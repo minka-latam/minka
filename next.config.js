@@ -9,22 +9,6 @@ const nextConfig = {
       },
       {
         protocol: 'https',
-        hostname: 'swfgvfhpmicwptupjyko.supabase.co',
-      },
-      {
-        protocol: 'https',
-        hostname: 'euflkzolctyfscsnwspq.supabase.co',
-      },
-      {
-        protocol: 'https',
-        hostname: 'noplbukuwhiizabgmfoo.supabase.co',
-      },
-      {
-        protocol: 'https',
-        hostname: 'aoovlhsyzfrfbouqcedw.supabase.co',
-      },
-      {
-        protocol: 'https',
         hostname: 'img.youtube.com',
       },
       {
@@ -42,6 +26,10 @@ const nextConfig = {
       {
         protocol: 'https',
         hostname: 'api.dicebear.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'zeqhatgoeftqhcqzdkim.supabase.co',
       },
     ],
   },
