@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { triptoClient } from "@/lib/tripto/client";
 import { prisma } from "@/lib/prisma";
 import { getAuthSession } from "@/lib/auth";
 import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
@@ -23,6 +24,7 @@ export async function POST(request: NextRequest) {
       message,
       isAnonymous = false,
       notificationEnabled = false,
+      customAmount,
     } = body;
 
     // Basic validation
@@ -127,20 +129,53 @@ export async function POST(request: NextRequest) {
       donorName = donor?.name || "Donante";
     }
 
-    // Create the donation
+    // 1. Create donor for both cases (card y qr)
     const donation = await prisma.donation.create({
       data: {
         campaignId,
         donorId: donorProfileId!,
         amount: Number(amount),
         paymentMethod: paymentMethodEnum,
-        paymentStatus: "pending", // Start as pending
+        paymentStatus: 'pending',
+        paymentProvider:
+          paymentMethod === 'card' ? 'tripto' : 'bisa',
         message: message || null,
         isAnonymous,
         notificationEnabled,
-        predefinedAmount: !body.customAmount,
+        predefinedAmount: !customAmount,
       },
-    });
+    })
+
+    // 2. If it's card → Tripto + early return
+    if (paymentMethod === 'card') {
+      const paymentLink = await triptoClient.createPaymentLink({
+        amount: Number(amount),
+        currency: 'BOB',
+        metadata: {
+          donationId: donation.id,
+          campaignId,
+        },
+      })
+
+      await prisma.donation.update({
+        where: { id: donation.id },
+        data: {
+          triptoPaymentId: paymentLink.paymentId,
+          triptoPaymentLinkId: paymentLink.id,
+          triptoCheckoutUrl: paymentLink.checkoutUrl,
+        },
+      })
+
+      return NextResponse.json(
+        {
+          success: true,
+          mode: 'tripto',
+          checkoutUrl: paymentLink.checkoutUrl,
+          donationId: donation.id,
+        },
+        { status: 201 },
+      )
+    }
 
     // Update campaign statistics (atomically with a transaction)
     await prisma.$transaction(async (tx) => {
