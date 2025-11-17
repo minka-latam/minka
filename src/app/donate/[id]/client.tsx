@@ -460,18 +460,18 @@ export function DonatePageContent({ campaignId }: { campaignId: string }) {
   }
 
   // Default values if campaign data isn't available
-  const campaignTitle = campaign?.title || "Parque Nacional Amboró";
+  const campaignTitle = campaign?.title || "Nombre de la campaña sin especificar";
   const campaignImage =
     campaign?.media && campaign.media.length > 0
       ? campaign.media[0].media_url
-      : "/amboro-campaign.jpg";
+      : "/placeholder.svg";
   const organizer = {
-    name: campaign?.organizer?.name || "Andrés Martínez Saucedo",
+    name: campaign?.organizer?.name || "Nombre sin especificar",
     role: "Organizador de campaña",
     location:
       campaign?.location ||
       campaign?.organizer?.location ||
-      "Santa Cruz de la Sierra, Bolivia",
+      "Ubicación no especificada",
     profilePicture: campaign?.organizer?.profilePicture || null,
   };
 
