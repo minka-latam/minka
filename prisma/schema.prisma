@@ -145,6 +145,10 @@ model Donation {
   campaign            Campaign      @relation("CampaignDonations", fields: [campaignId], references: [id], onDelete: Cascade)
   donor               Profile       @relation("DonorDonations", fields: [donorId], references: [id], onDelete: Cascade)
   notifications       Notification[] @relation("DonationNotifications")
+  paymentProvider     PaymentProvider? @map("payment_provider")
+  triptoPaymentId     String?        @map("tripto_payment_id")
+  triptoPaymentLinkId String?        @map("tripto_payment_link_id")
+  triptoCheckoutUrl   String?        @map("tripto_checkout_url")
 
   @@map("donations")
 }
@@ -307,6 +311,11 @@ enum PaymentMethod {
   credit_card
   qr
   bank_transfer
+}
+
+enum PaymentProvider {
+  tripto
+  bisa
 }
 
 enum PaymentStatus {
