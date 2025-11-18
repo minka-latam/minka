@@ -26,6 +26,7 @@ export async function POST(request: NextRequest) {
       notificationEnabled = false,
       customAmount,
     } = body;
+    console.log("[DONATION] Incoming body:", body);
 
     // Basic validation
     if (!campaignId) {
@@ -145,96 +146,117 @@ export async function POST(request: NextRequest) {
         predefinedAmount: !customAmount,
       },
     })
+    console.log("[DONATION] Created donation:", donation);
 
-    // 2. If it's card → Tripto + early return
+    // 2. If it's card → Tripto Checkout Session + early return
     if (paymentMethod === 'card') {
-      const paymentLink = await triptoClient.createPaymentLink({
-        amount: Number(amount),
-        currency: 'BOB',
+      console.log("────────────────────────────────────────────");
+      console.log("[TRIPTO] Starting checkout for donation:", donation.id);
+
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL;
+
+      const successUrl = `${baseUrl}/donate/${campaignId}?success=true&donationId=${donation.id}`;
+      const cancelUrl  = `${baseUrl}/donate/${campaignId}?cancelled=true&donationId=${donation.id}`;
+
+      const session = await triptoClient.createCheckoutSession({
+        productId: process.env.TRIPTO_PRODUCT_ID!,
+        quantity: Number(amount),
+        successUrl,
+        cancelUrl,
         metadata: {
           donationId: donation.id,
           campaignId,
         },
-      })
+      });
 
-      await prisma.donation.update({
+      console.log("[TRIPTO] Checkout session created:", session);
+
+      const updatedDonation = await prisma.donation.update({
         where: { id: donation.id },
         data: {
-          triptoPaymentId: paymentLink.paymentId,
-          triptoPaymentLinkId: paymentLink.id,
-          triptoCheckoutUrl: paymentLink.checkoutUrl,
+          triptoSessionId: session.id,
+          triptoCheckoutUrl: session.checkoutUrl,
         },
-      })
+      });
+
+      console.log("[TRIPTO] Donation updated with checkout session:", updatedDonation.id);
+      console.log("────────────────────────────────────────────");
 
       return NextResponse.json(
         {
           success: true,
-          mode: 'tripto',
-          checkoutUrl: paymentLink.checkoutUrl,
+          mode: "tripto",
+          checkoutUrl: session.checkoutUrl,
           donationId: donation.id,
         },
-        { status: 201 },
-      )
+        { status: 201 }
+      );
     }
 
-    // Update campaign statistics (atomically with a transaction)
-    await prisma.$transaction(async (tx) => {
-      // Get the current campaign
-      const currentCampaign = await tx.campaign.findUnique({
-        where: { id: campaignId },
-        select: { collectedAmount: true, donorCount: true, goalAmount: true },
+
+
+      // Update campaign statistics (atomically with a transaction)
+      await prisma.$transaction(async (tx) => {
+        // Get the current campaign
+        const currentCampaign = await tx.campaign.findUnique({
+          where: { id: campaignId },
+          select: { collectedAmount: true, donorCount: true, goalAmount: true },
+        });
+
+        if (!currentCampaign) {
+          throw new Error("Campaign not found");
+        }
+
+        // Calculate new values
+        const newCollectedAmount =
+          Number(currentCampaign.collectedAmount) + Number(amount);
+        const newDonorCount = currentCampaign.donorCount + 1;
+        const percentageFunded =
+          (newCollectedAmount / Number(currentCampaign.goalAmount)) * 100;
+
+        // Update the campaign
+        await tx.campaign.update({
+          where: { id: campaignId },
+          data: {
+            collectedAmount: newCollectedAmount,
+            donorCount: newDonorCount,
+            percentageFunded,
+          },
+        });
       });
 
-      if (!currentCampaign) {
-        throw new Error("Campaign not found");
+      // Create notification for campaign owner
+      try {
+        await createDonationNotification(
+          donation.id,
+          campaign.id,
+          campaign.organizerId,
+          donorName,
+          Number(amount),
+          campaign.title,
+          isAnonymous
+        );
+      } catch (notificationError) {
+        // Log error but don't fail the donation
+        console.error(
+          "Failed to create donation notification:",
+          notificationError
+        );
       }
-
-      // Calculate new values
-      const newCollectedAmount =
-        Number(currentCampaign.collectedAmount) + Number(amount);
-      const newDonorCount = currentCampaign.donorCount + 1;
-      const percentageFunded =
-        (newCollectedAmount / Number(currentCampaign.goalAmount)) * 100;
-
-      // Update the campaign
-      await tx.campaign.update({
-        where: { id: campaignId },
-        data: {
-          collectedAmount: newCollectedAmount,
-          donorCount: newDonorCount,
-          percentageFunded,
-        },
-      });
-    });
-
-    // Create notification for campaign owner
-    try {
-      await createDonationNotification(
-        donation.id,
-        campaign.id,
-        campaign.organizerId,
-        donorName,
-        Number(amount),
-        campaign.title,
-        isAnonymous
-      );
-    } catch (notificationError) {
-      // Log error but don't fail the donation
-      console.error(
-        "Failed to create donation notification:",
-        notificationError
-      );
-    }
 
     return NextResponse.json(
       { success: true, donationId: donation.id },
       { status: 201 }
     );
-  } catch (error) {
-    console.error("Donation creation error:", error);
-    return NextResponse.json(
-      { error: "Failed to process donation" },
-      { status: 500 }
-    );
-  }
+    } catch (err: any) {
+      console.error("Donation creation error:", err);
+
+      return NextResponse.json(
+        {
+          success: false,
+          error: err?.message || "Failed to process donation",
+        },
+        { status: 500 }
+      );
+    }
 }

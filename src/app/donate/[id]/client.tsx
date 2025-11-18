@@ -1,15 +1,16 @@
 "use client";
 
+import React from "react";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
 import { ArrowRight, CreditCard, QrCode, Bell } from "lucide-react";
+import Image from "next/image";
+import { useSearchParams } from "next/navigation";
+import { Button } from "@/components/ui/button";
 import { Header } from "@/components/views/landing-page/Header";
 import { Footer } from "@/components/views/landing-page/Footer";
-import Image from "next/image";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { useCampaign } from "@/hooks/useCampaign";
-import React from "react";
 import { Switch } from "@/components/ui/switch";
 import { CheckIcon } from "@/components/icons/CheckIcon";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
@@ -70,6 +71,12 @@ export function DonatePageContent({ campaignId }: { campaignId: string }) {
   >(null);
   const [donationId, setDonationId] = useState<string | null>(null);
 
+  // Read redirect parameters from Tripto checkout
+  const searchParams = useSearchParams();
+  const success = searchParams.get("success");
+  const cancelled = searchParams.get("cancelled");
+  const returnedDonationId = searchParams.get("donationId");
+
   // State for error notification
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -103,6 +110,23 @@ export function DonatePageContent({ campaignId }: { campaignId: string }) {
 
     checkUser();
   }, [supabase]);
+
+  // Auto-open success modal if user returned from Tripto checkout
+  useEffect(() => {
+    if (success && returnedDonationId) {
+      console.log("[TRIPTO] Redirect success detected, opening modal for donation:", returnedDonationId);
+      setDonationId(returnedDonationId); // ensures UI knows which donation completed
+      setShowSuccessModal(true);
+    }
+  }, [success, returnedDonationId]);
+
+  // TODO: handle cancellation modal or message
+  useEffect(() => {
+    if (cancelled && returnedDonationId) {
+      console.warn("[TRIPTO] User cancelled Tripto checkout for donation:", returnedDonationId);
+      // See how to display a 'rejected' state, maybe reuse modal, or else. See how the BISA implementation does
+    }
+  }, [cancelled, returnedDonationId]);
 
   // Calculate donation details
   const donationAmount =

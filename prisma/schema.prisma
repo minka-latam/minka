@@ -146,9 +146,9 @@ model Donation {
   donor               Profile       @relation("DonorDonations", fields: [donorId], references: [id], onDelete: Cascade)
   notifications       Notification[] @relation("DonationNotifications")
   paymentProvider     PaymentProvider? @map("payment_provider")
-  triptoPaymentId     String?        @map("tripto_payment_id")
-  triptoPaymentLinkId String?        @map("tripto_payment_link_id")
-  triptoCheckoutUrl   String?        @map("tripto_checkout_url")
+  triptoPaymentId     String?       @map("tripto_payment_id")
+  triptoCheckoutUrl   String?       @map("tripto_checkout_url")
+  triptoSessionId     String?       @map("tripto_session_id")
 
   @@map("donations")
 }
@@ -266,7 +266,7 @@ model LegalEntity {
   status            Status    @default(active)
   createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
   updatedAt         DateTime  @updatedAt @map("updated_at") @db.Timestamp(6)
-  
+
   // Relations
   campaigns         Campaign[] @relation("LegalEntityCampaigns")
 
@@ -364,7 +364,7 @@ enum Province {
   manco_kapac
   abel_iturralde
   bautista_saavedra
-  
+
   // Santa Cruz Department
   andres_ibañez
   warnes
@@ -380,7 +380,7 @@ enum Province {
   camiri
   ignacio_warnes
   obispo_santiestevan
-  
+
   // Cochabamba Department
   cercado
   campero
@@ -398,7 +398,7 @@ enum Province {
   aiquile
   bolivar_cochabamba
   tapacare
-  
+
   // Chuquisaca Department (Sucre)
   oropeza
   yamparaez
@@ -410,7 +410,7 @@ enum Province {
   luis_calvo
   azurduy
   zudañez
-  
+
   // Oruro Department
   cercado_oruro
   eduardo_avaroa
@@ -428,7 +428,7 @@ enum Province {
   nor_carangas
   cercado_de_oruro
   sabaya
-  
+
   // Potosí Department
   tomas_frias
   rafael_bustillo
@@ -446,7 +446,7 @@ enum Province {
   enrique_baldivieso
   sud_chichas
   nor_chichas
-  
+
   // Tarija Department
   cercado_tarija
   arce
@@ -454,7 +454,7 @@ enum Province {
   avilés
   méndez
   o_connor
-  
+
   // Beni Department
   cercado_beni
   vaca_diez
@@ -464,7 +464,7 @@ enum Province {
   mamore
   itenez
   marbán
-  
+
   // Pando Department
   nicolas_suarez
   manuripi
