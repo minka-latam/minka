@@ -9,90 +9,90 @@ datasource db {
 }
 
 model Profile {
-  role                 UserRole        @default(user)
-  activeCampaignsCount Int             @default(0) @map("active_campaigns_count")
-  address              String?
-  bio                  String?
-  birthDate            DateTime        @map("birth_date") @db.Date
-  createdAt            DateTime        @default(now()) @map("created_at") @db.Timestamp(6)
-  email                String          @unique
-  identityNumber       String          @unique @map("identity_number")
-  joinDate             DateTime        @default(now()) @map("join_date") @db.Date
-  location             String?
-  name                 String
-  passwordHash         String          @map("password_hash")
-  phone                String
-  profilePicture       String?         @map("profile_picture")
-  status               Status          @default(active)
-  updatedAt            DateTime        @updatedAt @map("updated_at") @db.Timestamp(6)
-  verificationStatus   Boolean         @default(false) @map("verification_status")
-  id                   String          @id @default(uuid()) @db.Uuid
-  campaigns            Campaign[]      @relation("OrganizerCampaigns")
-  comments             Comment[]       @relation("ProfileComments")
-  donations            Donation[]      @relation("DonorDonations")
-  savedCampaigns       SavedCampaign[] @relation("ProfileSavedCampaigns")
-  notifications        Notification[]  @relation("UserNotifications")
+  role                   UserRole                @default(user)
+  activeCampaignsCount   Int                     @default(0) @map("active_campaigns_count")
+  address                String?
+  bio                    String?
+  birthDate              DateTime                @map("birth_date") @db.Date
+  createdAt              DateTime                @default(now()) @map("created_at") @db.Timestamp(6)
+  email                  String                  @unique
+  identityNumber         String                  @unique @map("identity_number")
+  joinDate               DateTime                @default(now()) @map("join_date") @db.Date
+  location               String?
+  name                   String
+  passwordHash           String                  @map("password_hash")
+  phone                  String
+  profilePicture         String?                 @map("profile_picture")
+  status                 Status                  @default(active)
+  updatedAt              DateTime                @updatedAt @map("updated_at") @db.Timestamp(6)
+  verificationStatus     Boolean                 @default(false) @map("verification_status")
+  id                     String                  @id @default(uuid()) @db.Uuid
+  campaigns              Campaign[]              @relation("OrganizerCampaigns")
+  comments               Comment[]               @relation("ProfileComments")
+  donations              Donation[]              @relation("DonorDonations")
+  notifications          Notification[]          @relation("UserNotifications")
+  savedCampaigns         SavedCampaign[]         @relation("ProfileSavedCampaigns")
   systemNotificationLogs SystemNotificationLog[] @relation("AdminSystemNotifications")
 
   @@map("profiles")
 }
 
 model Campaign {
-  id                       String               @id @default(uuid()) @db.Uuid
+  id                       String                @id @default(uuid()) @db.Uuid
   title                    String
   description              String
-  story                    String               @db.VarChar(600)
-  beneficiariesDescription String               @map("beneficiaries_description")
+  beneficiariesDescription String                @map("beneficiaries_description")
   category                 CampaignCategory
-  goalAmount               Decimal              @map("goal_amount") @db.Decimal
-  collectedAmount          Decimal              @default(0) @map("collected_amount") @db.Decimal
-  donorCount               Int                  @default(0) @map("donor_count")
-  percentageFunded         Float                @map("percentage_funded")
-  daysRemaining            Int                  @map("days_remaining")
-  youtubeUrl               String?              @map("youtube_url")
+  goalAmount               Decimal               @map("goal_amount") @db.Decimal
+  collectedAmount          Decimal               @default(0) @map("collected_amount") @db.Decimal
+  donorCount               Int                   @default(0) @map("donor_count")
+  percentageFunded         Float                 @map("percentage_funded")
+  daysRemaining            Int                   @map("days_remaining")
+  youtubeUrl               String?               @map("youtube_url")
+  endDate                  DateTime              @map("end_date") @db.Date
+  verificationStatus       Boolean               @default(false) @map("verification_status")
+  verificationDate         DateTime?             @map("verification_date") @db.Timestamp(6)
+  campaignStatus           CampaignStatus        @default(draft) @map("campaign_status")
+  status                   Status                @default(active)
+  organizerId              String                @map("organizer_id") @db.Uuid
+  createdAt                DateTime              @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt                DateTime              @updatedAt @map("updated_at") @db.Timestamp(6)
+  youtubeUrls              String[]              @default([]) @map("youtube_urls")
+  story                    String                @db.VarChar(600)
   location                 Region
-  province                 Province?            // Optional province field
-  endDate                  DateTime             @map("end_date") @db.Date
-  verificationStatus       Boolean              @default(false) @map("verification_status")
-  verificationDate         DateTime?            @map("verification_date") @db.Timestamp(6)
-  campaignStatus           CampaignStatus       @default(draft) @map("campaign_status")
-  status                   Status               @default(active)
-  organizerId              String               @map("organizer_id") @db.Uuid
-  legalEntityId            String?              @map("legal_entity_id") @db.Uuid
-  createdAt                DateTime             @default(now()) @map("created_at") @db.Timestamp(6)
-  updatedAt                DateTime             @updatedAt @map("updated_at") @db.Timestamp(6)
-  youtubeUrls              String[]             @default([]) @map("youtube_urls")
-  media                    CampaignMedia[]      @relation("CampaignMedia")
-  updates                  CampaignUpdate[]     @relation("CampaignUpdates")
-  organizer                Profile              @relation("OrganizerCampaigns", fields: [organizerId], references: [id])
-  legalEntity              LegalEntity?         @relation("LegalEntityCampaigns", fields: [legalEntityId], references: [id])
-  comments                 Comment[]            @relation("CampaignComments")
-  donations                Donation[]           @relation("CampaignDonations")
-  savedBy                  SavedCampaign[]      @relation("CampaignSaved")
+  province                 Province?
+  legalEntityId            String?               @map("legal_entity_id") @db.Uuid
+  media                    CampaignMedia[]       @relation("CampaignMedia")
+  updates                  CampaignUpdate[]      @relation("CampaignUpdates")
   verificationRequests     CampaignVerification? @relation("CampaignVerificationRequests")
-  fundTransfers            FundTransfer[]       @relation("CampaignFundTransfers")
-  notifications            Notification[]       @relation("CampaignNotifications")
+  legalEntity              LegalEntity?          @relation("LegalEntityCampaigns", fields: [legalEntityId], references: [id])
+  organizer                Profile               @relation("OrganizerCampaigns", fields: [organizerId], references: [id])
+  comments                 Comment[]             @relation("CampaignComments")
+  donations                Donation[]            @relation("CampaignDonations")
+  fundTransfers            FundTransfer[]        @relation("CampaignFundTransfers")
+  notifications            Notification[]        @relation("CampaignNotifications")
+  savedBy                  SavedCampaign[]       @relation("CampaignSaved")
 
   @@map("campaigns")
 }
 
 model CampaignVerification {
-  id                String              @id @default(uuid()) @db.Uuid
-  campaignId        String              @unique @map("campaign_id") @db.Uuid
-  requestDate       DateTime            @default(now()) @map("request_date") @db.Timestamp(6)
-  approvalDate      DateTime?           @map("approval_date") @db.Timestamp(6)
-  verificationStatus VerificationStatus @default(pending) @map("verification_status")
-  notes             String?
-  idDocumentUrl     String?             @map("id_document_url")
-  supportingDocsUrls String[]           @default([]) @map("supporting_docs_urls")
-  campaignStory     String?             @map("campaign_story") @db.Text
-  referenceContactName String?          @map("reference_contact_name")
-  referenceContactEmail String?         @map("reference_contact_email")
-  referenceContactPhone String?         @map("reference_contact_phone")
-  status            Status              @default(active)
-  createdAt         DateTime            @default(now()) @map("created_at") @db.Timestamp(6)
-  updatedAt         DateTime            @updatedAt @map("updated_at") @db.Timestamp(6)
-  campaign          Campaign            @relation("CampaignVerificationRequests", fields: [campaignId], references: [id], onDelete: Cascade)
+  id                    String             @id @default(uuid()) @db.Uuid
+  campaignId            String             @unique @map("campaign_id") @db.Uuid
+  requestDate           DateTime           @default(now()) @map("request_date") @db.Timestamp(6)
+  approvalDate          DateTime?          @map("approval_date") @db.Timestamp(6)
+  verificationStatus    VerificationStatus @default(pending) @map("verification_status")
+  notes                 String?
+  idDocumentUrl         String?            @map("id_document_url")
+  supportingDocsUrls    String[]           @default([]) @map("supporting_docs_urls")
+  campaignStory         String?            @map("campaign_story")
+  referenceContactName  String?            @map("reference_contact_name")
+  referenceContactEmail String?            @map("reference_contact_email")
+  referenceContactPhone String?            @map("reference_contact_phone")
+  status                Status             @default(active)
+  createdAt             DateTime           @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt             DateTime           @updatedAt @map("updated_at") @db.Timestamp(6)
+  campaign              Campaign           @relation("CampaignVerificationRequests", fields: [campaignId], references: [id], onDelete: Cascade)
 
   @@map("campaign_verifications")
 }
@@ -117,48 +117,54 @@ model CampaignUpdate {
   campaignId String   @map("campaign_id") @db.Uuid
   title      String
   content    String
-  youtubeUrl String?  @map("youtube_url")
-  imageUrl   String?  @map("image_url")
   status     Status   @default(active)
   createdAt  DateTime @default(now()) @map("created_at") @db.Timestamp(6)
   updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamp(6)
+  imageUrl   String?  @map("image_url")
+  youtubeUrl String?  @map("youtube_url")
   campaign   Campaign @relation("CampaignUpdates", fields: [campaignId], references: [id], onDelete: Cascade)
 
   @@map("campaign_updates")
 }
 
 model Donation {
-  id                  String        @id @default(uuid()) @db.Uuid
-  campaignId          String        @map("campaign_id") @db.Uuid
-  donorId             String        @map("donor_id") @db.Uuid
-  amount              Decimal       @db.Decimal
-  currency            String        @default("BOB")
-  predefinedAmount    Boolean       @default(true) @map("predefined_amount")
-  paymentMethod       PaymentMethod @map("payment_method")
-  paymentStatus       PaymentStatus @default(pending) @map("payment_status")
+  id                  String         @id @default(uuid()) @db.Uuid
+  campaignId          String         @map("campaign_id") @db.Uuid
+  donorId             String         @map("donor_id") @db.Uuid
+  amount              Decimal        @db.Decimal
+  predefinedAmount    Boolean        @default(true) @map("predefined_amount")
+  paymentMethod       PaymentMethod  @map("payment_method")
+  paymentStatus       PaymentStatus  @default(pending) @map("payment_status")
   message             String?
-  isAnonymous         Boolean       @default(false) @map("is_anonymous")
-  notificationEnabled Boolean       @default(false) @map("notification_enabled")
-  status              Status        @default(active)
-  createdAt           DateTime      @default(now()) @map("created_at") @db.Timestamp(6)
-  updatedAt           DateTime      @updatedAt @map("updated_at") @db.Timestamp(6)
-  campaign            Campaign      @relation("CampaignDonations", fields: [campaignId], references: [id], onDelete: Cascade)
-  donor               Profile       @relation("DonorDonations", fields: [donorId], references: [id], onDelete: Cascade)
+  isAnonymous         Boolean        @default(false) @map("is_anonymous")
+  notificationEnabled Boolean        @default(false) @map("notification_enabled")
+  status              Status         @default(active)
+  createdAt           DateTime       @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt           DateTime       @updatedAt @map("updated_at") @db.Timestamp(6)
+  currency            String         @default("BOB")
+  paymentProvider     String?        @map("payment_provider")
+  triptoPaymentId     String?        @map("tripto_payment_id")
+  triptoCheckoutUrl   String?        @map("tripto_checkout_url")
+  triptoSessionId     String?        @map("tripto_session_id")
+  tip_amount          Decimal?       @db.Decimal
+  total_amount        Decimal?       @db.Decimal
+  campaign            Campaign       @relation("CampaignDonations", fields: [campaignId], references: [id], onDelete: Cascade)
+  donor               Profile        @relation("DonorDonations", fields: [donorId], references: [id], onDelete: Cascade)
   notifications       Notification[] @relation("DonationNotifications")
 
   @@map("donations")
 }
 
 model Comment {
-  id         String   @id @default(uuid()) @db.Uuid
-  campaignId String   @map("campaign_id") @db.Uuid
-  profileId  String   @map("profile_id") @db.Uuid
-  message    String
-  status     Status   @default(active)
-  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamp(6)
-  updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamp(6)
-  campaign   Campaign @relation("CampaignComments", fields: [campaignId], references: [id], onDelete: Cascade)
-  profile    Profile  @relation("ProfileComments", fields: [profileId], references: [id], onDelete: Cascade)
+  id            String         @id @default(uuid()) @db.Uuid
+  campaignId    String         @map("campaign_id") @db.Uuid
+  profileId     String         @map("profile_id") @db.Uuid
+  message       String
+  status        Status         @default(active)
+  createdAt     DateTime       @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt     DateTime       @updatedAt @map("updated_at") @db.Timestamp(6)
+  campaign      Campaign       @relation("CampaignComments", fields: [campaignId], references: [id], onDelete: Cascade)
+  profile       Profile        @relation("ProfileComments", fields: [profileId], references: [id], onDelete: Cascade)
   notifications Notification[] @relation("CommentNotifications")
 
   @@map("comments")
@@ -190,81 +196,79 @@ model NotificationPreference {
 }
 
 model Notification {
-  id           String             @id @default(uuid()) @db.Uuid
-  userId       String             @map("user_id") @db.Uuid
-  type         NotificationType
-  title        String
-  message      String
-  isRead       Boolean            @default(false) @map("is_read")
-  campaignId   String?            @map("campaign_id") @db.Uuid
-  donationId   String?            @map("donation_id") @db.Uuid
-  commentId    String?            @map("comment_id") @db.Uuid
-  status       Status             @default(active)
-  createdAt    DateTime           @default(now()) @map("created_at") @db.Timestamp(6)
-  updatedAt    DateTime           @updatedAt @map("updated_at") @db.Timestamp(6)
-  user         Profile            @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
-  campaign     Campaign?          @relation("CampaignNotifications", fields: [campaignId], references: [id], onDelete: Cascade)
-  donation     Donation?          @relation("DonationNotifications", fields: [donationId], references: [id], onDelete: Cascade)
-  comment      Comment?           @relation("CommentNotifications", fields: [commentId], references: [id], onDelete: Cascade)
+  id         String           @id @default(uuid()) @db.Uuid
+  userId     String           @map("user_id") @db.Uuid
+  type       NotificationType
+  title      String
+  message    String
+  isRead     Boolean          @default(false) @map("is_read")
+  campaignId String?          @map("campaign_id") @db.Uuid
+  donationId String?          @map("donation_id") @db.Uuid
+  commentId  String?          @map("comment_id") @db.Uuid
+  status     Status           @default(active)
+  createdAt  DateTime         @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt  DateTime         @updatedAt @map("updated_at") @db.Timestamp(6)
+  campaign   Campaign?        @relation("CampaignNotifications", fields: [campaignId], references: [id], onDelete: Cascade)
+  comment    Comment?         @relation("CommentNotifications", fields: [commentId], references: [id], onDelete: Cascade)
+  donation   Donation?        @relation("DonationNotifications", fields: [donationId], references: [id], onDelete: Cascade)
+  user       Profile          @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("notifications")
 }
 
 model SystemNotificationLog {
-  id              String   @id @default(uuid()) @db.Uuid
-  adminId         String   @map("admin_id") @db.Uuid
-  title           String
-  content         String   @db.Text
-  target          String   // "all", "donors", "organizers", "admins"
-  recipientCount  Int      @map("recipient_count")
-  status          Status   @default(active)
-  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamp(6)
-  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamp(6)
-  admin           Profile  @relation("AdminSystemNotifications", fields: [adminId], references: [id], onDelete: Cascade)
+  id             String   @id @default(uuid()) @db.Uuid
+  adminId        String   @map("admin_id") @db.Uuid
+  title          String
+  content        String
+  target         String
+  recipientCount Int      @map("recipient_count")
+  status         Status   @default(active)
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamp(6)
+  admin          Profile  @relation("AdminSystemNotifications", fields: [adminId], references: [id], onDelete: Cascade)
 
   @@map("system_notification_logs")
 }
 
 model FundTransfer {
-  id                String              @id @default(uuid()) @db.Uuid
-  campaignId        String              @map("campaign_id") @db.Uuid
-  accountHolderName String              @map("account_holder_name")
-  bankName          String              @map("bank_name")
-  accountNumber     String              @map("account_number")
-  amount            Decimal             @db.Decimal
-  status            TransferStatus      @default(processing)
-  frequency         TransferFrequency   @default(monthly_once)
-  transferDate      DateTime?           @map("transfer_date") @db.Timestamp(6)
+  id                String            @id @default(uuid()) @db.Uuid
+  campaignId        String            @map("campaign_id") @db.Uuid
+  accountHolderName String            @map("account_holder_name")
+  bankName          String            @map("bank_name")
+  accountNumber     String            @map("account_number")
+  amount            Decimal           @db.Decimal
+  status            TransferStatus    @default(processing)
+  frequency         TransferFrequency @default(monthly_once)
+  transferDate      DateTime?         @map("transfer_date") @db.Timestamp(6)
   notes             String?
-  createdAt         DateTime            @default(now()) @map("created_at") @db.Timestamp(6)
-  updatedAt         DateTime            @updatedAt @map("updated_at") @db.Timestamp(6)
-  campaign          Campaign            @relation("CampaignFundTransfers", fields: [campaignId], references: [id], onDelete: Cascade)
+  createdAt         DateTime          @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt         DateTime          @updatedAt @map("updated_at") @db.Timestamp(6)
+  campaign          Campaign          @relation("CampaignFundTransfers", fields: [campaignId], references: [id], onDelete: Cascade)
 
   @@map("fund_transfers")
 }
 
 model LegalEntity {
-  id                String    @id @default(uuid()) @db.Uuid
-  name              String    // Organization/company name
-  taxId             String?   @map("tax_id") // Tax identification number (NIT in Bolivia)
-  registrationNumber String? @map("registration_number") // Business registration number
-  legalForm         String?   @map("legal_form") // Legal form (S.A., S.R.L., etc.)
-  address           String?
-  city              String?
-  province          Province?
-  department        Region?
-  phone             String?
-  email             String?
-  website           String?
-  description       String?   @db.Text
-  documentUrls      String[]  @default([]) @map("document_urls") // Legal documents
-  isActive          Boolean   @default(true) @map("is_active")
-  status            Status    @default(active)
-  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
-  updatedAt         DateTime  @updatedAt @map("updated_at") @db.Timestamp(6)
-  
-  // Relations
-  campaigns         Campaign[] @relation("LegalEntityCampaigns")
+  id                 String     @id @default(uuid()) @db.Uuid
+  name               String
+  taxId              String?    @map("tax_id")
+  registrationNumber String?    @map("registration_number")
+  legalForm          String?    @map("legal_form")
+  address            String?
+  city               String?
+  province           Province?
+  department         Region?
+  phone              String?
+  email              String?
+  website            String?
+  description        String?
+  documentUrls       String[]   @default([]) @map("document_urls")
+  isActive           Boolean    @default(true) @map("is_active")
+  status             Status     @default(active)
+  createdAt          DateTime   @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt          DateTime   @updatedAt @map("updated_at") @db.Timestamp(6)
+  campaigns          Campaign[] @relation("LegalEntityCampaigns")
 
   @@map("legal_entities")
 }
@@ -309,6 +313,11 @@ enum PaymentMethod {
   bank_transfer
 }
 
+enum PaymentProvider {
+  tripto
+  bisa
+}
+
 enum PaymentStatus {
   pending
   completed
@@ -334,12 +343,11 @@ enum Region {
 }
 
 enum Province {
-  // La Paz Department
   murillo
   omasuyos
   pacajes
   camacho
-  muñecas
+  // muñecas
   larecaja
   franz_tamayo
   ingavi
@@ -355,9 +363,7 @@ enum Province {
   manco_kapac
   abel_iturralde
   bautista_saavedra
-  
-  // Santa Cruz Department
-  andres_ibañez
+  // andres_ibañez
   warnes
   sara
   ichilo
@@ -371,8 +377,6 @@ enum Province {
   camiri
   ignacio_warnes
   obispo_santiestevan
-  
-  // Cochabamba Department
   cercado
   campero
   ayopaya
@@ -389,8 +393,6 @@ enum Province {
   aiquile
   bolivar_cochabamba
   tapacare
-  
-  // Chuquisaca Department (Sucre)
   oropeza
   yamparaez
   nor_cinti
@@ -400,18 +402,16 @@ enum Province {
   hernando_siles
   luis_calvo
   azurduy
-  zudañez
-  
-  // Oruro Department
+  // zudañez
   cercado_oruro
   eduardo_avaroa
   carangas
   sajama
   litoral
   poopo
-  pantaleón_dalence
+  // pantaleón_dalence
   ladislao_cabrera
-  saucarí
+  // saucarí
   sebastian_pagador
   tomas_barron
   sur_carangas
@@ -419,14 +419,12 @@ enum Province {
   nor_carangas
   cercado_de_oruro
   sabaya
-  
-  // Potosí Department
   tomas_frias
   rafael_bustillo
   cornelio_saavedra
   chayanta
   charcas
-  alonso_de_ibañez
+  // alonso_de_ibañez
   bernardino_bilbao
   antonio_quijarro
   jose_maria_linares
@@ -437,16 +435,12 @@ enum Province {
   enrique_baldivieso
   sud_chichas
   nor_chichas
-  
-  // Tarija Department
   cercado_tarija
   arce
   gran_chaco
-  avilés
-  méndez
+  // avilés
+  // méndez
   o_connor
-  
-  // Beni Department
   cercado_beni
   vaca_diez
   jose_ballivian
@@ -454,9 +448,7 @@ enum Province {
   moxos
   mamore
   itenez
-  marbán
-  
-  // Pando Department
+  // marbán
   nicolas_suarez
   manuripi
   madre_de_dios
