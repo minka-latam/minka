@@ -9,6 +9,8 @@ interface LoadingScreenProps {
   showText?: boolean;
   fullScreen?: boolean;
   className?: string;
+  /** If true, shows the loader immediately without delay */
+  immediate?: boolean;
 }
 
 export function LoadingScreen({
@@ -16,28 +18,29 @@ export function LoadingScreen({
   showText = false,
   fullScreen = true,
   className,
+  immediate = false,
 }: LoadingScreenProps) {
   // Add a small delay before showing the loading screen for a smoother experience
-  const [showLoader, setShowLoader] = useState(false);
+  // Skip delay if immediate is true (for critical loading states like auth)
+  const [showLoader, setShowLoader] = useState(immediate);
 
   useEffect(() => {
+    if (immediate) return;
     // Short delay before showing loader to prevent flash for quick operations
     const timer = setTimeout(() => setShowLoader(true), 100);
     return () => clearTimeout(timer);
-  }, []);
+  }, [immediate]);
 
-  if (!showLoader) return null;
-
+  // Always render the container to prevent layout shift, but control visibility
   return (
     <div
       className={cn(
-        "flex items-center justify-center bg-[#f5f7e9]/90 backdrop-blur-sm animate-fadeIn", // Semi-transparent background with blur
+        "flex items-center justify-center bg-gradient-to-r from-white to-[#f5f7e9]",
         fullScreen ? "fixed inset-0 z-50" : "w-full h-full min-h-[200px]",
+        showLoader ? "opacity-100" : "opacity-0",
+        "transition-opacity duration-150",
         className
       )}
-      style={{
-        animationDuration: "300ms", // Fast fade-in
-      }}
     >
       <LoadingSpinner size="lg" text={text} showText={showText} />
     </div>
