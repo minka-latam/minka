@@ -13,6 +13,7 @@ import { Header } from "@/components/views/landing-page/Header";
 import { Footer } from "@/components/views/landing-page/Footer";
 import { CampaignCard } from "@/components/views/campaigns/CampaignCard";
 import { CampaignUpdates } from "@/components/views/campaign/CampaignUpdates";
+import { CampaignComments } from "@/components/views/campaign/CampaignComments";
 import Loading from "@/app/campaign/[id]/loading";
 
 // Helper function to format campaign data for components
@@ -41,20 +42,6 @@ function formatCampaignData(campaign: any) {
       createdAt: update.created_at,
       imageUrl: update.image_url,
       youtubeUrl: update.youtube_url,
-    })) || [];
-
-  // Format comments from campaign data
-  const formattedComments: Array<{
-    donor: string;
-    amount: number;
-    date: string;
-    comment: string;
-  }> =
-    campaign.comments?.map((comment: any) => ({
-      donor: comment.profile?.name || "Anonymous",
-      amount: 0, // We don't have amount in comments
-      date: new Date(comment.created_at).toLocaleDateString(),
-      comment: comment.message,
     })) || [];
 
   const progressData = {
@@ -89,7 +76,6 @@ function formatCampaignData(campaign: any) {
     images: galleryItems,
     progress: progressData,
     organizer: organizerData,
-    comments: formattedComments,
     updates: formattedUpdates,
   };
 }
@@ -250,41 +236,6 @@ function CustomCampaignDetails({
   );
 }
 
-// Custom donor comments component
-function CustomDonorComments({ comments }: { comments: any[] }) {
-  return (
-    <div className="space-y-6">
-      <h2 className="text-3xl md:text-4xl font-semibold text-[#2c6e49] break-words">
-        Comentarios de donadores
-      </h2>
-      <div className="space-y-6">
-        {comments.length > 0 ? (
-          comments.map((comment, index) => (
-            <div
-              key={index}
-              className="border-b border-gray-200 pb-6 last:border-0"
-            >
-              <div className="flex flex-wrap items-center gap-2 mb-2">
-                <span className="font-medium break-words">{comment.donor}</span>
-                <span className="text-sm text-gray-500 break-words">
-                  donó hace {comment.date}
-                </span>
-              </div>
-              <p className="text-gray-700 break-words whitespace-pre-wrap leading-relaxed">
-                {comment.comment}
-              </p>
-            </div>
-          ))
-        ) : (
-          <p className="text-gray-500 break-words">
-            Aún no hay comentarios en esta campaña.
-          </p>
-        )}
-      </div>
-    </div>
-  );
-}
-
 // Async function to fetch related campaigns
 async function fetchRelatedCampaigns(category: string, id: string) {
   try {
@@ -440,7 +391,10 @@ export default function CampaignClientPage({ id }: { id: string }) {
               )}
 
               {activeTab === "comentarios" && (
-                <CustomDonorComments comments={formattedData.comments} />
+                <CampaignComments
+                  campaignId={id}
+                  organizerId={campaign.organizer?.id}
+                />
               )}
             </div>
           </div>
