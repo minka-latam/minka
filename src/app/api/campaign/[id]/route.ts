@@ -276,6 +276,11 @@ export async function PATCH(
       campaignStatus,
       verificationStatus,
       recipient,
+      recipientType,
+      beneficiaryName,
+      beneficiaryRelationship,
+      beneficiaryReason,
+      legalEntityId,
       media,
       presentation,
     } = body;
@@ -300,6 +305,13 @@ export async function PATCH(
     if (verificationStatus !== undefined)
       updateData.verificationStatus = verificationStatus;
     if (presentation !== undefined) updateData.presentation = presentation;
+
+    // Handle recipient/beneficiary fields
+    if (recipientType !== undefined) updateData.recipientType = recipientType;
+    if (beneficiaryName !== undefined) updateData.beneficiaryName = beneficiaryName;
+    if (beneficiaryRelationship !== undefined) updateData.beneficiaryRelationship = beneficiaryRelationship;
+    if (beneficiaryReason !== undefined) updateData.beneficiaryReason = beneficiaryReason;
+    if (legalEntityId !== undefined) updateData.legalEntityId = legalEntityId;
 
     // Only set verification date if explicitly verifying the campaign
     if (verificationStatus === true) {

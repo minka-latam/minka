@@ -62,6 +62,10 @@ model Campaign {
   location                 Region
   province                 Province?
   legalEntityId            String?               @map("legal_entity_id") @db.Uuid
+  recipientType            RecipientType?        @map("recipient_type")
+  beneficiaryName          String?               @map("beneficiary_name")
+  beneficiaryRelationship  String?               @map("beneficiary_relationship")
+  beneficiaryReason        String?               @map("beneficiary_reason")
   media                    CampaignMedia[]       @relation("CampaignMedia")
   updates                  CampaignUpdate[]      @relation("CampaignUpdates")
   verificationRequests     CampaignVerification? @relation("CampaignVerificationRequests")
@@ -474,4 +478,10 @@ enum NotificationType {
   comment_received
   campaign_update
   general_news
+}
+
+enum RecipientType {
+  tu_mismo
+  otra_persona
+  persona_juridica
 }
