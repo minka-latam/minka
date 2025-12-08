@@ -4,9 +4,9 @@ import { bisaClient } from "@/lib/bisa/client";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { alias: string } }
+  { params }: { params: Promise<{ alias: string }> }
 ) {
-  const alias = params.alias;
+  const { alias } = await params;
 
   if (!alias) {
     return NextResponse.json({ error: "Alias is required" }, { status: 400 });
@@ -38,8 +38,8 @@ export async function GET(
 
     const status = response.data.status;
 
-    // If paid, update DB
-    if (status === "PAGADO" && donation.paymentStatus !== "completed") {
+    // If paid, update DB (paymentStatus is already known to not be "completed" from early return above)
+    if (status === "PAGADO") {
       // Transaction to ensure consistency
       await prisma.$transaction(async (tx) => {
         // Update donation
