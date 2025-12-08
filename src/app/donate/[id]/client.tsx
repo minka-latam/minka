@@ -13,6 +13,7 @@ import React from "react";
 import { Switch } from "@/components/ui/switch";
 import { CheckIcon } from "@/components/icons/CheckIcon";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { QRPaymentStep } from "@/components/donate/QRPaymentStep";
 
 // Define donation amount options
 const DONATION_AMOUNTS = [
@@ -89,6 +90,9 @@ export function DonatePageContent({ campaignId }: { campaignId: string }) {
 
   // Share functionality state
   const [showShareOptions, setShowShareOptions] = useState(false);
+
+  // QR Payment state
+  const [showQRStep, setShowQRStep] = useState(false);
 
   // Load user data on component mount
   useEffect(() => {
@@ -230,6 +234,17 @@ export function DonatePageContent({ campaignId }: { campaignId: string }) {
       // Store donation ID for notification updates
       if (data && data.donationId) {
         setDonationId(data.donationId);
+      }
+
+      const selectedMethod = selectedPaymentMethodIndex !== null
+            ? PAYMENT_METHODS[selectedPaymentMethodIndex].id
+            : paymentMethod || "card";
+
+      if (selectedMethod === "qr") {
+        setShowQRStep(true);
+        setIsDonationConfirmed(true);
+        setIsSubmitting(false);
+        return;
       }
 
       // Show success modal
@@ -881,8 +896,27 @@ export function DonatePageContent({ campaignId }: { campaignId: string }) {
                 </div>
               )}
 
+              {/* QR Payment Step */}
+              {showQRStep && donationId && (
+                <div className="min-h-[600px] flex items-center justify-center py-12">
+                  <QRPaymentStep
+                    donationId={donationId}
+                    amount={totalAmount}
+                    campaignId={campaignId}
+                    onPaymentConfirmed={() => {
+                      setShowQRStep(false);
+                      setShowSuccessModal(true);
+                    }}
+                    onCancel={() => {
+                      setShowQRStep(false);
+                      setIsDonationConfirmed(false);
+                    }}
+                  />
+                </div>
+              )}
+
               {/* Step 3: Confirm donation */}
-              {step === 3 && (
+              {step === 3 && !showQRStep && (
                 <div
                   className={`transition-opacity duration-500 ${isAnimating ? "opacity-0" : "opacity-100"}`}
                 >

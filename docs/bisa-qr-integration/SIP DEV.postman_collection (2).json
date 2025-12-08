@@ -1,0 +1,262 @@
+{
+	"info": {
+		"_postman_id": "82303f9b-8c5e-462b-89ba-a04569d4f57d",
+		"name": "SIP DEV",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "7763623",
+		"_collection_link": "https://lively-resonance-684213.postman.co/workspace/My-Workspace~321086a6-175a-4158-8754-32cab215c64d/collection/7763623-82303f9b-8c5e-462b-89ba-a04569d4f57d?action=share&source=collection_link&creator=7763623"
+	},
+	"item": [
+		{
+			"name": "METODO GENERAR TOKEN",
+			"protocolProfileBehavior": {
+				"disabledSystemHeaders": {
+					"content-type": true
+				}
+			},
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "apikey",
+						"value": "3147d8a391d52868be64c85a99cdd9dcd675bd920da9ba33",
+						"type": "text",
+						"description": "API KEY DEL CORREO"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"username\": \"INTEGRACION\",  //DATOS DEL CORREO, EL BANCO DEBE PROPORCIONAR\r\n    \"password\": \"G8WvhgiK7RueZ*m\"\r\n}\r\n"
+				},
+				"url": {
+					"raw": "https://dev-sip.mc4.com.bo:8443/autenticacion/v1/generarToken",
+					"protocol": "https",
+					"host": [
+						"dev-sip",
+						"mc4",
+						"com",
+						"bo"
+					],
+					"port": "8443",
+					"path": [
+						"autenticacion",
+						"v1",
+						"generarToken"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "METODO VERIFICAR ESTADO",
+			"protocolProfileBehavior": {
+				"disabledSystemHeaders": {}
+			},
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "apikeyServicio",
+						"value": "43c723af317b6806df86ce375fee01dc6caa06b4ab528da0",
+						"type": "text",
+						"description": "API KEY SERVICIO, OBTENER DESDE PLATAFORMA"
+					},
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzUxMiJ9.eyJOb21icmUiOiJzb3BvcnRlIiwic3ViIjoic29wb3J0ZTE1IiwiVGlwbyI6IkVNUFJFU0EiLCJTdWJ0aXBvIjpudWxsLCJJZFVzdWFyaW8iOjEwMDYsIk9ic2VydmFkbyI6dHJ1ZSwiTWVudSI6W3sidGl0dWxvIjoiQWRtaW5pc3RyYWNpw7NuIiwib3JkZW4iOjEsImxpc3RhUGVybWlzbyI6W3siaWRQZXJtaXNvIjoxNSwibm9tYnJlIjoiVXN1YXJpb3MiLCJ2YWxvciI6Ii91c3VhcmlvcyIsIm9yZGVuIjoxLCJfX2hpam9zIjpudWxsfV19LHsidGl0dWxvIjoiVHJhbnNmZXJlbmNpYXMiLCJvcmRlbiI6MCwibGlzdGFQZXJtaXNvIjpbeyJpZFBlcm1pc28iOjE3LCJub21icmUiOiJUcmFuc2FjY2lvbmVzIiwidmFsb3IiOiIvdHJhbnNhY2Npb25lcyIsIm9yZGVuIjoxLCJfX2hpam9zIjpudWxsfSx7ImlkUGVybWlzbyI6MjMsIm5vbWJyZSI6IlJlcG9ydGVzIiwidmFsb3IiOiIvcmVwb3J0ZXMiLCJvcmRlbiI6MSwiX19oaWpvcyI6bnVsbH1dfSx7InRpdHVsbyI6IkVudGlkYWRlcyIsIm9yZGVuIjozLCJsaXN0YVBlcm1pc28iOlt7ImlkUGVybWlzbyI6MjEsIm5vbWJyZSI6IlNlcnZpY2lvcyIsInZhbG9yIjoiL3NlcnZpY2lvcyIsIm9yZGVuIjoxLCJfX2hpam9zIjpudWxsfSx7ImlkUGVybWlzbyI6MzIsIm5vbWJyZSI6IkVzdHJ1Y3R1cmEiLCJ2YWxvciI6Ii9lc3RydWN0dXJhIiwib3JkZW4iOjIsIl9faGlqb3MiOm51bGx9XX0seyJ0aXR1bG8iOiJDb2Jyb3MiLCJvcmRlbiI6MSwibGlzdGFQZXJtaXNvIjpbXX0seyJ0aXR1bG8iOiJSZXBvcnRlcyIsIm9yZGVuIjoyLCJsaXN0YVBlcm1pc28iOltdfV0sImV4cCI6MTY5NDQ2NzYxNCwiaWF0IjoxNjk0NDY0MDE0LCJFbnRpZGFkIjozNTJ9.pBkkRMp8sYugAaziKzCqvUBUJtZDzIfneOXcnoZIzmklVHnbnUzlzdPQ2ht8x4X2Bk8NgM8UwCvFNuHPdEE85w",
+						"type": "text"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text",
+						"disabled": true
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"alias\": \"73\"\r\n}\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://dev-sip.mc4.com.bo:8443/api/v1/estadoTransaccion",
+					"protocol": "https",
+					"host": [
+						"dev-sip",
+						"mc4",
+						"com",
+						"bo"
+					],
+					"port": "8443",
+					"path": [
+						"api",
+						"v1",
+						"estadoTransaccion"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "METODO GENERAR QR",
+			"protocolProfileBehavior": {
+				"disabledSystemHeaders": {
+					"content-type": true
+				}
+			},
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "apikeyServicio",
+						"value": "0c9f50990d4e4b946df377537f07d4cc86819e25e15da504",
+						"type": "text",
+						"description": "APIKEY SERVICIO, OPTENER DESDE PLATAFORMA"
+					},
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzUxMiJ9.eyJOb21icmUiOiJTb3BvcnRlQWxpbWVudG8iLCJzdWIiOiJTb3BvcnRlQWxpbWVudG8iLCJUaXBvIjoiRU1QUkVTQSIsIlN1YnRpcG8iOm51bGwsIklkVXN1YXJpbyI6MTEzMiwiT2JzZXJ2YWRvIjp0cnVlLCJNZW51IjpbeyJ0aXR1bG8iOiJBZG1pbmlzdHJhY2nDs24iLCJvcmRlbiI6MSwibGlzdGFQZXJtaXNvIjpbeyJpZFBlcm1pc28iOjE1LCJub21icmUiOiJVc3VhcmlvcyIsInZhbG9yIjoiL3VzdWFyaW9zIiwib3JkZW4iOjEsIl9faGlqb3MiOm51bGx9XX0seyJ0aXR1bG8iOiJUcmFuc2ZlcmVuY2lhcyIsIm9yZGVuIjowLCJsaXN0YVBlcm1pc28iOlt7ImlkUGVybWlzbyI6MTcsIm5vbWJyZSI6IlRyYW5zYWNjaW9uZXMiLCJ2YWxvciI6Ii90cmFuc2FjY2lvbmVzIiwib3JkZW4iOjEsIl9faGlqb3MiOm51bGx9LHsiaWRQZXJtaXNvIjoyMywibm9tYnJlIjoiUmVwb3J0ZXMiLCJ2YWxvciI6Ii9yZXBvcnRlcyIsIm9yZGVuIjoxLCJfX2hpam9zIjpudWxsfV19LHsidGl0dWxvIjoiRW50aWRhZGVzIiwib3JkZW4iOjMsImxpc3RhUGVybWlzbyI6W3siaWRQZXJtaXNvIjoyMSwibm9tYnJlIjoiU2VydmljaW9zIiwidmFsb3IiOiIvc2VydmljaW9zIiwib3JkZW4iOjEsIl9faGlqb3MiOm51bGx9LHsiaWRQZXJtaXNvIjozMiwibm9tYnJlIjoiRXN0cnVjdHVyYSIsInZhbG9yIjoiL2VzdHJ1Y3R1cmEiLCJvcmRlbiI6MiwiX19oaWpvcyI6bnVsbH1dfSx7InRpdHVsbyI6IkNvYnJvcyIsIm9yZGVuIjoxLCJsaXN0YVBlcm1pc28iOltdfSx7InRpdHVsbyI6IlJlcG9ydGVzIiwib3JkZW4iOjIsImxpc3RhUGVybWlzbyI6W119LHsidGl0dWxvIjoiRGFzaGJvYXJkcyIsIm9yZGVuIjo1LCJsaXN0YVBlcm1pc28iOlt7ImlkUGVybWlzbyI6MTAwMDAxLCJub21icmUiOiJEYXNoYm9hcmQiLCJ2YWxvciI6Ii9kYXNoYm9hcmQtZ3JhcGhpYyIsIm9yZGVuIjo0LCJfX2hpam9zIjpudWxsfV19XSwiZXhwIjoxNzA2NTY4NTY5LCJpYXQiOjE3MDY1NjQ5NjksIkVudGlkYWQiOjQxMn0.ON8yEBzJqIVxq5LC2uMsKBZ53XFgesVl8fTlwF8vE7BwK9FlF-c6ofpwHEZNFA9qWhAx_Q6J7uGQuJCEfCyQ3w",
+						"type": "text"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"alias\": \"Prueba123102\",\r\n  \"callback\": \"000\",\r\n  \"detalleGlosa\": \"pagoTest261120201\",\r\n  \"monto\": \"2.0\",\r\n  \"moneda\": \"BOB\",\r\n  \"fechaVencimiento\": \"30/12/2024\",\r\n  \"tipoSolicitud\": \"API\"\r\n}\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://dev-sip.mc4.com.bo:8443/api/v1/generaQr",
+					"protocol": "https",
+					"host": [
+						"dev-sip",
+						"mc4",
+						"com",
+						"bo"
+					],
+					"port": "8443",
+					"path": [
+						"api",
+						"v1",
+						"generaQr"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "METODO DE LA EMPRESA",
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "CONTRASENA CALLBACK",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "USUARIO CALLBACK",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n\"alias\": \"23\",  // DATOS DE UN QR YUA. GENERADO\r\n\"numeroOrdenOriginante\": \"101821911210\",\r\n\"monto\": 40.83,\r\n\"idQr\": \"10330001UedpxCHq6SIP\",\r\n\"moneda\": \"BOB\",\r\n\"fechaproceso\": \"Sep 02, 2022 4:00:54 PM\",\r\n\"cuentaCliente\": \"13XXXXX272\",\r\n\"nombreCliente\": \"CHAMBI ALARC\",\r\n\"documentoCliente\": \"6944949\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://URL DE LA EMPRESA/api/confirmaPago",
+					"protocol": "https",
+					"host": [
+						"URL DE LA EMPRESA"
+					],
+					"path": [
+						"api",
+						"confirmaPago"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "METODO INHABILITAR QR",
+			"protocolProfileBehavior": {
+				"disabledSystemHeaders": {}
+			},
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "apikeyServicio",
+						"value": "43c723af317b6806df86ce375fee01dc6caa06b4ab528da0",
+						"type": "text",
+						"description": "APIKEY SERVICIO, OBTENER DE PLATAFORMA"
+					},
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzUxMiJ9.eyJOb21icmUiOiJzb3BvcnRlIiwic3ViIjoic29wb3J0ZTE1IiwiVGlwbyI6IkVNUFJFU0EiLCJTdWJ0aXBvIjpudWxsLCJJZFVzdWFyaW8iOjEwMDYsIk9ic2VydmFkbyI6dHJ1ZSwiTWVudSI6W3sidGl0dWxvIjoiQWRtaW5pc3RyYWNpw7NuIiwib3JkZW4iOjEsImxpc3RhUGVybWlzbyI6W3siaWRQZXJtaXNvIjoxNSwibm9tYnJlIjoiVXN1YXJpb3MiLCJ2YWxvciI6Ii91c3VhcmlvcyIsIm9yZGVuIjoxLCJfX2hpam9zIjpudWxsfV19LHsidGl0dWxvIjoiVHJhbnNmZXJlbmNpYXMiLCJvcmRlbiI6MCwibGlzdGFQZXJtaXNvIjpbeyJpZFBlcm1pc28iOjE3LCJub21icmUiOiJUcmFuc2FjY2lvbmVzIiwidmFsb3IiOiIvdHJhbnNhY2Npb25lcyIsIm9yZGVuIjoxLCJfX2hpam9zIjpudWxsfSx7ImlkUGVybWlzbyI6MjMsIm5vbWJyZSI6IlJlcG9ydGVzIiwidmFsb3IiOiIvcmVwb3J0ZXMiLCJvcmRlbiI6MSwiX19oaWpvcyI6bnVsbH1dfSx7InRpdHVsbyI6IkVudGlkYWRlcyIsIm9yZGVuIjozLCJsaXN0YVBlcm1pc28iOlt7ImlkUGVybWlzbyI6MjEsIm5vbWJyZSI6IlNlcnZpY2lvcyIsInZhbG9yIjoiL3NlcnZpY2lvcyIsIm9yZGVuIjoxLCJfX2hpam9zIjpudWxsfSx7ImlkUGVybWlzbyI6MzIsIm5vbWJyZSI6IkVzdHJ1Y3R1cmEiLCJ2YWxvciI6Ii9lc3RydWN0dXJhIiwib3JkZW4iOjIsIl9faGlqb3MiOm51bGx9XX0seyJ0aXR1bG8iOiJDb2Jyb3MiLCJvcmRlbiI6MSwibGlzdGFQZXJtaXNvIjpbXX0seyJ0aXR1bG8iOiJSZXBvcnRlcyIsIm9yZGVuIjoyLCJsaXN0YVBlcm1pc28iOltdfV0sImV4cCI6MTY5NDQ2NzYxNCwiaWF0IjoxNjk0NDY0MDE0LCJFbnRpZGFkIjozNTJ9.pBkkRMp8sYugAaziKzCqvUBUJtZDzIfneOXcnoZIzmklVHnbnUzlzdPQ2ht8x4X2Bk8NgM8UwCvFNuHPdEE85w",
+						"type": "text"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text",
+						"disabled": true
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"alias\": \"73\"\r\n}\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://dev-sip.mc4.com.bo:8443/api/v1/inhabilitarPago",
+					"protocol": "https",
+					"host": [
+						"dev-sip",
+						"mc4",
+						"com",
+						"bo"
+					],
+					"port": "8443",
+					"path": [
+						"api",
+						"v1",
+						"inhabilitarPago"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

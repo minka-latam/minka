@@ -152,11 +152,32 @@ model Donation {
   triptoSessionId     String?        @map("tripto_session_id")
   tip_amount          Decimal?       @db.Decimal
   total_amount        Decimal?       @db.Decimal
+  
+  // BISA QR Payment Fields
+  bisaAlias             String?   @map("bisa_alias")           // Unique identifier for the QR transaction
+  bisaQrId              String?   @map("bisa_qr_id")           // ID returned by SIP when QR is generated
+  bisaQrImage           String?   @map("bisa_qr_image") @db.Text  // Base64 QR image
+  bisaQrExpiresAt       DateTime? @map("bisa_qr_expires_at")   // QR expiration datetime
+  bisaTransactionId     String?   @map("bisa_transaction_id")  // numeroOrdenOriginante from callback
+  bisaPayerAccount      String?   @map("bisa_payer_account")   // Masked account number of payer
+  bisaPayerName         String?   @map("bisa_payer_name")      // Name of the payer
+  bisaPayerDocument     String?   @map("bisa_payer_document")  // CI of the payer
+  bisaProcessedAt       DateTime? @map("bisa_processed_at")    // When the payment was processed
+
   campaign            Campaign       @relation("CampaignDonations", fields: [campaignId], references: [id], onDelete: Cascade)
   donor               Profile        @relation("DonorDonations", fields: [donorId], references: [id], onDelete: Cascade)
   notifications       Notification[] @relation("DonationNotifications")
 
   @@map("donations")
+}
+
+model BisaToken {
+  id        String   @id @default(uuid()) @db.Uuid
+  token     String   @db.Text
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp(6)
+
+  @@map("bisa_tokens")
 }
 
 model Comment {
