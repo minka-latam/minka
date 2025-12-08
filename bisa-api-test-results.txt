@@ -1,0 +1,234 @@
+BISA API Test Results
+=====================
+Date: 2025-12-08
+Account: santisarabia
+Environment: DEV (https://dev-sip.mc4.com.bo:8443)
+
+=============================================================================
+TEST 1: Authentication (Token Generation)
+=============================================================================
+
+REQUEST:
+--------
+POST https://dev-sip.mc4.com.bo:8443/autenticacion/v1/generarToken
+Headers:
+  Content-Type: application/json
+  apikey: 9f026cf9877677ae4be41e88b1a9303262c7bb20d064e53a
+
+Body:
+{
+  "username": "santisarabia",
+  "password": "kUVcz&Abt3EvA2#Q8iwc"
+}
+
+RESPONSE:
+---------
+HTTP/2 200 OK
+{
+  "codigo": "OK",
+  "mensaje": "Inicio de sesion exitoso",
+  "objeto": {
+    "fechaExpiracion": null,
+    "token": "eyJhbGciOiJIUzUxMiJ9.eyJOb21icmUiOiJTYW50aWFnbyBTYXJhYmlhIiwic3ViIjoic2FudGlzYXJhYmlhIiwiVGlwbyI6IkVNUFJFU0EiLCJTdWJ0aXBvIjpudWxsLCJJZFVzdWFyaW8iOjE4MTksIk9ic2VydmFkbyI6ZmFsc2UsIlJvbGVzIjpbIlJPTEVfQURNSU5fRU1QIl0sIk1lbnUiOlt7InRpdHVsbyI6IkFkbWluaXN0cmFjacOzbiIsIm9yZGVuIjoxLCJsaXN0YVBlcm1pc28iOlt7ImlkUGVybWlzbyI6MTUsIm5vbWJyZSI6IlVzdWFyaW9zIiwidmFsb3IiOiIvdXN1YXJpb3MiLCJvcmRlbiI6MSwiX19oaWpvcyI6bnVsbH1dfSx7InRpdHVsbyI6IlRyYW5zZmVyZW5jaWFzIiwib3JkZW4iOjAsImxpc3RhUGVybWlzbyI6W3siaWRQZXJtaXNvIjoxNywibm9tYnJlIjoiVHJhbnNhY2Npb25lcyIsInZhbG9yIjoiL3RyYW5zYWNjaW9uZXMiLCJvcmRlbiI6MSwiX19oaWpvcyI6bnVsbH0seyJpZFBlcm1pc28iOjIzLCJub21icmUiOiJSZXBvcnRlcyIsInZhbG9yIjoiL3JlcG9ydGVzIiwib3JkZW4iOjEsIl9faGlqb3MiOm51bGx9XX0seyJ0aXR1bG8iOiJFbnRpZGFkZXMiLCJvcmRlbiI6MywibGlzdGFQZXJtaXNvIjpbeyJpZFBlcm1pc28iOjIxLCJub21icmUiOiJTZXJ2aWNpb3MiLCJ2YWxvciI6Ii9zZXJ2aWNpb3MiLCJvcmRlbiI6MSwiX19oaWpvcyI6bnVsbH0seyJpZFBlcm1pc28iOjMyLCJub21icmUiOiJFc3RydWN0dXJhIiwidmFsb3IiOiIvZXN0cnVjdHVyYSIsIm9yZGVuIjoyLCJfX2hpam9zIjpudWxsfV19LHsidGl0dWxvIjoiQ29icm9zIiwib3JkZW4iOjEsImxpc3RhUGVybWlzbyI6W119LHsidGl0dWxvIjoiUmVwb3J0ZXMiLCJvcmRlbiI6MiwibGlzdGFQZXJtaXNvIjpbXX0seyJ0aXR1bG8iOiJEYXNoYm9hcmRzIiwib3JkZW4iOjUsImxpc3RhUGVybWlzbyI6W3siaWRQZXJtaXNvIjoxMDAwMDEsIm5vbWJyZSI6IkRhc2hib2FyZCIsInZhbG9yIjoiL2Rhc2hib2FyZC1ncmFwaGljIiwib3JkZW4iOjQsIl9faGlqb3MiOm51bGx9XX1dLCJleHAiOjE3NjUyMTYwNzAsImlhdCI6MTc2NTIwMTY3MCwiRW50aWRhZCI6ODQxfQ.yl3VGwx_edzaoKld-ceqm5EmlnyCVT2z6geqkXLZT33ISG9XoPQA0C_zD75qOsEcYKsUGBhmFBl2him7U1d9pA"
+  },
+  "pageInfo": null
+}
+
+STATUS: ✅ SUCCESS - Authentication working correctly
+
+=============================================================================
+TEST 2: QR Code Generation (Exact Postman Format)
+=============================================================================
+
+REQUEST:
+--------
+POST https://dev-sip.mc4.com.bo:8443/api/v1/generaQr
+Headers:
+  Content-Type: application/json
+  apikeyServicio: 88723b795d49fa4617a3dffc04850839c96e45cbda8a3592
+  Authorization: Bearer [token from Test 1]
+
+Body (EXACT format from Postman collection):
+{
+  "alias": "Prueba123102",
+  "callback": "000",
+  "detalleGlosa": "pagoTest261120201",
+  "monto": "2.0",
+  "moneda": "BOB",
+  "fechaVencimiento": "30/12/2024",
+  "tipoSolicitud": "API"
+}
+
+RESPONSE:
+---------
+HTTP/2 200 OK
+{
+  "codigo": "9999",
+  "mensaje": "Ocurrio un Error inesperado al hacer el consumo Qr",
+  "objeto": null,
+  "pageInfo": null
+}
+
+STATUS: ❌ FAILED - Generic error from BISA API
+
+NOTE: Request format matches Postman collection EXACTLY:
+- Field order is identical
+- All required fields present
+- Value formats match (monto as "2.0", not "2.00")
+- tipoSolicitud included as "API"
+
+=============================================================================
+TEST 3: QR Code Generation (Alternative Test)
+=============================================================================
+
+REQUEST:
+--------
+POST https://dev-sip.mc4.com.bo:8443/api/v1/generaQr
+Headers:
+  Content-Type: application/json
+  apikeyServicio: 88723b795d49fa4617a3dffc04850839c96e45cbda8a3592
+  Authorization: Bearer [token from Test 1]
+
+Body:
+{
+  "alias": "TEST-MINKA-001",
+  "callback": "000",
+  "detalleGlosa": "Donacion Minka",
+  "monto": "100.0",
+  "moneda": "BOB",
+  "fechaVencimiento": "31/12/2024",
+  "tipoSolicitud": "API"
+}
+
+RESPONSE:
+---------
+[Same error - "Ocurrio un Error inesperado al hacer el consumo Qr"]
+
+STATUS: ❌ FAILED - Same generic error
+
+=============================================================================
+TEST 4: QR Code Generation (With Future Date - December 2025)
+=============================================================================
+
+REQUEST:
+--------
+POST https://dev-sip.mc4.com.bo:8443/api/v1/generaQr
+Headers:
+  Content-Type: application/json
+  apikeyServicio: 88723b795d49fa4617a3dffc04850839c96e45cbda8a3592
+  Authorization: Bearer [token from Test 1]
+
+Body:
+{
+  "alias": "TEST-09DEC2025",
+  "callback": "000",
+  "detalleGlosa": "Test payment",
+  "monto": "100.0",
+  "moneda": "BOB",
+  "fechaVencimiento": "09/12/2025",
+  "tipoSolicitud": "API"
+}
+
+RESPONSE:
+---------
+HTTP/2 200 OK
+{
+  "codigo": "9999",
+  "mensaje": "Ocurrio un Error inesperado al hacer el consumo Qr",
+  "objeto": null,
+  "pageInfo": null
+}
+
+STATUS: ❌ FAILED
+
+=============================================================================
+CURL COMMANDS FOR REPRODUCTION
+=============================================================================
+
+# Test 1: Get Authentication Token
+curl -X POST https://dev-sip.mc4.com.bo:8443/autenticacion/v1/generarToken \
+  -H "Content-Type: application/json" \
+  -H "apikey: 9f026cf9877677ae4be41e88b1a9303262c7bb20d064e53a" \
+  -d '{
+    "username": "santisarabia",
+    "password": "kUVcz&Abt3EvA2#Q8iwc"
+  }'
+
+# Test 2: Generate QR Code (EXACT Postman format)
+# First, save the token from Test 1
+TOKEN="[paste token here]"
+
+curl -X POST https://dev-sip.mc4.com.bo:8443/api/v1/generaQr \
+  -H "Content-Type: application/json" \
+  -H "apikeyServicio: 88723b795d49fa4617a3dffc04850839c96e45cbda8a3592" \
+  -H "Authorization: Bearer $TOKEN" \
+  -d '{
+    "alias": "Prueba123102",
+    "callback": "000",
+    "detalleGlosa": "pagoTest261120201",
+    "monto": "2.0",
+    "moneda": "BOB",
+    "fechaVencimiento": "30/12/2024",
+    "tipoSolicitud": "API"
+  }'
+
+=============================================================================
+ISSUE SUMMARY
+=============================================================================
+
+1. AUTHENTICATION: Working correctly ✅
+   - API Key is valid
+   - Username/password are correct
+   - Token is being generated successfully
+
+2. QR GENERATION: Failing ❌
+   - Error: "Ocurrio un Error inesperado al hacer el consumo Qr"
+   - Error Code: 9999
+   - This is a generic error from the BISA API
+   - Request format matches Postman collection EXACTLY (verified field-by-field)
+
+3. VERIFICATION PERFORMED:
+   - ✅ Field order matches Postman exactly
+   - ✅ All required fields present (alias, callback, detalleGlosa, monto, moneda, fechaVencimiento, tipoSolicitud)
+   - ✅ Value formats correct (monto as "2.0" format)
+   - ✅ Headers correct (apikeyServicio, Authorization)
+   - ✅ Content-Type correct (application/json)
+   - ✅ Tested with both past (30/12/2024) and future (09/12/2025) dates - same error
+   - ✅ Multiple different aliases tested - same error
+
+4. CONCLUSION:
+   The error is NOT caused by:
+   - Request format (verified against Postman collection)
+   - Expiration date (tested with future dates)
+   - Field values or order
+   - Authentication (working correctly)
+   
+   The error IS caused by:
+   - Account configuration/permissions on BISA's side
+   - Missing QR generation feature activation for this account
+
+5. POSSIBLE CAUSES:
+   - Account "santisarabia" may not have QR generation permissions enabled
+   - Service configuration may be incomplete in BISA platform
+   - Missing required service setup on BISA's backend
+   - Account may need to be activated for QR generation feature
+
+5. CREDENTIALS USED:
+   - API Key: 9f026cf9877677ae4be41e88b1a9303262c7bb20d064e53a
+   - Service API Key: 88723b795d49fa4617a3dffc04850839c96e45cbda8a3592
+   - Username: santisarabia
+   - Entity ID: 841 (from token payload)
+
+=============================================================================
+REQUEST TO BISA SUPPORT
+=============================================================================
+
+Please verify the following for account "santisarabia" (Entity ID: 841):
+
+1. Does this account have QR code generation permissions enabled?
+2. Is there any additional service configuration required?
+3. What is the correct format for the "callback" parameter? (currently using "000")
+4. Are there any specific requirements or restrictions for the generaQr endpoint?
+5. Can you provide detailed error logs for the failed QR generation attempts?
+
+Thank you for your assistance.

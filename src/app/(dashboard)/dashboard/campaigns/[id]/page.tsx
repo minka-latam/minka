@@ -1594,6 +1594,55 @@ export default function CampaignDetailPage() {
                       </div>
                       <div className="text-right text-sm text-black">0/600</div>
                     </div>
+
+                    {/* Información del beneficiario */}
+                    {campaign.recipient_type && (
+                      <div className="space-y-4 border-t border-gray-200 pt-6">
+                        <label className="text-lg font-bold text-gray-800">
+                          Información del beneficiario
+                        </label>
+                        <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium text-gray-600">Tipo de destinatario:</span>
+                            <span className="text-sm text-gray-800 capitalize">
+                              {campaign.recipient_type === "tu_mismo" && "Tú mismo"}
+                              {campaign.recipient_type === "otra_persona" && "Otra persona"}
+                              {campaign.recipient_type === "persona_juridica" && "Persona Jurídica"}
+                            </span>
+                          </div>
+
+                          {campaign.recipient_type === "otra_persona" && (
+                            <>
+                              {campaign.beneficiary_name && (
+                                <div className="flex items-center gap-2">
+                                  <span className="text-sm font-medium text-gray-600">Nombre del beneficiario:</span>
+                                  <span className="text-sm text-gray-800">{campaign.beneficiary_name}</span>
+                                </div>
+                              )}
+                              {campaign.beneficiary_relationship && (
+                                <div className="flex items-center gap-2">
+                                  <span className="text-sm font-medium text-gray-600">Relación:</span>
+                                  <span className="text-sm text-gray-800 capitalize">{campaign.beneficiary_relationship}</span>
+                                </div>
+                              )}
+                              {campaign.beneficiary_reason && (
+                                <div className="flex flex-col gap-1">
+                                  <span className="text-sm font-medium text-gray-600">Motivo:</span>
+                                  <span className="text-sm text-gray-800 bg-white p-2 rounded border border-gray-200">{campaign.beneficiary_reason}</span>
+                                </div>
+                              )}
+                            </>
+                          )}
+
+                          {campaign.recipient_type === "persona_juridica" && campaign.legal_entity_id && (
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-medium text-gray-600">Organización asociada:</span>
+                              <span className="text-sm text-gray-800">ID: {campaign.legal_entity_id}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </form>
                 </div>
               </div>

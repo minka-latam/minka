@@ -2,14 +2,13 @@
 
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, ChevronDown } from "lucide-react";
+import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useState, useCallback, useEffect } from "react";
 
 export function StartCampaignSection() {
-  const sectionRef = useRef<HTMLElement>(null);
-  const [activeStep, setActiveStep] = useState(-1); // Start with -1 to show intro first
-  const [isScrolled, setIsScrolled] = useState(false);
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const [isAnimating, setIsAnimating] = useState(false);
 
   // Campaign steps data
   const campaignSteps = [
@@ -20,8 +19,6 @@ export function StartCampaignSection() {
       title: "Crea tu campaña",
       description:
         "Establece tu meta y cuenta tu historia para inspirar a más personas.",
-      buttonText: "Crear campaña",
-      buttonLink: "/create-campaign",
     },
     {
       id: "verify",
@@ -30,8 +27,6 @@ export function StartCampaignSection() {
       title: "Verifica tu campaña",
       description:
         "Completa este proceso para garantizar confianza y transparencia.",
-      buttonText: "Crear campaña",
-      buttonLink: "/create-campaign",
     },
     {
       id: "share",
@@ -39,8 +34,6 @@ export function StartCampaignSection() {
       icon: "/landing-page/step-3.svg",
       title: "Comparte tu campaña",
       description: "Difunde tu causa y atrae el apoyo que necesitas.",
-      buttonText: "Crear campaña",
-      buttonLink: "/create-campaign",
     },
     {
       id: "manage",
@@ -49,187 +42,164 @@ export function StartCampaignSection() {
       title: "Gestiona y retira los fondos",
       description:
         "Utiliza los fondos recaudados para hacer realidad tu propósito.",
-      buttonText: "Crear campaña",
-      buttonLink: "/create-campaign",
     },
   ];
 
-  // Handle scroll to update active step
+  const nextSlide = useCallback(() => {
+    if (isAnimating) return;
+    setIsAnimating(true);
+    setCurrentSlide((prev) => (prev + 1) % campaignSteps.length);
+  }, [isAnimating, campaignSteps.length]);
+
+  const prevSlide = useCallback(() => {
+    if (isAnimating) return;
+    setIsAnimating(true);
+    setCurrentSlide((prev) => (prev - 1 + campaignSteps.length) % campaignSteps.length);
+  }, [isAnimating, campaignSteps.length]);
+
+  const goToSlide = useCallback((index: number) => {
+    if (isAnimating || index === currentSlide) return;
+    setIsAnimating(true);
+    setCurrentSlide(index);
+  }, [isAnimating, currentSlide]);
+
+  // Reset animation lock after transition
   useEffect(() => {
-    const handleScroll = () => {
-      if (!sectionRef.current) return;
+    if (isAnimating) {
+      const timer = setTimeout(() => setIsAnimating(false), 500);
+      return () => clearTimeout(timer);
+    }
+  }, [isAnimating]);
 
-      const sectionRect = sectionRef.current.getBoundingClientRect();
-      const sectionTop = sectionRect.top;
-      const sectionHeight = sectionRef.current.offsetHeight;
-      const windowHeight = window.innerHeight;
-
-      // Hide scroll prompt after user has started scrolling
-      if (window.scrollY > 100) {
-        setIsScrolled(true);
-      } else {
-        setIsScrolled(false);
-      }
-
-      // If section is not yet in view, reset to intro
-      if (sectionTop > windowHeight) {
-        setActiveStep(-1);
-        return;
-      }
-
-      // If section is completely scrolled past, keep at last step
-      if (sectionTop + sectionHeight < 0) {
-        setActiveStep(campaignSteps.length - 1);
-        return;
-      }
-
-      // Calculate progress through the section (0 to 1)
-      // We use the section's position relative to the viewport to determine progress
-      const visibleHeight = Math.min(windowHeight, sectionHeight);
-      const totalScrollableDistance = sectionHeight - visibleHeight;
-
-      // How far we've scrolled into the section (normalized from 0 to 1)
-      const scrollProgress = Math.max(
-        0,
-        Math.min(1, -sectionTop / totalScrollableDistance)
-      );
-
-      // Map progress to steps (-1 for intro, then 0 to 3 for the steps)
-      const numStates = campaignSteps.length + 1; // +1 for intro
-      const stepProgress = scrollProgress * numStates;
-
-      // Set active step based on progress
-      const newActiveStep = Math.min(
-        Math.floor(stepProgress) - 1, // -1 adjusts for intro step
-        campaignSteps.length - 1
-      );
-
-      setActiveStep(newActiveStep);
-    };
-
-    window.addEventListener("scroll", handleScroll);
-    handleScroll(); // Initialize on mount
-
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // Auto-advance carousel every 5 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      nextSlide();
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [nextSlide]);
 
   return (
-    <section ref={sectionRef} className="relative w-full h-[400vh]">
-      {/* Content container - sticky positioned to follow scroll */}
-      <div className="sticky top-0 left-0 w-full h-screen flex items-center justify-center overflow-hidden">
-        {/* Background SVG */}
-        <div className="absolute bottom-0 left-0 right-0 z-0">
-          <Image
-            src="/auth/auth-bg.svg"
-            alt="Background with plants"
-            width={1440}
-            height={535}
-            priority
-            className="h-auto w-full"
-          />
+    <section className="relative w-full pt-16 md:pt-24 pb-72 md:pb-80 lg:pb-96 overflow-hidden">
+      {/* Background SVG */}
+      <div className="absolute bottom-0 left-0 right-0 z-0">
+        <Image
+          src="/auth/auth-bg.svg"
+          alt="Background with plants"
+          width={1440}
+          height={535}
+          priority
+          className="h-auto w-full"
+        />
+      </div>
+
+      <div className="container mx-auto px-4 md:px-8 lg:px-16 relative z-10">
+        {/* Intro header */}
+        <div className="text-center max-w-3xl mx-auto mb-12 md:mb-16">
+          <span className="text-[#2c6e49] text-xl md:text-2xl font-medium mb-4 block">
+            ¿Tienes una causa que necesita apoyo?
+          </span>
+          <h2 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-[#333333] mb-6 leading-tight">
+            ¡Inicia tu campaña!
+          </h2>
+          <p className="text-lg sm:text-xl md:text-2xl text-[#555555] max-w-2xl mx-auto">
+            Sigue estos sencillos pasos y empieza a recibir la ayuda que tu
+            proyecto merece.
+          </p>
         </div>
 
-        {/* Scroll down prompt */}
-        <div
-          className={`absolute bottom-12 left-1/2 transform -translate-x-1/2 z-20 transition-opacity duration-500 ${
-            isScrolled ? "opacity-0" : "opacity-100"
-          }`}
-        >
-          <div className="flex flex-col items-center">
-            <p className="text-[#2c6e49] font-medium mb-2">
-              Desplázate para descubrir
-            </p>
-            <div className="animate-bounce bg-[#2c6e49] rounded-full p-2">
-              <ChevronDown className="h-6 w-6 text-white" />
-            </div>
-          </div>
-        </div>
-
-        {/* Intro section */}
-        <div
-          className={`absolute top-0 left-0 w-full h-full flex items-center justify-center transition-opacity duration-500 z-10 ${
-            activeStep === -1 ? "opacity-100" : "opacity-0 pointer-events-none"
-          }`}
-        >
-          <div className="container mx-auto px-4">
-            <div className="text-center max-w-3xl mx-auto">
-              <span className="text-[#2c6e49] text-2xl font-medium mb-4 block">
-                ¿Tienes una causa que necesita apoyo?
-              </span>
-              <h2 className="text-6xl md:text-7xl font-bold text-[#333333] mb-6 leading-tight text-center">
-                ¡Inicia tu campaña!
-              </h2>
-              <p className="text-2xl md:text-3xl text-[#555555] mb-10 max-w-2xl mx-auto">
-                Sigue estos sencillos pasos y empieza a recibir la ayuda que tu
-                proyecto merece.
-              </p>
-              <Link href="/create-campaign" rel="noopener noreferrer">
-                <Button
-                  className="bg-[#2c6e49] text-white hover:bg-[#1e4d33] text-xl px-8 py-4 h-auto rounded-full"
-                  size="lg"
-                >
-                  Crear campaña <ArrowRight className="ml-2 h-5 w-5" />
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </div>
-
-        {/* Step sections */}
-        {campaignSteps.map((step) => (
-          <div
-            key={step.id}
-            className={`absolute top-0 left-0 w-full h-full flex items-center justify-center transition-opacity duration-500 z-10 ${
-              activeStep === campaignSteps.findIndex((s) => s.id === step.id)
-                ? "opacity-100"
-                : "opacity-0 pointer-events-none"
-            }`}
+        {/* Carousel */}
+        <div className="relative max-w-3xl mx-auto">
+          {/* Navigation arrows */}
+          <button
+            onClick={prevSlide}
+            disabled={isAnimating}
+            className="absolute -left-4 sm:-left-8 md:-left-20 lg:-left-24 top-1/2 -translate-y-1/2 z-20 w-10 h-10 md:w-12 md:h-12 flex items-center justify-center bg-white rounded-full shadow-lg text-[#2c6e49] hover:bg-[#2c6e49] hover:text-white transition-colors disabled:opacity-50"
+            aria-label="Previous step"
           >
-            <div className="container mx-auto px-4">
-              <div className="max-w-3xl mx-auto text-center">
-                {/* Step icon */}
-                <div className="mb-4">
-                  <Image
-                    src={step.icon}
-                    alt={`Step ${step.step} icon`}
-                    width={64}
-                    height={64}
-                    className="mx-auto"
-                  />
+            <ChevronLeft className="w-5 h-5 md:w-6 md:h-6" />
+          </button>
+
+          <button
+            onClick={nextSlide}
+            disabled={isAnimating}
+            className="absolute -right-4 sm:-right-8 md:-right-20 lg:-right-24 top-1/2 -translate-y-1/2 z-20 w-10 h-10 md:w-12 md:h-12 flex items-center justify-center bg-white rounded-full shadow-lg text-[#2c6e49] hover:bg-[#2c6e49] hover:text-white transition-colors disabled:opacity-50"
+            aria-label="Next step"
+          >
+            <ChevronRight className="w-5 h-5 md:w-6 md:h-6" />
+          </button>
+
+          {/* Slides container */}
+          <div className="overflow-hidden rounded-2xl">
+            <div
+              className="flex transition-transform duration-500 ease-in-out"
+              style={{ transform: `translateX(-${currentSlide * 100}%)` }}
+            >
+              {campaignSteps.map((step) => (
+                <div
+                  key={step.id}
+                  className="w-full flex-shrink-0 px-2 md:px-4"
+                >
+                  <div className="text-center py-6 md:py-8">
+                    {/* Step icon */}
+                    <div className="mb-5">
+                      <Image
+                        src={step.icon}
+                        alt={`Step ${step.step} icon`}
+                        width={80}
+                        height={80}
+                        className="mx-auto"
+                      />
+                    </div>
+
+                    {/* Step number */}
+                    <p className="text-[#2c6e49] text-base md:text-lg font-semibold mb-2 tracking-wider">
+                      PASO {step.step}
+                    </p>
+
+                    {/* Step title */}
+                    <h3 className="text-2xl sm:text-3xl md:text-4xl font-bold text-[#333333] mb-3 leading-tight">
+                      {step.title}
+                    </h3>
+
+                    {/* Step description */}
+                    <p className="text-base sm:text-lg md:text-xl text-[#555555] mb-6 max-w-xl mx-auto">
+                      {step.description}
+                    </p>
+
+                    {/* Step button */}
+                    <Link href="/create-campaign">
+                      <Button
+                        className="bg-[#2c6e49] hover:bg-[#1e4d33] text-white text-base md:text-lg px-6 md:px-8 py-3 md:py-4 h-auto rounded-full"
+                        size="lg"
+                      >
+                        Crear campaña
+                        <ArrowRight className="ml-2 h-4 w-4 md:h-5 md:w-5" />
+                      </Button>
+                    </Link>
+                  </div>
                 </div>
-
-                {/* Step number */}
-                <p className="text-[#2c6e49] text-lg font-medium mb-2">
-                  PASO {step.step}
-                </p>
-
-                {/* Step title */}
-                <h2 className="text-5xl md:text-6xl font-bold text-[#333333] mb-4 leading-tight">
-                  {step.title}
-                </h2>
-
-                {/* Step description */}
-                <p className="text-2xl md:text-3xl text-[#555555] mb-8 max-w-2xl mx-auto">
-                  {step.description}
-                </p>
-
-                {/* Step button */}
-                <Link href={step.buttonLink} rel="noopener noreferrer">
-                  <Button
-                    className="bg-[#2c6e49] hover:bg-[#1e4d33] text-white text-xl px-8 py-4 h-auto rounded-full"
-                    size="lg"
-                  >
-                    {step.buttonText}
-                    <ArrowRight className="ml-2 h-5 w-5" />
-                  </Button>
-                </Link>
-              </div>
+              ))}
             </div>
           </div>
-        ))}
+
+          {/* Dots indicator */}
+          <div className="flex justify-center gap-2 mt-8">
+            {campaignSteps.map((step, index) => (
+              <button
+                key={step.id}
+                onClick={() => goToSlide(index)}
+                disabled={isAnimating}
+                className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                  index === currentSlide
+                    ? "bg-[#2c6e49] w-8"
+                    : "bg-gray-300 hover:bg-gray-400"
+                }`}
+                aria-label={`Go to step ${index + 1}`}
+              />
+            ))}
+          </div>
+        </div>
       </div>
     </section>
   );

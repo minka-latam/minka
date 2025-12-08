@@ -178,9 +178,11 @@
   }
 }
 
-/* Add smooth scrolling to the whole page */
+/* Add smooth scrolling to the whole page and prevent layout shift from scrollbar */
 html {
   scroll-behavior: smooth;
+  overflow-y: scroll; /* Always show scrollbar to prevent layout shift */
+  scrollbar-gutter: stable; /* Reserve space for scrollbar */
 }
 
 /* Add hover effect for interactive elements */

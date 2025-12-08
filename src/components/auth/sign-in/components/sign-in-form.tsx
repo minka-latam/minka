@@ -106,9 +106,9 @@ export function SignInForm() {
     []
   );
 
-  // Show a simplified loading screen when loading
+  // Show a simplified loading screen when loading - use immediate to prevent white flash
   if (isLoading || socialLoading) {
-    return <LoadingScreen text="Iniciando sesión..." showText={true} />;
+    return <LoadingScreen text="Iniciando sesión..." showText={true} immediate={true} />;
   }
 
   return (

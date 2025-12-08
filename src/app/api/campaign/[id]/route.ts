@@ -174,12 +174,24 @@ export async function GET(
             bio: campaign.organizer.bio,
           }
         : null,
+        // NOTE (Hotfix - Dec 2025):
+        // When the user is NOT authenticated, campaign data is fetched via the Supabase REST API.
+        // When the user IS authenticated, campaign data is fetched via Prisma (direct PostgreSQL).
+        // Prisma returns fields in snake_case (media_url, order_index).
+        // Supabase REST was returning mediaUrl/orderIndex in camelCase after mapping.
+        // This mismatch caused images to fail loading ONLY for anonymous users.
+        // To unify both data sources, we return the fields in snake_case, matching Prisma output.
       media: Array.isArray(campaign.media)
-        ? campaign.media.sort(
-            (a: CampaignMedia, b: CampaignMedia) =>
-              (a.order_index || 999) - (b.order_index || 999)
-          )
-        : [],
+      ? campaign.media
+          .map((m: any) => ({
+            id: m.id,
+            media_url: m.media_url,
+            is_primary: m.is_primary,
+            type: m.type,
+            order_index: m.order_index,
+          }))
+          .sort((a: any, b: any) => (a.order_index || 999) - (b.order_index || 999))
+      : [],
       updates: Array.isArray(campaign.updates) ? campaign.updates : [],
       comments: Array.isArray(campaign.comments) ? campaign.comments : [],
     };
@@ -264,6 +276,11 @@ export async function PATCH(
       campaignStatus,
       verificationStatus,
       recipient,
+      recipientType,
+      beneficiaryName,
+      beneficiaryRelationship,
+      beneficiaryReason,
+      legalEntityId,
       media,
       presentation,
     } = body;
@@ -288,6 +305,13 @@ export async function PATCH(
     if (verificationStatus !== undefined)
       updateData.verificationStatus = verificationStatus;
     if (presentation !== undefined) updateData.presentation = presentation;
+
+    // Handle recipient/beneficiary fields
+    if (recipientType !== undefined) updateData.recipientType = recipientType;
+    if (beneficiaryName !== undefined) updateData.beneficiaryName = beneficiaryName;
+    if (beneficiaryRelationship !== undefined) updateData.beneficiaryRelationship = beneficiaryRelationship;
+    if (beneficiaryReason !== undefined) updateData.beneficiaryReason = beneficiaryReason;
+    if (legalEntityId !== undefined) updateData.legalEntityId = legalEntityId;
 
     // Only set verification date if explicitly verifying the campaign
     if (verificationStatus === true) {
