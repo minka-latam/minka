@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, CreditCard, QrCode, Bell } from "lucide-react";
@@ -14,6 +14,9 @@ import { Switch } from "@/components/ui/switch";
 import { CheckIcon } from "@/components/icons/CheckIcon";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { QRPaymentStep } from "@/components/donate/QRPaymentStep";
+
+// Key for storing pending donation in localStorage
+const PENDING_DONATION_KEY = "minka_pending_donation";
 
 // Define donation amount options
 const DONATION_AMOUNTS = [
@@ -94,8 +97,14 @@ export function DonatePageContent({ campaignId }: { campaignId: string }) {
   // QR Payment state
   const [showQRStep, setShowQRStep] = useState(false);
 
-  // Load user data on component mount
+  // Ref to prevent double initialization
+  const initRef = useRef(false);
+
+  // Load user data and check for pending donation on component mount
   useEffect(() => {
+    if (initRef.current) return;
+    initRef.current = true;
+
     const checkUser = async () => {
       try {
         const { data } = await supabase.auth.getUser();
@@ -105,8 +114,41 @@ export function DonatePageContent({ campaignId }: { campaignId: string }) {
       }
     };
 
+    // Check for pending donation in localStorage
+    const checkPendingDonation = () => {
+      try {
+        const stored = localStorage.getItem(PENDING_DONATION_KEY);
+        if (stored) {
+          const pendingDonation = JSON.parse(stored);
+          // Check if it's for the same campaign and not too old (24 hours)
+          const createdAt = new Date(pendingDonation.createdAt).getTime();
+          const now = Date.now();
+          const MAX_AGE = 24 * 60 * 60 * 1000; // 24 hours
+
+          if (pendingDonation.campaignId === campaignId && (now - createdAt) < MAX_AGE) {
+            console.log("Found pending donation:", pendingDonation);
+            setDonationId(pendingDonation.donationId);
+            setSelectedAmount(pendingDonation.amount);
+            setPaymentMethod(pendingDonation.paymentMethod);
+            if (pendingDonation.paymentMethod === "qr") {
+              setSelectedPaymentMethodIndex(1);
+              setShowQRStep(true);
+              setIsDonationConfirmed(true);
+              setStep(3);
+            }
+          } else {
+            // Clear old or mismatched pending donation
+            localStorage.removeItem(PENDING_DONATION_KEY);
+          }
+        }
+      } catch (error) {
+        console.error("Error checking pending donation:", error);
+      }
+    };
+
     checkUser();
-  }, [supabase]);
+    checkPendingDonation();
+  }, [supabase, campaignId]);
 
   // Calculate donation details
   const donationAmount =
@@ -188,15 +230,25 @@ export function DonatePageContent({ campaignId }: { campaignId: string }) {
     setErrorMessage(null);
     setIsSubmitting(true);
 
+    const selectedMethod = selectedPaymentMethodIndex !== null
+          ? PAYMENT_METHODS[selectedPaymentMethodIndex].id
+          : paymentMethod || "card";
+
     try {
+      // Check if we already have a pending donation for QR payment
+      if (donationId && selectedMethod === "qr") {
+        console.log("Reusing existing donation ID:", donationId);
+        setShowQRStep(true);
+        setIsDonationConfirmed(true);
+        setIsSubmitting(false);
+        return;
+      }
+
       // Create donation through our API
       const donationData = {
         campaignId: campaignId,
         amount: donationAmount,
-        paymentMethod:
-          selectedPaymentMethodIndex !== null
-            ? PAYMENT_METHODS[selectedPaymentMethodIndex].id
-            : paymentMethod || "card",
+        paymentMethod: selectedMethod,
         message: "",
         isAnonymous: !user, // Explicitly set isAnonymous flag
         notificationEnabled: receiveNotifications,
@@ -234,11 +286,20 @@ export function DonatePageContent({ campaignId }: { campaignId: string }) {
       // Store donation ID for notification updates
       if (data && data.donationId) {
         setDonationId(data.donationId);
-      }
 
-      const selectedMethod = selectedPaymentMethodIndex !== null
-            ? PAYMENT_METHODS[selectedPaymentMethodIndex].id
-            : paymentMethod || "card";
+        // Store pending donation in localStorage for QR payments
+        if (selectedMethod === "qr") {
+          const pendingDonation = {
+            donationId: data.donationId,
+            campaignId,
+            amount: donationAmount,
+            paymentMethod: selectedMethod,
+            createdAt: new Date().toISOString(),
+          };
+          localStorage.setItem(PENDING_DONATION_KEY, JSON.stringify(pendingDonation));
+          console.log("Stored pending donation:", pendingDonation);
+        }
+      }
 
       if (selectedMethod === "qr") {
         setShowQRStep(true);
@@ -900,14 +961,20 @@ export function DonatePageContent({ campaignId }: { campaignId: string }) {
               {showQRStep && donationId && (
                 <div className="min-h-[600px] flex items-center justify-center py-12">
                   <QRPaymentStep
+                    key={donationId}
                     donationId={donationId}
                     amount={totalAmount}
                     campaignId={campaignId}
                     onPaymentConfirmed={() => {
+                      // Clear pending donation from localStorage on success
+                      localStorage.removeItem(PENDING_DONATION_KEY);
                       setShowQRStep(false);
                       setShowSuccessModal(true);
                     }}
                     onCancel={() => {
+                      // Clear pending donation from localStorage on cancel
+                      localStorage.removeItem(PENDING_DONATION_KEY);
+                      setDonationId(null);
                       setShowQRStep(false);
                       setIsDonationConfirmed(false);
                     }}
