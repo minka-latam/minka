@@ -1,40 +1,40 @@
 const TRIPTO_BASE_URL = 'https://api.triptoverse.xyz'
-
 export class TriptoClient {
   apiKey: string
 
-  constructor() {
-    if (!process.env.TRIPTO_API_KEY) {
-      throw new Error('Missing TRIPTO_API_KEY')
-    }
-    this.apiKey = process.env.TRIPTO_API_KEY!
+  constructor(apiKey: string) {
+    this.apiKey = apiKey
   }
-
   async createCheckoutSession(params: {
-    productId: string;
-    quantity: number;
-    successUrl: string;
-    cancelUrl: string;
-    metadata?: Record<string, any>;
+    productId: string
+    quantity: number
+    successUrl: string
+    cancelUrl: string
+    metadata?: Record<string, any>
   }) {
-    const url = `${TRIPTO_BASE_URL}/api/v1/checkout`;
+    const url = `${TRIPTO_BASE_URL}/api/v1/checkout`
 
     const response = await fetch(url, {
-      method: "POST",
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
-        "X-API-Key": this.apiKey,
+        'Content-Type': 'application/json',
+        'X-API-Key': this.apiKey,
       },
       body: JSON.stringify(params),
-    });
+    })
 
     if (!response.ok) {
-      const error = await response.text();
-      console.error("[Tripto] Error creating checkout session:", error);
-      throw new Error(`Tripto error: ${response.status} ${error}`);
+      const error = await response.text()
+      console.error(
+        '[Tripto] Error creating checkout session:',
+        error,
+      )
+      throw new Error(
+        `Tripto error: ${response.status} ${error}`,
+      )
     }
 
-    return response.json();
+    return response.json()
   }
 
   async getPayment(paymentId: string) {
@@ -60,7 +60,26 @@ export class TriptoClient {
 
     return response.json()
   }
-}
 
-// Singleton (para evitar crear múltiples clientes)
-export const triptoClient = new TriptoClient()
+  async createDonationLink(payload: {
+    name: string
+    description: string
+    suggestedAmount: number
+    metadata: Record<string, string>
+  }) {
+    const response = await fetch(
+      'https://api.triptoverse.xyz/api/v1/payment-links/custom-amount',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-API-Key': this.apiKey,
+        },
+        body: JSON.stringify(payload),
+      },
+    )
+
+    const data = await response.json()
+    return data
+  }
+}
