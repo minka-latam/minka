@@ -1,6 +1,7 @@
 import {
   TriptoCreateDonationPayload,
   TriptoCreateDonationResponse,
+  TriptoWebhookSecretResponse,
 } from './types'
 
 export class TriptoClient {
@@ -42,10 +43,10 @@ export class TriptoClient {
   // -------------------------------
   // 2) Create Webhook Secret
   // -------------------------------
-  async createWebhookSecret(): Promise<{
-    success: boolean
-    secret?: string
-  }> {
+  // can be don with the curl command --that's how I did it the first time
+  async createWebhookSecret(
+    webhookUrl: string,
+  ): Promise<TriptoWebhookSecretResponse> {
     const response = await fetch(
       `${this.baseUrl}/settings/webhooks`,
       {
@@ -54,23 +55,19 @@ export class TriptoClient {
           'Content-Type': 'application/json',
           'X-API-Key': this.apiKey,
         },
-        body: JSON.stringify({}),
+        body: JSON.stringify({ webhookUrl }),
       },
     )
+
+    const data = await response.json()
 
     if (!response.ok) {
       return {
         success: false,
+        error: data.error || 'Request failed',
       }
     }
 
-    const data = await response.json()
-
-    // Tripto returns:
-    // { "webhookSecret": "whsec_xxx" }
-    return {
-      success: true,
-      secret: data.webhookSecret,
-    }
+    return { success: true, secret: data.webhookSecret }
   }
 }
