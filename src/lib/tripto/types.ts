@@ -1,18 +1,54 @@
-export interface TriptoPaymentLinkResponse {
-  id: string
+// ============================
+// Donation Link
+// ============================
+
+export interface TriptoCreateDonationPayload {
+  name: string
+  description: string
+  suggestedAmount: number // siempre en centavos
+  metadata: Record<string, string>
+}
+
+export interface TriptoDonationLinkData {
+  url: string
+  paymentLinkId?: string
+  slug?: string
+}
+
+export interface TriptoCreateDonationResponse {
+  success: boolean
+  data?: TriptoDonationLinkData
+  error?: string
+}
+
+// ============================
+// Webhook Secret Creation
+// ============================
+
+export interface TriptoWebhookSecretResponse {
+  success: boolean
+  secret?: string
+  error?: string
+}
+
+// ============================
+// Webhook Events
+// ============================
+
+export interface TriptoWebhookEvent {
+  event: string // "payment.completed", "payment.failed", etc.
   paymentId: string
-  checkoutUrl: string
-  status: string
+  stripePaymentId?: string
+  stripeChargeId?: string
+  stripeSessionId?: string
+  amount: number
+  currency: string
+  metadata: Record<string, string>
   createdAt: string
 }
 
-export interface TriptoWebhookPayload {
-  event: string // payment.completed, payment.failed
-  data: {
-    id: string
-    paymentId: string
-    amount: number
-    currency: string
-    metadata?: Record<string, any>
-  }
+// To validate HMAC signature in the  webhook
+export interface TriptoWebhookHeaders {
+  signature: string // X-Webhook-Signature
+  timestamp: string // X-Webhook-Timestamp
 }
