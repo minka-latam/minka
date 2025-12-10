@@ -1,145 +1,93 @@
 import { NextResponse } from 'next/server'
-import crypto from 'crypto'
+import { TriptoClient } from '@/lib/tripto/client'
 import { db } from '@/lib/db'
-import { TriptoWebhookEvent } from '@/lib/tripto/types'
 
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-}
-
+// Create Tripto payment link
 export async function POST(req: Request) {
   try {
-    const secret = process.env.TRIPTO_WEBHOOK_SECRET
-    if (!secret) {
-      return NextResponse.json(
-        { error: 'Missing webhook secret' },
-        { status: 500 },
-      )
-    }
+    const body = await req.json()
 
-    // Read raw body as text
-    const rawBody = await req.text()
+    const {
+      campaignId,
+      donorId,
+      amount,
+      tipAmount,
+      message,
+      isAnonymous,
+      notificationEnabled,
+      paymentMethod,
+    } = body
 
-    // Read Tripto signature
-    const signature = req.headers.get('X-Webhook-Signature')
-    if (!signature) {
+    if (!campaignId || !donorId || !amount) {
       return NextResponse.json(
-        { error: 'Missing signature' },
+        {
+          success: false,
+          error: 'Missing required fields',
+        },
         { status: 400 },
       )
     }
 
-    // Compute HMAC
-    const expected = crypto
-      .createHmac('sha256', secret)
-      .update(rawBody)
-      .digest('hex')
+    const totalAmount =
+      Number(amount) + Number(tipAmount || 0)
 
-    if (expected !== signature) {
+    const apiKey = process.env.TRIPTO_API_KEY
+    if (!apiKey) {
       return NextResponse.json(
-        { error: 'Invalid signature' },
-        { status: 401 },
+        { success: false, error: 'Missing TRIPTO_API_KEY' },
+        { status: 500 },
       )
     }
 
-    // Safe to parse now
-    const event = JSON.parse(rawBody) as TriptoWebhookEvent
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL!
+    const successUrl = `${baseUrl}/donate/${campaignId}?status=success`
+    const failedUrl = `${baseUrl}/donate/${campaignId}?status=failed`
 
-    // ============================
-    // PAYMENT COMPLETED
-    // ============================
-    if (event.event === 'payment.completed') {
-      const total = event.amount / 100
+    const client = new TriptoClient(apiKey)
 
-      const metadata = event.metadata || {}
-      const campaignId = metadata.campaignId
-      const donorId = metadata.donorId
-      const amount = Number(metadata.amount || '0')
-      const tipAmount = Number(metadata.tipAmount || '0')
-      const message = metadata.message || null
-      const isAnonymous = metadata.isAnonymous === 'true'
-      const notificationEnabled =
-        metadata.notificationEnabled === 'true'
+    // Metadata passed to webhook
+    const metadata = {
+      campaignId,
+      donorId,
+      amount: String(amount),
+      tipAmount: String(tipAmount || 0),
+      message: message || '',
+      isAnonymous: isAnonymous ? 'true' : 'false',
+      notificationEnabled: notificationEnabled
+        ? 'true'
+        : 'false',
+      paymentMethod: paymentMethod || 'card',
+    }
 
-      // Avoid duplicate insert if Tripto retries webhook
-      const exists = await db.donation.findFirst({
-        where: { triptoPaymentId: event.paymentId },
-      })
+    // Tripto donation link request
+    const result = await client.createDonationLink({
+      name: 'Donación en Minka',
+      description: 'Apoyo directo a una campaña',
+      suggestedAmount: totalAmount * 100,
+      successUrl,
+      failedUrl,
+      metadata,
+    })
 
-      if (!exists) {
-        await db.donation.create({
-          data: {
-            campaignId,
-            donorId,
-            amount,
-            tipAmount,
-            totalAmount: total,
-            currency: event.currency,
-            paymentStatus: 'completed',
-            paymentProvider: 'tripto',
-            paymentMethod: 'credit_card',
-            message,
-            isAnonymous,
-            notificationEnabled,
-            triptoPaymentId: event.paymentId,
-            triptoSessionId: event.stripeSessionId || null,
-            triptoCheckoutUrl: null,
-          },
-        })
-
-        // Update campaign counters
-        await db.campaign.update({
-          where: { id: campaignId },
-          data: {
-            collectedAmount: { increment: amount },
-            donorCount: { increment: 1 },
-          },
-        })
-      }
-
+    if (!result.success) {
       return NextResponse.json(
-        { received: true },
-        { status: 200 },
+        { success: false, error: result.error },
+        { status: 500 },
       )
     }
 
-    // ============================
-    // PAYMENT FAILED
-    // ============================
-    if (event.event === 'payment.failed') {
-      const metadata = event.metadata || {}
-      const campaignId = metadata.campaignId
-      const donorId = metadata.donorId
+    const checkoutUrl = result.url
 
-      await db.paymentLog.create({
-        data: {
-          paymentProvider: 'tripto',
-          status: 'failed',
-          paymentId: event.paymentId,
-          amount: event.amount / 100,
-          currency: event.currency,
-          metadata: JSON.stringify(metadata),
-          campaignId,
-          donorId,
-        },
-      })
-
-      return NextResponse.json(
-        { received: true },
-        { status: 200 },
-      )
-    }
-
-    return NextResponse.json(
-      { received: true },
-      { status: 200 },
-    )
+    return NextResponse.json({
+      success: true,
+      url: checkoutUrl,
+    })
   } catch (err: any) {
-    console.error('Tripto webhook error:', err)
     return NextResponse.json(
-      { error: 'Webhook error' },
+      {
+        success: false,
+        error: err.message || 'Server error',
+      },
       { status: 500 },
     )
   }

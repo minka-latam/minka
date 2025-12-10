@@ -1,153 +1,124 @@
-import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { NextResponse } from 'next/server'
+import crypto from 'crypto'
+import { db } from '@/lib/db'
+import { TriptoWebhookEvent } from '@/lib/tripto/types'
 
-// This is a mock webhook handler for payment status updates
-// In a real application, this would need to verify the webhook signature
-// and handle different payment processors appropriately
-export async function POST(request: NextRequest) {
+export const config = {
+  api: { bodyParser: false },
+}
+
+export async function POST(req: Request) {
   try {
-    // Get the webhook payload
-    const body = await request.json();
-
-    // Basic validation
-    if (!body.donationId || !body.paymentStatus) {
+    const secret = process.env.TRIPTO_WEBHOOK_SECRET
+    if (!secret)
       return NextResponse.json(
-        { error: "Missing required fields" },
-        { status: 400 }
-      );
-    }
+        { error: 'Missing webhook secret' },
+        { status: 500 },
+      )
 
-    const { donationId, paymentStatus, transactionId } = body;
-
-    // Validate payment status is one of the allowed values
-    const validStatuses = ["pending", "completed", "failed", "refunded"];
-    if (!validStatuses.includes(paymentStatus)) {
+    const rawBody = await req.text()
+    const signature = req.headers.get('X-Webhook-Signature')
+    if (!signature)
       return NextResponse.json(
-        { error: "Invalid payment status" },
-        { status: 400 }
-      );
-    }
+        { error: 'Missing signature' },
+        { status: 400 },
+      )
 
-    // Get the current donation
-    const donation = await prisma.donation.findUnique({
-      where: { id: donationId },
-      select: {
-        id: true,
-        campaignId: true,
-        amount: true,
-        paymentStatus: true,
-      },
-    });
+    const expected = crypto
+      .createHmac('sha256', secret)
+      .update(rawBody)
+      .digest('hex')
 
-    if (!donation) {
+    if (expected !== signature) {
       return NextResponse.json(
-        { error: "Donation not found" },
-        { status: 404 }
-      );
+        { error: 'Invalid signature' },
+        { status: 401 },
+      )
     }
 
-    // If the donation is already in the target state, just return success
-    if (donation.paymentStatus === paymentStatus) {
-      return NextResponse.json({ success: true, status: "unchanged" });
+    const event = JSON.parse(rawBody) as TriptoWebhookEvent
+
+    if (event.event === 'payment.completed') {
+      const metadata = event.metadata || {}
+      const prismaPaymentMethod =
+        metadata.paymentMethod === 'card'
+          ? 'credit_card'
+          : metadata.paymentMethod
+
+      const exists = await db.donation.findFirst({
+        where: { triptoPaymentId: event.paymentId },
+      })
+
+      if (!exists) {
+        await db.donation.create({
+          data: {
+            campaignId: metadata.campaignId,
+            donorId: metadata.donorId,
+            amount: Number(metadata.amount || 0),
+            tipAmount: Number(metadata.tipAmount || 0),
+            totalAmount: event.amount / 100,
+            currency: event.currency,
+            paymentStatus: 'completed',
+            paymentProvider: 'tripto',
+            paymentMethod: prismaPaymentMethod as any,
+            isAnonymous: metadata.isAnonymous === 'true',
+            notificationEnabled:
+              metadata.notificationEnabled === 'true',
+            message: metadata.message || null,
+            triptoPaymentId: event.paymentId,
+            triptoSessionId: event.stripeSessionId || null,
+            triptoCheckoutUrl: null,
+          },
+        })
+
+        await db.campaign.update({
+          where: { id: metadata.campaignId },
+          data: {
+            collectedAmount: {
+              increment: Number(metadata.amount || 0),
+            },
+            donorCount: { increment: 1 },
+          },
+        })
+      }
+
+      return NextResponse.json(
+        { received: true },
+        { status: 200 },
+      )
     }
 
-    // Use a transaction to ensure data consistency
-    const result = await prisma.$transaction(async (tx) => {
-      // Update the donation
-      const updatedDonation = await tx.donation.update({
-        where: { id: donationId },
+    if (event.event === 'payment.failed') {
+      const metadata = event.metadata || {}
+
+      await db.paymentLog.create({
         data: {
-          paymentStatus,
-          // Store transaction ID if provided
-          message: transactionId
-            ? `Transaction ID: ${transactionId}`
-            : undefined,
+          paymentProvider: 'tripto',
+          status: 'failed',
+          paymentId: event.paymentId,
+          amount: event.amount / 100,
+          currency: event.currency,
+          metadata: JSON.stringify(metadata),
+          campaignId: metadata.campaignId,
+          donorId: metadata.donorId,
         },
-      });
+      })
 
-      // If payment is completed and it wasn't before, update campaign amounts
-      if (
-        paymentStatus === "completed" &&
-        donation.paymentStatus !== "completed"
-      ) {
-        // Get the current campaign stats
-        const campaign = await tx.campaign.findUnique({
-          where: { id: donation.campaignId },
-          select: {
-            collectedAmount: true,
-            goalAmount: true,
-            donorCount: true,
-          },
-        });
+      return NextResponse.json(
+        { received: true },
+        { status: 200 },
+      )
+    }
 
-        if (campaign) {
-          // Calculate new values
-          const newCollectedAmount =
-            Number(campaign.collectedAmount) + Number(donation.amount);
-          const percentageFunded =
-            (newCollectedAmount / Number(campaign.goalAmount)) * 100;
-
-          // Update the campaign
-          await tx.campaign.update({
-            where: { id: donation.campaignId },
-            data: {
-              collectedAmount: newCollectedAmount,
-              percentageFunded,
-              donorCount: campaign.donorCount + 1,
-            },
-          });
-        }
-      }
-      // If payment was completed before but now it's not
-      else if (
-        donation.paymentStatus === "completed" &&
-        paymentStatus !== "completed"
-      ) {
-        // Get the current campaign stats
-        const campaign = await tx.campaign.findUnique({
-          where: { id: donation.campaignId },
-          select: {
-            collectedAmount: true,
-            goalAmount: true,
-            donorCount: true,
-          },
-        });
-
-        if (campaign) {
-          // Calculate new values (subtract the amount)
-          const newCollectedAmount =
-            Number(campaign.collectedAmount) - Number(donation.amount);
-          const percentageFunded =
-            (newCollectedAmount / Number(campaign.goalAmount)) * 100;
-
-          // Update the campaign
-          await tx.campaign.update({
-            where: { id: donation.campaignId },
-            data: {
-              collectedAmount: newCollectedAmount > 0 ? newCollectedAmount : 0,
-              percentageFunded: percentageFunded > 0 ? percentageFunded : 0,
-              donorCount: campaign.donorCount > 0 ? campaign.donorCount - 1 : 0,
-            },
-          });
-        }
-      }
-
-      return updatedDonation;
-    });
-
-    return NextResponse.json({
-      success: true,
-      status: "updated",
-      donation: {
-        id: result.id,
-        paymentStatus: result.paymentStatus,
-      },
-    });
-  } catch (error) {
-    console.error("Payment webhook error:", error);
     return NextResponse.json(
-      { error: "Failed to process payment webhook" },
-      { status: 500 }
-    );
+      { received: true },
+      { status: 200 },
+    )
+  } catch (err) {
+    console.error('Tripto webhook error:', err)
+    return NextResponse.json(
+      { error: 'Webhook error' },
+      { status: 500 },
+    )
   }
 }

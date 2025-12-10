@@ -6,7 +6,7 @@ import {
 
 export class TriptoClient {
   private apiKey: string
-  private baseUrl = 'https://api.triptoverse.xyz/api/v1'
+  private baseUrl = process.env.TRIPTO_BASE_URL
 
   constructor(apiKey: string) {
     this.apiKey = apiKey
@@ -24,26 +24,32 @@ export class TriptoClient {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-API-Key': this.apiKey,
+          Authorization: `Bearer ${this.apiKey}`,
         },
         body: JSON.stringify(payload),
       },
     )
 
+    const data = await response.json()
+
     if (!response.ok) {
       return {
         success: false,
-        error: `Tripto error: ${response.status}`,
+        error:
+          data.error || `Tripto error: ${response.status}`,
       }
     }
 
-    return (await response.json()) as TriptoCreateDonationResponse
+    // Tripto returns: { success: true, url: "..." }
+    return {
+      success: true,
+      url: data.url,
+    }
   }
 
   // -------------------------------
   // 2) Create Webhook Secret
   // -------------------------------
-  // can be don with the curl command --that's how I did it the first time
   async createWebhookSecret(
     webhookUrl: string,
   ): Promise<TriptoWebhookSecretResponse> {
@@ -53,7 +59,7 @@ export class TriptoClient {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-API-Key': this.apiKey,
+          Authorization: `Bearer ${this.apiKey}`,
         },
         body: JSON.stringify({ webhookUrl }),
       },

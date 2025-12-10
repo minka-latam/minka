@@ -73,9 +73,9 @@ export function DonatePageContent({ campaignId }: { campaignId: string }) {
 
   // Read redirect parameters from Tripto checkout
   const searchParams = useSearchParams();
-  const success = searchParams.get("success");
-  const cancelled = searchParams.get("cancelled");
-  const returnedDonationId = searchParams.get("donationId");
+
+  // For Tripto redirects
+  const status = searchParams.get("status");
 
   // State for error notification
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -111,22 +111,25 @@ export function DonatePageContent({ campaignId }: { campaignId: string }) {
     checkUser();
   }, [supabase]);
 
-  // Auto-open success modal if user returned from Tripto checkout
+  // Tripto redirect handler
   useEffect(() => {
-    if (success && returnedDonationId) {
-      console.log("[TRIPTO] Redirect success detected, opening modal for donation:", returnedDonationId);
-      setDonationId(returnedDonationId); // ensures UI knows which donation completed
-      setShowSuccessModal(true);
-    }
-  }, [success, returnedDonationId]);
+    if (!status) return;
 
-  // TODO: handle cancellation modal or message
-  useEffect(() => {
-    if (cancelled && returnedDonationId) {
-      console.warn("[TRIPTO] User cancelled Tripto checkout for donation:", returnedDonationId);
-      // See how to display a 'rejected' state, maybe reuse modal, or else. See how the BISA implementation does
+    if (status === "success") {
+      console.log("[TRIPTO] Redirect success");
+      setShowSuccessModal(true);
+
+      router.refresh();
     }
-  }, [cancelled, returnedDonationId]);
+
+    if (status === "failed") {
+      console.warn("[TRIPTO] Redirect failed");
+      setErrorMessage("Tu pago no se completó. Por favor inténtalo nuevamente.");
+    }
+
+    const newUrl = window.location.pathname;
+    window.history.replaceState({}, "", newUrl);
+  }, [status, router]);
 
   // Calculate donation details
   const donationAmount =
@@ -200,76 +203,126 @@ export function DonatePageContent({ campaignId }: { campaignId: string }) {
   // Handle donation confirmation
   const handleConfirmDonation = async () => {
     if (!campaignId) {
-      setErrorMessage("No campaign selected for donation.");
-      return;
+      setErrorMessage('No campaign selected for donation.')
+      return
     }
 
     // Clear any previous errors
-    setErrorMessage(null);
-    setIsSubmitting(true);
+    setErrorMessage(null)
+    setIsSubmitting(true)
 
     try {
-      // Create donation through our API
+      // Determine selected payment method (card or qr)
+      const selectedMethod =
+        selectedPaymentMethodIndex !== null
+          ? PAYMENT_METHODS[selectedPaymentMethodIndex].id
+          : paymentMethod || 'card'
+
+      // 🔹 Branch 1: Tripto (card)
+      if (selectedMethod === 'card') {
+        const response = await fetch(
+          '/api/tripto/payment',
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              campaignId,
+              donorId: user?.id ?? null,
+              amount: donationAmount,
+              tipAmount: platformFee,
+              message: '',
+              isAnonymous: !user, // same logic as antes
+              notificationEnabled: receiveNotifications,
+              paymentMethod: selectedMethod,
+            }),
+          },
+        )
+
+        const data = await response.json()
+
+        if (!response.ok || !data.success || !data.url) {
+          console.error(
+            'Error initiating Tripto payment:',
+            data.error,
+          )
+          setErrorMessage(
+            data.error ||
+              'Hubo un problema al iniciar el pago. Inténtalo nuevamente.',
+          )
+          return
+        }
+
+        // Redirect user to Tripto checkout
+        window.location.href = data.url
+        return // important: no seguir con el flujo viejo
+      }
+
+      // 🔹 Branch 2: flujo antiguo (QR / otros)
       const donationData = {
         campaignId: campaignId,
         amount: donationAmount,
-        paymentMethod:
-          selectedPaymentMethodIndex !== null
-            ? PAYMENT_METHODS[selectedPaymentMethodIndex].id
-            : paymentMethod || "card",
-        message: "",
+        paymentMethod: selectedMethod,
+        message: '',
         isAnonymous: !user, // Explicitly set isAnonymous flag
         notificationEnabled: receiveNotifications,
-        customAmount: !selectedAmount && customAmount ? true : false,
-      };
+        customAmount:
+          !selectedAmount && customAmount ? true : false,
+      }
 
-      const response = await fetch("/api/donation", {
-        method: "POST",
+      const response = await fetch('/api/donation', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify(donationData),
-        credentials: "include", // Include cookies for authentication
-      });
+        credentials: 'include', // Include cookies for authentication
+      })
 
       if (!response.ok) {
-        const errorData = await response.json();
-        console.error("Error submitting donation:", errorData.error);
+        const errorData = await response.json()
+        console.error(
+          'Error submitting donation:',
+          errorData.error,
+        )
 
         // Check specifically for auth error
         if (
           errorData.error ===
-          "User must be logged in for non-anonymous donations"
+          'User must be logged in for non-anonymous donations'
         ) {
           throw new Error(
-            "Debes iniciar sesión para realizar donaciones. Por favor, inicia sesión o regístrate primero."
-          );
+            'Debes iniciar sesión para realizar donaciones. Por favor, inicia sesión o regístrate primero.',
+          )
         }
 
-        throw new Error(errorData.error || "Error submitting donation");
+        throw new Error(
+          errorData.error || 'Error submitting donation',
+        )
       }
 
-      const data = await response.json();
+      const data = await response.json()
 
       // Store donation ID for notification updates
       if (data && data.donationId) {
-        setDonationId(data.donationId);
+        setDonationId(data.donationId)
       }
 
-      // Show success modal
-      setShowSuccessModal(true);
-      setIsDonationConfirmed(true);
+      // Show success modal (flujo legacy)
+      setShowSuccessModal(true)
+      setIsDonationConfirmed(true)
     } catch (error) {
-      console.error("Error submitting donation:", error);
+      console.error('Error submitting donation:', error)
       setErrorMessage(
         error instanceof Error
           ? error.message
-          : "Error desconocido al enviar la donación"
-      );
+          : 'Error desconocido al enviar la donación',
+      )
     } finally {
-      setIsSubmitting(false);
+      setIsSubmitting(false)
     }
-  };
+  }
 
   // Handle authentication error by redirecting to login
   const handleLoginRedirect = () => {

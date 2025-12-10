@@ -5,7 +5,9 @@
 export interface TriptoCreateDonationPayload {
   name: string
   description: string
-  suggestedAmount: number // siempre en centavos
+  suggestedAmount: number // in cents
+  successUrl: string
+  failedUrl: string
   metadata: Record<string, string>
 }
 
@@ -17,7 +19,7 @@ export interface TriptoDonationLinkData {
 
 export interface TriptoCreateDonationResponse {
   success: boolean
-  data?: TriptoDonationLinkData
+  url?: string
   error?: string
 }
 
