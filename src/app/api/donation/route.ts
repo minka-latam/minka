@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { triptoClient } from "@/lib/tripto/client";
+import { TriptoClient } from "@/lib/tripto/client";
 import { prisma } from "@/lib/prisma";
 import { getAuthSession } from "@/lib/auth";
 import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
@@ -158,9 +158,9 @@ export async function POST(request: NextRequest) {
       const successUrl = `${baseUrl}/donate/${campaignId}?success=true&donationId=${donation.id}`;
       const cancelUrl  = `${baseUrl}/donate/${campaignId}?cancelled=true&donationId=${donation.id}`;
 
-      const session = await triptoClient.createCheckoutSession({
+      const session = await TriptoClient.createDonationLink({
         productId: process.env.TRIPTO_PRODUCT_ID!,
-        quantity: Number(amount),
+        suggestedAmount: Number(amount),
         successUrl,
         cancelUrl,
         metadata: {

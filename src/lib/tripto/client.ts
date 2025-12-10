@@ -9,6 +9,7 @@ export class TriptoClient {
   private baseUrl = process.env.TRIPTO_BASE_URL
 
   constructor(apiKey: string) {
+    console.log('TRIPTO_CLIENT INIT → apiKey:', apiKey)
     this.apiKey = apiKey
   }
 
@@ -18,19 +19,32 @@ export class TriptoClient {
   async createDonationLink(
     payload: TriptoCreateDonationPayload,
   ): Promise<TriptoCreateDonationResponse> {
+    console.log(
+      '[TRIPTO] POST',
+      `${this.baseUrl}/payment-links/custom-amount`,
+    )
+
+    if (!this.baseUrl) {
+      return {
+        success: false,
+        error: 'TRIPTO_BASE_URL is not configured',
+      }
+    }
+
     const response = await fetch(
       `${this.baseUrl}/payment-links/custom-amount`,
       {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${this.apiKey}`,
+          'X-API-Key': this.apiKey,
         },
         body: JSON.stringify(payload),
       },
     )
 
     const data = await response.json()
+    console.log('[DEBUG][TRIPTO_RESPONSE]', data)
 
     if (!response.ok) {
       return {
@@ -40,10 +54,9 @@ export class TriptoClient {
       }
     }
 
-    // Tripto returns: { success: true, url: "..." }
     return {
       success: true,
-      url: data.url,
+      url: data?.data?.url,
     }
   }
 
@@ -53,13 +66,20 @@ export class TriptoClient {
   async createWebhookSecret(
     webhookUrl: string,
   ): Promise<TriptoWebhookSecretResponse> {
+    if (!this.baseUrl) {
+      return {
+        success: false,
+        error: 'TRIPTO_BASE_URL is not configured',
+      }
+    }
+
     const response = await fetch(
       `${this.baseUrl}/settings/webhooks`,
       {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${this.apiKey}`,
+          'X-API-Key': this.apiKey,
         },
         body: JSON.stringify({ webhookUrl }),
       },

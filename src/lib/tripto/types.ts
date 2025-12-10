@@ -3,12 +3,20 @@
 // ============================
 
 export interface TriptoCreateDonationPayload {
+  slug: string
   name: string
-  description: string
-  suggestedAmount: number // in cents
-  successUrl: string
-  failedUrl: string
-  metadata: Record<string, string>
+  description?: string | null
+  imageUrl: string
+  minAmount?: number
+  maxAmount?: number
+  suggestedAmount?: number
+  submitType: 'pay' | 'donate' | 'book'
+  afterPayment: {
+    type: 'redirect'
+    redirectUrl: string
+  }
+  campaign?: string
+  metadata?: Record<string, string>
 }
 
 export interface TriptoDonationLinkData {
@@ -34,19 +42,21 @@ export interface TriptoWebhookSecretResponse {
 }
 
 // ============================
-// Webhook Events
+// Webhook Payload
 // ============================
 
-export interface TriptoWebhookEvent {
-  event: string // "payment.completed", "payment.failed", etc.
-  paymentId: string
-  stripePaymentId?: string
-  stripeChargeId?: string
-  stripeSessionId?: string
-  amount: number
-  currency: string
-  metadata: Record<string, string>
-  createdAt: string
+export interface TriptoWebhookPayload {
+  event: string
+  timestamp: string
+  data: {
+    paymentId: string
+    amount: number
+    currency: string
+    metadata?: Record<string, string>
+    stripeSessionId?: string
+    stripePaymentId?: string
+    stripeChargeId?: string
+  }
 }
 
 // To validate HMAC signature in the  webhook

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import crypto from 'crypto'
 import { db } from '@/lib/db'
-import { TriptoWebhookEvent } from '@/lib/tripto/types'
+import { TriptoWebhookPayload } from '@/lib/tripto/types'
 
 export const config = {
   api: { bodyParser: false },
@@ -17,7 +17,10 @@ export async function POST(req: Request) {
       )
 
     const rawBody = await req.text()
-    const signature = req.headers.get('X-Webhook-Signature')
+    const signature =
+      req.headers.get('X-Webhook-Signature') ??
+      req.headers.get('X-Signature')
+
     if (!signature)
       return NextResponse.json(
         { error: 'Missing signature' },
@@ -36,17 +39,18 @@ export async function POST(req: Request) {
       )
     }
 
-    const event = JSON.parse(rawBody) as TriptoWebhookEvent
+    const payload = JSON.parse(rawBody) as TriptoWebhookPayload
+    const { event, data } = payload
 
-    if (event.event === 'payment.completed') {
-      const metadata = event.metadata || {}
+    if (event === 'payment.completed') {
+      const metadata = data.metadata || {}
       const prismaPaymentMethod =
         metadata.paymentMethod === 'card'
           ? 'credit_card'
           : metadata.paymentMethod
 
       const exists = await db.donation.findFirst({
-        where: { triptoPaymentId: event.paymentId },
+        where: { triptoPaymentId: data.paymentId },
       })
 
       if (!exists) {
@@ -56,8 +60,8 @@ export async function POST(req: Request) {
             donorId: metadata.donorId,
             amount: Number(metadata.amount || 0),
             tipAmount: Number(metadata.tipAmount || 0),
-            totalAmount: event.amount / 100,
-            currency: event.currency,
+            totalAmount: data.amount / 100,
+            currency: data.currency,
             paymentStatus: 'completed',
             paymentProvider: 'tripto',
             paymentMethod: prismaPaymentMethod as any,
@@ -65,8 +69,8 @@ export async function POST(req: Request) {
             notificationEnabled:
               metadata.notificationEnabled === 'true',
             message: metadata.message || null,
-            triptoPaymentId: event.paymentId,
-            triptoSessionId: event.stripeSessionId || null,
+            triptoPaymentId: data.paymentId,
+            triptoSessionId: data.stripeSessionId || null,
             triptoCheckoutUrl: null,
           },
         })
@@ -88,16 +92,16 @@ export async function POST(req: Request) {
       )
     }
 
-    if (event.event === 'payment.failed') {
-      const metadata = event.metadata || {}
+    if (event === 'payment.failed') {
+      const metadata = data.metadata || {}
 
       await db.paymentLog.create({
         data: {
           paymentProvider: 'tripto',
           status: 'failed',
-          paymentId: event.paymentId,
-          amount: event.amount / 100,
-          currency: event.currency,
+          paymentId: data.paymentId,
+          amount: data.amount / 100,
+          currency: data.currency,
           metadata: JSON.stringify(metadata),
           campaignId: metadata.campaignId,
           donorId: metadata.donorId,
