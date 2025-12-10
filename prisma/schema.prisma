@@ -62,10 +62,10 @@ model Campaign {
   location                 Region
   province                 Province?
   legalEntityId            String?               @map("legal_entity_id") @db.Uuid
-  recipientType            RecipientType?        @map("recipient_type")
   beneficiaryName          String?               @map("beneficiary_name")
-  beneficiaryRelationship  String?               @map("beneficiary_relationship")
   beneficiaryReason        String?               @map("beneficiary_reason")
+  beneficiaryRelationship  String?               @map("beneficiary_relationship")
+  recipientType            RecipientType?        @map("recipient_type")
   media                    CampaignMedia[]       @relation("CampaignMedia")
   updates                  CampaignUpdate[]      @relation("CampaignUpdates")
   verificationRequests     CampaignVerification? @relation("CampaignVerificationRequests")
@@ -152,18 +152,15 @@ model Donation {
   triptoSessionId     String?        @map("tripto_session_id")
   tip_amount          Decimal?       @db.Decimal
   total_amount        Decimal?       @db.Decimal
-  
-  // BISA QR Payment Fields
-  bisaAlias             String?   @map("bisa_alias")           // Unique identifier for the QR transaction
-  bisaQrId              String?   @map("bisa_qr_id")           // ID returned by SIP when QR is generated
-  bisaQrImage           String?   @map("bisa_qr_image") @db.Text  // Base64 QR image
-  bisaQrExpiresAt       DateTime? @map("bisa_qr_expires_at")   // QR expiration datetime
-  bisaTransactionId     String?   @map("bisa_transaction_id")  // numeroOrdenOriginante from callback
-  bisaPayerAccount      String?   @map("bisa_payer_account")   // Masked account number of payer
-  bisaPayerName         String?   @map("bisa_payer_name")      // Name of the payer
-  bisaPayerDocument     String?   @map("bisa_payer_document")  // CI of the payer
-  bisaProcessedAt       DateTime? @map("bisa_processed_at")    // When the payment was processed
-
+  bisaAlias           String?        @map("bisa_alias")
+  bisaPayerAccount    String?        @map("bisa_payer_account")
+  bisaPayerDocument   String?        @map("bisa_payer_document")
+  bisaPayerName       String?        @map("bisa_payer_name")
+  bisaProcessedAt     DateTime?      @map("bisa_processed_at")
+  bisaQrExpiresAt     DateTime?      @map("bisa_qr_expires_at")
+  bisaQrId            String?        @map("bisa_qr_id")
+  bisaQrImage         String?        @map("bisa_qr_image")
+  bisaTransactionId   String?        @map("bisa_transaction_id")
   campaign            Campaign       @relation("CampaignDonations", fields: [campaignId], references: [id], onDelete: Cascade)
   donor               Profile        @relation("DonorDonations", fields: [donorId], references: [id], onDelete: Cascade)
   notifications       Notification[] @relation("DonationNotifications")
@@ -173,7 +170,7 @@ model Donation {
 
 model BisaToken {
   id        String   @id @default(uuid()) @db.Uuid
-  token     String   @db.Text
+  token     String
   expiresAt DateTime @map("expires_at")
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamp(6)
 
@@ -372,7 +369,6 @@ enum Province {
   omasuyos
   pacajes
   camacho
-  // muñecas
   larecaja
   franz_tamayo
   ingavi
@@ -388,7 +384,6 @@ enum Province {
   manco_kapac
   abel_iturralde
   bautista_saavedra
-  // andres_ibañez
   warnes
   sara
   ichilo
@@ -427,16 +422,13 @@ enum Province {
   hernando_siles
   luis_calvo
   azurduy
-  // zudañez
   cercado_oruro
   eduardo_avaroa
   carangas
   sajama
   litoral
   poopo
-  // pantaleón_dalence
   ladislao_cabrera
-  // saucarí
   sebastian_pagador
   tomas_barron
   sur_carangas
@@ -449,7 +441,6 @@ enum Province {
   cornelio_saavedra
   chayanta
   charcas
-  // alonso_de_ibañez
   bernardino_bilbao
   antonio_quijarro
   jose_maria_linares
@@ -463,8 +454,6 @@ enum Province {
   cercado_tarija
   arce
   gran_chaco
-  // avilés
-  // méndez
   o_connor
   cercado_beni
   vaca_diez
@@ -473,7 +462,6 @@ enum Province {
   moxos
   mamore
   itenez
-  // marbán
   nicolas_suarez
   manuripi
   madre_de_dios

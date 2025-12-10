@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, CreditCard, QrCode, Bell } from "lucide-react";
+import { ArrowRight, QrCode, Bell } from "lucide-react";
 import { Header } from "@/components/views/landing-page/Header";
 import { Footer } from "@/components/views/landing-page/Footer";
 import Image from "next/image";
@@ -28,13 +28,6 @@ const DONATION_AMOUNTS = [
 
 // Define payment methods
 const PAYMENT_METHODS = [
-  {
-    id: "card",
-    title: "Tarjeta de crédito/débito",
-    description:
-      "Ingresa los detalles de tu tarjeta de crédito o débito para procesar tu donación.",
-    icon: <CreditCard className="h-6 w-6" />,
-  },
   {
     id: "qr",
     title: "Código QR",
@@ -131,7 +124,7 @@ export function DonatePageContent({ campaignId }: { campaignId: string }) {
             setSelectedAmount(pendingDonation.amount);
             setPaymentMethod(pendingDonation.paymentMethod);
             if (pendingDonation.paymentMethod === "qr") {
-              setSelectedPaymentMethodIndex(1);
+              setSelectedPaymentMethodIndex(0);
               setShowQRStep(true);
               setIsDonationConfirmed(true);
               setStep(3);
@@ -232,7 +225,7 @@ export function DonatePageContent({ campaignId }: { campaignId: string }) {
 
     const selectedMethod = selectedPaymentMethodIndex !== null
           ? PAYMENT_METHODS[selectedPaymentMethodIndex].id
-          : paymentMethod || "card";
+          : paymentMethod || "qr";
 
     try {
       // Check if we already have a pending donation for QR payment
@@ -878,43 +871,6 @@ export function DonatePageContent({ campaignId }: { campaignId: string }) {
 
                       {/* Payment method cards centered */}
                       <div className="space-y-4">
-                        {/* Credit/Debit Card Option */}
-                        <div
-                          className={`bg-white rounded-lg p-8 border ${
-                            paymentMethod === "card"
-                              ? "border-[#2c6e49]"
-                              : "border-black"
-                          } cursor-pointer hover:border-[#2c6e49] transition-colors`}
-                          onClick={() => handlePaymentMethodSelect("card")}
-                        >
-                          <div className="flex items-start gap-6">
-                            <div className="flex-shrink-0 mt-1">
-                              <div className="h-6 w-6 rounded-full border border-gray-300 flex items-center justify-center">
-                                {paymentMethod === "card" ? (
-                                  <div className="h-3 w-3 rounded-full bg-[#2c6e49]"></div>
-                                ) : null}
-                              </div>
-                            </div>
-                            <div className="flex-shrink-0 flex items-center justify-center w-16 h-16">
-                              <Image
-                                src="/icons/credit_card_heart.svg"
-                                alt="Credit Card"
-                                width={32}
-                                height={32}
-                              />
-                            </div>
-                            <div className="flex-1">
-                              <h3 className="font-medium text-gray-800 text-lg mb-2">
-                                Tarjeta de crédito/débito
-                              </h3>
-                              <p className="text-base text-gray-600">
-                                Ingresa los detalles de tu tarjeta de crédito o
-                                débito para procesar tu donación.
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-
                         {/* QR Code Option */}
                         <div
                           className={`bg-white rounded-lg p-8 border ${
