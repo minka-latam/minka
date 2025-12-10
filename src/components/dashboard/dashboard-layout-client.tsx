@@ -7,7 +7,7 @@ import { AppSidebar } from "@/components/sidebar/app-sidebar";
 import SkipToMain from "@/components/skip-to-main";
 import { Search } from "@/components/sidebar/search";
 import { ThemeSwitch } from "@/components/sidebar/theme-switch";
-import { ProfileDropdown } from "@/components/sidebar/profile-dropdown";
+import { AdminProfileDropdown } from "@/components/sidebar/admin-profile-dropdown";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -35,7 +35,7 @@ export function DashboardLayoutClient({ children }: DashboardLayoutProps) {
             <div className="flex items-center space-x-4">
               <Search />
               <ThemeSwitch />
-              <ProfileDropdown />
+              <AdminProfileDropdown />
             </div>
           </div>
           {children}
