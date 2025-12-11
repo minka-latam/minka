@@ -50,16 +50,41 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: response.error || "Failed to generate QR" }, { status: 500 });
     }
 
-    // Update donation with QR details
-    await prisma.donation.update({
-      where: { id: donationId },
-      data: {
-        bisaAlias: alias,
-        bisaQrId: response.data.qrId,
-        bisaQrImage: response.data.qrImage,
-        bisaQrExpiresAt: expirationDate,
-        paymentProvider: "bisa",
-      },
+    // Extract data for use in transaction
+    const { qrId, qrImage } = response.data;
+
+    // Update donation with QR details and create payment log
+    await prisma.$transaction(async (tx) => {
+      await tx.donation.update({
+        where: { id: donationId },
+        data: {
+          bisaAlias: alias,
+          bisaQrId: qrId,
+          bisaQrImage: qrImage,
+          bisaQrExpiresAt: expirationDate,
+          paymentProvider: "bisa",
+        },
+      });
+
+      // Create payment log for QR generation
+      await tx.paymentLog.create({
+        data: {
+          paymentprovider: "bisa",
+          paymentmethod: "qr",
+          paymentid: qrId,
+          status: "qr_generated",
+          amount: amount,
+          currency: "BOB",
+          metadata: JSON.stringify({
+            alias,
+            donationId,
+            campaignId,
+            expiresAt: expirationDate.toISOString(),
+          }),
+          campaignid: campaignId || donation.campaignId,
+          donorid: donation.donorId,
+        },
+      });
     });
 
     // Format expiration date for display (dd/MM/yyyy HH:mm)

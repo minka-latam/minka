@@ -84,6 +84,30 @@ export async function POST(request: NextRequest) {
           },
         },
       });
+
+      // Create payment log for completed payment
+      await tx.paymentLog.create({
+        data: {
+          paymentprovider: "bisa",
+          paymentmethod: "qr",
+          paymentid: numeroOrdenOriginante || donation.bisaQrId || alias,
+          status: "completed",
+          amount: monto || donation.amount,
+          currency: moneda || "BOB",
+          metadata: JSON.stringify({
+            alias,
+            donationId: donation.id,
+            campaignId: donation.campaignId,
+            bisaQrId: donation.bisaQrId,
+            payerName: nombreCliente,
+            payerAccount: cuentaCliente,
+            payerDocument: documentoCliente,
+            processedAt: fechaproceso,
+          }),
+          campaignid: donation.campaignId,
+          donorid: donation.donorId,
+        },
+      });
     });
 
     return NextResponse.json({ codigo: "0000", mensaje: "Success" });
