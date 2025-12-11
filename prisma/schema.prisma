@@ -177,6 +177,22 @@ model BisaToken {
   @@map("bisa_tokens")
 }
 
+model PaymentLog {
+  id             String           @id @default(uuid()) @db.Uuid
+  paymentProvider PaymentProvider
+  paymentMethod  PaymentMethod?
+  paymentId      String
+  status         String
+  amount         Decimal          @db.Decimal
+  currency       String
+  metadata       String?
+  campaignId     String?          @db.Uuid
+  donorId        String?          @db.Uuid
+  createdAt      DateTime         @default(now()) @db.Timestamp(6)
+
+  @@map("payment_logs")
+}
+
 model Comment {
   id            String         @id @default(uuid()) @db.Uuid
   campaignId    String         @map("campaign_id") @db.Uuid
