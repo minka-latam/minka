@@ -3,26 +3,29 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2 } from "lucide-react";
+import { Loader2, Mail, Calendar, IdCard } from "lucide-react";
 import { useAuth } from "@/providers/auth-provider";
 import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/components/ui/use-toast";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { AvatarUpload } from "@/components/settings/avatar-upload";
 import { profileFormSchema } from "@/lib/validations/profile";
 import type { ProfileFormValues } from "@/lib/validations/profile";
+import { Separator } from "@/components/ui/separator";
 
 export function ProfileForm() {
-  const { profile } = useAuth();
+  const { profile, user } = useAuth();
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [pendingChanges, setPendingChanges] =
     useState<ProfileFormValues | null>(null);
@@ -32,9 +35,11 @@ export function ProfileForm() {
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
     defaultValues: {
-      firstName:
-        typeof profile?.firstName === "string" ? profile.firstName : "",
-      lastName: typeof profile?.lastName === "string" ? profile.lastName : "",
+      name: typeof profile?.name === "string" ? profile.name : "",
+      phone: typeof profile?.phone === "string" ? profile.phone : "",
+      bio: typeof profile?.bio === "string" ? profile.bio : "",
+      location: typeof profile?.location === "string" ? profile.location : "",
+      address: typeof profile?.address === "string" ? profile.address : "",
     },
   });
 
@@ -44,32 +49,32 @@ export function ProfileForm() {
   }
 
   async function handleConfirmUpdate() {
-    if (!pendingChanges || !profile?.userId) return;
+    if (!pendingChanges || !profile?.id) return;
 
     try {
       setIsUpdating(true);
 
-      const response = await fetch(`/api/profile/${profile.userId}`, {
+      const response = await fetch(`/api/profile/${profile.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...pendingChanges,
-          avatarUrl: newAvatarUrl || profile.avatarUrl,
+          profilePicture: newAvatarUrl || profile.profile_picture,
         }),
       });
 
       if (!response.ok) throw new Error("Failed to update profile");
 
       toast({
-        title: "Profile updated",
-        description: "Your profile has been updated successfully.",
+        title: "Perfil actualizado",
+        description: "Tu perfil ha sido actualizado exitosamente.",
       });
 
       form.reset(pendingChanges);
     } catch {
       toast({
         title: "Error",
-        description: "Failed to update profile. Please try again.",
+        description: "Error al actualizar el perfil. Intenta nuevamente.",
         variant: "destructive",
       });
     } finally {
@@ -79,15 +84,37 @@ export function ProfileForm() {
     }
   }
 
+  // Format date for display
+  const formatDate = (dateString: string | null | undefined) => {
+    if (!dateString) return "No especificada";
+    try {
+      return new Date(dateString).toLocaleDateString("es-BO", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      });
+    } catch {
+      return "No especificada";
+    }
+  };
+
+  // Format join date
+  const joinDate = profile?.created_at
+    ? formatDate(profile.created_at)
+    : "No disponible";
+
   return (
     <>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-8">
+          {/* Avatar Upload */}
           {profile && (
             <AvatarUpload
-              userId={String(profile.userId)}
+              userId={String(profile.id)}
               currentAvatarUrl={
-                typeof profile.avatarUrl === "string" ? profile.avatarUrl : null
+                typeof profile.profile_picture === "string"
+                  ? profile.profile_picture
+                  : null
               }
               onUploadComplete={(url) => setNewAvatarUrl(url)}
               onUploadError={(error) => {
@@ -100,20 +127,54 @@ export function ProfileForm() {
             />
           )}
 
-          <div className="grid gap-4 sm:grid-cols-2">
+          {/* Read-only Information */}
+          <div className="rounded-lg border bg-muted/50 p-4 space-y-3">
+            <h4 className="text-sm font-medium text-muted-foreground">
+              Información de cuenta
+            </h4>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="flex items-center gap-2 text-sm">
+                <Mail className="h-4 w-4 text-muted-foreground" />
+                <span className="text-muted-foreground">Email:</span>
+                <span className="font-medium">{user?.email || "N/A"}</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm">
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+                <span className="text-muted-foreground">Miembro desde:</span>
+                <span className="font-medium">{joinDate}</span>
+              </div>
+              {profile?.identity_number && (
+                <div className="flex items-center gap-2 text-sm">
+                  <IdCard className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-muted-foreground">Documento:</span>
+                  <span className="font-medium">
+                    ****{profile.identity_number.slice(-4)}
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Editable Fields */}
+          <div className="space-y-6">
             <FormField
               control={form.control}
-              name="firstName"
+              name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>First Name</FormLabel>
+                  <FormLabel>Nombre completo</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="John"
+                      placeholder="Tu nombre completo"
                       {...field}
                       value={field.value ?? ""}
                     />
                   </FormControl>
+                  <FormDescription>
+                    Este es el nombre que se mostrará públicamente.
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -121,27 +182,91 @@ export function ProfileForm() {
 
             <FormField
               control={form.control}
-              name="lastName"
+              name="phone"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Last Name</FormLabel>
+                  <FormLabel>Teléfono</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="Doe"
+                      placeholder="+591 70000000"
                       {...field}
                       value={field.value ?? ""}
                     />
                   </FormControl>
+                  <FormDescription>
+                    Tu número de teléfono de contacto.
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
+
+            <FormField
+              control={form.control}
+              name="bio"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Biografía</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Cuéntanos un poco sobre ti..."
+                      className="resize-none"
+                      rows={4}
+                      {...field}
+                      value={field.value ?? ""}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Una breve descripción sobre ti (máximo 500 caracteres).
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <FormField
+                control={form.control}
+                name="location"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Ciudad</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="Ej: La Paz, Bolivia"
+                        {...field}
+                        value={field.value ?? ""}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="address"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Dirección</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="Tu dirección"
+                        {...field}
+                        value={field.value ?? ""}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
           </div>
 
           <div className="flex items-center gap-4">
             <Button type="submit" disabled={isUpdating}>
               {isUpdating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Update profile
+              Guardar cambios
             </Button>
             <Button
               type="button"
@@ -149,7 +274,7 @@ export function ProfileForm() {
               onClick={() => form.reset()}
               disabled={isUpdating}
             >
-              Reset
+              Restablecer
             </Button>
           </div>
         </form>
@@ -159,8 +284,8 @@ export function ProfileForm() {
         open={showConfirmDialog}
         onOpenChange={setShowConfirmDialog}
         onConfirm={handleConfirmUpdate}
-        title="Update Profile"
-        description="Are you sure you want to update your profile? This action cannot be undone."
+        title="Actualizar perfil"
+        description="¿Estás seguro de que deseas actualizar tu perfil? Esta acción guardará los cambios realizados."
       />
     </>
   );

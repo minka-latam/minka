@@ -62,9 +62,21 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    // Format expiration date for display (dd/MM/yyyy HH:mm)
+    const formattedExpiration = expirationDate.toLocaleString('es-BO', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+
     return NextResponse.json({
       success: true,
-      data: response.data,
+      data: {
+        ...response.data,
+        expiresAt: formattedExpiration,
+      },
     });
 
   } catch (error) {

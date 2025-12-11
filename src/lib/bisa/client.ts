@@ -166,13 +166,16 @@ export class BisaClient {
         };
       }
 
+      // BISA API returns data nested inside "objeto"
+      const objeto = data.objeto;
+
       return {
         success: true,
         data: {
-          qrImage: data.imagenQr,
-          qrId: data.idQr,
+          qrImage: objeto?.imagenQr,
+          qrId: objeto?.idQr,
           alias: params.alias,
-          expiresAt: data.fechaVencimiento,
+          expiresAt: objeto?.fechaVencimiento,
         },
       };
     } catch (error) {
@@ -216,6 +219,7 @@ export class BisaClient {
       }
 
       const data = await response.json();
+      console.log("BISA checkStatus response:", JSON.stringify(data, null, 2));
 
       if (data.codigo !== "0000") {
         return {
@@ -224,19 +228,19 @@ export class BisaClient {
         };
       }
 
-      // Map BISA status to our status
-      // Note: You'll need to adjust this mapping based on actual API response values
-      // The spec says: PENDIENTE, PAGADO, INHABILITADO, ERROR, EXPIRADO
-      
+      // BISA API returns data nested inside "objeto"
+      // Status field is "estadoActual" not "estado"
+      const objeto = data.objeto;
+
       return {
         success: true,
         data: {
-          status: data.estado,
-          processedAt: data.fechaProceso,
-          payerName: data.nombreCliente,
-          payerAccount: data.cuentaCliente,
-          payerDocument: data.documentoCliente,
-          transactionId: data.numeroOrdenOriginante,
+          status: objeto?.estadoActual,
+          processedAt: objeto?.fechaProcesamiento,
+          payerName: objeto?.nombreCliente,
+          payerAccount: objeto?.cuentaCliente,
+          payerDocument: objeto?.documentoCliente,
+          transactionId: objeto?.numeroOrdenOriginante,
         },
       };
     } catch (error) {

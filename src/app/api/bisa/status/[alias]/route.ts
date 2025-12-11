@@ -19,7 +19,16 @@ export async function GET(
     });
 
     if (!donation) {
-      return NextResponse.json({ error: "Donation not found" }, { status: 404 });
+      // Alias not found in DB - could be an old alias that was replaced
+      // Treat as expired so frontend generates a new QR
+      console.log("Alias not found in DB (may have been replaced):", alias);
+      return NextResponse.json({
+        success: true,
+        data: {
+          status: "EXPIRADO",
+          message: "QR no encontrado"
+        }
+      });
     }
 
     if (donation.paymentStatus === "completed") {
@@ -33,7 +42,13 @@ export async function GET(
     const response = await bisaClient.checkStatus(alias);
 
     if (!response.success || !response.data) {
-      return NextResponse.json({ error: response.error || "Failed to check status" }, { status: 500 });
+      // BISA returned an error - pass it through to the frontend
+      console.log("BISA status check failed for alias:", alias, "Error:", response.error);
+      return NextResponse.json({
+        success: false,
+        error: response.error || "Error al consultar estado del QR",
+        needsRegeneration: true // Signal that a new QR should be generated
+      });
     }
 
     const status = response.data.status;
