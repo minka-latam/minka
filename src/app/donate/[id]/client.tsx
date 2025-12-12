@@ -81,6 +81,7 @@ export function DonatePageContent({ campaignId }: { campaignId: string }) {
 
   // State for error notification
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [infoMessage, setInfoMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Animation state for step transitions
@@ -253,6 +254,7 @@ export function DonatePageContent({ campaignId }: { campaignId: string }) {
 
     // Clear any previous errors
     setErrorMessage(null)
+    setInfoMessage(null)
     setIsSubmitting(true)
 
     const selectedMethod = selectedPaymentMethodIndex !== null
@@ -262,6 +264,9 @@ export function DonatePageContent({ campaignId }: { campaignId: string }) {
     try {
       // 🔹 Branch 1: Tripto (card)
       if (selectedMethod === 'card') {
+        setInfoMessage(
+          'Estamos redirigiendo a la plataforma segura de pago por tarjeta. Espera un momento por favor...',
+        )
         const response = await fetch(
           '/api/tripto/payment',
           {
@@ -300,6 +305,7 @@ export function DonatePageContent({ campaignId }: { campaignId: string }) {
               'Hubo un problema al iniciar el pago. Por favor, inténtalo nuevamente.'
           }
 
+          setInfoMessage(null)
           setErrorMessage(userMessage)
 
           return
@@ -307,7 +313,7 @@ export function DonatePageContent({ campaignId }: { campaignId: string }) {
 
         // Redirect user to Tripto checkout
         window.location.href = data.url
-        return // important: no seguir con el flujo viejo
+        return
       }
 
       // 🔹 Branch 2: flujo antiguo (QR / otros)
@@ -392,6 +398,7 @@ export function DonatePageContent({ campaignId }: { campaignId: string }) {
 
     } catch (error) {
       console.error('Error submitting donation:', error)
+      setInfoMessage(null)
       setErrorMessage(
         error instanceof Error
           ? error.message
@@ -1109,6 +1116,13 @@ export function DonatePageContent({ campaignId }: { campaignId: string }) {
                           </div>
                         </div>
 
+                        {/* Informational message for card redirect */}
+                        {infoMessage && (
+                          <div className="bg-blue-50 border border-blue-200 text-blue-800 px-4 py-3 rounded relative mb-4">
+                            <span className="block sm:inline">{infoMessage}</span>                          
+                          </div>
+                        )}
+
                         {/* Error notification */}
                         {errorMessage && (
                           <div className="bg-red-50 border border-red-300 text-red-800 rounded-lg p-4 mb-6">
@@ -1256,11 +1270,11 @@ export function DonatePageContent({ campaignId }: { campaignId: string }) {
               <div className="max-w-3xl mx-auto mt-8 mb-4 px-4 flex justify-between">
                 {/* Volver button - always present but invisible in step 1 */}
                 <Button
-                  className={`bg-white border border-[#2c6e49] text-[#2c6e49] hover:bg-[#e8f0e9] rounded-full px-6 py-2 ${
+                  className={`bg-white border border-[#2c6e49] text-[#2c6e49] hover:bg-[#e8f0e9] rounded-full px-6 py-2 disabled:opacity-50 disabled:cursor-not-allowed ${
                     step === 1 || isDonationConfirmed ? "invisible" : "visible"
                   }`}
                   onClick={handleBack}
-                  disabled={step === 1 || isDonationConfirmed}
+                  disabled={step === 1 || isDonationConfirmed || isSubmitting}
                 >
                   Volver
                 </Button>
@@ -1289,7 +1303,10 @@ export function DonatePageContent({ campaignId }: { campaignId: string }) {
                     onClick={handleConfirmDonation}
                     disabled={isSubmitting}
                   >
-                    Confirmar donación <ArrowRight className="ml-2 h-4 w-4" />
+                    {infoMessage
+                    ? 'Redirigiendo...'
+                    : 'Confirmar donación'}
+                    <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 )}
 
