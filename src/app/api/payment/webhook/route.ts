@@ -59,8 +59,8 @@ export async function POST(req: Request) {
             campaignId: metadata.campaignId,
             donorId: metadata.donorId,
             amount: Number(metadata.amount || 0),
-            tipAmount: Number(metadata.tipAmount || 0),
-            totalAmount: data.amount / 100,
+            tip_amount: Number(metadata.tipAmount || 0),
+            total_amount: data.amount / 100,
             currency: data.currency,
             paymentStatus: 'completed',
             paymentProvider: 'tripto',
@@ -97,14 +97,14 @@ export async function POST(req: Request) {
 
       await db.paymentLog.create({
         data: {
-          paymentProvider: 'tripto',
+          paymentprovider: 'tripto',
           status: 'failed',
-          paymentId: data.paymentId,
+          paymentid: data.paymentId,
           amount: data.amount / 100,
           currency: data.currency,
           metadata: JSON.stringify(metadata),
-          campaignId: metadata.campaignId,
-          donorId: metadata.donorId,
+          campaignid: metadata.campaignId,
+          donorid: metadata.donorId,
         },
       })
 
