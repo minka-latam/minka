@@ -430,13 +430,9 @@ export function CampaignForm() {
 
   // State for "Otra persona" modal form
   const [otraPersonaForm, setOtraPersonaForm] = useState({
-    bank: "",
-    accountNumber: "",
-    documentCountryCode: "BO",
-    documentId: "",
-    accountHolderName: "",
-    phoneCountryCode: "BO",
-    phone: "",
+    beneficiaryName: "",
+    relationship: "",
+    reason: "",
   });
 
   // State for "Persona Jurídica" modal form
@@ -512,7 +508,7 @@ export function CampaignForm() {
 
       // Prepare the update data
       const updateData: any = {
-        recipient,
+        recipientType: recipient,
       };
 
       // If selecting persona_juridica, include the legal entity ID
@@ -523,7 +519,14 @@ export function CampaignForm() {
         updateData.legalEntityId = personaJuridicaForm.selectedEntityId;
       }
 
-      // Update form data with the selected recipient and legal entity ID
+      // If selecting otra_persona, include the beneficiary information
+      if (recipient === "otra_persona") {
+        updateData.beneficiaryName = otraPersonaForm.beneficiaryName;
+        updateData.beneficiaryRelationship = otraPersonaForm.relationship;
+        updateData.beneficiaryReason = otraPersonaForm.reason;
+      }
+
+      // Update form data with the selected recipient and related fields
       setFormData((prev) => ({
         ...prev,
         recipient,
@@ -664,13 +667,9 @@ export function CampaignForm() {
     setShowOtraPersonaModal(false);
     // Reset form when closing modal
     setOtraPersonaForm({
-      bank: "",
-      accountNumber: "",
-      documentCountryCode: "BO",
-      documentId: "",
-      accountHolderName: "",
-      phoneCountryCode: "BO",
-      phone: "",
+      beneficiaryName: "",
+      relationship: "",
+      reason: "",
     });
   };
 
@@ -1117,16 +1116,9 @@ export function CampaignForm() {
 
   const handleOtraPersonaSubmit = async () => {
     // Validate form data
-    const { bank, accountNumber, documentId, accountHolderName, phone } =
-      otraPersonaForm;
+    const { beneficiaryName, relationship, reason } = otraPersonaForm;
 
-    if (
-      !bank ||
-      !accountNumber ||
-      !documentId ||
-      !accountHolderName ||
-      !phone
-    ) {
+    if (!beneficiaryName || !relationship || !reason) {
       toast({
         title: "Error",
         description: "Por favor completa todos los campos requeridos.",
@@ -1135,32 +1127,26 @@ export function CampaignForm() {
       return;
     }
 
-    // Additional validation for document ID and phone number
-    if (documentId.length < 5) {
+    if (beneficiaryName.length < 3) {
       toast({
         title: "Error",
-        description: "El número de documento debe tener al menos 5 caracteres.",
+        description: "El nombre debe tener al menos 3 caracteres.",
         variant: "destructive",
       });
       return;
     }
 
-    if (phone.length < 7) {
+    if (reason.length < 10) {
       toast({
         title: "Error",
-        description: "El número de teléfono debe tener al menos 7 dígitos.",
+        description: "Por favor explica con más detalle el motivo.",
         variant: "destructive",
       });
       return;
     }
 
     try {
-      // Here you could save the beneficiary data to the campaign
-      // For now, we'll just log it and proceed
-      console.log("Otra persona form data:", {
-        ...otraPersonaForm,
-        formattedDocumentId: `${otraPersonaForm.documentCountryCode}-${otraPersonaForm.documentId}`,
-      });
+      console.log("Otra persona form data:", otraPersonaForm);
 
       toast({
         title: "Beneficiario agregado",
@@ -2651,6 +2637,110 @@ export function CampaignForm() {
           isLoading={isUploading}
         />
       )}
+
+      {/* Otra Persona Modal */}
+      <Dialog
+        open={showOtraPersonaModal}
+        onOpenChange={setShowOtraPersonaModal}
+      >
+        <DialogContent className="max-w-xl">
+          <DialogHeader>
+            <DialogTitle>Información del beneficiario</DialogTitle>
+            <DialogDescription>
+              Cuéntanos sobre la persona que recibirá los fondos de esta campaña
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-6 py-4">
+            {/* Beneficiary Name */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">
+                ¿Quién es esta persona? *
+              </label>
+              <Input
+                type="text"
+                className="w-full h-11 border-gray-300 focus:border-[#478C5C] focus:ring-[#478C5C]"
+                placeholder="Nombre completo del beneficiario"
+                value={otraPersonaForm.beneficiaryName}
+                onChange={(e) =>
+                  setOtraPersonaForm({
+                    ...otraPersonaForm,
+                    beneficiaryName: e.target.value,
+                  })
+                }
+              />
+            </div>
+
+            {/* Relationship */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">
+                ¿Cuál es tu relación con esta persona? *
+              </label>
+              <select
+                className="w-full h-11 px-3 border border-gray-300 rounded-md focus:border-[#478C5C] focus:ring-[#478C5C] focus:outline-none"
+                value={otraPersonaForm.relationship}
+                onChange={(e) =>
+                  setOtraPersonaForm({
+                    ...otraPersonaForm,
+                    relationship: e.target.value,
+                  })
+                }
+              >
+                <option value="">Selecciona una opción</option>
+                <option value="familiar">Familiar</option>
+                <option value="amigo">Amigo/a</option>
+                <option value="conocido">Conocido/a</option>
+                <option value="vecino">Vecino/a</option>
+                <option value="colega">Colega de trabajo</option>
+                <option value="otro">Otro</option>
+              </select>
+            </div>
+
+            {/* Reason */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">
+                ¿Por qué esta persona necesita que crees la campaña por ella? *
+              </label>
+              <Textarea
+                className="w-full min-h-[100px] border-gray-300 focus:border-[#478C5C] focus:ring-[#478C5C]"
+                placeholder="Explica brevemente por qué estás creando esta campaña en nombre de otra persona (ej: no tiene acceso a internet, está hospitalizada, etc.)"
+                value={otraPersonaForm.reason}
+                onChange={(e) =>
+                  setOtraPersonaForm({
+                    ...otraPersonaForm,
+                    reason: e.target.value,
+                  })
+                }
+                maxLength={500}
+              />
+              <div className="text-xs text-gray-500 text-right">
+                {otraPersonaForm.reason.length}/500
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="flex justify-between gap-3">
+            <Button
+              variant="outline"
+              onClick={closeOtraPersonaModal}
+              className="flex-1 rounded-full"
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleOtraPersonaSubmit}
+              className="flex-1 bg-[#2c6e49] hover:bg-[#1e4d33] text-white rounded-full"
+              disabled={
+                !otraPersonaForm.beneficiaryName ||
+                !otraPersonaForm.relationship ||
+                !otraPersonaForm.reason
+              }
+            >
+              Continuar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Persona Jurídica Modal */}
       <Dialog

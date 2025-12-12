@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { SignInClient } from "./sign-in-client";
-import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { LoadingScreen } from "@/components/ui/loading-screen";
 
 // This function is used to safely get the registered status from searchParams
 function getRegistrationStatus(registered?: string): boolean {
@@ -39,9 +39,13 @@ export default async function SignInPage({ searchParams }: PageProps) {
 
       <Suspense
         fallback={
-          <div className="flex items-center justify-center h-[400px]">
-            <LoadingSpinner size="md" showText text="Cargando formulario..." />
-          </div>
+          <LoadingScreen
+            text="Cargando formulario..."
+            showText={true}
+            fullScreen={false}
+            immediate={true}
+            className="min-h-[400px]"
+          />
         }
       >
         <SignInClient />

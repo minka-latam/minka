@@ -14,6 +14,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/components/ui/use-toast";
 import { profileFormSchema } from "@/lib/validations/profile";
 import type { ProfileFormValues } from "@/lib/validations/profile";
@@ -24,16 +25,17 @@ export function ProfileForm() {
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
     defaultValues: {
-      firstName:
-        typeof profile?.firstName === "string" ? profile.firstName : "",
-      lastName:
-        typeof profile?.lastName === "string" ? profile.lastName : "",
+      name: typeof profile?.name === "string" ? profile.name : "",
+      phone: typeof profile?.phone === "string" ? profile.phone : "",
+      bio: typeof profile?.bio === "string" ? profile.bio : "",
+      location: typeof profile?.location === "string" ? profile.location : "",
+      address: typeof profile?.address === "string" ? profile.address : "",
     },
   });
 
   async function onSubmit(data: ProfileFormValues) {
     try {
-      const response = await fetch(`/api/profile/${profile?.userId}`, {
+      const response = await fetch(`/api/profile/${profile?.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
@@ -44,16 +46,19 @@ export function ProfileForm() {
         throw new Error(error.message || "Failed to update profile");
       }
 
-      await response.json(); // Wait for response to be fully read
+      await response.json();
 
       toast({
-        title: "Profile updated",
-        description: "Your profile has been updated successfully.",
+        title: "Perfil actualizado",
+        description: "Tu perfil ha sido actualizado exitosamente.",
       });
     } catch (error) {
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to update profile. Please try again.",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Error al actualizar el perfil. Intenta nuevamente.",
         variant: "destructive",
       });
     }
@@ -64,15 +69,19 @@ export function ProfileForm() {
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
         <FormField
           control={form.control}
-          name="firstName"
+          name="name"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>First Name</FormLabel>
+              <FormLabel>Nombre completo</FormLabel>
               <FormControl>
-                <Input placeholder="shadcn" {...field} value={field.value ?? ""} />
+                <Input
+                  placeholder="Tu nombre completo"
+                  {...field}
+                  value={field.value ?? ""}
+                />
               </FormControl>
               <FormDescription>
-                This is your public display name. It can be your real name or a pseudonym.
+                Este es el nombre que se mostrará públicamente.
               </FormDescription>
               <FormMessage />
             </FormItem>
@@ -81,24 +90,87 @@ export function ProfileForm() {
 
         <FormField
           control={form.control}
-          name="lastName"
+          name="phone"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Last Name</FormLabel>
+              <FormLabel>Teléfono</FormLabel>
               <FormControl>
-                <Input placeholder="John Doe" {...field} value={field.value ?? ""} />
+                <Input
+                  placeholder="+591 70000000"
+                  {...field}
+                  value={field.value ?? ""}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
+
+        <FormField
+          control={form.control}
+          name="bio"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Biografía</FormLabel>
+              <FormControl>
+                <Textarea
+                  placeholder="Cuéntanos un poco sobre ti..."
+                  className="resize-none"
+                  rows={4}
+                  {...field}
+                  value={field.value ?? ""}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <FormField
+            control={form.control}
+            name="location"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Ciudad</FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder="Ej: La Paz, Bolivia"
+                    {...field}
+                    value={field.value ?? ""}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="address"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Dirección</FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder="Tu dirección"
+                    {...field}
+                    value={field.value ?? ""}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
         <div className="flex items-center gap-4">
-          <Button type="submit">Update profile</Button>
+          <Button type="submit">Guardar cambios</Button>
           <Button type="button" variant="outline" onClick={() => form.reset()}>
-            Cancel
+            Restablecer
           </Button>
         </div>
       </form>
     </Form>
   );
-} 
+}

@@ -3,13 +3,7 @@
 import { Separator } from "@/components/ui/separator";
 import { SidebarNav } from "./components/sidebar-nav";
 import type { LucideIcon } from "lucide-react";
-import {
-  User as UserIcon,
-  Settings as WrenchIcon,
-  Bell as BellIcon,
-  Palette as PaletteIcon,
-  Monitor as MonitorIcon,
-} from "lucide-react";
+import { User as UserIcon, Bell as BellIcon } from "lucide-react";
 
 const sidebarNavItems: {
   title: string;
@@ -17,29 +11,14 @@ const sidebarNavItems: {
   icon: LucideIcon;
 }[] = [
   {
-    title: "Profile",
+    title: "Perfil",
     icon: UserIcon,
     href: "/settings",
   },
   {
-    title: "Account",
-    icon: WrenchIcon,
-    href: "/settings/account",
-  },
-  {
-    title: "Appearance",
-    icon: PaletteIcon,
-    href: "/settings/appearance",
-  },
-  {
-    title: "Notifications",
+    title: "Notificaciones",
     icon: BellIcon,
     href: "/settings/notifications",
-  },
-  {
-    title: "Display",
-    icon: MonitorIcon,
-    href: "/settings/display",
   },
 ];
 
@@ -51,9 +30,9 @@ export default function SettingsLayout({
   return (
     <div className="space-y-6 p-6 pb-16">
       <div className="space-y-0.5">
-        <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
+        <h1 className="text-2xl font-bold tracking-tight">Configuración</h1>
         <p className="text-muted-foreground">
-          Manage your account settings and set e-mail preferences.
+          Administra tu cuenta y preferencias de notificaciones.
         </p>
       </div>
       <Separator className="my-6" />

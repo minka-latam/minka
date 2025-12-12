@@ -4,7 +4,7 @@ import React from "react";
 import { cn } from "@/lib/utils";
 
 interface LoadingSpinnerProps extends React.HTMLAttributes<HTMLDivElement> {
-  size?: "sm" | "md" | "lg" | "xl";
+  size?: "xs" | "sm" | "md" | "lg" | "xl";
   showText?: boolean;
   text?: string;
 }
@@ -17,6 +17,7 @@ export function LoadingSpinner({
   ...props
 }: LoadingSpinnerProps) {
   const sizeClasses = {
+    xs: "w-5 h-5",
     sm: "w-16 h-16",
     md: "w-24 h-24",
     lg: "w-32 h-32",

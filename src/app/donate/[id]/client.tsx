@@ -1,12 +1,12 @@
 "use client";
 
-import React from "react";
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { ArrowRight, CreditCard, QrCode, Bell } from "lucide-react";
+
+import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import { useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { ArrowRight, QrCode, Bell, CreditCard } from "lucide-react";
 import { Header } from "@/components/views/landing-page/Header";
 import { Footer } from "@/components/views/landing-page/Footer";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
@@ -14,6 +14,10 @@ import { useCampaign } from "@/hooks/useCampaign";
 import { Switch } from "@/components/ui/switch";
 import { CheckIcon } from "@/components/icons/CheckIcon";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { QRPaymentStep } from "@/components/donate/QRPaymentStep";
+
+// Key for storing pending donation in localStorage
+const PENDING_DONATION_KEY = "minka_pending_donation";
 
 // Define donation amount options
 const DONATION_AMOUNTS = [
@@ -27,16 +31,14 @@ const DONATION_AMOUNTS = [
 const PAYMENT_METHODS = [
   {
     id: "card",
-    title: "Tarjeta de crédito/débito",
-    description:
-      "Ingresa los detalles de tu tarjeta de crédito o débito para procesar tu donación.",
+    title: "Tarjeta de crédito/débito Internacional*",
+    description: "Ingresa los datos de tu tarjeta para procesar tu donación.",
     icon: <CreditCard className="h-6 w-6" />,
   },
   {
     id: "qr",
     title: "Código QR",
-    description:
-      "Abre la aplicación de tu banco, escanea el código QR y sigue las instrucciones.",
+    description: "Abre la app de tu banco, escanea el código QR y sigue las instrucciones.",
     icon: <QrCode className="h-6 w-6" />,
   },
 ];
@@ -97,8 +99,17 @@ export function DonatePageContent({ campaignId }: { campaignId: string }) {
   // Share functionality state
   const [showShareOptions, setShowShareOptions] = useState(false);
 
-  // Load user data on component mount
+  // QR Payment state
+  const [showQRStep, setShowQRStep] = useState(false);
+
+  // Ref to prevent double initialization
+  const initRef = useRef(false);
+
+  // Load user data and check for pending donation on component mount
   useEffect(() => {
+    if (initRef.current) return;
+    initRef.current = true;
+
     const checkUser = async () => {
       try {
         const { data } = await supabase.auth.getUser();
@@ -108,8 +119,41 @@ export function DonatePageContent({ campaignId }: { campaignId: string }) {
       }
     };
 
+    // Check for pending donation in localStorage
+    const checkPendingDonation = () => {
+      try {
+        const stored = localStorage.getItem(PENDING_DONATION_KEY);
+        if (stored) {
+          const pendingDonation = JSON.parse(stored);
+          // Check if it's for the same campaign and not too old (24 hours)
+          const createdAt = new Date(pendingDonation.createdAt).getTime();
+          const now = Date.now();
+          const MAX_AGE = 24 * 60 * 60 * 1000; // 24 hours
+
+          if (pendingDonation.campaignId === campaignId && (now - createdAt) < MAX_AGE) {
+            console.log("Found pending donation:", pendingDonation);
+            setDonationId(pendingDonation.donationId);
+            setSelectedAmount(pendingDonation.amount);
+            setPaymentMethod(pendingDonation.paymentMethod);
+            if (pendingDonation.paymentMethod === "qr") {
+              setSelectedPaymentMethodIndex(0);
+              setShowQRStep(true);
+              setIsDonationConfirmed(true);
+              setStep(3);
+            }
+          } else {
+            // Clear old or mismatched pending donation
+            localStorage.removeItem(PENDING_DONATION_KEY);
+          }
+        }
+      } catch (error) {
+        console.error("Error checking pending donation:", error);
+      }
+    };
+
     checkUser();
-  }, [supabase]);
+    checkPendingDonation();
+  }, [supabase, campaignId]);
 
   // Tripto redirect handler
   useEffect(() => {
@@ -211,13 +255,11 @@ export function DonatePageContent({ campaignId }: { campaignId: string }) {
     setErrorMessage(null)
     setIsSubmitting(true)
 
-    try {
-      // Determine selected payment method (card or qr)
-      const selectedMethod =
-        selectedPaymentMethodIndex !== null
+    const selectedMethod = selectedPaymentMethodIndex !== null
           ? PAYMENT_METHODS[selectedPaymentMethodIndex].id
-          : paymentMethod || 'card'
+          : paymentMethod || "qr";
 
+    try {
       // 🔹 Branch 1: Tripto (card)
       if (selectedMethod === 'card') {
         const response = await fetch(
@@ -269,11 +311,21 @@ export function DonatePageContent({ campaignId }: { campaignId: string }) {
       }
 
       // 🔹 Branch 2: flujo antiguo (QR / otros)
+      // Check if we already have a pending donation for QR payment
+      if (donationId && selectedMethod === "qr") {
+        console.log("Reusing existing donation ID:", donationId);
+        setShowQRStep(true);
+        setIsDonationConfirmed(true);
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Create donation through our API
       const donationData = {
         campaignId: campaignId,
         amount: donationAmount,
         paymentMethod: selectedMethod,
-        message: '',
+        message: "",
         isAnonymous: !user, // Explicitly set isAnonymous flag
         notificationEnabled: receiveNotifications,
         customAmount:
@@ -315,12 +367,29 @@ export function DonatePageContent({ campaignId }: { campaignId: string }) {
 
       // Store donation ID for notification updates
       if (data && data.donationId) {
-        setDonationId(data.donationId)
+        setDonationId(data.donationId);
+
+        // Store pending donation in localStorage for QR payments
+        if (selectedMethod === "qr") {
+          const pendingDonation = {
+            donationId: data.donationId,
+            campaignId,
+            amount: donationAmount,
+            paymentMethod: selectedMethod,
+            createdAt: new Date().toISOString(),
+          };
+          localStorage.setItem(PENDING_DONATION_KEY, JSON.stringify(pendingDonation));
+          console.log("Stored pending donation:", pendingDonation);
+        }
       }
 
-      // Show success modal (flujo legacy)
-      setShowSuccessModal(true)
-      setIsDonationConfirmed(true)
+      if (selectedMethod === "qr") {
+        setShowQRStep(true);
+        setIsDonationConfirmed(true);
+        setIsSubmitting(false);
+        return;
+      }
+
     } catch (error) {
       console.error('Error submitting donation:', error)
       setErrorMessage(
@@ -888,87 +957,69 @@ export function DonatePageContent({ campaignId }: { campaignId: string }) {
 
                       {/* Payment method cards centered */}
                       <div className="space-y-4">
-                        {/* Credit/Debit Card Option */}
-                        <div
-                          className={`bg-white rounded-lg p-8 border ${
-                            paymentMethod === "card"
-                              ? "border-[#2c6e49]"
-                              : "border-black"
-                          } cursor-pointer hover:border-[#2c6e49] transition-colors`}
-                          onClick={() => handlePaymentMethodSelect("card")}
-                        >
-                          <div className="flex items-start gap-6">
-                            <div className="flex-shrink-0 mt-1">
-                              <div className="h-6 w-6 rounded-full border border-gray-300 flex items-center justify-center">
-                                {paymentMethod === "card" ? (
-                                  <div className="h-3 w-3 rounded-full bg-[#2c6e49]"></div>
-                                ) : null}
+                        {PAYMENT_METHODS.map((method) => (
+                          <div
+                            key={method.id}
+                            className={`bg-white rounded-lg p-8 border ${
+                              paymentMethod === method.id ? "border-[#2c6e49]" : "border-black"
+                            } cursor-pointer hover:border-[#2c6e49] transition-colors`}
+                            onClick={() => handlePaymentMethodSelect(method.id)}
+                          >
+                            <div className="flex items-start gap-6">
+                              <div className="flex-shrink-0 mt-1">
+                                <div className="h-6 w-6 rounded-full border border-gray-300 flex items-center justify-center">
+                                  {paymentMethod === method.id ? (
+                                    <div className="h-3 w-3 rounded-full bg-[#2c6e49]" />
+                                  ) : null}
+                                </div>
+                              </div>
+                              <div className="flex-shrink-0 flex items-center justify-center w-16 h-16">
+                                {method.id === "card" ? (
+                                  <CreditCard className="h-8 w-8 text-[#2c6e49]" />
+                                ) : (
+                                  <Image src="/icons/qr_code.svg" alt="QR Code" width={32} height={32} />
+                                )}
+                              </div>
+                              <div className="flex-1">
+                                <h3 className="font-medium text-gray-800 text-lg mb-2">{method.title}</h3>
+                                <p className="text-base text-gray-600">{method.description}</p>
                               </div>
                             </div>
-                            <div className="flex-shrink-0 flex items-center justify-center w-16 h-16">
-                              <Image
-                                src="/icons/credit_card_heart.svg"
-                                alt="Credit Card"
-                                width={32}
-                                height={32}
-                              />
-                            </div>
-                            <div className="flex-1">
-                              <h3 className="font-medium text-gray-800 text-lg mb-2">
-                                Tarjeta de crédito/débito
-                              </h3>
-                              <p className="text-base text-gray-600">
-                                Ingresa los detalles de tu tarjeta de crédito o
-                                débito para procesar tu donación.
-                              </p>
-                            </div>
                           </div>
-                        </div>
-
-                        {/* QR Code Option */}
-                        <div
-                          className={`bg-white rounded-lg p-8 border ${
-                            paymentMethod === "qr"
-                              ? "border-[#2c6e49]"
-                              : "border-black"
-                          } cursor-pointer hover:border-[#2c6e49] transition-colors`}
-                          onClick={() => handlePaymentMethodSelect("qr")}
-                        >
-                          <div className="flex items-start gap-6">
-                            <div className="flex-shrink-0 mt-1">
-                              <div className="h-6 w-6 rounded-full border border-gray-300 flex items-center justify-center">
-                                {paymentMethod === "qr" ? (
-                                  <div className="h-3 w-3 rounded-full bg-[#2c6e49]"></div>
-                                ) : null}
-                              </div>
-                            </div>
-                            <div className="flex-shrink-0 flex items-center justify-center w-16 h-16">
-                              <Image
-                                src="/icons/qr_code.svg"
-                                alt="QR Code"
-                                width={32}
-                                height={32}
-                              />
-                            </div>
-                            <div className="flex-1">
-                              <h3 className="font-medium text-gray-800 text-lg mb-2">
-                                Código QR
-                              </h3>
-                              <p className="text-base text-gray-600">
-                                Abre la aplicación de tu banco, escanea el
-                                código QR y sigue las instrucciones.
-                              </p>
-                            </div>
-                          </div>
-                        </div>
+                        ))}
                       </div>
                     </div>
                   </div>
                 </div>
               )}
 
+              {/* QR Payment Step */}
+              {showQRStep && donationId && (
+                <div className="min-h-[600px] flex items-center justify-center py-12">
+                  <QRPaymentStep
+                    key={donationId}
+                    donationId={donationId}
+                    amount={totalAmount}
+                    campaignId={campaignId}
+                    onPaymentConfirmed={() => {
+                      // Clear pending donation from localStorage on success
+                      localStorage.removeItem(PENDING_DONATION_KEY);
+                      setShowQRStep(false);
+                      setShowSuccessModal(true);
+                    }}
+                    onCancel={() => {
+                      // Clear pending donation from localStorage on cancel
+                      localStorage.removeItem(PENDING_DONATION_KEY);
+                      setDonationId(null);
+                      setShowQRStep(false);
+                      setIsDonationConfirmed(false);
+                    }}
+                  />
+                </div>
+              )}
+
               {/* Step 3: Confirm donation */}
-              {step === 3 && (
+              {step === 3 && !showQRStep && (
                 <div
                   className={`transition-opacity duration-500 ${isAnimating ? "opacity-0" : "opacity-100"}`}
                 >
