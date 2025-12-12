@@ -243,14 +243,23 @@ export function DonatePageContent({ campaignId }: { campaignId: string }) {
         const data = await response.json()
 
         if (!response.ok || !data.success || !data.url) {
-          console.error(
-            'Error initiating Tripto payment:',
-            data.error,
-          )
-          setErrorMessage(
-            data.error ||
-              'Hubo un problema al iniciar el pago. Inténtalo nuevamente.',
-          )
+          const error = data?.error
+
+          let userMessage =
+            'No pudimos iniciar el pago en este momento. Por favor, inténtalo nuevamente.'
+
+          if (error === 'PAYMENT_PROVIDER_UNAVAILABLE') {
+            userMessage =
+              'El servicio de pagos está teniendo problemas en este momento. Tu donación no se ha realizado. Por favor, inténtalo nuevamente en unos minutos o utiliza otro método de pago.'
+          }
+
+          if (error === 'PAYMENT_PROVIDER_ERROR') {
+            userMessage =
+              'Hubo un problema al iniciar el pago. Por favor, inténtalo nuevamente.'
+          }
+
+          setErrorMessage(userMessage)
+
           return
         }
 

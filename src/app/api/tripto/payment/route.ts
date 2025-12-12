@@ -133,9 +133,9 @@ export async function POST(req: Request) {
       return NextResponse.json(
         {
           success: false,
-          error: result.error || 'Tripto error',
+          error: result.error ?? 'PAYMENT_PROVIDER_ERROR',
         },
-        { status: 500 },
+        { status: 502 },
       )
     }
 

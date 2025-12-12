@@ -43,20 +43,39 @@ export class TriptoClient {
       },
     )
 
-    const data = await response.json()
-    console.log('[DEBUG][TRIPTO_RESPONSE]', data)
+    const text = await response.text()
+    let data: any
 
-    if (!response.ok) {
+    try {
+      data = JSON.parse(text)
+    } catch {
+      console.error('[TRIPTO][NON_JSON_RESPONSE]', text)
       return {
         success: false,
-        error:
-          data.error || `Tripto error: ${response.status}`,
+        error: 'PAYMENT_PROVIDER_UNAVAILABLE',
+      }
+    }
+
+    if (!response.ok || !data?.success) {
+      console.error('[TRIPTO][ERROR_RESPONSE]', data)
+      return {
+        success: false,
+        error: 'PAYMENT_PROVIDER_ERROR',
+      }
+    }
+
+    const url = data?.data?.url
+    if (!url) {
+      console.error('[TRIPTO][INVALID_RESPONSE]', data)
+      return {
+        success: false,
+        error: 'PAYMENT_PROVIDER_INVALID_RESPONSE',
       }
     }
 
     return {
       success: true,
-      url: data?.data?.url,
+      url,
     }
   }
 

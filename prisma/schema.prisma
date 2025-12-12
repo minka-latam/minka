@@ -62,10 +62,10 @@ model Campaign {
   location                 Region
   province                 Province?
   legalEntityId            String?               @map("legal_entity_id") @db.Uuid
-  beneficiary_name         String?
-  beneficiary_reason       String?
-  beneficiary_relationship String?
-  recipient_type           RecipientType?
+  beneficiaryName          String?               @map("beneficiary_name")
+  beneficiaryReason        String?               @map("beneficiary_reason")
+  beneficiaryRelationship  String?               @map("beneficiary_relationship")
+  recipientType            RecipientType?        @map("recipient_type")
   media                    CampaignMedia[]       @relation("CampaignMedia")
   updates                  CampaignUpdate[]      @relation("CampaignUpdates")
   verificationRequests     CampaignVerification? @relation("CampaignVerificationRequests")
@@ -150,22 +150,47 @@ model Donation {
   triptoPaymentId     String?        @map("tripto_payment_id")
   triptoCheckoutUrl   String?        @map("tripto_checkout_url")
   triptoSessionId     String?        @map("tripto_session_id")
-  tipAmount           Decimal?       @map("tip_amount") @db.Decimal
-  totalAmount         Decimal?       @map("total_amount") @db.Decimal
-  bisa_alias          String?
-  bisa_payer_account  String?
-  bisa_payer_document String?
-  bisa_payer_name     String?
-  bisa_processed_at   DateTime?
-  bisa_qr_expires_at  DateTime?
-  bisa_qr_id          String?
-  bisa_qr_image       String?
-  bisa_transaction_id String?
+  tip_amount          Decimal?       @db.Decimal
+  total_amount        Decimal?       @db.Decimal
+  bisaAlias           String?        @map("bisa_alias")
+  bisaPayerAccount    String?        @map("bisa_payer_account")
+  bisaPayerDocument   String?        @map("bisa_payer_document")
+  bisaPayerName       String?        @map("bisa_payer_name")
+  bisaProcessedAt     DateTime?      @map("bisa_processed_at")
+  bisaQrExpiresAt     DateTime?      @map("bisa_qr_expires_at")
+  bisaQrId            String?        @map("bisa_qr_id")
+  bisaQrImage         String?        @map("bisa_qr_image")
+  bisaTransactionId   String?        @map("bisa_transaction_id")
   campaign            Campaign       @relation("CampaignDonations", fields: [campaignId], references: [id], onDelete: Cascade)
   donor               Profile        @relation("DonorDonations", fields: [donorId], references: [id], onDelete: Cascade)
   notifications       Notification[] @relation("DonationNotifications")
 
   @@map("donations")
+}
+
+model BisaToken {
+  id        String   @id @default(uuid()) @db.Uuid
+  token     String
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp(6)
+
+  @@map("bisa_tokens")
+}
+
+model PaymentLog {
+  id             String           @id @default(uuid()) @db.Uuid
+  paymentProvider PaymentProvider
+  paymentMethod  PaymentMethod?
+  paymentId      String
+  status         String
+  amount         Decimal          @db.Decimal
+  currency       String
+  metadata       String?
+  campaignId     String?          @db.Uuid
+  donorId        String?          @db.Uuid
+  createdAt      DateTime         @default(now()) @db.Timestamp(6)
+
+  @@map("payment_logs")
 }
 
 model Comment {
@@ -286,29 +311,6 @@ model LegalEntity {
   @@map("legal_entities")
 }
 
-model bisa_tokens {
-  id         String   @id @db.Uuid
-  token      String
-  expires_at DateTime
-  created_at DateTime @default(now()) @db.Timestamp(6)
-}
-
-model PaymentLog {
-  id             String           @id @default(uuid()) @db.Uuid
-  paymentProvider PaymentProvider
-  paymentMethod  PaymentMethod?
-  paymentId      String
-  status         String           // "failed"
-  amount         Decimal          @db.Decimal
-  currency       String
-  metadata       String?
-  campaignId     String?          @db.Uuid
-  donorId        String?          @db.Uuid
-  createdAt      DateTime         @default(now()) @db.Timestamp(6)
-
-  @@map("payment_logs")
-}
-
 enum UserRole {
   user
   organizer
@@ -360,7 +362,6 @@ enum PaymentStatus {
   failed
   refunded
 }
-
 
 enum Status {
   active
