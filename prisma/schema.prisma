@@ -361,6 +361,7 @@ enum PaymentStatus {
   completed
   failed
   refunded
+  cancelled
 }
 
 enum Status {

@@ -666,7 +666,7 @@ export function DonatePageContent({ campaignId }: { campaignId: string }) {
           <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center gap-6">
             <div className="text-center md:text-left md:flex-1">
               <h2 className="text-2xl md:text-3xl font-bold text-[#2c6e49] mb-4">
-                Protejamos juntos el {campaignTitle}
+                {campaignTitle}
               </h2>
 
               {/* Organizer details without background */}
