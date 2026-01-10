@@ -1,12 +1,11 @@
 "use client";
 
-
 import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, QrCode, Bell, CreditCard } from "lucide-react";
+import { ArrowRight, QrCode, Bell, CreditCard, ArrowUp } from "lucide-react";
 import { Header } from "@/components/views/landing-page/Header";
 import { Footer } from "@/components/views/landing-page/Footer";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
@@ -71,17 +70,21 @@ export function DonatePageContent({ campaignId }: { campaignId: string }) {
   const [selectedPaymentMethodIndex, setSelectedPaymentMethodIndex] = useState<
     number | null
   >(null);
-  const [donationId, setDonationId] = useState<string | null>(null);
-
-  // Read redirect parameters from Tripto checkout
-  const searchParams = useSearchParams();
-
-  // For Tripto redirects
-  const status = searchParams.get("status");
+  const [donationId, setDonationId] = useState<
+    string | null
+  >(null)
+  const activeDonationIdRef = useRef<string | null>(null)
+  const [activeDonationId, setActiveDonationId] = useState<string | null>(null)
+  const [reviewState, setReviewState] = useState(false)
 
   // State for error notification
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [infoMessage, setInfoMessage] = useState<string | null>(null);
+
+  // Read redirect parameters from Tripto checkout
+  const searchParams = useSearchParams()
+  const donationIdFromRedirect = searchParams.get("donationId")
 
   // Animation state for step transitions
   const [isAnimating, setIsAnimating] = useState(false);
@@ -155,25 +158,19 @@ export function DonatePageContent({ campaignId }: { campaignId: string }) {
     checkPendingDonation();
   }, [supabase, campaignId]);
 
-  // Tripto redirect handler
+  // Tripto redirect + poll using handler
   useEffect(() => {
-    if (!status) return;
+  if (!donationIdFromRedirect) return;
 
-    if (status === "success") {
-      console.log("[TRIPTO] Redirect success");
-      setShowSuccessModal(true);
+  // persist donationId for future re-polling even if URL is cleaned
+  activeDonationIdRef.current = donationIdFromRedirect;
+  setActiveDonationId(donationIdFromRedirect);
+  setDonationId(donationIdFromRedirect); // optional: keeps the rest of your component consistent
 
-      router.refresh();
-    }
+  pollDonationStatus(donationIdFromRedirect);
 
-    if (status === "failed") {
-      console.warn("[TRIPTO] Redirect failed");
-      setErrorMessage("Tu pago no se completó. Por favor inténtalo nuevamente.");
-    }
+  }, [donationIdFromRedirect]);
 
-    const newUrl = window.location.pathname;
-    window.history.replaceState({}, "", newUrl);
-  }, [status, router]);
 
   // Calculate donation details
   const donationAmount =
@@ -183,6 +180,101 @@ export function DonatePageContent({ campaignId }: { campaignId: string }) {
       ? donationAmount * (minkaContribution / 100)
       : Number.parseFloat(customTipAmount) || 0; // User-selected percentage or custom amount for platform fee
   const totalAmount = donationAmount + platformFee;
+
+  //Poll by donationId
+  const pollAbortRef = useRef<AbortController | null>(null);
+  const pollDonationStatus = async (donationId: string) => {
+    // cancel previous poll if any
+    pollAbortRef.current?.abort();
+    const controller = new AbortController();
+    pollAbortRef.current = controller;
+
+    const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+    try {
+      setReviewState(false);
+      setStep(3);
+      setInfoMessage("Estamos confirmando tu pago... Puede tardar unos segundos.");
+      setIsSubmitting(true);
+      setErrorMessage(null);
+
+      const maxAttempts = 5;
+      const intervalMs = 600;
+
+      for (let i = 0; i < maxAttempts; i++) {
+        if (controller.signal.aborted) return;
+
+        const res = await fetch(
+          `/api/donation/status?donationId=${encodeURIComponent(donationId)}`,
+          { cache: "no-store", signal: controller.signal }
+        );
+
+        const data = await res.json().catch(() => null);
+
+        if (res.ok && data?.success) {
+          // rehydrate UI from DB here (see section 3)
+
+          const paymentStatus = data?.donation?.paymentStatus;
+          const dbAmount = Number(data?.donation?.amount ?? 0);
+          const dbTip = Number(data?.donation?.tip_amount ?? 0);
+
+          // 1) amount: set either selectedAmount (if matches predefined) or customAmount
+          const matchesPreset = DONATION_AMOUNTS.some((o) => o.value === dbAmount);
+          if (matchesPreset) {
+            setSelectedAmount(dbAmount);
+            setCustomAmount("");
+          } else {
+            setSelectedAmount(null);
+            setCustomAmount(dbAmount ? String(dbAmount) : "");
+          }
+
+          // 2) tip: easiest is to force custom tip mode so platformFee reflects dbTip exactly
+          setTipMode("custom");
+          setCustomTipAmount(dbTip ? String(dbTip) : "");
+
+          // 3) ensure payment method in UI (optional but consistent)
+          setPaymentMethod("card");
+          setSelectedPaymentMethodIndex(PAYMENT_METHODS.findIndex((p) => p.id === "card"));
+
+          if (paymentStatus === "completed") {
+            setInfoMessage(null);
+            setShowSuccessModal(true);
+            setIsSubmitting(false);
+
+            window.history.replaceState({}, "", window.location.pathname);
+            return;
+          }
+
+          if (paymentStatus === "failed") {
+            setInfoMessage(null);
+            setErrorMessage("Lo siento, tu pago no se completó. Por favor inténtalo nuevamente.");
+            setIsSubmitting(false);
+
+            window.history.replaceState({}, "", window.location.pathname);
+            return;
+          }
+        }
+
+        await sleep(intervalMs);
+      }
+
+      setInfoMessage(
+        "Aún no pudimos confirmar el estado de tu pago. En algunos casos la confirmación puede tardar un poco más. Espera 1–2 minutos y presiona ‘Revisar estado’ o vuelve a intentar el pago."
+      );
+      setIsSubmitting(false);
+      setReviewState(true);
+    } catch (e) {
+      if ((e as any)?.name === "AbortError") return;
+      setInfoMessage(null);
+      setErrorMessage("No pudimos confirmar el estado del pago todavía. Por favor intenta nuevamente en unos segundos.");
+      setIsSubmitting(false);
+      setReviewState(true);
+    }
+  };
+
+  useEffect(() => {
+    return () => pollAbortRef.current?.abort();
+  }, []);
 
   // Handle amount selection
   const handleAmountSelect = (amount: number) => {
@@ -234,6 +326,8 @@ export function DonatePageContent({ campaignId }: { campaignId: string }) {
 
   // Handle going back to previous step
   const handleBack = () => {
+    setInfoMessage(null)
+    setErrorMessage(null)
     if (step > 1) {
       setIsAnimating(true);
       setAnimationDirection("backward");
@@ -241,6 +335,11 @@ export function DonatePageContent({ campaignId }: { campaignId: string }) {
         setStep(step - 1);
         setIsAnimating(false);
       }, 300);
+    }
+    if (step === 3) {
+      activeDonationIdRef.current = null;
+      setActiveDonationId(null);
+      window.history.replaceState({}, "", window.location.pathname);
     }
   };
 
@@ -262,6 +361,7 @@ export function DonatePageContent({ campaignId }: { campaignId: string }) {
     try {
       // 🔹 Branch 1: Tripto (card)
       if (selectedMethod === 'card') {
+        setInfoMessage("Estamos redirigiendo a la plataforma segura de pago por tarjeta, espera por favor.")
         const response = await fetch(
           '/api/tripto/payment',
           {
@@ -275,7 +375,7 @@ export function DonatePageContent({ campaignId }: { campaignId: string }) {
               amount: donationAmount,
               tipAmount: platformFee,
               message: '',
-              isAnonymous: !user, // same logic as antes
+              isAnonymous: !user,
               notificationEnabled: receiveNotifications,
               paymentMethod: selectedMethod,
             }),
@@ -285,6 +385,7 @@ export function DonatePageContent({ campaignId }: { campaignId: string }) {
         const data = await response.json()
 
         if (!response.ok || !data.success || !data.url) {
+          setInfoMessage(null)
           const error = data?.error
 
           let userMessage =
@@ -307,7 +408,7 @@ export function DonatePageContent({ campaignId }: { campaignId: string }) {
 
         // Redirect user to Tripto checkout
         window.location.href = data.url
-        return // important: no seguir con el flujo viejo
+        return
       }
 
       // 🔹 Branch 2: flujo antiguo (QR / otros)
@@ -1142,6 +1243,32 @@ export function DonatePageContent({ campaignId }: { campaignId: string }) {
                             </div>
                           </div>
                         )}
+
+                        {/* Info notification */}
+                        {infoMessage && (
+                          <div className="bg-blue-50 border border-blue-300 text-blue-800 rounded-lg p-4 mb-6">
+                            <div className="flex items-start">
+                              <div className="flex-shrink-0">
+                                <svg
+                                  className="h-5 w-5 text-blue-400"
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  viewBox="0 0 20 20"
+                                  fill="currentColor"
+                                  aria-hidden="true"
+                                >
+                                  <path
+                                    fillRule="evenodd"
+                                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2h1a1 1 0 001-1V7a1 1 0 10-2 0v2z"
+                                    clipRule="evenodd"
+                                  />
+                                </svg>
+                              </div>
+                              <div className="ml-3">
+                                <p className="text-sm">{infoMessage}</p>                                
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -1282,8 +1409,38 @@ export function DonatePageContent({ campaignId }: { campaignId: string }) {
                   </Button>
                 )}
 
+                {/* Review state, triggering re-polling */}
+                {step === 3 && reviewState && (
+                  <>
+                    <Button
+                      className="bg-[#2c6e49] hover:bg-[#1e4d33] text-white px-8 py-3 rounded-full m-auto"
+                      onClick={() => {
+                        const id = activeDonationIdRef.current || activeDonationId;
+                        if (id) pollDonationStatus(id);
+                      }}
+                    disabled={isSubmitting}
+                    >
+                      Revisar Estado <ArrowUp className="ml-2 h-4 w-4" />
+                    </Button>
+                    <Button
+                      className="bg-[#2c6e49] hover:bg-[#1e4d33] text-white px-8 py-3 rounded-full"
+                      onClick={async() => {
+                        await fetch("/api/donation/status", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ donationId: activeDonationIdRef.current }),
+                      });
+                      handleConfirmDonation()
+                      }}
+                    disabled={isSubmitting}
+                    >
+                      Nuevo intento <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </>
+                )}
+
                 {/* Confirmar donación button for step 3 */}
-                {step === 3 && !isDonationConfirmed && (
+                {step === 3 && !isDonationConfirmed && !reviewState && (
                   <Button
                     className="bg-[#2c6e49] hover:bg-[#1e4d33] text-white px-8 py-3 rounded-full"
                     onClick={handleConfirmDonation}

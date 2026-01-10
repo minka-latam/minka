@@ -170,7 +170,7 @@ Lists all donations made by the authenticated user with pagination.
 
 ### Payment Webhook
 
-**POST /api/payment/webhook**
+**POST /api/webhook**
 
 Handles payment status updates from payment processors.
 
