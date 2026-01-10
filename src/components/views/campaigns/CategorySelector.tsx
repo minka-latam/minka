@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { Loader2 } from "lucide-react";
 import Image from "next/image";
@@ -29,33 +29,13 @@ export function CategorySelector({
   const [activeCategory, setActiveCategory] = useState<string | undefined>(
     selectedCategory
   );
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const [isDragging, setIsDragging] = useState(false);
-
   useEffect(() => {
     setActiveCategory(selectedCategory);
   }, [selectedCategory]);
 
   const handleCategoryClick = (category: string | undefined) => {
-    // Only handle click if we're not in the middle of dragging
-    if (!isDragging) {
-      setActiveCategory(category);
-      onSelectCategory(category);
-    }
-  };
-
-  // Handle touch/mouse events to track dragging state
-  const handleTouchStart = () => {
-    setIsDragging(false);
-  };
-
-  const handleTouchMove = () => {
-    setIsDragging(true);
-  };
-
-  const handleTouchEnd = () => {
-    // Reset dragging state after a short delay to allow click detection
-    setTimeout(() => setIsDragging(false), 100);
+    setActiveCategory(category);
+    onSelectCategory(category);
   };
 
   // Default categories if none are provided
@@ -148,24 +128,8 @@ export function CategorySelector({
         <h3 className="text-xl font-bold text-[#333333] mb-4 px-4">
           Filtrar por categorías
         </h3>
-        <div
-          ref={scrollContainerRef}
-          className="overflow-x-auto scrollbar-hide touch-pan-x scroll-smooth"
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
-          onMouseDown={handleTouchStart}
-          onMouseMove={handleTouchMove}
-          onMouseUp={handleTouchEnd}
-          style={{
-            WebkitOverflowScrolling: "touch",
-            overscrollBehaviorX: "contain",
-          }}
-        >
-          <div
-            className="flex gap-3 px-4 pb-2 min-w-max"
-            style={{ WebkitOverflowScrolling: "touch" }}
-          >
+        <div className="px-4">
+          <div className="flex flex-wrap gap-3">
             <button
               onClick={() => handleCategoryClick(undefined)}
               className={`flex-shrink-0 px-4 py-2 border-2 rounded-full transition-all text-sm font-medium whitespace-nowrap touch-manipulation select-none ${

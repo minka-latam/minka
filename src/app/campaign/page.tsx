@@ -8,7 +8,7 @@ import { Header } from "@/components/views/landing-page/Header";
 import { Footer } from "@/components/views/landing-page/Footer";
 import { EnhancedPagination } from "@/components/ui/enhanced-pagination";
 import { ChevronDown, Search, Filter } from "lucide-react";
-import { useState, useEffect, Suspense, memo } from "react";
+import { useState, useEffect, Suspense, memo, useRef } from "react";
 import { useCampaignBrowse, SortOption } from "@/hooks/use-campaign-browse";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -52,9 +52,23 @@ const CampaignResults = memo(function CampaignResults({
   onResetFilters: () => void;
 }) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const toggleDropdown = () => {
-    setIsDropdownOpen(!isDropdownOpen);
+    setIsDropdownOpen((prev) => !prev);
+  };
+
+  const handleMouseEnter = () => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+  };
+
+  const handleMouseLeave = () => {
+    timeoutRef.current = setTimeout(() => {
+      setIsDropdownOpen(false);
+    }, 400); // 400ms delay to make it less sensitive
   };
 
   const selectOption = (option: SortOption) => {
@@ -92,7 +106,11 @@ const CampaignResults = memo(function CampaignResults({
             <span className="mr-3 text-[#555555] font-medium">
               Ordenar por:
             </span>
-            <div className="relative">
+            <div 
+              className="relative"
+              onMouseEnter={handleMouseEnter}
+              onMouseLeave={handleMouseLeave}
+            >
               <button
                 type="button"
                 onClick={toggleDropdown}

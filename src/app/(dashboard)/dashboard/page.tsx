@@ -13,6 +13,8 @@ import { ProfileData } from "@/types";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { useAuth, Profile } from "@/providers/auth-provider";
 import { useDb } from "@/hooks/use-db";
+import { PasswordResetHandler } from "@/components/auth/reset-password/password-reset-handler";
+import { ResetPasswordDialog } from "@/components/auth/reset-password/reset-password-dialog";
 
 // Ensure ProfileData and Profile have compatible shapes for our purposes
 type DashboardProfile = ProfileData;
@@ -29,8 +31,18 @@ export default function DashboardPage() {
     phone: "",
     address: "",
   });
-  const router = useRouter();
+  const [isResetPasswordOpen, setIsResetPasswordOpen] = useState(false);
+  
+  const handleSuccess = () => {
+     setIsResetPasswordOpen(false);
+     toast({
+        title: "Contraseña actualizada",
+        description: "Tu contraseña ha sido actualizada correctamente",
+     });
+  };
 
+  const router = useRouter();
+  
   // Get auth context
   const { user, profile: authProfile, isLoading: authLoading } = useAuth();
   const { getProfile, updateProfile } = useDb();
@@ -248,6 +260,7 @@ export default function DashboardPage() {
         <UserDashboardContent
           profile={profile}
           onEditProfile={() => setIsEditModalOpen(true)}
+          onChangePassword={() => setIsResetPasswordOpen(true)}
           onProfileUpdated={refreshProfileData}
         />
       )}
@@ -363,6 +376,15 @@ export default function DashboardPage() {
           </div>
         </DialogContent>
       </Dialog>
+      
+      {/* Change Password / Reset Password Dialog */}
+      <ResetPasswordDialog 
+        open={isResetPasswordOpen} 
+        onOpenChange={setIsResetPasswordOpen}
+        onSuccess={handleSuccess}
+      />
+
+      <PasswordResetHandler />
     </>
   );
 }

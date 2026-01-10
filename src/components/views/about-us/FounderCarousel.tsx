@@ -29,7 +29,7 @@ const founders: Founder[] = [
   {
     id: "founder-4",
     image: "/founders/Carolina Orias.jpeg",
-    name: "Carolina Arias",
+    name: "Carolina Orias",
     role: "Co-fundadora",
   },
   {

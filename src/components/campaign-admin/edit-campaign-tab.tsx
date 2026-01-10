@@ -448,6 +448,7 @@ export function EditCampaignTab({ campaign }: EditCampaignTabProps) {
                 <option value="igualdad">Igualdad</option>
                 <option value="medioambiente">Medio ambiente</option>
                 <option value="salud">Salud</option>
+                <option value="otros">Otros</option>
               </select>
             </div>
 

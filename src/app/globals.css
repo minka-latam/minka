@@ -226,7 +226,113 @@ html {
   transform: scale(1.2);
 }
 
-.nav-dot.active {
+
+/* Campaign Form Styles - Migrated from styled-jsx */
+.campaign-form input,
+.campaign-form textarea,
+.campaign-form select,
+.campaign-form .bg-card {
+  background-color: white !important;
+}
+
+.campaign-form input:focus,
+.campaign-form textarea:focus,
+.campaign-form select:focus,
+.campaign-form [data-state="open"] > .ui-select-trigger {
+  border-color: #478c5c !important;
+  outline: none !important;
+}
+
+.campaign-form .error-input {
+  border-color: #e11d48 !important;
+}
+
+.campaign-form .error-text {
+  color: #e11d48;
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+}
+
+.campaign-form [data-radix-select-trigger] {
+  height: 56px !important;
+  border-radius: 0.5rem !important;
+  border-width: 1px !important;
+  font-size: 1rem !important;
+}
+
+.campaign-form [data-radix-select-content] {
+  background-color: white !important;
+  border-color: #e5e7eb !important;
+  border-radius: 0.5rem !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+}
+
+.campaign-form [data-radix-select-item] {
+  font-size: 1rem !important;
+  padding: 0.5rem 1rem !important;
+}
+
+.campaign-form [data-radix-select-item][data-highlighted] {
+  background-color: #f0f7f1 !important;
+  color: #2c6e49 !important;
+}
+
+/* Form Animations */
+.form-step {
+  opacity: 1;
+  transition: opacity 0.5s ease-in-out;
+}
+
+.form-step.fade-out {
+  opacity: 0;
+}
+
+.form-step.fade-in {
+  opacity: 1;
+}
+
+.sub-step {
+  opacity: 1;
+  transform: translateX(0);
+  transition: all 0.3s ease-in-out;
+}
+
+.sub-step.fade-out-next {
+  opacity: 0;
+  transform: translateX(-20px);
+}
+
+.sub-step.fade-out-prev {
+  opacity: 0;
+  transform: translateX(20px);
+}
+
+.sub-step.fade-in-next {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.sub-step.fade-in-prev {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.progress-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+}
+
+.progress-dot.active {
   background-color: #2c6e49;
   transform: scale(1.2);
+}
+
+.progress-dot.inactive {
+  background-color: #e5e7eb;
+}
+
+.progress-dot.completed {
+  background-color: #2c6e49;
 }

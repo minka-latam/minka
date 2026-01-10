@@ -32,7 +32,8 @@ export default async function SignInPage({ searchParams }: PageProps) {
       {isRegistered && (
         <div className="mb-6 p-4 bg-green-50 text-green-800 rounded-md">
           <p>
-            ¡Tu cuenta ha sido creada exitosamente! Ahora puedes iniciar sesión.
+            ¡Tu cuenta ha sido creada exitosamente! Por favor revisa tu correo
+            electrónico para confirmarla antes de iniciar sesión.
           </p>
         </div>
       )}

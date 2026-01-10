@@ -103,11 +103,15 @@ export async function POST(request: Request) {
       );
     }
 
+    const requestUrl = new URL(request.url);
+    const origin = requestUrl.origin;
+
     // Now that all validations passed, register the user with Supabase Auth
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
       password,
       options: {
+        emailRedirectTo: `${origin}/auth/callback`,
         data: {
           first_name: firstName,
           last_name: lastName,

@@ -194,8 +194,8 @@ export function DonatePageContent({ campaignId }: { campaignId: string }) {
   // Handle custom amount input
   const handleCustomAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    // Only allow numbers and decimal point
-    if (/^\d*\.?\d*$/.test(value)) {
+    // Only allow numbers and decimal point, max 2 decimal places
+    if (/^\d*(\.\d{0,2})?$/.test(value)) {
       setCustomAmount(value);
       setSelectedAmount(null);
     }
@@ -518,8 +518,8 @@ export function DonatePageContent({ campaignId }: { campaignId: string }) {
   // Handle custom tip amount change
   const handleCustomTipChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    // Only allow numbers and decimal point
-    if (/^\d*\.?\d*$/.test(value)) {
+    // Only allow numbers and decimal point, max 2 decimal places
+    if (/^\d*(\.\d{0,2})?$/.test(value)) {
       setCustomTipAmount(value);
     }
   };
