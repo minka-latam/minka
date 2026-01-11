@@ -77,7 +77,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // Create AbortController for timeout handling
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+      const timeoutId = setTimeout(
+        () =>
+          controller.abort(
+            new DOMException("Profile fetch timed out after 10s", "AbortError")
+          ),
+        10000
+      ); // 10 second timeout
 
       const response = await fetch(`/api/profile/${userId}`, {
         signal: controller.signal,
@@ -107,10 +113,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw new Error("No profile data received");
       }
     } catch (error) {
-      console.error(
-        `Error fetching profile (attempt ${retryCount + 1}):`,
-        error
-      );
+      const isRetryable =
+        error instanceof Error &&
+        (error.name === "AbortError" ||
+          error.message.includes("network") ||
+          error.message.includes("fetch"));
+
+      if (retryCount < 2 && isRetryable) {
+        console.warn(
+          `Error fetching profile (attempt ${retryCount + 1}):`,
+          error instanceof Error ? error.message : error
+        );
+      } else {
+        console.error(
+          `Error fetching profile (attempt ${retryCount + 1}):`,
+          error
+        );
+      }
 
       // Retry logic for network errors (max 2 retries)
       if (
@@ -293,14 +312,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        console.error("Registration API error:", errorData);
+        const errorData = await response.json().catch(() => ({})); 
+        console.error("Registration API error:", response.status, errorData);
 
         // Use a simplified error message instead of exposing details
-        const errorType = errorData.error?.toLowerCase() || "";
+        const errorType = typeof errorData.error === 'string' ? errorData.error.toLowerCase() : "";
 
-        if (errorType.includes("email")) {
-          throw new Error("email_error");
+        if (errorType.includes("email") || errorType.includes("exists")) {
+          // If it mentions email or general existence, likely email or ID duplication
+          if (errorType.includes("id") || errorType.includes("document")) {
+             throw new Error("document_error");
+          }
+           throw new Error("email_error");
         } else if (
           errorType.includes("document") ||
           errorType.includes("identity")
@@ -309,7 +332,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } else if (errorType.includes("password")) {
           throw new Error("password_error");
         } else {
-          throw new Error("Registration failed");
+          // Pass the actual error message if available, otherwise generic
+          throw new Error(errorData.error || "Registration failed");
         }
       }
 

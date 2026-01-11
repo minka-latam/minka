@@ -28,9 +28,9 @@ export async function GET(request: NextRequest) {
         );
       }
 
-      // For password reset flows, redirect to the reset-password page
+      // For password reset flows, redirect to the processing page which will set the client-side trigger
       if (type === "recovery") {
-        return NextResponse.redirect(new URL("/reset-password", request.url));
+        return NextResponse.redirect(new URL("/reset-processing", request.url));
       }
 
       if (!data.user) {
@@ -79,12 +79,18 @@ export async function GET(request: NextRequest) {
               location: "",
               joinDate: new Date(),
               status: "active",
+              verificationStatus: true,
             },
           });
 
           console.log("Successfully created profile for user:", data.user.id);
         } else {
           console.log("Using existing profile for user:", data.user.id);
+          // Update verification status for existing users
+          await prisma.profile.update({
+            where: { id: data.user.id },
+            data: { verificationStatus: true },
+          });
         }
       } catch (profileError) {
         console.error("Error handling user profile:", profileError);

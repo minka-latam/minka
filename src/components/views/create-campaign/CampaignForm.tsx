@@ -62,6 +62,7 @@ import {
   getProvincesForDepartment,
   DEPARTMENT_LABELS,
 } from "@/constants/bolivia-provinces";
+import { StoryInput } from "./StoryInput";
 import { Input } from "@/components/ui/input";
 import {
   Dialog,
@@ -72,6 +73,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useCurrentStep } from "@/contexts/current-step-context";
+import { useAuth } from "@/providers/auth-provider";
 
 // Campaign Preview component
 const CampaignPreview = ({
@@ -111,6 +113,8 @@ const CampaignPreview = ({
       id: "default-img",
     });
   }
+
+  const { profile } = useAuth();
 
   return (
     <div className="fixed inset-0 bg-black/40 z-50 overflow-y-auto flex items-start justify-center pt-8">
@@ -187,15 +191,15 @@ const CampaignPreview = ({
                 <div className="flex items-center gap-3 py-4 border-b border-gray-200">
                   <div className="h-10 w-10 rounded-full bg-[#e8f0e9] flex items-center justify-center">
                     <span className="text-sm font-medium text-[#2c6e49]">
-                      A
+                      {profile?.name ? profile.name.charAt(0).toUpperCase() : "A"}
                     </span>
                   </div>
                   <div>
                     <h3 className="font-medium text-[#2c6e49]">
-                      Andrés Martínez Saucedo
+                      {profile?.name || "Usuario de Minka"}
                     </h3>
                     <p className="text-sm text-gray-600">
-                      Gestor de campaña | Santa Cruz de la Sierra, Bolivia
+                      Organizador | {profile?.address || "Bolivia"}
                     </p>
                   </div>
                 </div>
@@ -1474,148 +1478,7 @@ export function CampaignForm() {
 
   // Add style block for transitions at the beginning of the component return statement
   return (
-    <>
-      <style jsx global>{`
-        input,
-        textarea,
-        select,
-        .bg-card {
-          background-color: white !important;
-        }
-        input:focus,
-        textarea:focus,
-        select:focus,
-        [data-state="open"] > .ui-select-trigger {
-          border-color: #478c5c !important;
-          outline: none !important;
-        }
-        .error-input {
-          border-color: #e11d48 !important;
-        }
-        .error-text {
-          color: #e11d48;
-          font-size: 0.875rem;
-          margin-top: 0.25rem;
-        }
-
-        /* Line clamp utility */
-        .line-clamp-2 {
-          display: -webkit-box;
-          -webkit-line-clamp: 2;
-          -webkit-box-orient: vertical;
-          overflow: hidden;
-        }
-
-        /* Custom select styling */
-        [data-radix-select-trigger] {
-          height: 56px !important;
-          border-radius: 0.5rem !important;
-          border-width: 1px !important;
-          font-size: 1rem !important;
-        }
-
-        [data-radix-select-content] {
-          background-color: white !important;
-          border-color: #e5e7eb !important;
-          border-radius: 0.5rem !important;
-          box-shadow:
-            0 4px 6px -1px rgba(0, 0, 0, 0.1),
-            0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
-        }
-
-        [data-radix-select-item] {
-          font-size: 1rem !important;
-          padding: 0.5rem 1rem !important;
-        }
-
-        [data-radix-select-item][data-highlighted] {
-          background-color: #f0f7f1 !important;
-          color: #2c6e49 !important;
-        }
-
-        /* Animation styles */
-        .form-step {
-          opacity: 1;
-          transition: opacity 0.5s ease-in-out;
-        }
-
-        .form-step.fade-out {
-          opacity: 0;
-        }
-
-        .form-step.fade-in {
-          opacity: 1;
-        }
-
-        /* Sub-step animations */
-        .sub-step {
-          opacity: 1;
-          transform: translateX(0);
-          transition: all 0.3s ease-in-out;
-        }
-
-        .sub-step.fade-out-next {
-          opacity: 0;
-          transform: translateX(-20px);
-        }
-
-        .sub-step.fade-out-prev {
-          opacity: 0;
-          transform: translateX(20px);
-        }
-
-        .sub-step.fade-in-next {
-          opacity: 1;
-          transform: translateX(0);
-        }
-
-        .sub-step.fade-in-prev {
-          opacity: 1;
-          transform: translateX(0);
-        }
-
-        /* Modal animations */
-        .modal-overlay {
-          opacity: 0;
-          transition: opacity 0.3s ease-in-out;
-        }
-
-        .modal-overlay.visible {
-          opacity: 1;
-        }
-
-        .modal-content {
-          transform: translateY(20px);
-          opacity: 0;
-          transition: all 0.4s ease-in-out;
-        }
-
-        .modal-content.visible {
-          transform: translateY(0);
-          opacity: 1;
-        }
-
-        /* Progress indicator */
-        .progress-dot {
-          width: 12px;
-          height: 12px;
-          border-radius: 50%;
-          transition: all 0.3s ease;
-        }
-
-        .progress-dot.active {
-          background-color: #2c6e49;
-          transform: scale(1.2);
-        }
-
-        .progress-dot.inactive {
-          background-color: #e5e7eb;
-        }
-
-        .progress-dot.completed {
-          background-color: #2c6e49;
-        }
-      `}</style>
+    <div className="campaign-form">
 
       {/* STEP #1 - Now with sub-steps */}
       {currentStep === 1 && (
@@ -2206,33 +2069,16 @@ export function CampaignForm() {
                     </p>
                   </div>
                   <div className="bg-white rounded-xl border border-black p-6 md:p-8">
-                    <div className="relative" id="story">
-                      <label className="block text-lg font-medium mb-2">
-                        Presentación de la campaña (historia)
-                      </label>
-                      <textarea
-                        rows={4}
-                        placeholder="Ejemplo: Su conservación depende de nosotros"
-                        className={`w-full rounded-lg border ${formErrors.story ? "error-input" : "border-black"} bg-white shadow-sm focus:border-[#478C5C] focus:ring-[#478C5C] focus:ring-0 p-4`}
-                        value={formData.story}
-                        onChange={(e) => {
-                          setFormData({ ...formData, story: e.target.value });
-                          if (
-                            e.target.value.length >= 10 &&
-                            e.target.value.length <= 600
-                          ) {
-                            setFormErrors({ ...formErrors, story: "" });
-                          }
-                        }}
-                        maxLength={600}
-                      />
-                      <div className="text-sm text-gray-500 text-right mt-1">
-                        {formData.story.length}/600
-                      </div>
-                      {formErrors.story && (
-                        <div className="error-text">{formErrors.story}</div>
-                      )}
-                    </div>
+                    <StoryInput
+                      initialValue={formData.story}
+                      onUpdate={(val) => {
+                        setFormData({ ...formData, story: val });
+                        if (val.length >= 10 && val.length <= 600) {
+                          setFormErrors({ ...formErrors, story: "" });
+                        }
+                      }}
+                      error={formErrors.story}
+                    />
                   </div>
                 </div>
               </div>
@@ -2946,6 +2792,6 @@ export function CampaignForm() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </>
+    </div>
   );
 }

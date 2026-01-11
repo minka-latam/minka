@@ -10,6 +10,7 @@ import {
   Copy,
   Facebook,
   MessageCircle,
+  Instagram,
 } from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect } from "react";
@@ -212,6 +213,13 @@ export function CampaignProgress({
 
     if (platform === "copy") {
       copyToClipboard(shareUrl);
+    } else if (platform === "instagram") {
+      copyToClipboard(shareUrl);
+      toast({
+        title: "Instagram",
+        description: "Enlace copiado. Abre Instagram para compartir.",
+      });
+      setShowShareOptions(false);
     } else if (urls[platform as keyof typeof urls]) {
       window.open(
         urls[platform as keyof typeof urls],
@@ -396,6 +404,14 @@ export function CampaignProgress({
                     style={{ filter: "brightness(0.43)" }}
                   />
                   <span className="text-sm">LinkedIn</span>
+                </button>
+
+                <button
+                  onClick={() => shareOnPlatform("instagram")}
+                  className="flex items-center gap-2 p-3 hover:bg-gray-50 rounded-xl transition-colors"
+                >
+                  <Instagram className="h-5 w-5 text-[#E4405F]" />
+                  <span className="text-sm">Instagram</span>
                 </button>
 
                 <button

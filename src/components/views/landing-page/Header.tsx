@@ -202,12 +202,20 @@ export function Header() {
       </header>
 
       {/* Mobile Header */}
-      <header className="md:hidden flex justify-between items-center px-4 py-3 sticky top-0 z-50">
+      <header
+        className={`md:hidden flex justify-between items-center px-4 py-3 fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+          isScrolled ? "bg-[#2c6e49] shadow-md" : "bg-transparent"
+        }`}
+      >
         <button
           type="button"
           onClick={toggleMenu}
           aria-label="Toggle menu"
-          className="text-[#2c6e49] p-2 rounded-full border border-[#2c6e49] hover:bg-[#2c6e49] hover:text-white transition-colors"
+          className={`p-2 rounded-full border transition-colors ${
+            isScrolled
+              ? "text-white border-white hover:bg-white hover:text-[#2c6e49]"
+              : "text-[#2c6e49] border-[#2c6e49] hover:bg-[#2c6e49] hover:text-white"
+          }`}
         >
           <Menu size={24} />
         </button>
@@ -217,7 +225,7 @@ export function Header() {
             alt="MINKA Logo"
             width={100}
             height={32}
-            className="h-8 w-auto"
+            className={`h-8 w-auto transition-all duration-300 ${isScrolled ? "brightness-0 invert" : ""}`}
           />
         </Link>
       </header>

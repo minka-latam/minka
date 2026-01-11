@@ -31,6 +31,7 @@ import {
 interface UserDashboardContentProps {
   profile: ProfileData | null;
   onEditProfile?: () => void;
+  onChangePassword?: () => void;
   onProfileUpdated?: () => Promise<void>;
 }
 
@@ -94,6 +95,7 @@ const ProfileImageEditor = ({
 export function UserDashboardContent({
   profile,
   onEditProfile,
+  onChangePassword,
   onProfileUpdated,
 }: UserDashboardContentProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -102,6 +104,9 @@ export function UserDashboardContent({
   const { signOut } = useAuth();
   const { isUploading, uploadFile } = useUpload();
   const { updateProfile } = useDb();
+  const [optimisticImage, setOptimisticImage] = useState<string | undefined>(
+    undefined
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Debug logging to see what's in the profile object
@@ -157,42 +162,6 @@ export function UserDashboardContent({
     }
   };
 
-  const handleDeleteImage = async () => {
-    if (!profile?.id) return;
-
-    try {
-      setIsSubmitting(true);
-
-      const { error } = await updateProfile(profile.id, {
-        profile_picture: null,
-      });
-
-      if (error) throw error;
-
-      toast({
-        title: "Éxito",
-        description: "Imagen de perfil eliminada correctamente.",
-      });
-
-      // Call the onProfileUpdated callback if provided
-      if (onProfileUpdated) {
-        await onProfileUpdated();
-      } else {
-        // Fall back to router.refresh() if callback not provided
-        router.refresh();
-      }
-    } catch (error) {
-      console.error("Error deleting profile picture:", error);
-      toast({
-        title: "Error",
-        description: "No se pudo eliminar la imagen de perfil.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) return;
 
@@ -228,24 +197,65 @@ export function UserDashboardContent({
     }
   };
 
+  const handleDeleteImage = async () => {
+    if (!profile?.id) return;
+
+    try {
+      setIsSubmitting(true);
+      // Optimistically clear the image immediately
+      setOptimisticImage("");
+
+      const { error } = await updateProfile(profile.id, {
+        profile_picture: null,
+      });
+
+      if (error) {
+        // Revert optimization on error
+        setOptimisticImage(undefined);
+        throw error;
+      }
+
+      toast({
+        title: "Éxito",
+        description: "Imagen de perfil eliminada correctamente.",
+      });
+
+      if (onProfileUpdated) {
+        await onProfileUpdated();
+      } else {
+        router.refresh();
+      }
+    } catch (error) {
+      console.error("Error deleting profile picture:", error);
+      toast({
+        title: "Error",
+        description: "No se pudo eliminar la imagen de perfil.",
+        variant: "destructive",
+      });
+      // Ensure we revert to the prop state if failed
+      setOptimisticImage(undefined);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // ... (existing code)
+
   const handleSaveProfileImage = async (editedUrl: string) => {
     if (!profile?.id) return;
 
     try {
       setIsSubmitting(true);
 
-      // Convert data URL to Blob if needed
+      // ... (file creation logic remains same)
       let imageFile: File;
-
       if (editedUrl.startsWith("blob:")) {
-        // Fetch the image from the blob URL
         const response = await fetch(editedUrl);
         const blob = await response.blob();
         imageFile = new File([blob], `profile-${Date.now()}.jpg`, {
           type: "image/jpeg",
         });
       } else {
-        // If it's not a blob URL, it might be an object URL from file input
         const response = await fetch(editedUrl);
         const blob = await response.blob();
         imageFile = new File([blob], `profile-${Date.now()}.jpg`, {
@@ -253,33 +263,35 @@ export function UserDashboardContent({
         });
       }
 
-      // Upload the file
       const result = await uploadFile(imageFile);
 
       if (!result.success) {
         throw new Error("Failed to upload profile picture");
       }
 
-      // Update profile with new image URL
+      // Optimistically set the new image immediately
+      setOptimisticImage(result.url);
+
+      // Reset editing state immediately so modal closes and user sees the new image
+      setImageToEdit(null);
+
       const { error } = await updateProfile(profile.id, {
         profile_picture: result.url,
       });
 
-      if (error) throw error;
+      if (error) {
+        setOptimisticImage(undefined);
+        throw error;
+      }
 
       toast({
         title: "Éxito",
         description: "Imagen de perfil actualizada correctamente.",
       });
 
-      // Reset state
-      setImageToEdit(null);
-
-      // Call the onProfileUpdated callback if provided
       if (onProfileUpdated) {
         await onProfileUpdated();
       } else {
-        // Fall back to router.refresh() if callback not provided
         router.refresh();
       }
     } catch (error) {
@@ -290,48 +302,38 @@ export function UserDashboardContent({
         variant: "destructive",
       });
       setImageToEdit(null);
+      setOptimisticImage(undefined);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // Clean up object URLs when unmounting
-  useEffect(() => {
-    return () => {
-      if (imageToEdit && imageToEdit.startsWith("blob:")) {
-        URL.revokeObjectURL(imageToEdit);
-      }
-    };
-  }, [imageToEdit]);
+  // ... (render logic)
+
+  // Determine which image to show
+  const displayedImage =
+    optimisticImage !== undefined
+      ? optimisticImage
+      : profile?.profilePicture || profile?.profile_picture;
 
   return (
     <div className="space-y-10">
-      <div className="flex items-center justify-between">
-        <h1 className="text-4xl font-bold text-gray-800">
-          Información personal
-        </h1>
-        <Button
-          variant="ghost"
-          className="text-[#2c6e49] hover:text-[#1e4d33] flex items-center gap-2"
-          onClick={onEditProfile}
-        >
-          Editar <Edit size={16} />
-        </Button>
-      </div>
-
+      {/* ... (header) */}
+      
       {/* Personal Information Card */}
       <div className="bg-white rounded-lg p-8 shadow-sm">
         {/* Profile Picture Section */}
         <div className="flex items-start gap-8 pb-8 border-b border-gray-200">
           <div className="flex flex-col items-center gap-4">
             <div className="w-32 h-32 bg-[#2c6e49] rounded-full flex items-center justify-center overflow-hidden">
-              {profile?.profilePicture || profile?.profile_picture ? (
+              {displayedImage ? (
                 <Image
-                  src={profile.profilePicture || profile.profile_picture || ""}
+                  src={displayedImage}
                   alt="Profile"
                   width={128}
                   height={128}
                   className="object-cover w-full h-full"
+                  key={displayedImage} // key forces re-render if URL changes
                 />
               ) : (
                 <div className="flex items-center justify-center w-full h-full text-white">
@@ -373,7 +375,7 @@ export function UserDashboardContent({
                 )}
               </Button>
 
-              {(profile?.profilePicture || profile?.profile_picture) && (
+              {displayedImage && (
                 <Button
                   variant="outline"
                   className="flex items-center gap-2 text-red-600 border-red-600 hover:bg-red-600 hover:text-white"

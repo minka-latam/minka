@@ -19,8 +19,16 @@ import Loading from "@/app/campaign/[id]/loading";
 // Helper function to format campaign data for components
 function formatCampaignData(campaign: any) {
   // Format gallery images
+  // Sort media to put primary image first
+  const sortedMedia = campaign.media
+    ? [...campaign.media].sort((a: any, b: any) => {
+        if (a.is_primary === b.is_primary) return 0;
+        return a.is_primary ? -1 : 1;
+      })
+    : [];
+
   const galleryItems =
-    campaign.media?.map((item: any) => ({
+    sortedMedia.map((item: any) => ({
       url: item.media_url,
       type: item.type as "image" | "video",
       id: item.id,

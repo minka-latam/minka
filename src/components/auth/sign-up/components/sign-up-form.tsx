@@ -102,6 +102,7 @@ export function SignUpForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [currentCountryCode, setCurrentCountryCode] = useState("BO");
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const { signUp } = useAuth();
 
   const {
@@ -191,13 +192,36 @@ export function SignUpForm() {
     } catch (error) {
       console.error("Error during sign up:", error);
 
-      // Use toast notification for errors instead of field errors
-      toast({
-        title: "Error",
-        description:
-          "No se pudo crear la cuenta. Por favor, verifica tus datos e intenta nuevamente.",
-        variant: "destructive",
-      });
+      const errorMessage = error instanceof Error ? error.message : "Error desconocido";
+
+      if (errorMessage === "email_error" || errorMessage.includes("email")) {
+        toast({
+          title: "Error de registro",
+          description: "Este correo electrónico ya está registrado.",
+          variant: "destructive",
+        });
+      } else if (errorMessage === "document_error" || errorMessage.includes("document") || errorMessage.includes("identity")) {
+         toast({
+          title: "Error de registro",
+          description: "Este documento de identidad ya está registrado.",
+          variant: "destructive",
+        });
+      } else if (errorMessage === "password_error") {
+         toast({
+          title: "Error de contraseña",
+          description: "La contraseña no cumple con los requisitos.",
+          variant: "destructive",
+        });
+      } else {
+        // Show the actual backend error if it's not one of the specific keys, or generic fallback
+        toast({
+          title: "Error",
+          description: errorMessage !== "Registration failed" && errorMessage !== "Error desconocido" 
+            ? errorMessage 
+            : "No se pudo crear la cuenta. Por favor, verifica tus datos e intenta nuevamente.",
+          variant: "destructive",
+        });
+      }
     } finally {
       setIsLoading(false);
       setIsSubmitting(false);
@@ -336,7 +360,7 @@ export function SignUpForm() {
           name="birthDate"
           render={({ field }) => (
             <div className="relative">
-              <Popover>
+              <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
                 <PopoverTrigger asChild>
                   <Button
                     id="birthDate"
@@ -364,8 +388,7 @@ export function SignUpForm() {
                     selected={field.value}
                     onSelect={(date) => {
                       field.onChange(date);
-                      // Auto-close the popover after selection
-                      setTimeout(() => document.body.click(), 100);
+                      setIsCalendarOpen(false);
                     }}
                     disabled={(date) => {
                       // Disable future dates and dates more than 100 years ago

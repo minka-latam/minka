@@ -30,7 +30,11 @@ const resetPasswordSchema = z
 
 type ResetPasswordFormData = z.infer<typeof resetPasswordSchema>;
 
-export function ResetPasswordForm() {
+interface ResetPasswordFormProps {
+  onSuccess?: () => void;
+}
+
+export function ResetPasswordForm({ onSuccess }: ResetPasswordFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -98,8 +102,12 @@ export function ResetPasswordForm() {
           description: "Tu contraseña ha sido actualizada correctamente.",
         });
 
-        // Redirect to sign in page
-        router.push("/sign-in");
+        if (onSuccess) {
+          onSuccess();
+        } else {
+          // Redirect to sign in page
+          router.push("/sign-in");
+        }
       } catch (error) {
         console.error("Error resetting password:", error);
 
