@@ -2,6 +2,33 @@ import { NextResponse } from 'next/server'
 import { TriptoClient } from '@/lib/tripto/client'
 import { db } from '@/lib/db'
 
+async function getOrCreateAnonymousProfileId() {
+  const existing = await db.profile.findFirst({
+    where: {
+      email: 'anonymous@minka.org',
+      identityNumber: 'ANONYMOUS',
+      name: 'Donante Anónimo',
+    },
+    select: { id: true },
+  })
+
+  if (existing?.id) return existing.id
+
+  const created = await db.profile.create({
+    data: {
+      email: 'anonymous@minka.org',
+      identityNumber: 'ANONYMOUS',
+      name: 'Donante Anónimo',
+      passwordHash: 'not-applicable',
+      phone: '0000000000',
+      birthDate: new Date(), // Add a default birthDate to fulfill schema
+    },
+    select: { id: true },
+  })
+
+  return created.id
+}
+
 export async function POST(req: Request) {
   try {
     const body = await req.json()
@@ -28,7 +55,6 @@ export async function POST(req: Request) {
       )
     }
 
-    // Fetch campaign
     const campaign = await db.campaign.findUnique({
       where: { id: campaignId },
     })
@@ -43,7 +69,6 @@ export async function POST(req: Request) {
     // Prepare environment & client
     const apiKey = process.env.TRIPTO_API_KEY
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL
-    const triptoBaseUrl = process.env.TRIPTO_BASE_URL
 
     if (!apiKey) {
       return NextResponse.json(
@@ -62,38 +87,55 @@ export async function POST(req: Request) {
       )
     }
 
-    if (!triptoBaseUrl) {
+    const donorProfileId =
+      donorId ??
+      (isAnonymous
+        ? await getOrCreateAnonymousProfileId()
+        : null)
+
+    if (!donorProfileId) {
       return NextResponse.json(
         {
           success: false,
-          error: 'Missing TRIPTO_BASE_URL',
+          error:
+            'Missing donorId for non-anonymous donation',
         },
-        { status: 500 },
+        { status: 400 },
       )
     }
 
-    console.log(
-      '🚀 ~ POST /api/tripto/payment ~ baseUrl:',
-      baseUrl,
-    )
+    const totalAmount = Number(amount) + Number(tipAmount)
 
-    const client = new TriptoClient(apiKey)
+    const pendingDonation = await db.donation.create({
+      data: {
+        campaignId,
+        donorId: donorProfileId,
+        amount: Number(amount),
+        tip_amount: Number(tipAmount),
+        total_amount: totalAmount,
+        paymentStatus: 'pending',
+        paymentProvider: 'tripto',
+        paymentMethod: 'credit_card' as any,
+        isAnonymous: !!isAnonymous,
+        notificationEnabled: !!notificationEnabled,
+        message: message || null,
+      },
+      select: { id: true },
+    })
 
-    const totalAmount = amount + tipAmount
-    const slug = `donacion-${campaignId}-${Date.now()}`
-    // Find primary image
+    const slug = `donacion-${campaignId}-${pendingDonation.id}`
+
     const primaryImage = await db.campaignMedia.findFirst({
       where: { campaignId, isPrimary: true },
     })
-
     const imageUrl =
       primaryImage?.mediaUrl ||
-      'https://pub-840a7677467645169a67fce420658392.r2.dev/minka-logo.png'
+      `${baseUrl}/assets/minka-logo.png`
 
-    // Metadata for webhook
     const metadata = {
+      donationId: pendingDonation.id,
       campaignId,
-      donorId,
+      donorId: donorProfileId,
       amount: String(amount),
       tipAmount: String(tipAmount),
       message,
@@ -104,32 +146,33 @@ export async function POST(req: Request) {
       paymentMethod: paymentMethod || 'card',
     }
 
+    const client = new TriptoClient(apiKey)
+
     const payload = {
       slug,
       name: campaign.title,
       description: campaign.description || null,
       imageUrl,
-      suggestedAmount: totalAmount * 100,
+      suggestedAmount: Math.round(totalAmount * 100),
       submitType: 'pay' as const,
       afterPayment: {
         type: 'redirect' as const,
-        redirectUrl: `${baseUrl}/donate/${campaignId}`,
+        redirectUrl: `${baseUrl}/donate/${campaignId}?donationId=${pendingDonation.id}`,
       },
       campaign: slug || campaignId,
       metadata,
     }
 
-    console.log(
-      '[DEBUG][PAYLOAD_TO_TRIPTO]',
-      JSON.stringify(payload, null, 2),
+    const result = await client.createDonationLink(
+      payload as any,
     )
 
-    // Call Tripto
-    const result = await client.createDonationLink(payload)
-
-    console.log('[DEBUG][TRIPTO_RESPONSE]', result)
-
     if (!result.success || !result.url) {
+      await db.donation.update({
+        where: { id: pendingDonation.id },
+        data: { paymentStatus: 'failed' },
+      })
+
       return NextResponse.json(
         {
           success: false,
@@ -139,14 +182,15 @@ export async function POST(req: Request) {
       )
     }
 
-    console.log(
-      'Redirecting user to Tripto checkout:',
-      result.url,
-    )
+    await db.donation.update({
+      where: { id: pendingDonation.id },
+      data: { triptoCheckoutUrl: result.url },
+    })
 
     return NextResponse.json({
       success: true,
       url: result.url,
+      donationId: pendingDonation.id,
     })
   } catch (err: any) {
     console.error('❌ Error in /api/tripto/payment:', err)
