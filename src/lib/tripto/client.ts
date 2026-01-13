@@ -1,3 +1,5 @@
+import 'server-only'
+
 import {
   TriptoCreateDonationPayload,
   TriptoCreateDonationResponse,
@@ -9,7 +11,6 @@ export class TriptoClient {
   private baseUrl = process.env.TRIPTO_BASE_URL
 
   constructor(apiKey: string) {
-    console.log('TRIPTO_CLIENT INIT → apiKey:', apiKey)
     this.apiKey = apiKey
   }
 

@@ -1,3 +1,5 @@
+import 'server-only'
+
 import { NextResponse } from 'next/server'
 import { TriptoClient } from '@/lib/tripto/client'
 import { db } from '@/lib/db'
