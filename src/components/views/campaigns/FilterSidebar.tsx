@@ -177,51 +177,32 @@ export function FilterSidebar({
 
   // Handle verified filter change - now integrated with verification status
   const handleVerificationStatusChange = (status: string) => {
-    const newStatus = [...verificationStatus];
-
-    if (newStatus.includes(status)) {
-      // Remove the filter if it's already selected
-      const index = newStatus.indexOf(status);
-      newStatus.splice(index, 1);
+    // Single select behavior
+    if (verificationStatus.includes(status)) {
+      // If already selected, deselect it
+      setVerificationStatus([]);
+      onUpdateFilters({
+        verificationStatus: undefined,
+        verified: undefined,
+      });
     } else {
-      // Add the filter
-      newStatus.push(status);
-    }
+      // If not selected, select it (and clear others)
+      setVerificationStatus([status]);
 
-    setVerificationStatus(newStatus);
+      // Map to API status
+      let selectedStatus: "verified" | "pending" | "unverified" = "verified";
 
-    // Use the new verificationStatus parameter instead of boolean verified
-    if (newStatus.length === 1) {
-      // Single selection - use the specific verification status
-      let selectedStatus: "verified" | "pending" | "unverified";
-
-      if (newStatus[0] === "verified") {
+      if (status === "verified") {
         selectedStatus = "verified";
-      } else if (newStatus[0] === "in_process") {
+      } else if (status === "in_process") {
         selectedStatus = "pending";
-      } else if (newStatus[0] === "unverified") {
+      } else if (status === "unverified") {
         selectedStatus = "unverified";
-      } else {
-        // fallback
-        selectedStatus = "verified";
       }
 
       onUpdateFilters({
         verificationStatus: selectedStatus,
         verified: undefined, // clear old parameter
-      });
-    } else if (newStatus.length === 0) {
-      // No selection - show all campaigns
-      onUpdateFilters({
-        verificationStatus: undefined,
-        verified: undefined,
-      });
-    } else {
-      // Multiple selections - for now, clear the filter to show all
-      // In the future, we could support multiple status filtering
-      onUpdateFilters({
-        verificationStatus: undefined,
-        verified: undefined,
       });
     }
   };
@@ -238,83 +219,71 @@ export function FilterSidebar({
   const [creationDateFilter, setCreationDateFilter] = useState<string[]>([]);
 
   const handleCreationDateChange = (filter: string) => {
-    const newFilters = [...creationDateFilter];
-
-    if (newFilters.includes(filter)) {
-      // Remove the filter if it's already selected
-      const index = newFilters.indexOf(filter);
-      newFilters.splice(index, 1);
+    // Single select behavior
+    if (creationDateFilter.includes(filter)) {
+      // If already selected, deselect it
+      setCreationDateFilter([]);
+      onUpdateFilters({ createdAfter: undefined });
     } else {
-      // Add the filter
-      newFilters.push(filter);
+      // If not selected, select it (and clear others)
+      setCreationDateFilter([filter]);
+
+      // Calculate a date for filtering based on selected options
+      let createdAfter: string | undefined = undefined;
+      const date = new Date();
+
+      if (filter === "24h") {
+        date.setHours(date.getHours() - 24);
+        createdAfter = date.toISOString();
+      } else if (filter === "7d") {
+        date.setDate(date.getDate() - 7);
+        createdAfter = date.toISOString();
+      } else if (filter === "30d") {
+        date.setDate(date.getDate() - 30);
+        createdAfter = date.toISOString();
+      }
+
+      onUpdateFilters({ createdAfter });
     }
-
-    setCreationDateFilter(newFilters);
-
-    // Calculate a date for filtering based on selected options
-    // This works with a backend that supports 'createdAfter' parameter
-    let createdAfter: string | undefined = undefined;
-
-    if (newFilters.includes("24h")) {
-      const date = new Date();
-      date.setHours(date.getHours() - 24);
-      createdAfter = date.toISOString();
-    } else if (newFilters.includes("7d")) {
-      const date = new Date();
-      date.setDate(date.getDate() - 7);
-      createdAfter = date.toISOString();
-    } else if (newFilters.includes("30d")) {
-      const date = new Date();
-      date.setDate(date.getDate() - 30);
-      createdAfter = date.toISOString();
-    }
-
-    // If the backend doesn't support createdAfter parameter yet, this will be ignored
-    // But this prepares the component for when it is supported
-    onUpdateFilters({ createdAfter });
   };
 
   // Amount raised filter - for UI only, not implemented in backend yet
   const [amountRaisedFilter, setAmountRaisedFilter] = useState<string[]>([]);
 
   const handleAmountRaisedChange = (filter: string) => {
-    const newFilters = [...amountRaisedFilter];
-
-    if (newFilters.includes(filter)) {
-      // Remove the filter if it's already selected
-      const index = newFilters.indexOf(filter);
-      newFilters.splice(index, 1);
+    // Single select behavior
+    if (amountRaisedFilter.includes(filter)) {
+      // If already selected, deselect it
+      setAmountRaisedFilter([]);
+      onUpdateFilters({
+        fundingPercentageMin: undefined,
+        fundingPercentageMax: undefined,
+      });
     } else {
-      // Add the filter
-      newFilters.push(filter);
+      // If not selected, select it (and clear others)
+      setAmountRaisedFilter([filter]);
+
+      let fundingPercentageMin: number | undefined = undefined;
+      let fundingPercentageMax: number | undefined = undefined;
+
+      if (filter === "less_25") {
+        fundingPercentageMin = 0;
+        fundingPercentageMax = 25;
+      } else if (filter === "between_25_75") {
+        fundingPercentageMin = 25;
+        fundingPercentageMax = 75;
+      } else if (filter === "more_75") {
+        fundingPercentageMin = 75;
+        fundingPercentageMax = 100;
+      } else if (filter === "goal_reached") {
+        fundingPercentageMin = 100;
+      }
+
+      onUpdateFilters({
+        fundingPercentageMin,
+        fundingPercentageMax,
+      });
     }
-
-    setAmountRaisedFilter(newFilters);
-
-    // Map selected filters to percentages for the backend
-    // This works with a backend that supports 'fundingPercentageMin' and 'fundingPercentageMax'
-    let fundingPercentageMin: number | undefined = undefined;
-    let fundingPercentageMax: number | undefined = undefined;
-
-    if (newFilters.includes("less_25")) {
-      fundingPercentageMin = 0;
-      fundingPercentageMax = 25;
-    } else if (newFilters.includes("between_25_75")) {
-      fundingPercentageMin = 25;
-      fundingPercentageMax = 75;
-    } else if (newFilters.includes("more_75")) {
-      fundingPercentageMin = 75;
-      fundingPercentageMax = 100;
-    } else if (newFilters.includes("goal_reached")) {
-      fundingPercentageMin = 100;
-    }
-
-    // If the backend doesn't support these parameters yet, they will be ignored
-    // But this prepares the component for when they are supported
-    onUpdateFilters({
-      fundingPercentageMin,
-      fundingPercentageMax,
-    });
   };
 
   return (
