@@ -198,6 +198,12 @@ export function DonationsTab({ campaign }: DonationsTabProps) {
                     Monto donado
                   </th>
                   <th className="text-left py-3 px-4 font-medium text-gray-600">
+                    Propina a Minka
+                  </th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-600">
+                    Total pagado
+                  </th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-600">
                     Fecha
                   </th>
                 </tr>
@@ -213,6 +219,12 @@ export function DonationsTab({ campaign }: DonationsTabProps) {
                     </td>
                     <td className="py-4 px-4 text-gray-700">
                       {formatCurrency(donation.amount || 0)}
+                    </td>
+                    <td className="py-4 px-4 text-gray-700">
+                      {formatCurrency(donation.tip_amount || 0)}
+                    </td>
+                    <td className="py-4 px-4 text-gray-700 font-medium">
+                      {formatCurrency(donation.total_amount || donation.amount || 0)}
                     </td>
                     <td className="py-4 px-4 text-gray-700">
                       {new Date(

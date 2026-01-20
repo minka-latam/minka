@@ -87,6 +87,8 @@ export interface CampaignComment {
 export interface CampaignDonation {
   id: string;
   amount: number;
+  tip_amount?: number;
+  total_amount?: number;
   currency: string;
   message?: string;
   isAnonymous: boolean;

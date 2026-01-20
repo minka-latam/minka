@@ -20,6 +20,7 @@ export async function POST(request: NextRequest) {
     const {
       campaignId,
       amount,
+      tipAmount = 0,
       paymentMethod,
       message,
       isAnonymous = false,
@@ -130,12 +131,17 @@ export async function POST(request: NextRequest) {
       donorName = donor?.name || "Donante";
     }
 
+    // Calculate total amount
+    const totalAmount = Number(amount) + Number(tipAmount);
+
     // 1. Create donor for both cases (card y qr)
     const donation = await prisma.donation.create({
       data: {
         campaignId,
         donorId: donorProfileId!,
         amount: Number(amount),
+        tip_amount: Number(tipAmount),
+        total_amount: totalAmount,
         paymentMethod: paymentMethodEnum,
         paymentStatus: 'pending',
         paymentProvider:

@@ -8,6 +8,7 @@ import { CheckCircle, AlertCircle, RefreshCw, Clock, Download } from "lucide-rea
 interface QRPaymentStepProps {
   donationId: string;
   amount: number;
+  tipAmount: number;
   campaignId: string;
   onPaymentConfirmed: () => void;
   onCancel: () => void;
@@ -27,6 +28,7 @@ const QR_STORAGE_KEY = "minka_pending_qr";
 export function QRPaymentStep({
   donationId,
   amount,
+  tipAmount,
   campaignId,
   onPaymentConfirmed,
   onCancel,
@@ -191,7 +193,7 @@ export function QRPaymentStep({
       const response = await fetch("/api/bisa/generate-qr", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ donationId, amount, campaignId }),
+        body: JSON.stringify({ donationId, amount, tipAmount, campaignId }),
       });
 
       const data = await response.json();

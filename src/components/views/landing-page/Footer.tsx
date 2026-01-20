@@ -55,7 +55,7 @@ export function Footer() {
 
             <div className="flex gap-6">
               <Link
-                href="#"
+                href="https://www.facebook.com/minkacomunidadbolivia"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="rounded-full p-3 hover:bg-white/10 transition-colors duration-300"
@@ -70,7 +70,7 @@ export function Footer() {
                 />
               </Link>
               <Link
-                href="#"
+                href="https://www.instagram.com/minka_comunidad"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="rounded-full p-3 hover:bg-white/10 transition-colors duration-300"
@@ -100,7 +100,7 @@ export function Footer() {
                 />
               </Link>
               <Link
-                href="#"
+                href="https://www.linkedin.com/company/minka-comunidad/"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="rounded-full p-3 hover:bg-white/10 transition-colors duration-300"

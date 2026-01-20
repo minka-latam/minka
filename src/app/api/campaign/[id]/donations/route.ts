@@ -37,6 +37,8 @@ export async function GET(
       select: {
         id: true,
         amount: true,
+        tip_amount: true,
+        total_amount: true,
         message: true,
         isAnonymous: true,
         createdAt: true,
@@ -57,6 +59,8 @@ export async function GET(
     const formattedDonations = donations.map((donation) => ({
       id: donation.id,
       amount: donation.amount,
+      tip_amount: donation.tip_amount,
+      total_amount: donation.total_amount,
       message: donation.message,
       createdAt: donation.createdAt,
       paymentStatus: donation.paymentStatus,

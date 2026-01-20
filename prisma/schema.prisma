@@ -184,6 +184,7 @@ model PaymentLog {
   paymentid       String
   status          String
   amount          Decimal         @db.Decimal
+  tipamount       Decimal?        @db.Decimal
   currency        String
   metadata        String?
   campaignid      String?         @db.Uuid
