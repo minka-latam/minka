@@ -1,5 +1,3 @@
-import 'server-only'
-
 import {
   TriptoCreateDonationPayload,
   TriptoCreateDonationResponse,
@@ -9,6 +7,7 @@ import {
 export class TriptoClient {
   private apiKey: string
   private baseUrl = process.env.TRIPTO_BASE_URL
+  private tenantAuth = process.env.TRIPTO_CF_BYPASS
 
   constructor(apiKey: string) {
     this.apiKey = apiKey
@@ -36,10 +35,16 @@ export class TriptoClient {
       `${this.baseUrl}/payment-links/custom-amount`,
       {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-API-Key': this.apiKey,
-        },
+        headers: (() => {
+          const headers = new Headers({
+            'Content-Type': 'application/json',
+            'X-API-Key': this.apiKey,
+          })
+          if (this.tenantAuth) {
+            headers.set('x-tenant-auth', this.tenantAuth)
+          }
+          return headers
+        })(),
         body: JSON.stringify(payload),
       },
     )
