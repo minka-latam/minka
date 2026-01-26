@@ -7,10 +7,15 @@ import {
 export class TriptoClient {
   private apiKey: string
   private baseUrl = process.env.TRIPTO_BASE_URL
-  private tenantAuth = process.env.TRIPTO_CF_BYPASS
+  private tenantAuth: string
 
   constructor(apiKey: string) {
     this.apiKey = apiKey
+    const tenantAuth = process.env.TRIPTO_CF_BYPASS
+    if (!tenantAuth) {
+      throw new Error('TRIPTO_CF_BYPASS is not configured')
+    }
+    this.tenantAuth = tenantAuth
   }
 
   // -------------------------------
@@ -35,17 +40,13 @@ export class TriptoClient {
             'Content-Type': 'application/json',
             'X-API-Key': this.apiKey,
           })
-          console.log(
-            '🚀 ~ TriptoClient ~ createDonationLink ~ this.tenantAuth:',
-            this.tenantAuth,
-          )
-          console.log(
-            '🚀 ~ TriptoClient ~ createDonationLink ~ this.baseUrl:',
-            this.baseUrl,
-          )
           if (this.tenantAuth) {
             headers.set('x-tenant-auth', this.tenantAuth)
           }
+          console.log(
+            'tripto headers',
+            Object.fromEntries(headers.entries()),
+          )
           return headers
         })(),
         body: JSON.stringify(payload),
