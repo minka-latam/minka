@@ -19,11 +19,6 @@ export class TriptoClient {
   async createDonationLink(
     payload: TriptoCreateDonationPayload,
   ): Promise<TriptoCreateDonationResponse> {
-    console.log(
-      '[TRIPTO] POST',
-      `${this.baseUrl}/payment-links/custom-amount`,
-    )
-
     if (!this.baseUrl) {
       return {
         success: false,
@@ -40,6 +35,14 @@ export class TriptoClient {
             'Content-Type': 'application/json',
             'X-API-Key': this.apiKey,
           })
+          console.log(
+            '🚀 ~ TriptoClient ~ createDonationLink ~ this.tenantAuth:',
+            this.tenantAuth,
+          )
+          console.log(
+            '🚀 ~ TriptoClient ~ createDonationLink ~ this.baseUrl:',
+            this.baseUrl,
+          )
           if (this.tenantAuth) {
             headers.set('x-tenant-auth', this.tenantAuth)
           }
