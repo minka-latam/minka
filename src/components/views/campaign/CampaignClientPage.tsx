@@ -324,7 +324,7 @@ export default function CampaignClientPage({ id }: { id: string }) {
             {campaign.title}
           </h1>
           <p className="text-lg md:text-xl text-black leading-relaxed break-words whitespace-pre-wrap max-w-4xl mx-auto">
-            {formattedData.story}
+            {formattedData.description}
           </p>
         </div>
 
@@ -388,7 +388,7 @@ export default function CampaignClientPage({ id }: { id: string }) {
               {activeTab === "descripcion" && (
                 <CustomCampaignDetails
                   organizer={formattedData.organizer}
-                  description={formattedData.description}
+                  description={formattedData.story}
                   beneficiaries={formattedData.beneficiaries}
                   isVerified={formattedData.progress.isVerified}
                 />

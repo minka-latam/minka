@@ -5,11 +5,14 @@ import { bisaClient } from "@/lib/bisa/client";
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { donationId, amount, campaignId } = body;
+    const { donationId, amount, tipAmount = 0, campaignId } = body;
 
     if (!donationId || !amount) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
+
+    // Calculate total amount including tip
+    const totalAmount = Number(amount) + Number(tipAmount);
 
     // Verify donation exists
     const donation = await prisma.donation.findUnique({
@@ -38,7 +41,7 @@ export async function POST(request: NextRequest) {
 
     const response = await bisaClient.generateQR({
       alias,
-      amount: Number(amount),
+      amount: totalAmount,
       currency: "BOB",
       description: `Donacion Minka`,
       expirationDate: expirationString,
@@ -74,11 +77,15 @@ export async function POST(request: NextRequest) {
           paymentid: qrId,
           status: "qr_generated",
           amount: amount,
+          tipamount: Number(tipAmount),
           currency: "BOB",
           metadata: JSON.stringify({
             alias,
             donationId,
             campaignId,
+            amount: Number(amount),
+            tipAmount: Number(tipAmount),
+            totalAmount,
             expiresAt: expirationDate.toISOString(),
           }),
           campaignid: campaignId || donation.campaignId,
