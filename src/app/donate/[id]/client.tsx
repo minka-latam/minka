@@ -1290,6 +1290,7 @@ export function DonatePageContent({
                   <QRPaymentStep
                     key={donationId}
                     donationId={donationId}
+                    tipAmount={platformFee}
                     amount={totalAmount}
                     campaignId={campaignId}
                     onPaymentConfirmed={() => {
