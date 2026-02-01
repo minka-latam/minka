@@ -21,6 +21,10 @@ export async function POST(req: Request) {
         { status: 500 },
       )
     }
+    console.log('[TRIPTO][WEBHOOK] hit', {
+      hasSig: !!req.headers.get('x-signature'),
+      ua: req.headers.get('user-agent'),
+    })
 
     const signature = req.headers.get('x-signature')
     if (!signature) {
@@ -39,6 +43,14 @@ export async function POST(req: Request) {
       .update(payload)
       .digest('hex')
 
+    console.error('[TRIPTO][WEBHOOK] invalid signature', {
+      received: signature?.slice(0, 12),
+      expected: expectedSignature.slice(0, 12),
+      event: body?.event,
+      paymentId: body?.data?.paymentId,
+      donationId: body?.data?.metadata?.donationId,
+    })
+
     if (signature !== expectedSignature) {
       return NextResponse.json(
         { error: 'Unauthorized' },
@@ -48,6 +60,8 @@ export async function POST(req: Request) {
 
     const event = body?.event
     const data = body?.data
+
+    console.log('[TRIPTO][WEBHOOK] event', body, data)
 
     if (!event || !data) {
       return NextResponse.json(
