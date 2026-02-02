@@ -25,6 +25,10 @@ export async function POST(req: Request) {
       hasSig: !!req.headers.get('x-signature'),
       ua: req.headers.get('user-agent'),
     })
+    console.log(
+      '[TRIPTO][WEBHOOK] headers',
+      Object.fromEntries(req.headers.entries()),
+    )
 
     const signature = req.headers.get('x-signature')
     if (!signature) {
