@@ -35,14 +35,6 @@ function timingSafeEqualHex(a: string, b: string) {
 }
 
 export async function POST(req: Request) {
-  console.log('[TRIPTO][WEBHOOK] MARKER v2', {
-    commit:
-      process.env.COMMIT_REF ||
-      process.env.HEAD ||
-      'no-commit',
-    deployId: process.env.DEPLOY_ID || 'no-deploy-id',
-  })
-
   try {
     const webhookSecret = process.env.TRIPTO_WEBHOOK_SECRET
     if (!webhookSecret) {
@@ -52,26 +44,10 @@ export async function POST(req: Request) {
       )
     }
 
-    // IMPORTANT: verify signature against the RAW body (not re-serialized JSON)
-    const rawBody = await req.text()
-
-    console.log(
-      '[TRIPTO][WEBHOOK] headers',
-      Object.fromEntries(req.headers.entries()),
-    )
-
     // Tripto now sends Stripe-style signature header: "t=...,v1=..."
     const signatureHeader =
       req.headers.get('x-webhook-signature') ||
       req.headers.get('x-signature')
-
-    console.log('[TRIPTO][WEBHOOK] hit', {
-      hasSig: !!signatureHeader,
-      sigPrefix: signatureHeader?.slice(0, 18),
-      webhookEvent: req.headers.get('x-webhook-event'),
-      webhookId: req.headers.get('x-webhook-id'),
-      ua: req.headers.get('user-agent'),
-    })
 
     if (!signatureHeader) {
       return NextResponse.json(
@@ -79,6 +55,9 @@ export async function POST(req: Request) {
         { status: 400 },
       )
     }
+
+    // IMPORTANT: verify signature against the RAW body (not re-serialized JSON)
+    const rawBody = await req.text()
 
     let body: any
     try {
@@ -89,13 +68,6 @@ export async function POST(req: Request) {
         { status: 400 },
       )
     }
-    console.log('[TRIPTO][WEBHOOK] body keys', {
-      event:
-        req.headers.get('x-webhook-event') || body?.event,
-      paymentId: body?.data?.paymentId,
-      hasMetadata: !!body?.data?.metadata,
-      donationId: body?.data?.metadata?.donationId,
-    })
 
     let expectedSignature = ''
     let receivedSignature = ''
