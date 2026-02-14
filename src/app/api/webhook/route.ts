@@ -12,6 +12,28 @@ function toNumber(value: unknown, fallback = 0) {
   return Number.isFinite(n) ? n : fallback
 }
 
+function parseTV1Signature(sig: string) {
+  // "t=123,v1=abcdef..."
+  const parts = sig.split(',').map((p) => p.trim())
+  const out: Record<string, string> = {}
+  for (const p of parts) {
+    const [k, v] = p.split('=')
+    if (k && v) out[k] = v
+  }
+  return { t: out.t, v1: out.v1 }
+}
+
+function timingSafeEqualHex(a: string, b: string) {
+  try {
+    const ab = Buffer.from(a, 'hex')
+    const bb = Buffer.from(b, 'hex')
+    if (ab.length !== bb.length) return false
+    return crypto.timingSafeEqual(ab, bb)
+  } catch {
+    return false
+  }
+}
+
 export async function POST(req: Request) {
   try {
     const webhookSecret = process.env.TRIPTO_WEBHOOK_SECRET
@@ -22,32 +44,90 @@ export async function POST(req: Request) {
       )
     }
 
-    const signature = req.headers.get('x-signature')
-    if (!signature) {
+    // Tripto now sends Stripe-style signature header: "t=...,v1=..."
+    const signatureHeader =
+      req.headers.get('x-webhook-signature') ||
+      req.headers.get('x-signature')
+
+    if (!signatureHeader) {
       return NextResponse.json(
-        { error: 'Missing X-Signature' },
+        { error: 'Missing signature header' },
         { status: 400 },
       )
     }
 
-    // Tripto spec: signature is computed on JSON.stringify(req.body)
-    const body = await req.json()
-    const payload = JSON.stringify(body)
+    // IMPORTANT: verify signature against the RAW body (not re-serialized JSON)
+    const rawBody = await req.text()
 
-    const expectedSignature = crypto
-      .createHmac('sha256', webhookSecret)
-      .update(payload)
-      .digest('hex')
+    let body: any
+    try {
+      body = JSON.parse(rawBody)
+    } catch {
+      return NextResponse.json(
+        { error: 'Invalid JSON payload' },
+        { status: 400 },
+      )
+    }
 
-    if (signature !== expectedSignature) {
+    let expectedSignature = ''
+    let receivedSignature = ''
+
+    // New format: "t=...,v1=..."
+    if (
+      signatureHeader.includes('t=') &&
+      signatureHeader.includes('v1=')
+    ) {
+      const { t, v1 } = parseTV1Signature(signatureHeader)
+      if (!t || !v1) {
+        return NextResponse.json(
+          { error: 'Bad signature format' },
+          { status: 400 },
+        )
+      }
+
+      expectedSignature = crypto
+        .createHmac('sha256', webhookSecret)
+        .update(`${t}.${rawBody}`)
+        .digest('hex')
+
+      receivedSignature = v1
+    } else {
+      // Legacy fallback: hex(HMAC(secret, rawBody))
+      expectedSignature = crypto
+        .createHmac('sha256', webhookSecret)
+        .update(rawBody)
+        .digest('hex')
+
+      receivedSignature = signatureHeader
+    }
+
+    if (
+      !timingSafeEqualHex(
+        expectedSignature,
+        receivedSignature,
+      )
+    ) {
+      console.error('[TRIPTO][WEBHOOK] invalid signature', {
+        received: receivedSignature?.slice(0, 12),
+        expected: expectedSignature.slice(0, 12),
+        webhookEvent: req.headers.get('x-webhook-event'),
+        webhookId: req.headers.get('x-webhook-id'),
+      })
+
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 },
       )
     }
 
-    const event = body?.event
+    const event =
+      req.headers.get('x-webhook-event') || body?.event
     const data = body?.data
+
+    console.log('[TRIPTO][WEBHOOK] event ok', {
+      event,
+      paymentId: data?.paymentId,
+    })
 
     if (!event || !data) {
       return NextResponse.json(

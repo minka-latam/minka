@@ -252,8 +252,8 @@ export function DonatePageContent({
       setIsSubmitting(true)
       setErrorMessage(null)
 
-      const maxAttempts = 5
-      const intervalMs = 600
+      const maxAttempts = 25
+      const intervalMs = 1600
 
       for (let i = 0; i < maxAttempts; i++) {
         if (controller.signal.aborted) return
@@ -1415,15 +1415,6 @@ export function DonatePageContent({
                             </div>
                           </div>
                         </div>
-
-                        {/* Informational message for card redirect */}
-                        {infoMessage && (
-                          <div className='bg-blue-50 border border-blue-200 text-blue-800 px-4 py-3 rounded relative mb-4'>
-                            <span className='block sm:inline'>
-                              {infoMessage}
-                            </span>
-                          </div>
-                        )}
 
                         {/* Error notification */}
                         {errorMessage && (

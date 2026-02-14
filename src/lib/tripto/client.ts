@@ -1,5 +1,3 @@
-import 'server-only'
-
 import {
   TriptoCreateDonationPayload,
   TriptoCreateDonationResponse,
@@ -9,9 +7,15 @@ import {
 export class TriptoClient {
   private apiKey: string
   private baseUrl = process.env.TRIPTO_BASE_URL
+  private tenantAuth: string
 
   constructor(apiKey: string) {
     this.apiKey = apiKey
+    const tenantAuth = process.env.TRIPTO_CF_BYPASS
+    if (!tenantAuth) {
+      throw new Error('TRIPTO_CF_BYPASS is not configured')
+    }
+    this.tenantAuth = tenantAuth
   }
 
   // -------------------------------
@@ -20,11 +24,6 @@ export class TriptoClient {
   async createDonationLink(
     payload: TriptoCreateDonationPayload,
   ): Promise<TriptoCreateDonationResponse> {
-    console.log(
-      '[TRIPTO] POST',
-      `${this.baseUrl}/payment-links/custom-amount`,
-    )
-
     if (!this.baseUrl) {
       return {
         success: false,
@@ -36,10 +35,20 @@ export class TriptoClient {
       `${this.baseUrl}/payment-links/custom-amount`,
       {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-API-Key': this.apiKey,
-        },
+        headers: (() => {
+          const headers = new Headers({
+            'Content-Type': 'application/json',
+            'X-API-Key': this.apiKey,
+          })
+          if (this.tenantAuth) {
+            headers.set('x-tenant-auth', this.tenantAuth)
+          }
+          console.log(
+            'tripto headers',
+            Object.fromEntries(headers.entries()),
+          )
+          return headers
+        })(),
         body: JSON.stringify(payload),
       },
     )

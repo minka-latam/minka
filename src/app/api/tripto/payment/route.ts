@@ -1,5 +1,3 @@
-import 'server-only'
-
 import { NextResponse } from 'next/server'
 import { TriptoClient } from '@/lib/tripto/client'
 import { db } from '@/lib/db'
@@ -156,6 +154,8 @@ export async function POST(req: Request) {
       description: campaign.description || null,
       imageUrl,
       suggestedAmount: Math.round(totalAmount * 100),
+      minAmount: Math.round(totalAmount * 100 - 1),
+      maxAmount: Math.round(totalAmount * 100 + 1),
       submitType: 'pay' as const,
       afterPayment: {
         type: 'redirect' as const,
