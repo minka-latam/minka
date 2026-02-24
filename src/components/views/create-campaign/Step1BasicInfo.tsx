@@ -343,7 +343,7 @@ export function Step1BasicInfo() {
                         <SelectItem value="emergencia">Emergencia</SelectItem>
                         <SelectItem value="igualdad">Igualdad</SelectItem>
                         <SelectItem value="medioambiente">
-                          Medioambiente
+                          Medio ambiente
                         </SelectItem>
                         <SelectItem value="salud">Salud</SelectItem>
                       </SelectContent>

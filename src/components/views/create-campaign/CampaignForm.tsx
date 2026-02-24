@@ -1621,7 +1621,7 @@ export function CampaignForm() {
                           </SelectItem>
                           <SelectItem value="igualdad">Igualdad</SelectItem>
                           <SelectItem value="medioambiente">
-                            Medioambiente
+                            Medio ambiente
                           </SelectItem>
                           <SelectItem value="salud">Salud</SelectItem>
                           <SelectItem value="otros">Otros</SelectItem>

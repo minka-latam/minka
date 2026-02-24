@@ -106,7 +106,6 @@ export function Header() {
   };
 
   const menuItems = [
-    { href: "/", label: "Inicio" },
     { href: "/campaign", label: "Donar" },
     { href: "/create-campaign", label: "Crear campaña" },
     { href: "/about-us", label: "Nosotros" },

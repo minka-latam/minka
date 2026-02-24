@@ -201,7 +201,11 @@ export function CategorySelector({
       {/* Desktop version - original layout */}
       <div className="hidden lg:block">
         <div
-          className={`flex flex-wrap justify-center ${displayStyle === "card" ? "gap-6" : "gap-4"}`}
+          className={
+            displayStyle === "card"
+              ? "flex justify-center gap-6 flex-wrap 2xl:flex-nowrap"
+              : "flex flex-wrap justify-center gap-4"
+          }
         >
           {displayStyle === "pill" ? (
             <>

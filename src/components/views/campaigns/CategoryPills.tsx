@@ -9,7 +9,7 @@ const categories = [
   { id: "educacion", label: "Educación" },
   { id: "emprendimiento", label: "Emprendimiento" },
   { id: "igualdad", label: "Igualdad" },
-  { id: "medioambiente", label: "Medioambiente" },
+  { id: "medioambiente", label: "Medio ambiente" },
   { id: "salud", label: "Salud" },
 ];
 

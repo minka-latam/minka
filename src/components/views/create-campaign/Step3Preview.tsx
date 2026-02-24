@@ -27,7 +27,7 @@ export function Step3Preview() {
       educacion: "Educación",
       emergencia: "Emergencia",
       igualdad: "Igualdad",
-      medioambiente: "Medioambiente",
+      medioambiente: "Medio ambiente",
       salud: "Salud",
       otros: "Otros",
     };

@@ -93,7 +93,7 @@ function formatCategory(category: string) {
   const categories: Record<string, string> = {
     educacion: "Educación",
     salud: "Salud",
-    medioambiente: "Medioambiente",
+    medioambiente: "Medio ambiente",
     cultura_arte: "Cultura y arte",
     emergencia: "Emergencia",
     igualdad: "Igualdad",
