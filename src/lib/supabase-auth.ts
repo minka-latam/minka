@@ -20,7 +20,7 @@ export const signOut = async () => {
 
 // Function to handle social login
 export const signInWithSocial = async (
-  provider: "google" | "facebook" | "apple"
+  provider: "google" | "facebook"
 ) => {
   const supabase = createClient();
   const { data, error } = await supabase.auth.signInWithOAuth({

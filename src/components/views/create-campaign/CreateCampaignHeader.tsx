@@ -11,7 +11,7 @@ const steps = [
   {
     id: "step-2",
     icon: "/landing-page/step-2.png",
-    label: "Verificala",
+    label: "Verifícala",
   },
   {
     id: "step-3",

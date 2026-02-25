@@ -102,10 +102,11 @@ export function CampaignCard({
 
           {/* Description - Only visible on hover, positioned absolutely to not affect layout */}
           <div className="absolute top-[140px] left-3 right-3 overflow-hidden transition-all duration-300 max-h-0 group-hover:max-h-20 z-10">
-            <div className="bg-white rounded p-2 shadow-sm">
+            <div className="bg-white rounded p-2 shadow-sm relative">
               <p className="text-gray-600 line-clamp-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-150 leading-relaxed text-sm">
                 {description}
               </p>
+              
             </div>
           </div>
 
@@ -121,7 +122,9 @@ export function CampaignCard({
                   <div className="overflow-hidden">
                     <p className="font-medium text-sm truncate">Recaudado</p>
                     <p className="text-lg font-bold truncate">{amountRaised}</p>
-                  </div>
+                  </div><span className="absolute top-[-10px] right-2 text-[11px] text-[#2c6e49] font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-150 overflow-visibles">
+                ver más
+              </span>
                 </div>
               </div>
             </div>
@@ -137,7 +140,7 @@ export function CampaignCard({
               <div className="flex items-center gap-3">
                 <div className="flex-1 bg-[#EBEDE6] rounded-full h-3">
                   <div
-                    className="bg-[#2c6e49] h-3 rounded-full transition-all duration-300"
+                    className="bg-[#2c6e49] h-3 rounded-full transition-all duration-300 max-w-full"
                     style={{ width: `${progress}%` }}
                   />
                 </div>

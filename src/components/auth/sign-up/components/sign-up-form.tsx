@@ -228,7 +228,7 @@ export function SignUpForm() {
     }
   }
 
-  async function handleSocialSignIn(provider: "google" | "facebook" | "apple") {
+  async function handleSocialSignIn(provider: "google" | "facebook") {
     if (socialLoading) return;
 
     try {
@@ -621,7 +621,7 @@ export function SignUpForm() {
       </div>
 
       {/* Social Login Buttons */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 gap-4">
         <Button
           type="button"
           variant="outline"
@@ -654,23 +654,6 @@ export function SignUpForm() {
           />
           <span className="ml-2">
             {socialLoading === "google" ? "Cargando..." : "Google"}
-          </span>
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          className="flex items-center justify-center border border-black rounded-md h-11"
-          onClick={() => handleSocialSignIn("apple")}
-          disabled={!!socialLoading || isLoading || isSubmitting}
-        >
-          <Image
-            src="/social-icons/Apple.svg"
-            alt="Apple"
-            width={20}
-            height={20}
-          />
-          <span className="ml-2">
-            {socialLoading === "apple" ? "Cargando..." : "Apple"}
           </span>
         </Button>
       </div>

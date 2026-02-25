@@ -1229,6 +1229,41 @@ export function CampaignForm() {
     }
   };
 
+  // Add function to format number with thousands separators
+  const formatNumberWithSeparators = (value: string | number): string => {
+    // Convert to string and remove any non-digit characters first
+    const stringValue = String(value || "");
+    const numericValue = stringValue.replace(/\D/g, "");
+
+    // Return empty string if no digits
+    if (!numericValue) return "";
+
+    // Add thousands separators (dots)
+    return numericValue.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  };
+
+  // Add function to remove separators and get raw numeric value
+  const removeNumberSeparators = (value: string): string => {
+    return value.replace(/\./g, "");
+  };
+
+  const MAX_GOAL_AMOUNT = 150000;
+
+  const validateGoalAmount = (value: string | number): string => {
+    const rawValue = removeNumberSeparators(String(value || ""));
+
+    if (!rawValue) {
+      return "Debes establecer una meta de recaudación";
+    }
+
+    const parsedValue = Number(rawValue);
+    if (Number.isNaN(parsedValue) || parsedValue > MAX_GOAL_AMOUNT) {
+      return "La meta no debe superar Bs. 150.000";
+    }
+
+    return "";
+  };
+
   // Add validation function to check all required fields
   const validateForm = (): boolean => {
     const errors: Record<string, string> = {};
@@ -1246,6 +1281,11 @@ export function CampaignForm() {
     // Validate category
     if (!formData.category) {
       errors.category = "Debes seleccionar una categoría";
+    }
+
+    const goalAmountError = validateGoalAmount(formData.goalAmount);
+    if (goalAmountError) {
+      errors.goalAmount = goalAmountError;
     }
 
     // Validate story
@@ -1273,24 +1313,6 @@ export function CampaignForm() {
     return Object.keys(errors).length === 0;
   };
 
-  // Add function to format number with thousands separators
-  const formatNumberWithSeparators = (value: string | number): string => {
-    // Convert to string and remove any non-digit characters first
-    const stringValue = String(value || "");
-    const numericValue = stringValue.replace(/\D/g, "");
-
-    // Return empty string if no digits
-    if (!numericValue) return "";
-
-    // Add thousands separators (dots)
-    return numericValue.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-  };
-
-  // Add function to remove separators and get raw numeric value
-  const removeNumberSeparators = (value: string): string => {
-    return value.replace(/\./g, "");
-  };
-
   // Add function to handle input change with number validation
   const handleGoalAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const inputValue = e.target.value;
@@ -1304,10 +1326,8 @@ export function CampaignForm() {
     // Update form data with raw numeric value
     setFormData({ ...formData, goalAmount: rawValue });
 
-    // Clear error if value is provided
-    if (rawValue) {
-      setFormErrors({ ...formErrors, goalAmount: "" });
-    }
+    const goalAmountError = rawValue ? validateGoalAmount(rawValue) : "";
+    setFormErrors({ ...formErrors, goalAmount: goalAmountError });
   };
 
   // Function to load legal entities
@@ -1428,11 +1448,11 @@ export function CampaignForm() {
         }
         break;
       case 3: // Goal Amount
-        if (
-          !formData.goalAmount ||
-          removeNumberSeparators(String(formData.goalAmount)) === ""
-        ) {
-          errors.goalAmount = "Debes establecer una meta de recaudación";
+        {
+          const goalAmountError = validateGoalAmount(formData.goalAmount);
+          if (goalAmountError) {
+            errors.goalAmount = goalAmountError;
+          }
         }
         break;
       case 4: // Media
@@ -1660,6 +1680,7 @@ export function CampaignForm() {
                         type="text"
                         placeholder="Ingresa el monto a recaudar"
                         className={`w-full rounded-lg border ${formErrors.goalAmount ? "error-input" : "border-black"} bg-white shadow-sm focus:border-[#478C5C] focus:ring-[#478C5C] focus:ring-0 h-14 px-4`}
+                        inputMode="numeric"
                         value={formatNumberWithSeparators(formData.goalAmount)}
                         onChange={handleGoalAmountChange}
                       />
@@ -1668,17 +1689,6 @@ export function CampaignForm() {
                           {formErrors.goalAmount}
                         </div>
                       )}
-                      <div className="flex items-center gap-2 bg-[#EDF2FF] border border-[#365AFF] rounded-lg p-2 mt-4">
-                        <Image
-                          src="/views/create-campaign/Form/info.svg"
-                          alt="Info"
-                          width={20}
-                          height={20}
-                        />
-                        <span className="text-base text-gray-600">
-                          Este será el monto objetivo de tu campaña
-                        </span>
-                      </div>
                     </div>
                   </div>
                 </div>

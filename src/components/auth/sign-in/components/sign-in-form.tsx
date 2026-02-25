@@ -88,7 +88,7 @@ export function SignInForm() {
   );
 
   const handleSocialSignIn = useCallback(
-    async (provider: "google" | "facebook" | "apple") => {
+    async (provider: "google" | "facebook") => {
       try {
         setSocialLoading(provider);
         await signInWithSocial(provider);
@@ -190,7 +190,7 @@ export function SignInForm() {
         <div className="border-t border-gray-300 flex-grow" />
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 gap-4">
         <Button
           type="button"
           variant="outline"
@@ -225,24 +225,6 @@ export function SignInForm() {
           />
           <span className="ml-2">
             {socialLoading === "google" ? "Cargando..." : "Google"}
-          </span>
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          className="flex items-center justify-center border border-black rounded-md h-11"
-          onClick={() => handleSocialSignIn("apple")}
-          disabled={!!socialLoading}
-        >
-          <Image
-            src="/social-icons/Apple.svg"
-            alt="Apple"
-            width={20}
-            height={20}
-            priority
-          />
-          <span className="ml-2">
-            {socialLoading === "apple" ? "Cargando..." : "Apple"}
           </span>
         </Button>
       </div>
