@@ -20,12 +20,12 @@ const verificationRequestSchema = z.object({
 export async function POST(req: NextRequest) {
   try {
     // Get session using supabase client with proper cookie handling
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     // Use void to prevent synchronous API warning
     void cookieStore;
 
     const supabase = createRouteHandlerClient({
-      cookies: () => cookieStore,
+      cookies: (() => cookieStore) as any,
     });
 
     // Get the session

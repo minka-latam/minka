@@ -19,6 +19,12 @@ import { useAuth } from "@/providers/auth-provider";
 import { useToast } from "@/components/ui/use-toast";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import {
+  SAVED_CAMPAIGN_IDS_CACHE_KEY,
+  SAVED_CAMPAIGNS_UPDATED_EVENT,
+  SAVE_CAMPAIGN_INTENT_KEY,
+  SAVE_CAMPAIGN_INTENT_UPDATED_EVENT,
+} from "@/constants/saved-campaign";
 
 interface CampaignProgressProps {
   isVerified: boolean;
@@ -71,10 +77,24 @@ export function CampaignProgress({
   const [isSaving, setIsSaving] = useState(false);
   const [isSessionLoaded, setIsSessionLoaded] = useState(false);
   const [showShareOptions, setShowShareOptions] = useState(false);
+  const [hasPendingSaveIntent, setHasPendingSaveIntent] = useState(false);
+  const [cachedIsSaved, setCachedIsSaved] = useState(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      const rawIds = localStorage.getItem(SAVED_CAMPAIGN_IDS_CACHE_KEY);
+      if (!rawIds) return false;
+      const ids = JSON.parse(rawIds) as string[];
+      return Array.isArray(ids) && ids.includes(campaignId);
+    } catch {
+      return false;
+    }
+  });
   const router = useRouter();
 
   const isLoggedIn = !!session;
   const isSaved = isCampaignSaved(campaignId);
+  const effectiveIsSaved =
+    isSaved || cachedIsSaved || hasPendingSaveIntent;
 
   // Debug component state
   useEffect(() => {
@@ -100,6 +120,61 @@ export function CampaignProgress({
     }
   }, [session, authLoading, isLoggedIn, campaignId]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const syncClientState = () => {
+      try {
+        const rawIntent = sessionStorage.getItem(SAVE_CAMPAIGN_INTENT_KEY);
+        if (!rawIntent) {
+          setHasPendingSaveIntent(false);
+        } else {
+          const parsedIntent = JSON.parse(rawIntent) as {
+            campaignId?: string;
+          };
+          setHasPendingSaveIntent(parsedIntent?.campaignId === campaignId);
+        }
+
+        const rawIds = localStorage.getItem(
+          SAVED_CAMPAIGN_IDS_CACHE_KEY
+        );
+        if (!rawIds) {
+          setCachedIsSaved(false);
+        } else {
+          const ids = JSON.parse(rawIds) as string[];
+          setCachedIsSaved(
+            Array.isArray(ids) && ids.includes(campaignId)
+          );
+        }
+      } catch (intentError) {
+        console.error("Error reading save campaign intent:", intentError);
+        setHasPendingSaveIntent(false);
+        setCachedIsSaved(false);
+      }
+    };
+
+    syncClientState();
+    window.addEventListener(
+      SAVE_CAMPAIGN_INTENT_UPDATED_EVENT,
+      syncClientState
+    );
+    window.addEventListener(
+      SAVED_CAMPAIGNS_UPDATED_EVENT,
+      syncClientState
+    );
+
+    return () => {
+      window.removeEventListener(
+        SAVE_CAMPAIGN_INTENT_UPDATED_EVENT,
+        syncClientState
+      );
+      window.removeEventListener(
+        SAVED_CAMPAIGNS_UPDATED_EVENT,
+        syncClientState
+      );
+    };
+  }, [campaignId]);
+
   const safeCurrentAmount = currentAmount || 0;
   const safeTargetAmount = targetAmount || 1;
   const progress =
@@ -119,11 +194,25 @@ export function CampaignProgress({
 
     if (!isLoggedIn) {
       console.log("User not logged in, session:", session);
-      toast({
-        title: "Inicia sesión",
-        description: "Debes iniciar sesión para guardar campañas",
-        variant: "destructive",
-      });
+      try {
+        sessionStorage.setItem(
+          SAVE_CAMPAIGN_INTENT_KEY,
+          JSON.stringify({
+            campaignId,
+            createdAt: Date.now(),
+          })
+        );
+        window.dispatchEvent(
+          new Event(SAVE_CAMPAIGN_INTENT_UPDATED_EVENT)
+        );
+      } catch (storageError) {
+        console.error("Error storing save campaign intent:", storageError);
+      }
+      const returnUrl =
+        typeof window !== "undefined"
+          ? `${window.location.pathname}${window.location.search}`
+          : `/campaign/${campaignId}`;
+      router.push(`/sign-in?returnUrl=${encodeURIComponent(returnUrl)}`);
       return;
     }
 
@@ -140,14 +229,14 @@ export function CampaignProgress({
 
     console.log("Save toggle initiated:", {
       campaignId: campaignId,
-      isSaved: isSaved,
+      isSaved: effectiveIsSaved,
       isLoggedIn: isLoggedIn,
       userEmail: session?.user?.email,
     });
 
     setIsSaving(true);
     try {
-      if (isSaved) {
+      if (effectiveIsSaved) {
         console.log("Attempting to unsave campaign:", campaignId);
         const result = await unsaveCampaign(campaignId);
         console.log("Unsave result:", result);
@@ -437,11 +526,15 @@ export function CampaignProgress({
           variant="ghost"
           className="w-full hover:bg-gray-50 rounded-full py-6 text-[#2c6e49]"
           onClick={handleSaveToggle}
-          disabled={isSaving || authLoading}
+          disabled={isSaving || authLoading || hasPendingSaveIntent}
         >
-          {isSaved ? "Campaña guardada" : "Guardar campaña"}
+          {hasPendingSaveIntent
+            ? "Guardando campaña..."
+            : effectiveIsSaved
+              ? "Campaña guardada"
+              : "Guardar campaña"}
           {authLoading && " (cargando...)"}
-          {isSaved ? (
+          {effectiveIsSaved ? (
             <BookmarkCheck className="ml-2 h-4 w-4 text-[#2c6e49]" />
           ) : (
             <Bookmark className="ml-2 h-4 w-4 text-[#2c6e49]" />

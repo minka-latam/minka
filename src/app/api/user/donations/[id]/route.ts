@@ -10,7 +10,10 @@ export async function GET(
     const donationId = (await params).id;
 
     // Check if user is authenticated
-    const supabase = createServerComponentClient({ cookies });
+    const cookieStore = await cookies();
+    const supabase = createServerComponentClient({
+      cookies: (() => cookieStore) as any,
+    });
     const {
       data: { session },
     } = await supabase.auth.getSession();

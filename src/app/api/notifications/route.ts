@@ -5,7 +5,9 @@ import { prisma } from "@/lib/prisma";
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createRouteHandlerClient({ cookies });
+    const cookieStore = await cookies();
+
+    const supabase = createRouteHandlerClient({ cookies: (() => cookieStore) as any });
     const {
       data: { session },
     } = await supabase.auth.getSession();
@@ -88,7 +90,9 @@ export async function GET(request: NextRequest) {
 // Mark notifications as read
 export async function PATCH(request: NextRequest) {
   try {
-    const supabase = createRouteHandlerClient({ cookies });
+    const cookieStore = await cookies();
+
+    const supabase = createRouteHandlerClient({ cookies: (() => cookieStore) as any });
     const {
       data: { session },
     } = await supabase.auth.getSession();

@@ -37,9 +37,9 @@ export async function POST(request: Request) {
     }
 
     // Create a Supabase client with properly awaited cookies
-    const supabase = createRouteHandlerClient({
-      cookies: () => cookies(),
-    });
+    const cookieStore = await cookies();
+
+    const supabase = createRouteHandlerClient({ cookies: (() => cookieStore) as any });
 
     // Format birth date from DD/MM/YYYY to a Date object
     let formattedBirthDate: Date;

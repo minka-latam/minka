@@ -6,7 +6,7 @@ import { cache } from "react";
 
 export const getAuthSession = cache(async (): Promise<Session | null> => {
   try {
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
 
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -14,13 +14,11 @@ export const getAuthSession = cache(async (): Promise<Session | null> => {
       {
         cookies: {
           async get(name: string) {
-            const cookies = await cookieStore;
-            return cookies.get(name)?.value;
+            return cookieStore.get(name)?.value;
           },
           async set(name: string, value: string, options: any) {
             try {
-              const cookies = await cookieStore;
-              cookies.set({ name, value, ...options });
+              cookieStore.set({ name, value, ...options });
             } catch (error) {
               // Can't set cookies during SSR
               console.error("Error setting cookie:", error);
@@ -28,8 +26,7 @@ export const getAuthSession = cache(async (): Promise<Session | null> => {
           },
           async remove(name: string, options: any) {
             try {
-              const cookies = await cookieStore;
-              cookies.set({ name, value: "", ...options });
+              cookieStore.set({ name, value: "", ...options });
             } catch (error) {
               // Can't remove cookies during SSR
               console.error("Error removing cookie:", error);

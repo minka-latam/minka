@@ -1,7 +1,10 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/providers/auth-provider";
 import { toast } from "@/components/ui/use-toast";
-import { supabase } from "@/lib/supabase/client";
+import {
+  SAVED_CAMPAIGN_IDS_CACHE_KEY,
+  SAVED_CAMPAIGNS_UPDATED_EVENT,
+} from "@/constants/saved-campaign";
 
 type SavedCampaign = {
   id: string;
@@ -20,6 +23,20 @@ export function useSavedCampaigns() {
   const [error, setError] = useState<string | null>(null);
   const { session, isLoading: authLoading } = useAuth();
 
+  const notifySavedCampaignsUpdated = () => {
+    if (typeof window === "undefined") return;
+    window.dispatchEvent(new Event(SAVED_CAMPAIGNS_UPDATED_EVENT));
+  };
+
+  const updateSavedIdsCache = (campaigns: SavedCampaign[]) => {
+    if (typeof window === "undefined") return;
+    const ids = campaigns.map((campaign) => campaign.id);
+    localStorage.setItem(
+      SAVED_CAMPAIGN_IDS_CACHE_KEY,
+      JSON.stringify(ids)
+    );
+  };
+
   // Function to fetch saved campaigns
   const fetchSavedCampaigns = useCallback(async () => {
     if (authLoading) {
@@ -29,6 +46,9 @@ export function useSavedCampaigns() {
 
     if (!session) {
       setSavedCampaigns([]);
+      if (typeof window !== "undefined") {
+        localStorage.removeItem(SAVED_CAMPAIGN_IDS_CACHE_KEY);
+      }
       setIsLoading(false);
       return;
     }
@@ -56,6 +76,7 @@ export function useSavedCampaigns() {
       const data = await response.json();
       console.log(`Fetched ${data.length} saved campaigns`);
       setSavedCampaigns(data);
+      updateSavedIdsCache(data);
     } catch (err) {
       console.error("Error fetching saved campaigns:", err);
       setError(
@@ -74,8 +95,33 @@ export function useSavedCampaigns() {
     }
   }, [fetchSavedCampaigns, authLoading]);
 
+  // Keep multiple hook instances in sync (e.g. auto-save from another component)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const handleSavedCampaignsUpdated = () => {
+      fetchSavedCampaigns();
+    };
+
+    window.addEventListener(
+      SAVED_CAMPAIGNS_UPDATED_EVENT,
+      handleSavedCampaignsUpdated
+    );
+
+    return () => {
+      window.removeEventListener(
+        SAVED_CAMPAIGNS_UPDATED_EVENT,
+        handleSavedCampaignsUpdated
+      );
+    };
+  }, [fetchSavedCampaigns]);
+
   // Function to save a campaign
-  const saveCampaign = async (campaignId: string) => {
+  const saveCampaign = async (
+    campaignId: string,
+    options?: { silent?: boolean }
+  ) => {
+    const silent = options?.silent ?? false;
     console.log("=== SAVE CAMPAIGN DEBUG START ===");
     console.log("Auth loading:", authLoading);
     console.log("Session:", session);
@@ -85,30 +131,36 @@ export function useSavedCampaigns() {
 
     if (authLoading) {
       console.log("AUTH LOADING - aborting");
-      toast({
-        title: "Cargando",
-        description: "Por favor espera mientras verificamos tu sesión",
-      });
+      if (!silent) {
+        toast({
+          title: "Cargando",
+          description: "Por favor espera mientras verificamos tu sesión",
+        });
+      }
       return false;
     }
 
     if (!session) {
       console.log("NO SESSION - aborting");
-      toast({
-        title: "Error",
-        description: "Debes iniciar sesión para guardar campañas",
-        variant: "destructive",
-      });
+      if (!silent) {
+        toast({
+          title: "Error",
+          description: "Debes iniciar sesión para guardar campañas",
+          variant: "destructive",
+        });
+      }
       return false;
     }
 
     if (!campaignId || campaignId.trim() === "") {
       console.log("INVALID CAMPAIGN ID - aborting");
-      toast({
-        title: "Error",
-        description: "ID de campaña no válido",
-        variant: "destructive",
-      });
+      if (!silent) {
+        toast({
+          title: "Error",
+          description: "ID de campaña no válido",
+          variant: "destructive",
+        });
+      }
       return false;
     }
 
@@ -138,12 +190,14 @@ export function useSavedCampaigns() {
 
         // Handle specific error cases
         if (response.status === 401) {
-          toast({
-            title: "Error de autenticación",
-            description:
-              "Tu sesión ha expirado. Por favor inicia sesión nuevamente",
-            variant: "destructive",
-          });
+          if (!silent) {
+            toast({
+              title: "Error de autenticación",
+              description:
+                "Tu sesión ha expirado. Por favor inicia sesión nuevamente",
+              variant: "destructive",
+            });
+          }
           return false;
         }
 
@@ -151,10 +205,12 @@ export function useSavedCampaigns() {
           response.status === 400 &&
           errorData.error === "Campaign already saved"
         ) {
-          toast({
-            title: "Campaña ya guardada",
-            description: "Esta campaña ya está en tu lista de guardadas",
-          });
+          if (!silent) {
+            toast({
+              title: "Campaña ya guardada",
+              description: "Esta campaña ya está en tu lista de guardadas",
+            });
+          }
           // Refresh to ensure UI is in sync
           await fetchSavedCampaigns();
           return true;
@@ -169,10 +225,13 @@ export function useSavedCampaigns() {
       // Refresh the list of saved campaigns
       await fetchSavedCampaigns();
 
-      toast({
-        title: "Campaña guardada",
-        description: "La campaña ha sido guardada exitosamente",
-      });
+      if (!silent) {
+        toast({
+          title: "Campaña guardada",
+          description: "La campaña ha sido guardada exitosamente",
+        });
+      }
+      notifySavedCampaignsUpdated();
 
       console.log("=== SAVE CAMPAIGN DEBUG END - SUCCESS ===");
       return true;
@@ -183,12 +242,14 @@ export function useSavedCampaigns() {
         err instanceof Error ? err.message : "An unknown error occurred"
       );
 
-      toast({
-        title: "Error",
-        description:
-          err instanceof Error ? err.message : "No se pudo guardar la campaña",
-        variant: "destructive",
-      });
+      if (!silent) {
+        toast({
+          title: "Error",
+          description:
+            err instanceof Error ? err.message : "No se pudo guardar la campaña",
+          variant: "destructive",
+        });
+      }
 
       return false;
     }
@@ -272,6 +333,7 @@ export function useSavedCampaigns() {
         title: "Campaña eliminada",
         description: "La campaña ha sido eliminada de tu lista",
       });
+      notifySavedCampaignsUpdated();
 
       return true;
     } catch (err) {

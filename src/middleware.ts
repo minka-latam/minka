@@ -27,6 +27,17 @@ export async function middleware(req: NextRequest) {
 
   // If user is authenticated and trying to access auth routes, redirect to dashboard
   if (isAuthenticated && isAuthRoute) {
+    const returnUrl = req.nextUrl.searchParams.get("returnUrl");
+    const safeReturnUrl =
+      returnUrl && returnUrl.startsWith("/") ? returnUrl : null;
+
+    if (safeReturnUrl) {
+      console.log(
+        `Authenticated user redirected from auth route to returnUrl: ${safeReturnUrl}`
+      );
+      return NextResponse.redirect(new URL(safeReturnUrl, req.url));
+    }
+
     console.log("Authenticated user redirected from auth route to dashboard");
     return NextResponse.redirect(new URL("/dashboard", req.url));
   }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Clock, Award } from "lucide-react";
@@ -15,6 +15,12 @@ import { CampaignCard } from "@/components/views/campaigns/CampaignCard";
 import { CampaignUpdates } from "@/components/views/campaign/CampaignUpdates";
 import { CampaignComments } from "@/components/views/campaign/CampaignComments";
 import Loading from "@/app/campaign/[id]/loading";
+import { useAuth } from "@/providers/auth-provider";
+import { useSavedCampaigns } from "@/hooks/use-saved-campaigns";
+import {
+  SAVE_CAMPAIGN_INTENT_KEY,
+  SAVE_CAMPAIGN_INTENT_UPDATED_EVENT,
+} from "@/constants/saved-campaign";
 
 // Helper function to format campaign data for components
 function formatCampaignData(campaign: any) {
@@ -267,6 +273,13 @@ export default function CampaignClientPage({ id }: { id: string }) {
   const { campaign, isLoading, error } = useCampaign(id);
   const [relatedCampaigns, setRelatedCampaigns] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState("descripcion");
+  const autoSaveHandledRef = useRef(false);
+  const { session, isLoading: authLoading } = useAuth();
+  const {
+    saveCampaign,
+    isCampaignSaved,
+    isLoading: savedCampaignsLoading,
+  } = useSavedCampaigns();
 
   // Debug campaign ID
   useEffect(() => {
@@ -287,6 +300,57 @@ export default function CampaignClientPage({ id }: { id: string }) {
         );
     }
   }, [campaign, id]);
+
+  useEffect(() => {
+    const tryAutoSave = async () => {
+      if (
+        autoSaveHandledRef.current ||
+        authLoading ||
+        savedCampaignsLoading ||
+        !session
+      ) {
+        return;
+      }
+
+      const rawIntent = sessionStorage.getItem(
+        SAVE_CAMPAIGN_INTENT_KEY
+      );
+      if (!rawIntent) return;
+
+      autoSaveHandledRef.current = true;
+
+      try {
+        const parsedIntent = JSON.parse(rawIntent) as {
+          campaignId?: string;
+        };
+
+        if (parsedIntent?.campaignId !== id) return;
+
+        if (!isCampaignSaved(id)) {
+          await saveCampaign(id, { silent: true });
+        }
+      } catch (intentError) {
+        console.error(
+          "Error processing save campaign intent:",
+          intentError
+        );
+      } finally {
+        sessionStorage.removeItem(SAVE_CAMPAIGN_INTENT_KEY);
+        window.dispatchEvent(
+          new Event(SAVE_CAMPAIGN_INTENT_UPDATED_EVENT)
+        );
+      }
+    };
+
+    void tryAutoSave();
+  }, [
+    id,
+    session,
+    authLoading,
+    savedCampaignsLoading,
+    isCampaignSaved,
+    saveCampaign,
+  ]);
 
   // Handle error state
   if (error) {

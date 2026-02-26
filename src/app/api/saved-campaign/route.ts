@@ -11,9 +11,9 @@ export async function GET() {
     console.log("GET /api/saved-campaign: Fetching saved campaigns");
 
     // Get the current session using Supabase
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     const supabase = createRouteHandlerClient({
-      cookies: () => cookieStore,
+      cookies: (() => cookieStore) as any,
     });
 
     const {
@@ -123,9 +123,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Get the current session using Supabase
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     const supabase = createRouteHandlerClient({
-      cookies: () => cookieStore,
+      cookies: (() => cookieStore) as any,
     });
 
     const {
@@ -234,9 +234,9 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Get the current session using Supabase
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     const supabase = createRouteHandlerClient({
-      cookies: () => cookieStore,
+      cookies: (() => cookieStore) as any,
     });
 
     const {

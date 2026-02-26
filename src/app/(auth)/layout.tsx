@@ -6,7 +6,7 @@ import { Quicksand, Geist_Mono } from "next/font/google";
 import "../globals.css";
 import { Card } from "@/components/ui/card";
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/providers/auth-provider";
 import { LoadingScreen } from "@/components/ui/loading-screen";
 import { Header } from "@/components/views/landing-page/Header";
@@ -30,13 +30,17 @@ export default function AuthLayout({
 }) {
   const { user, isLoading } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const returnUrl = searchParams.get("returnUrl");
+  const redirectPath =
+    returnUrl && returnUrl.startsWith("/") ? returnUrl : "/dashboard";
 
   // Redirect logged-in users away from auth pages
   useEffect(() => {
     if (user && !isLoading) {
-      router.replace("/dashboard");
+      router.replace(redirectPath);
     }
-  }, [user, isLoading, router]);
+  }, [user, isLoading, router, redirectPath]);
 
   // If loading or already authenticated, show minimal content
   if (isLoading || user) {

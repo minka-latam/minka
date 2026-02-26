@@ -9,7 +9,9 @@ export async function GET(
 ) {
   try {
     // Get the user session to validate authentication
-    const supabase = createRouteHandlerClient({ cookies });
+    const cookieStore = await cookies();
+
+    const supabase = createRouteHandlerClient({ cookies: (() => cookieStore) as any });
     const {
       data: { session },
     } = await supabase.auth.getSession();
@@ -77,7 +79,9 @@ export async function PUT(
 ) {
   try {
     // Get the user session to validate authentication
-    const supabase = createRouteHandlerClient({ cookies });
+    const cookieStore = await cookies();
+
+    const supabase = createRouteHandlerClient({ cookies: (() => cookieStore) as any });
     const {
       data: { session },
     } = await supabase.auth.getSession();

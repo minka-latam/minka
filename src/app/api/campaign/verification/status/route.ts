@@ -57,9 +57,9 @@ export async function GET(req: NextRequest) {
 export async function PUT(req: NextRequest) {
   try {
     // Authentication
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     const supabase = createRouteHandlerClient({
-      cookies: () => cookieStore,
+      cookies: (() => cookieStore) as any,
     });
 
     const {

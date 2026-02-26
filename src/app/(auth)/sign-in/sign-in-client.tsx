@@ -35,7 +35,11 @@ export function SignInClient() {
   useEffect(() => {
     if (user && !isLoading) {
       setIsRedirecting(true);
-      router.replace("/dashboard");
+      const urlParams = new URLSearchParams(window.location.search);
+      const returnUrl = urlParams.get("returnUrl");
+      const redirectPath =
+        returnUrl && returnUrl.startsWith("/") ? returnUrl : "/dashboard";
+      router.replace(redirectPath);
     }
   }, [user, isLoading, router]);
 
@@ -43,7 +47,7 @@ export function SignInClient() {
   if (isLoading || user || isRedirecting) {
     return (
       <LoadingScreen
-        text={isRedirecting ? "Redirigiendo al dashboard..." : "Cargando..."}
+        text={isRedirecting ? "Redirigiendo..." : "Cargando..."}
         showText={true}
         fullScreen={false}
         immediate={true}

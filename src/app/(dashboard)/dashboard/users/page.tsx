@@ -5,7 +5,10 @@ import { AdminUserTable } from "@/components/dashboard/admin-user-table";
 import { ProfileData } from "@/types"; // Assuming ProfileData includes id, name, email, role, created_at
 
 export default async function ManageUsersPage() {
-  const supabase = createServerComponentClient({ cookies });
+  const cookieStore = await cookies();
+  const supabase = createServerComponentClient({
+    cookies: (() => cookieStore) as any,
+  });
   const {
     data: { session },
   } = await supabase.auth.getSession();

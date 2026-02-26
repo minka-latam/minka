@@ -9,7 +9,9 @@ import { createDonationNotification } from "@/lib/notifications";
 export async function POST(request: NextRequest) {
   try {
     // Get the authenticated user using Supabase client
-    const supabase = createRouteHandlerClient({ cookies });
+    const cookieStore = await cookies();
+
+    const supabase = createRouteHandlerClient({ cookies: (() => cookieStore) as any });
     const {
       data: { session },
     } = await supabase.auth.getSession();

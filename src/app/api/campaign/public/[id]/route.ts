@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
 
 export async function GET(
@@ -18,12 +17,14 @@ export async function GET(
   }
 
   try {
+    const cookieStore = await cookies();
+
     // Forward to our main API endpoint
     const response = await fetch(
       `${request.nextUrl.origin}/api/campaign/${id}`,
       {
         headers: {
-          cookie: cookies().toString(),
+          cookie: cookieStore.toString(),
         },
       }
     );

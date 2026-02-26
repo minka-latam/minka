@@ -6,7 +6,9 @@ import { NextResponse } from "next/server";
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
-  const supabase = createRouteHandlerClient({ cookies });
+  const cookieStore = await cookies();
+
+  const supabase = createRouteHandlerClient({ cookies: (() => cookieStore) as any });
 
   // Clear the session cookie by signing out server-side
   const { error } = await supabase.auth.signOut();

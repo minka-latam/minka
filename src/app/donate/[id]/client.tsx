@@ -239,6 +239,10 @@ export function DonatePageContent({
   const totalAmount = donationAmount + platformFee
   const currencyPrefix =
     paymentMethod === 'card' ? '$/€' : 'Bs.'
+  const selectedTipText =
+    tipMode === 'percentage'
+      ? `${minkaContribution}%`
+      : `${currencyPrefix} ${customTipAmount || '0'}`
   const donationAmounts =
     paymentMethod === 'card'
       ? DONATION_AMOUNTS_CARD
@@ -1433,15 +1437,14 @@ export function DonatePageContent({
                                 a Minka
                               </p>
                               <p className='text-sm text-gray-700 leading-relaxed'>
-                                El 5% de tu donación va a
-                                Minka para mantener la
-                                plataforma funcionando,
-                                procesar pagos de forma
-                                segura y brindar soporte a
-                                las campañas.
-                                Adicionalmente, puedes
-                                agregar un aporte voluntario
-                                extra en el paso anterior.
+                                Tu aporte adicional
+                                seleccionado para Minka es {' '}                             
+                                  {selectedTipText}.
+                                Este monto ayuda a
+                                mantener la plataforma
+                                funcionando, procesar pagos
+                                de forma segura y brindar
+                                soporte a las campañas.
                               </p>
                             </div>
                           </div>

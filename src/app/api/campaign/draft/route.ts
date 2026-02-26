@@ -47,8 +47,8 @@ const campaignDraftSchema = z.object({
 export async function POST(req: NextRequest) {
   try {
     // Use createRouteHandlerClient with awaited cookies
-    const cookieStore = cookies();
-    const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
+    const cookieStore = await cookies();
+    const supabase = createRouteHandlerClient({ cookies: (() => cookieStore) as any });
 
     // Get session using supabase client
     const {

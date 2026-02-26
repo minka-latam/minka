@@ -2,13 +2,16 @@ import { createServerComponentClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
 
 // Server-side Supabase client (to be used in server components)
-export const createServerClient = () => {
-  return createServerComponentClient({ cookies });
+export const createServerClient = async () => {
+  const cookieStore = await cookies();
+  return createServerComponentClient({
+    cookies: (() => cookieStore) as any,
+  });
 };
 
 // Function to get the current session
 export const getSession = async () => {
-  const supabase = createServerClient();
+  const supabase = await createServerClient();
   const { data, error } = await supabase.auth.getSession();
 
   if (error) {

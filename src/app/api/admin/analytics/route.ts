@@ -6,7 +6,9 @@ import { prisma } from "@/lib/prisma";
 export async function GET(request: Request) {
   try {
     // Get the user session to validate authentication
-    const supabase = createRouteHandlerClient({ cookies });
+    const cookieStore = await cookies();
+
+    const supabase = createRouteHandlerClient({ cookies: (() => cookieStore) as any });
     const {
       data: { session },
     } = await supabase.auth.getSession();

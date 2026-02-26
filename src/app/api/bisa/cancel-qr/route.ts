@@ -14,7 +14,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify user is authenticated
-    const supabase = createRouteHandlerClient({ cookies });
+    const cookieStore = await cookies();
+
+    const supabase = createRouteHandlerClient({ cookies: (() => cookieStore) as any });
     const { data: { session } } = await supabase.auth.getSession();
     const user = session?.user;
 

@@ -7,9 +7,9 @@ export async function GET() {
     console.log("Starting to fetch user campaigns");
 
     // Create Supabase client with properly handled cookies
-    const supabase = createRouteHandlerClient({
-      cookies: () => cookies(),
-    });
+    const cookieStore = await cookies();
+
+    const supabase = createRouteHandlerClient({ cookies: (() => cookieStore) as any });
 
     // Get the session from Supabase
     const {

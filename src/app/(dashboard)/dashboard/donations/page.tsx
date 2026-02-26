@@ -32,7 +32,10 @@ export interface AdminDonationData {
 }
 
 export default async function DonationsPage() {
-  const supabase = createServerComponentClient({ cookies });
+  const cookieStore = await cookies();
+  const supabase = createServerComponentClient({
+    cookies: (() => cookieStore) as any,
+  });
   const {
     data: { session },
   } = await supabase.auth.getSession();

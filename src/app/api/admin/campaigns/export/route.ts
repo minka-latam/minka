@@ -6,9 +6,9 @@ import { db } from "@/lib/db";
 export async function POST(req: NextRequest) {
   try {
     // Create Supabase client with properly handled cookies
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     const supabase = createRouteHandlerClient({
-      cookies: () => cookieStore,
+      cookies: (() => cookieStore) as any,
     });
 
     // Get the session from Supabase
