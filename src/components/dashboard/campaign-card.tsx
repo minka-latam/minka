@@ -72,6 +72,7 @@ export function CampaignCard({
 
   // Use imageUrl from props and fallback to placeholder if not available
   const imageSrc = imageUrl || "/amboro-main.jpg";
+  const progressWidth = Math.min(Math.max(progress, 0), 100)
 
   return (
     <div
@@ -132,7 +133,7 @@ export function CampaignCard({
         <div className="w-full bg-gray-200 h-2 rounded-full mb-1">
           <div
             className="bg-[#2c6e49] h-2 rounded-full"
-            style={{ width: `${progress}%` }}
+            style={{ width: `${progressWidth}%` }}
           ></div>
         </div>
 
@@ -151,7 +152,7 @@ export function CampaignCard({
             <Button
               variant="ghost"
               size="sm"
-              className="text-[#2c6e49] hover:bg-[#f0f7f1] flex items-center justify-start w-full text-xs sm:text-sm px-1 py-1 h-auto font-medium"
+              className="text-[#2c6e49] hover:bg-[#f0f7f1] flex items-center justify-start w-full text-xs sm:text-sm px-1 py-1 h-auto font-medium gap-0"
               onClick={handleVerifyClick}
             >
               <span className="truncate">Solicitar verificación</span>
@@ -160,7 +161,7 @@ export function CampaignCard({
             <Button
               variant="ghost"
               size="sm"
-              className="text-[#2c6e49] hover:bg-[#f0f7f1] flex items-center justify-start w-full text-xs sm:text-sm px-1 py-1 h-auto font-medium"
+              className="text-[#2c6e49] hover:bg-[#f0f7f1] flex items-center justify-start w-full text-xs sm:text-sm px-1 py-1 h-auto font-medium gap-0"
               onClick={() => router.push(`/dashboard/campaigns/${id}`)}
             >
               <span className="truncate">Administrar Campaña</span>

@@ -1676,14 +1676,19 @@ export function CampaignForm() {
                       >
                         Meta de recaudación
                       </label>
-                      <input
-                        type="text"
-                        placeholder="Ingresa el monto a recaudar"
-                        className={`w-full rounded-lg border ${formErrors.goalAmount ? "error-input" : "border-black"} bg-white shadow-sm focus:border-[#478C5C] focus:ring-[#478C5C] focus:ring-0 h-14 px-4`}
-                        inputMode="numeric"
-                        value={formatNumberWithSeparators(formData.goalAmount)}
-                        onChange={handleGoalAmountChange}
-                      />
+                      <div className="relative">
+                        <span className="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-400 pointer-events-none">
+                          Bs.-
+                        </span>
+                        <input
+                          type="text"
+                          placeholder="Ingresa el monto a recaudar"
+                          className={`w-full rounded-lg border ${formErrors.goalAmount ? "error-input" : "border-black"} bg-white shadow-sm focus:border-[#478C5C] focus:ring-[#478C5C] focus:ring-0 h-14 pl-16 pr-4`}
+                          inputMode="numeric"
+                          value={formatNumberWithSeparators(formData.goalAmount)}
+                          onChange={handleGoalAmountChange}
+                        />
+                      </div>
                       {formErrors.goalAmount && (
                         <div className="error-text">
                           {formErrors.goalAmount}

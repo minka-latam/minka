@@ -24,12 +24,18 @@ import { QRPaymentStep } from '@/components/donate/QRPaymentStep'
 // Key for storing pending donation in localStorage
 const PENDING_DONATION_KEY = 'minka_pending_donation'
 
-// Define donation amount options
-const DONATION_AMOUNTS = [
-  { value: 50, label: 'Bs. 50' },
-  { value: 100, label: 'Bs. 100' },
-  { value: 200, label: 'Bs. 200' },
-  { value: 500, label: 'Bs. 500' },
+const DONATION_AMOUNTS_BS = [
+  { value: 50 },
+  { value: 100 },
+  { value: 200 },
+  { value: 500 },
+]
+
+const DONATION_AMOUNTS_CARD = [
+  { value: 10 },
+  { value: 20 },
+  { value: 50 },
+  { value: 100 },
 ]
 
 // Define payment methods
@@ -231,6 +237,12 @@ export function DonatePageContent({
       ? donationAmount * (minkaContribution / 100)
       : Number.parseFloat(customTipAmount) || 0 // User-selected percentage or custom amount for platform fee
   const totalAmount = donationAmount + platformFee
+  const currencyPrefix =
+    paymentMethod === 'card' ? '$/€' : 'Bs.'
+  const donationAmounts =
+    paymentMethod === 'card'
+      ? DONATION_AMOUNTS_CARD
+      : DONATION_AMOUNTS_BS
 
   //Poll by donationId
   const pollAbortRef = useRef<AbortController | null>(null)
@@ -278,9 +290,10 @@ export function DonatePageContent({
           )
 
           // 1) amount: set either selectedAmount (if matches predefined) or customAmount
-          const matchesPreset = DONATION_AMOUNTS.some(
-            (o) => o.value === dbAmount,
-          )
+          const matchesPreset = [
+            ...DONATION_AMOUNTS_BS,
+            ...DONATION_AMOUNTS_CARD,
+          ].some((o) => o.value === dbAmount)
           if (matchesPreset) {
             setSelectedAmount(dbAmount)
             setCustomAmount('')
@@ -355,6 +368,17 @@ export function DonatePageContent({
     return () => pollAbortRef.current?.abort()
   }, [])
 
+  useEffect(() => {
+    if (selectedAmount === null) return
+
+    const isValidAmount = donationAmounts.some(
+      (option) => option.value === selectedAmount,
+    )
+    if (!isValidAmount) {
+      setSelectedAmount(null)
+    }
+  }, [paymentMethod, donationAmounts, selectedAmount])
+
   // Handle amount selection
   const handleAmountSelect = (amount: number) => {
     setSelectedAmount(amount)
@@ -389,9 +413,7 @@ export function DonatePageContent({
   const handleContinue = () => {
     if (
       step === 1 &&
-      (selectedAmount ||
-        (customAmount &&
-          Number.parseFloat(customAmount) > 0))
+      paymentMethod
     ) {
       setIsAnimating(true)
       setAnimationDirection('forward')
@@ -399,7 +421,12 @@ export function DonatePageContent({
         setStep(2)
         setIsAnimating(false)
       }, 300)
-    } else if (step === 2 && paymentMethod) {
+    } else if (
+      step === 2 &&
+      (selectedAmount ||
+        (customAmount &&
+          Number.parseFloat(customAmount) > 0))
+    ) {
       setIsAnimating(true)
       setAnimationDirection('forward')
       setTimeout(() => {
@@ -1003,8 +1030,8 @@ export function DonatePageContent({
             </div>
           ) : (
             <>
-              {/* Step 1: Choose donation amount */}
-              {step === 1 && (
+              {/* Step 2: Choose donation amount */}
+              {step === 2 && (
                 <div
                   className={`transition-opacity duration-500 ${isAnimating ? 'opacity-0' : 'opacity-100'}`}
                 >
@@ -1035,8 +1062,8 @@ export function DonatePageContent({
 
                         {/* Predefined amounts */}
                         <div className='grid grid-cols-2 md:grid-cols-4 gap-4 mb-6'>
-                          {DONATION_AMOUNTS.map(
-                            (option, index) => (
+                          {donationAmounts.map(
+                            (option) => (
                               <button
                                 key={option.value}
                                 type='button'
@@ -1052,7 +1079,8 @@ export function DonatePageContent({
                                   )
                                 }
                               >
-                                {option.label}
+                                {currencyPrefix}{' '}
+                                {option.value}
                               </button>
                             ),
                           )}
@@ -1081,7 +1109,7 @@ export function DonatePageContent({
                           </label>
                           <div className='relative'>
                             <span className='absolute inset-y-0 left-0 flex items-center pl-3 text-black'>
-                              Bs.
+                              {currencyPrefix}
                             </span>
                             <input
                               type='text'
@@ -1180,7 +1208,7 @@ export function DonatePageContent({
                               </label>
                               <div className='relative'>
                                 <span className='absolute inset-y-0 left-0 flex items-center pl-3 text-black'>
-                                  Bs.
+                                  {currencyPrefix}
                                 </span>
                                 <input
                                   type='text'
@@ -1201,7 +1229,8 @@ export function DonatePageContent({
                               Tu contribución a Minka:
                             </span>
                             <span className='text-sm font-medium text-black'>
-                              Bs. {platformFee.toFixed(2)}
+                              {currencyPrefix}{' '}
+                              {platformFee.toFixed(2)}
                             </span>
                           </div>
                         </div>
@@ -1211,8 +1240,8 @@ export function DonatePageContent({
                 </div>
               )}
 
-              {/* Step 2: Choose payment method */}
-              {step === 2 && (
+              {/* Step 1: Choose payment method */}
+              {step === 1 && (
                 <div
                   className={`transition-opacity duration-500 ${isAnimating ? 'opacity-0' : 'opacity-100'}`}
                 >
@@ -1355,7 +1384,7 @@ export function DonatePageContent({
                               Tu donación
                             </span>
                             <span className='font-medium'>
-                              Bs.{' '}
+                              {currencyPrefix}{' '}
                               {donationAmount.toFixed(2)}
                             </span>
                           </div>
@@ -1364,7 +1393,8 @@ export function DonatePageContent({
                               Aporte adicional a Minka
                             </span>
                             <span className='font-medium'>
-                              Bs. {platformFee.toFixed(2)}
+                              {currencyPrefix}{' '}
+                              {platformFee.toFixed(2)}
                             </span>
                           </div>
                           <div className='border-t border-gray-200 pt-3 flex justify-between'>
@@ -1372,7 +1402,8 @@ export function DonatePageContent({
                               Total
                             </span>
                             <span className='font-medium'>
-                              Bs. {totalAmount.toFixed(2)}
+                              {currencyPrefix}{' '}
+                              {totalAmount.toFixed(2)}
                             </span>
                           </div>
                         </div>
@@ -1628,12 +1659,12 @@ export function DonatePageContent({
                     className='bg-[#2c6e49] hover:bg-[#1e4d33] text-white px-8 py-3 rounded-full'
                     onClick={handleContinue}
                     disabled={
-                      (step === 1 &&
+                      (step === 1 && !paymentMethod) ||
+                      (step === 2 &&
                         !selectedAmount &&
                         (!customAmount ||
                           Number.parseFloat(customAmount) <=
-                            0)) ||
-                      (step === 2 && !paymentMethod)
+                            0))
                     }
                   >
                     Continuar{' '}

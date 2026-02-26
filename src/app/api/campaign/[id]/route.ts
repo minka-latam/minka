@@ -285,6 +285,19 @@ export async function PATCH(
       presentation,
     } = body;
 
+    if (
+      goalAmount !== undefined &&
+      Number(goalAmount) > 150000
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Goal amount cannot exceed 150000",
+        },
+        { status: 400 }
+      );
+    }
+
     // Build the data object dynamically with only the fields that were provided
     const updateData: any = {};
 
@@ -355,6 +368,89 @@ export async function PATCH(
     );
   } catch (error) {
     console.error("Error updating campaign:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(
+  _req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const cookieStore = cookies();
+    const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session?.user) {
+      return NextResponse.json(
+        { error: "Unauthorized - You must be logged in" },
+        { status: 401 }
+      );
+    }
+
+    const organizer = await db.profile.findUnique({
+      where: { email: session.user.email },
+    });
+
+    if (!organizer) {
+      return NextResponse.json(
+        { error: "Organizer profile not found" },
+        { status: 404 }
+      );
+    }
+
+    const campaignId = (await params).id;
+    const existingCampaign = await db.campaign.findUnique({
+      where: { id: campaignId },
+      select: {
+        id: true,
+        organizerId: true,
+        campaignStatus: true,
+      },
+    });
+
+    if (!existingCampaign) {
+      return NextResponse.json(
+        { error: "Campaign not found" },
+        { status: 404 }
+      );
+    }
+
+    if (existingCampaign.organizerId !== organizer.id) {
+      return NextResponse.json(
+        { error: "You don't have permission to delete this campaign" },
+        { status: 403 }
+      );
+    }
+
+    if (
+      existingCampaign.campaignStatus !== "draft" &&
+      existingCampaign.campaignStatus !== "active"
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Only draft or active campaigns can be deleted from this endpoint",
+        },
+        { status: 400 }
+      );
+    }
+
+    await db.campaign.delete({
+      where: { id: campaignId },
+    });
+
+    return NextResponse.json(
+      { message: "Campaign deleted successfully" },
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error("Error deleting campaign:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

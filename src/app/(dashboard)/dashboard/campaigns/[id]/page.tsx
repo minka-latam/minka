@@ -27,6 +27,7 @@ import { cn } from "@/lib/utils";
 import { uploadMedia } from "@/lib/supabase/upload-media";
 
 export default function CampaignDetailPage() {
+  const MAX_GOAL_AMOUNT = 150000;
   const params = useParams();
   const router = useRouter();
   const [campaign, setCampaign] = useState<Record<string, any>>({});
@@ -54,6 +55,8 @@ export default function CampaignDetailPage() {
     null
   );
   const [newYoutubeUrl, setNewYoutubeUrl] = useState("");
+  const [isPublishing, setIsPublishing] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Track original campaign state for reset functionality
   const [originalCampaign, setOriginalCampaign] = useState<Record<string, any>>(
@@ -495,6 +498,95 @@ export default function CampaignDetailPage() {
     }
   };
 
+  const isDraftCampaign =
+    campaign?.campaign_status === "draft" ||
+    campaign?.campaignStatus === "draft";
+  const canDeleteCampaign =
+    campaign?.campaign_status === "draft" ||
+    campaign?.campaignStatus === "draft" ||
+    campaign?.campaign_status === "active" ||
+    campaign?.campaignStatus === "active";
+
+  const handlePublishCampaign = async () => {
+    try {
+      setIsPublishing(true);
+      const response = await fetch(`/api/campaign/${params.id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          campaignStatus: "active",
+          verificationStatus: false,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "No se pudo publicar la campaña.");
+      }
+
+      setCampaign((prev: Record<string, any>) => ({
+        ...prev,
+        campaign_status: "active",
+      }));
+
+      toast({
+        title: "Campaña publicada",
+        description: "Tu campaña ahora está activa.",
+      });
+    } catch (error) {
+      console.error("Error publishing campaign:", error);
+      toast({
+        title: "Error",
+        description: "No se pudo publicar la campaña.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsPublishing(false);
+    }
+  };
+
+  const handleDeleteCampaign = async () => {
+    const confirmed = window.confirm(
+      "¿Eliminar esta campaña borrador? Esta acción no se puede deshacer."
+    );
+    if (!confirmed) return;
+
+    try {
+      setIsDeleting(true);
+      const response = await fetch(`/api/campaign/${params.id}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "No se pudo eliminar la campaña.");
+      }
+
+      toast({
+        title: "Campaña eliminada",
+        description: "El borrador fue eliminado correctamente.",
+      });
+      router.push("/dashboard/campaigns");
+    } catch (error) {
+      console.error("Error deleting campaign:", error);
+      toast({
+        title: "Error",
+        description: "No se pudo eliminar la campaña.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isDraftCampaign && activeTab !== "editar") {
+      setActiveTab("editar");
+    }
+  }, [isDraftCampaign, activeTab]);
+
   useEffect(() => {
     async function getCampaignDetails() {
       try {
@@ -756,6 +848,28 @@ export default function CampaignDetailPage() {
                     height={18}
                   />
                 </button>
+                {isDraftCampaign && (
+                  <Button
+                    type="button"
+                    onClick={handlePublishCampaign}
+                    disabled={isPublishing || isDeleting}
+                    className="h-8 px-4 rounded-full bg-[#2c6e49] hover:bg-[#1e4d33] text-white"
+                  >
+                    {isPublishing ? "Publicando..." : "Publicar"}
+                  </Button>
+                )}
+                {canDeleteCampaign && (
+                  <Button
+                    type="button"
+                    onClick={handleDeleteCampaign}
+                    disabled={isDeleting || isPublishing}
+                    variant="outline"
+                    className="h-8 px-4 rounded-full border-red-600 text-red-600 hover:bg-red-50"
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    {isDeleting ? "Eliminando..." : "Eliminar"}
+                  </Button>
+                )}
               </div>
 
               {/* Campaign Title */}
@@ -784,6 +898,11 @@ export default function CampaignDetailPage() {
                   </p>
                 </div>
               </div>
+              {isDraftCampaign && (
+                <p className="mt-4 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
+                  Esta campaña está en borrador. Publícala o elimínala desde aquí.
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -805,68 +924,72 @@ export default function CampaignDetailPage() {
             <Image src="/icons/edit.svg" alt="Edit" width={16} height={16} />
           </button>
 
-          <button
-            onClick={() => setActiveTab("anuncios")}
-            className={`relative flex items-center gap-2 py-3 px-3 sm:px-6 rounded-t-lg transition-colors flex-1 justify-center border border-[#2c6e49] border-b-0 ${
-              activeTab === "anuncios"
-                ? "bg-white text-[#1a5535] after:absolute after:bottom-[-1px] after:left-0 after:right-0 after:h-[1px] after:bg-white after:z-10"
-                : "bg-[#f2f8f5] text-[#1a5535] hover:bg-[#e8f5ed]"
-            }`}
-          >
-            <span className="text-xs sm:text-sm">Publicar anuncios</span>
-            <Image src="/icons/add_2.svg" alt="Add" width={16} height={16} />
-          </button>
+          {!isDraftCampaign && (
+            <>
+              <button
+                onClick={() => setActiveTab("anuncios")}
+                className={`relative flex items-center gap-2 py-3 px-3 sm:px-6 rounded-t-lg transition-colors flex-1 justify-center border border-[#2c6e49] border-b-0 ${
+                  activeTab === "anuncios"
+                    ? "bg-white text-[#1a5535] after:absolute after:bottom-[-1px] after:left-0 after:right-0 after:h-[1px] after:bg-white after:z-10"
+                    : "bg-[#f2f8f5] text-[#1a5535] hover:bg-[#e8f5ed]"
+                }`}
+              >
+                <span className="text-xs sm:text-sm">Publicar anuncios</span>
+                <Image src="/icons/add_2.svg" alt="Add" width={16} height={16} />
+              </button>
 
-          <button
-            onClick={() => setActiveTab("comentarios")}
-            className={`relative flex items-center gap-2 py-3 px-3 sm:px-6 rounded-t-lg transition-colors flex-1 justify-center border border-[#2c6e49] border-b-0 ${
-              activeTab === "comentarios"
-                ? "bg-white text-[#1a5535] after:absolute after:bottom-[-1px] after:left-0 after:right-0 after:h-[1px] after:bg-white after:z-10"
-                : "bg-[#f2f8f5] text-[#1a5535] hover:bg-[#e8f5ed]"
-            }`}
-          >
-            <span className="text-xs sm:text-sm">Comentarios</span>
-            <Image
-              src="/icons/chat.svg"
-              alt="Comments"
-              width={16}
-              height={16}
-            />
-          </button>
+              <button
+                onClick={() => setActiveTab("comentarios")}
+                className={`relative flex items-center gap-2 py-3 px-3 sm:px-6 rounded-t-lg transition-colors flex-1 justify-center border border-[#2c6e49] border-b-0 ${
+                  activeTab === "comentarios"
+                    ? "bg-white text-[#1a5535] after:absolute after:bottom-[-1px] after:left-0 after:right-0 after:h-[1px] after:bg-white after:z-10"
+                    : "bg-[#f2f8f5] text-[#1a5535] hover:bg-[#e8f5ed]"
+                }`}
+              >
+                <span className="text-xs sm:text-sm">Comentarios</span>
+                <Image
+                  src="/icons/chat.svg"
+                  alt="Comments"
+                  width={16}
+                  height={16}
+                />
+              </button>
 
-          <button
-            onClick={() => setActiveTab("donaciones")}
-            className={`relative flex items-center gap-2 py-3 px-3 sm:px-6 rounded-t-lg transition-colors flex-1 justify-center border border-[#2c6e49] border-b-0 ${
-              activeTab === "donaciones"
-                ? "bg-white text-[#1a5535] after:absolute after:bottom-[-1px] after:left-0 after:right-0 after:h-[1px] after:bg-white after:z-10"
-                : "bg-[#f2f8f5] text-[#1a5535] hover:bg-[#e8f5ed]"
-            }`}
-          >
-            <span className="text-xs sm:text-sm">Donaciones</span>
-            <Image
-              src="/icons/check_circle.svg"
-              alt="Donations"
-              width={16}
-              height={16}
-            />
-          </button>
+              <button
+                onClick={() => setActiveTab("donaciones")}
+                className={`relative flex items-center gap-2 py-3 px-3 sm:px-6 rounded-t-lg transition-colors flex-1 justify-center border border-[#2c6e49] border-b-0 ${
+                  activeTab === "donaciones"
+                    ? "bg-white text-[#1a5535] after:absolute after:bottom-[-1px] after:left-0 after:right-0 after:h-[1px] after:bg-white after:z-10"
+                    : "bg-[#f2f8f5] text-[#1a5535] hover:bg-[#e8f5ed]"
+                }`}
+              >
+                <span className="text-xs sm:text-sm">Donaciones</span>
+                <Image
+                  src="/icons/check_circle.svg"
+                  alt="Donations"
+                  width={16}
+                  height={16}
+                />
+              </button>
 
-          <button
-            onClick={() => setActiveTab("transferir")}
-            className={`relative flex items-center gap-2 py-3 px-3 sm:px-6 rounded-t-lg transition-colors flex-1 justify-center border border-[#2c6e49] border-b-0 ${
-              activeTab === "transferir"
-                ? "bg-white text-[#1a5535] after:absolute after:bottom-[-1px] after:left-0 after:right-0 after:h-[1px] after:bg-white after:z-10"
-                : "bg-[#f2f8f5] text-[#1a5535] hover:bg-[#e8f5ed]"
-            }`}
-          >
-            <span className="text-xs sm:text-sm">Transferir fondos</span>
-            <Image
-              src="/icons/east.svg"
-              alt="Transfer"
-              width={16}
-              height={16}
-            />
-          </button>
+              <button
+                onClick={() => setActiveTab("transferir")}
+                className={`relative flex items-center gap-2 py-3 px-3 sm:px-6 rounded-t-lg transition-colors flex-1 justify-center border border-[#2c6e49] border-b-0 ${
+                  activeTab === "transferir"
+                    ? "bg-white text-[#1a5535] after:absolute after:bottom-[-1px] after:left-0 after:right-0 after:h-[1px] after:bg-white after:z-10"
+                    : "bg-[#f2f8f5] text-[#1a5535] hover:bg-[#e8f5ed]"
+                }`}
+              >
+                <span className="text-xs sm:text-sm">Transferir fondos</span>
+                <Image
+                  src="/icons/east.svg"
+                  alt="Transfer"
+                  width={16}
+                  height={16}
+                />
+              </button>
+            </>
+          )}
         </div>
 
         <div className="h-[1px] bg-[#2c6e49] w-full relative z-0"></div>
@@ -984,7 +1107,7 @@ export default function CampaignDetailPage() {
                           type="text"
                           className="w-full p-4 border border-black rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
                           placeholder="Bs. 2.000,00"
-                          defaultValue={
+                          value={
                             campaign.goal_amount
                               ? `Bs. ${campaign.goal_amount.toLocaleString()}`
                               : ""
@@ -995,11 +1118,16 @@ export default function CampaignDetailPage() {
                               /[^0-9]/g,
                               ""
                             );
+                            const parsedValue = numericValue
+                              ? parseInt(numericValue, 10)
+                              : 0;
+                            const boundedValue = Math.min(
+                              parsedValue,
+                              MAX_GOAL_AMOUNT
+                            );
                             setCampaign({
                               ...campaign,
-                              goal_amount: numericValue
-                                ? parseInt(numericValue)
-                                : 0,
+                              goal_amount: boundedValue,
                             });
                             handleFormChange();
                           }}
