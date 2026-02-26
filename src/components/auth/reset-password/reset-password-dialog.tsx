@@ -3,8 +3,7 @@
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { ResetPasswordForm } from "@/components/auth/reset-password/reset-password-form";
 import { X } from "lucide-react";
-import { useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useState } from "react";
 
 interface ResetPasswordDialogProps {
   open?: boolean;

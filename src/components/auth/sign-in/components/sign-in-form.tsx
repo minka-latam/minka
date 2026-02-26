@@ -13,7 +13,7 @@ import { z } from "zod";
 import { Mail, Lock, Info, Eye, EyeOff } from "lucide-react";
 import { signInWithSocial } from "@/lib/supabase-auth";
 import { LoadingScreen } from "@/components/ui/loading-screen";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 
 const signInFormSchema = z.object({
   email: z
@@ -34,16 +34,16 @@ export function SignInForm() {
   const [showPassword, setShowPassword] = useState(false);
   const { signIn } = useAuth();
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const returnUrl = searchParams.get("returnUrl");
 
   // Pre-fetch the dashboard page to speed up navigation
   useEffect(() => {
     router.prefetch("/dashboard");
-    if (returnUrl) {
+    const params = new URLSearchParams(window.location.search);
+    const returnUrl = params.get("returnUrl");
+    if (returnUrl && returnUrl.startsWith("/")) {
       router.prefetch(returnUrl);
     }
-  }, [router, returnUrl]);
+  }, [router]);
 
   const {
     register,
