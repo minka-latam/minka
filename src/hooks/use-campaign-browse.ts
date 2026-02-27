@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 export interface CampaignFilters {
   category?: string;
   location?: string;
+  locations?: string[];
   search?: string;
   verified?: boolean;
   verificationStatus?: "verified" | "pending" | "unverified";
@@ -126,8 +127,15 @@ export function useCampaignBrowse() {
         // Add filters to URL
         if (filters.category)
           url.searchParams.append("category", filters.category);
-        if (filters.location)
-          url.searchParams.append("location", filters.location);
+        const selectedLocations =
+          filters.locations && filters.locations.length > 0
+            ? filters.locations
+            : filters.location
+              ? [filters.location]
+              : [];
+        selectedLocations.forEach((location) =>
+          url.searchParams.append("location", location)
+        );
         if (filters.search) url.searchParams.append("search", filters.search);
         if (filters.verified) url.searchParams.append("verified", "true");
         if (filters.verificationStatus)
@@ -241,8 +249,15 @@ export function useCampaignBrowse() {
       const url = new URL("/api/campaign/categories", window.location.origin);
 
       // Add current filters to get dynamic counts except category itself
-      if (filters.location)
-        url.searchParams.append("location", filters.location);
+      const selectedLocations =
+        filters.locations && filters.locations.length > 0
+          ? filters.locations
+          : filters.location
+            ? [filters.location]
+            : [];
+      selectedLocations.forEach((location) =>
+        url.searchParams.append("location", location)
+      );
       if (filters.search) url.searchParams.append("search", filters.search);
       if (filters.verified) url.searchParams.append("verified", "true");
       if (filters.verificationStatus)
@@ -273,6 +288,7 @@ export function useCampaignBrowse() {
     }
   }, [
     filters.location,
+    filters.locations,
     filters.search,
     filters.verified,
     filters.verificationStatus,
@@ -331,6 +347,21 @@ export function useCampaignBrowse() {
       console.log("Previous filters:", filters);
       setFilters((prev) => {
         const updated = { ...prev, ...newFilters };
+
+        // Normalize multi-location filter while keeping backward compatibility.
+        if (newFilters.locations !== undefined) {
+          updated.locations =
+            newFilters.locations.length > 0
+              ? Array.from(new Set(newFilters.locations))
+              : undefined;
+          updated.location = undefined;
+        } else if (newFilters.location !== undefined) {
+          updated.locations = newFilters.location
+            ? [newFilters.location]
+            : undefined;
+          updated.location = undefined;
+        }
+
         console.log("New filters will be:", updated);
         return updated;
       });
@@ -424,6 +455,7 @@ export function useCampaignBrowse() {
     }
   }, [
     filters.location,
+    filters.locations,
     filters.search,
     filters.verified,
     filters.verificationStatus,

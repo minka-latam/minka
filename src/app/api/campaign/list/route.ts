@@ -137,7 +137,10 @@ export async function GET(request: Request) {
 
     // Get all query parameters for filtering
     const category = url.searchParams.get("category");
-    const location = url.searchParams.get("location");
+    const locations = url.searchParams
+      .getAll("location")
+      .map((location) => location.trim())
+      .filter(Boolean);
     const search = url.searchParams.get("search");
     const sortBy = url.searchParams.get("sortBy") || "popular"; // default sort
     const verified = url.searchParams.get("verified") === "true"; // keep for backward compatibility
@@ -168,8 +171,10 @@ export async function GET(request: Request) {
       whereClause.category = category;
     }
 
-    if (location) {
-      whereClause.location = location;
+    if (locations.length === 1) {
+      whereClause.location = locations[0];
+    } else if (locations.length > 1) {
+      whereClause.location = { in: locations };
     }
 
     if (search) {

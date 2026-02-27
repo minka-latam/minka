@@ -44,7 +44,10 @@ export async function GET(request: Request) {
     const url = new URL(request.url);
 
     // Get filters from query parameters
-    const location = url.searchParams.get("location");
+    const locations = url.searchParams
+      .getAll("location")
+      .map((location) => location.trim())
+      .filter(Boolean);
     const search = url.searchParams.get("search");
     const verified = url.searchParams.get("verified") === "true";
 
@@ -58,7 +61,7 @@ export async function GET(request: Request) {
       : undefined;
 
     console.log("Categories API - Received filters:", {
-      location,
+      locations,
       search,
       verified,
       createdAfter,
@@ -74,8 +77,10 @@ export async function GET(request: Request) {
       };
 
       // Apply filters if they exist
-      if (location) {
-        whereClause.location = location;
+      if (locations.length === 1) {
+        whereClause.location = locations[0];
+      } else if (locations.length > 1) {
+        whereClause.location = { in: locations };
       }
 
       if (verified) {

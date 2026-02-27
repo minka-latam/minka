@@ -336,18 +336,6 @@ function CampaignsContent() {
     }
   };
 
-  // Modified function to handle location selection
-  const handleLocationSelect = (location: string | undefined) => {
-    if (location) {
-      // Convert display name to enum value for DB query
-      const enumValue = mapLocationToEnum(location);
-      console.log(`Selected location: ${location} -> ${enumValue}`);
-      updateFilters({ location: enumValue });
-    } else {
-      updateFilters({ location: undefined });
-    }
-  };
-
   // Enhanced reset function to clear search and all filters
   const handleResetFilters = () => {
     console.log("Resetting all filters and search");
@@ -379,10 +367,20 @@ function CampaignsContent() {
     return mapEnumToCategory(category);
   };
 
-  // Helper to get display name for UI selection state
-  const getDisplayLocation = (location?: string): string | undefined => {
-    if (!location) return undefined;
-    return mapEnumToLocation(location);
+  // Helper to get display names for UI selection state
+  const getDisplayLocations = (
+    locations?: string[],
+    location?: string
+  ): string[] => {
+    const selectedLocations =
+      locations && locations.length > 0
+        ? locations
+        : location
+          ? [location]
+          : [];
+    return selectedLocations.map((selectedLocation) =>
+      mapEnumToLocation(selectedLocation)
+    );
   };
 
   // Helper to get display title for the results section
@@ -506,21 +504,25 @@ function CampaignsContent() {
                 locations={locations}
                 filters={{
                   ...filters,
-                  location: getDisplayLocation(filters.location),
+                  location: undefined,
+                  locations: getDisplayLocations(
+                    filters.locations,
+                    filters.location
+                  ),
                 }}
                 onUpdateFilters={(newFilters) => {
                   // Handle all filter updates properly
                   const processedFilters: any = { ...newFilters };
 
-                  // Special handling for location filter
-                  if (newFilters.location !== undefined) {
-                    if (newFilters.location) {
-                      processedFilters.location = mapLocationToEnum(
-                        newFilters.location
-                      );
-                    } else {
-                      processedFilters.location = undefined;
-                    }
+                  // Special handling for multi-location filter
+                  if (newFilters.locations !== undefined) {
+                    processedFilters.locations =
+                      newFilters.locations.length > 0
+                        ? newFilters.locations.map((selectedLocation) =>
+                            mapLocationToEnum(selectedLocation)
+                          )
+                        : undefined;
+                    processedFilters.location = undefined;
                   }
 
                   // For all other filters (including createdAfter, fundingPercentageMin, fundingPercentageMax)
@@ -554,21 +556,22 @@ function CampaignsContent() {
             locations={locations}
             filters={{
               ...filters,
-              location: getDisplayLocation(filters.location),
+              location: undefined,
+              locations: getDisplayLocations(filters.locations, filters.location),
             }}
             onUpdateFilters={(newFilters) => {
               // Handle all filter updates properly
               const processedFilters: any = { ...newFilters };
 
-              // Special handling for location filter
-              if (newFilters.location !== undefined) {
-                if (newFilters.location) {
-                  processedFilters.location = mapLocationToEnum(
-                    newFilters.location
-                  );
-                } else {
-                  processedFilters.location = undefined;
-                }
+              // Special handling for multi-location filter
+              if (newFilters.locations !== undefined) {
+                processedFilters.locations =
+                  newFilters.locations.length > 0
+                    ? newFilters.locations.map((selectedLocation) =>
+                        mapLocationToEnum(selectedLocation)
+                      )
+                    : undefined;
+                processedFilters.location = undefined;
               }
 
               // For all other filters

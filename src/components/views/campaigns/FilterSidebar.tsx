@@ -43,6 +43,12 @@ export function FilterSidebar({
 
   // Use provided locations or defaults if empty
   const displayLocations = locations.length > 0 ? locations : defaultLocations;
+  const selectedLocations =
+    filters.locations && filters.locations.length > 0
+      ? filters.locations
+      : filters.location
+        ? [filters.location]
+        : [];
 
   // Search state
   const [searchQuery, setSearchQuery] = useState("");
@@ -162,7 +168,8 @@ export function FilterSidebar({
   useEffect(() => {
     // Check if filters object is completely empty or only has undefined values
     const hasAnyFilter = Object.values(filters).some(
-      (value) => value !== undefined
+      (value) =>
+        value !== undefined && (!Array.isArray(value) || value.length > 0)
     );
 
     if (!hasAnyFilter) {
@@ -207,9 +214,22 @@ export function FilterSidebar({
     }
   };
 
-  // Handle location change
-  const handleLocationChange = (location: string | undefined) => {
-    onUpdateFilters({ location });
+  // Handle location changes as multi-select
+  const handleLocationToggle = (location: string) => {
+    const updatedLocations = selectedLocations.includes(location)
+      ? selectedLocations.filter(
+          (selectedLocation) => selectedLocation !== location
+        )
+      : [...selectedLocations, location];
+
+    onUpdateFilters({
+      locations: updatedLocations.length > 0 ? updatedLocations : undefined,
+      location: undefined,
+    });
+  };
+
+  const handleClearLocations = () => {
+    onUpdateFilters({ locations: undefined, location: undefined });
   };
 
   // Verification status filter - now handles all verification states
@@ -354,13 +374,24 @@ export function FilterSidebar({
         <div className="space-y-3">
           <div
             className="flex items-center cursor-pointer"
-            onClick={() => handleLocationChange(undefined)}
+            onClick={handleClearLocations}
           >
             <div
-              className={`w-6 h-6 border border-gray-400 rounded-full flex items-center justify-center ${!filters.location ? "bg-[#1a5535] border-[#1a5535]" : "bg-white"}`}
+              className={`w-6 h-6 border border-gray-400 rounded flex items-center justify-center ${selectedLocations.length === 0 ? "bg-[#1a5535] border-[#1a5535]" : "bg-white"}`}
             >
-              {!filters.location && (
-                <div className="w-4 h-4 rounded-full bg-white"></div>
+              {selectedLocations.length === 0 && (
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="white"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
               )}
             </div>
             <span className="ml-3 text-[#333333]">Todas las ubicaciones</span>
@@ -376,13 +407,24 @@ export function FilterSidebar({
               <div
                 key={location.name}
                 className="flex items-center cursor-pointer"
-                onClick={() => handleLocationChange(location.name)}
+                onClick={() => handleLocationToggle(location.name)}
               >
                 <div
-                  className={`w-6 h-6 border border-gray-400 rounded-full flex items-center justify-center ${filters.location === location.name ? "bg-[#1a5535] border-[#1a5535]" : "bg-white"}`}
+                  className={`w-6 h-6 border border-gray-400 rounded flex items-center justify-center ${selectedLocations.includes(location.name) ? "bg-[#1a5535] border-[#1a5535]" : "bg-white"}`}
                 >
-                  {filters.location === location.name && (
-                    <div className="w-4 h-4 rounded-full bg-white"></div>
+                  {selectedLocations.includes(location.name) && (
+                    <svg
+                      width="18"
+                      height="18"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="white"
+                      strokeWidth="3"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
                   )}
                 </div>
                 <span className="ml-3 text-[#333333]">{location.name}</span>
