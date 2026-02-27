@@ -8,7 +8,7 @@ export function Footer() {
     <div className="container mx-auto px-4 mt-auto">
       <footer className="bg-[#2c6e49] rounded-t-3xl text-white">
         <div className="p-8 md:p-16">
-          <div className="flex flex-col md:flex-row justify-between items-center mb-16">
+          <div className="flex flex-col md:flex-row justify-between items-center mb-4 lg:mb-16">
             <div className="mb-8 md:mb-0">
               <Image
                 src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/logo-2S5vgSiFRwu8gClKBuwTXkOi5H46aN.svg"
@@ -19,7 +19,7 @@ export function Footer() {
               />
             </div>
 
-            <nav className="flex flex-col md:flex-row items-center gap-6 md:gap-12">
+            <nav className="flex md:flex-row items-center gap-6 md:gap-12">
               <Link
                 href="/help"
                 target="_blank"
@@ -47,8 +47,8 @@ export function Footer() {
             </nav>
           </div>
 
-          <div className="flex flex-col md:flex-row justify-between items-center mb-12">
-            <p className="text-white font-bold text-2xl md:text-3xl mb-8 md:mb-0 max-w-xl">
+          <div className="flex flex-col md:flex-row justify-between items-center mb-4 lg:mb-12">
+            <p className="text-white font-bold text-2xl md:text-3xl mb-3 max-w-xl">
               Tu apoyo tiene poder. <br />
               Conecta con Minka.
             </p>
@@ -84,7 +84,7 @@ export function Footer() {
                   className="h-16 w-16"
                 />
               </Link>
-              <Link
+              {/* <Link
                 href="#"
                 target="_blank"
                 rel="noopener noreferrer"
@@ -98,7 +98,7 @@ export function Footer() {
                   height={63}
                   className="h-16 w-16"
                 />
-              </Link>
+              </Link> */}
               <Link
                 href="https://www.linkedin.com/company/minka-comunidad/"
                 target="_blank"
@@ -117,10 +117,10 @@ export function Footer() {
             </div>
           </div>
 
-          <div className="h-px bg-[#4a8c67] mb-10" />
+          <div className="h-px bg-[#4a8c67] mb-2 lg:mb-10" />
 
           <div className="flex flex-col md:flex-row justify-between items-center text-sm text-white/80">
-            <p>© 2024 Minka. Todos los derechos reservados.</p>
+            <p>© {new Date().getFullYear()} Minka. Todos los derechos reservados.</p>
             <Link
               href="/politicas-de-privacidad"
               target="_blank"
