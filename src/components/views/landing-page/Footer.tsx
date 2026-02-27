@@ -21,24 +21,21 @@ export function Footer() {
 
             <nav className="flex md:flex-row items-center gap-6 md:gap-12">
               <Link
-                href="/help"
-                target="_blank"
+                href="/help"                
                 rel="noopener noreferrer"
                 className="text-white hover:text-gray-200 transition-colors underline underline-offset-4 text-lg font-bold"
               >
                 Centro de ayuda
               </Link>
               <Link
-                href="/campaign"
-                target="_blank"
+                href="/campaign"                
                 rel="noopener noreferrer"
                 className="text-white hover:text-gray-200 transition-colors underline underline-offset-4 text-lg font-bold"
               >
                 Donar
               </Link>
               <Link
-                href="/about-us"
-                target="_blank"
+                href="/about-us"                
                 rel="noopener noreferrer"
                 className="text-white hover:text-gray-200 transition-colors underline underline-offset-4 text-lg font-bold"
               >
