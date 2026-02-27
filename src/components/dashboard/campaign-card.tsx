@@ -148,7 +148,7 @@ export function CampaignCard({
       >
         {/* Add verification action button if not verified and campaign is active */}
         {!isVerified && status === "active" ? (
-          <div className="flex flex-col sm:flex-row gap-2 sm:gap-0 sm:justify-between">
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-0 sm:justify-between flex-wrap lg:flex-nowrap">
             <Button
               variant="ghost"
               size="sm"

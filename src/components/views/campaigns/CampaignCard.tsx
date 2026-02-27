@@ -71,14 +71,14 @@ export function CampaignCard({
         {/* Card Content - Fixed height to prevent expansion */}
         <div className="p-3 bg-white flex flex-col relative flex-1 min-h-0 overflow-hidden">
           <div className="flex flex-col mb-1 flex-shrink-0">
-            <div className="mb-1 flex-shrink-0 h-8 group-hover:opacity-0 transition-opacity duration-500 ease-in-out">
+            <div className="mb-1 flex-shrink-0 h-8 group-hover:opacity-0 transition-opacity">
               {verified ? (
                 <Image
                   src="/landing-page/step-2.png"
                   alt="Verified"
                   width={32}
                   height={32}
-                  className="text-[#2c6e49] transition-opacity duration-500 ease-in-out"
+                  className="text-[#2c6e49] transition-opacity "
                 />
               ) : (
                 <div className="w-8 h-8" />
