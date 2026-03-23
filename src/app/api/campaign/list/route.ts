@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { db } from "@/lib/db";
+import { prisma as db } from "@/lib/prisma";
 
 // Fallback campaign data for development
 const mockCampaigns = [
@@ -375,7 +375,7 @@ export async function GET(request: Request) {
         },
         error: "Error fetching campaigns. Please try again later.",
       },
-      { status: 200 } // Return 200 to handle errors gracefully on the client side
+      { status: 500 } // Return 500 to handle errors gracefully on the client side
     );
   }
 }
