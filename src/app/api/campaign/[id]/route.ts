@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
-import { db } from "@/lib/db";
+import { prisma as db } from "@/lib/prisma";
 import { getAuthSession } from "@/lib/auth";
 
 // Define interfaces to help with typing
