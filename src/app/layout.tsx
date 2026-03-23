@@ -23,7 +23,11 @@ const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
 });
-
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+};
 export const metadata: Metadata = {
   metadataBase: new URL(APP_URL),
   title: {
@@ -31,7 +35,7 @@ export const metadata: Metadata = {
     template: `%s | ${APP_NAME}`,
   },
   description: APP_DESCRIPTION,
-  generator: "v0.dev",
+  generator: "MINKA",
   openGraph: {
     title: APP_NAME,
     description: APP_DESCRIPTION,
@@ -108,13 +112,7 @@ export const metadata: Metadata = {
   formatDetection: {
     email: false,
     address: false,
-    telephone: false,
-  },
-  viewport: {
-    width: "device-width",
-    initialScale: 1,
-    maximumScale: 1,
-  },
+    telephone: false  },
 };
 
 export default function RootLayout({
