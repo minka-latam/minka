@@ -178,7 +178,6 @@ export function FilterSidebar({
       setAmountRaisedFilter([]);
       setVerificationStatus([]);
       setSearchQuery("");
-      console.log("All filters cleared - resetting UI states");
     }
   }, [filters]);
 

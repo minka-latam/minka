@@ -68,7 +68,6 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const id = (await params).id;
-  console.log(`API: Fetching campaign with ID: ${id}`);
 
   if (!id) {
     console.error("API: Campaign ID is required but not provided");
@@ -82,10 +81,6 @@ export async function GET(
     const cookieStore = await cookies();
 
     const supabase = createRouteHandlerClient({ cookies: (() => cookieStore) as any });
-    console.log(`API: Created supabase client for campaign: ${id}`);
-
-    // Fetch campaign data with organizer profile and campaign media
-    console.log(`API: Executing supabase query for campaign: ${id}`);
     const { data, error: campaignError } = await supabase
       .from("campaigns")
       .select(
@@ -145,8 +140,6 @@ export async function GET(
         { status: 404 }
       );
     }
-
-    console.log(`API: Successfully fetched campaign: ${data.title}`);
     const campaign = data as any;
 
     // Format the response with proper type handling

@@ -43,10 +43,6 @@ export class TriptoClient {
           if (this.tenantAuth) {
             headers.set('x-tenant-auth', this.tenantAuth)
           }
-          console.log(
-            'tripto headers',
-            Object.fromEntries(headers.entries()),
-          )
           return headers
         })(),
         body: JSON.stringify(payload),
@@ -59,7 +55,7 @@ export class TriptoClient {
     try {
       data = JSON.parse(text)
     } catch {
-      console.error('[TRIPTO][NON_JSON_RESPONSE]', text)
+      console.error('[TRIPTO][NON_JSON_RESPONSE]')
       return {
         success: false,
         error: 'PAYMENT_PROVIDER_UNAVAILABLE',
@@ -67,7 +63,7 @@ export class TriptoClient {
     }
 
     if (!response.ok || !data?.success) {
-      console.error('[TRIPTO][ERROR_RESPONSE]', data)
+      console.error(`[TRIPTO][ERROR_RESPONSE] status=${response.status}`)
       return {
         success: false,
         error: 'PAYMENT_PROVIDER_ERROR',
@@ -76,7 +72,7 @@ export class TriptoClient {
 
     const url = data?.data?.url
     if (!url) {
-      console.error('[TRIPTO][INVALID_RESPONSE]', data)
+      console.error('[TRIPTO][INVALID_RESPONSE]')
       return {
         success: false,
         error: 'PAYMENT_PROVIDER_INVALID_RESPONSE',

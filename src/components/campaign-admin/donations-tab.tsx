@@ -51,21 +51,10 @@ export function DonationsTab({ campaign }: DonationsTabProps) {
 
   // Debug function to log current state
   const logState = () => {
-    console.log({
-      campaignId: campaign?.id,
-      donations,
-      donationsLength: donations?.length || 0,
-      isLoading,
-      error,
-      totalDonations,
-      currentPage,
-      totalPages,
-    });
   };
 
   // Load donations when component mounts or campaign.id changes
   useEffect(() => {
-    console.log("DonationsTab mounted or campaign changed:", campaign?.id);
     if (campaign?.id) {
       fetchDonations(1);
     } else {
@@ -80,17 +69,12 @@ export function DonationsTab({ campaign }: DonationsTabProps) {
     setError(null);
 
     try {
-      console.log(
-        `⏳ Fetching donations for campaign ID: ${campaign.id}, page: ${pageNumber}`
-      );
 
       const response = await getCampaignDonations(
         campaign.id,
         limit,
         (pageNumber - 1) * limit
       );
-
-      console.log("📊 Raw API response:", response);
 
       if (response) {
         let donationsList: CampaignDonation[] = [];
@@ -99,11 +83,6 @@ export function DonationsTab({ campaign }: DonationsTabProps) {
         if (isResponseWithData(response)) {
           // New API format with data and meta properties
           donationsList = response.data;
-
-          console.log("✅ Donations extracted from data property:", {
-            count: donationsList.length,
-            samples: donationsList.slice(0, 2),
-          });
 
           setDonations(donationsList);
           setTotalDonations(response.meta.totalCount);
@@ -115,11 +94,6 @@ export function DonationsTab({ campaign }: DonationsTabProps) {
             ? response.donations
             : [];
 
-          console.log("✅ Donations extracted from donations property:", {
-            count: donationsList.length,
-            samples: donationsList.slice(0, 2),
-          });
-
           setDonations(donationsList);
           setTotalDonations(response.total || 0);
           setCurrentPage(pageNumber);
@@ -128,10 +102,6 @@ export function DonationsTab({ campaign }: DonationsTabProps) {
 
         // Debug log after state should be updated
         setTimeout(() => {
-          console.log("⚙️ Component state after update:", {
-            donationsLength: donationsList.length,
-            donations: donationsList,
-          });
         }, 0);
       } else {
         console.error("❌ No donation data returned");
@@ -158,11 +128,6 @@ export function DonationsTab({ campaign }: DonationsTabProps) {
 
   // This will run whenever the dependencies change and log the current state
   useEffect(() => {
-    console.log("Donations state changed:", {
-      donationsCount: donations?.length || 0,
-      isLoading,
-      hasError: Boolean(error),
-    });
   }, [donations, isLoading, error]);
 
   // Determine if we have donations to display - more specific to catch edge cases

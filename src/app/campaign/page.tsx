@@ -308,9 +308,6 @@ function CampaignsContent() {
     if (categoryFromUrl) {
       // If the category is a display name, map it to enum value
       const enumValue = mapCategoryToEnum(categoryFromUrl);
-      console.log(
-        `Setting initial category from URL: ${categoryFromUrl} -> ${enumValue}`
-      );
       updateFilters({ category: enumValue });
     }
   }, [categoryFromUrl, updateFilters]);
@@ -329,7 +326,6 @@ function CampaignsContent() {
     if (category) {
       // Convert display name to enum value for DB query
       const enumValue = mapCategoryToEnum(category);
-      console.log(`Selected category: ${category} -> ${enumValue}`);
       updateFilters({ category: enumValue });
     } else {
       updateFilters({ category: undefined });
@@ -338,7 +334,6 @@ function CampaignsContent() {
 
   // Enhanced reset function to clear search and all filters
   const handleResetFilters = () => {
-    console.log("Resetting all filters and search");
     // Clear search input
     setSearchQuery("");
     // Reset all filters in the hook

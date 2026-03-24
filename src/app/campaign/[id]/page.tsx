@@ -10,7 +10,6 @@ export default async function CampaignPage({
   params: Promise<{ id: string }>;
 }) {
   const id = (await params).id;
-  console.log(`Server: Rendering campaign page with ID: ${id}`);
 
   if (!id) {
     console.error("Server: Campaign ID is required but not provided");

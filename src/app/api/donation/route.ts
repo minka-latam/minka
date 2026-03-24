@@ -29,7 +29,6 @@ export async function POST(request: NextRequest) {
       notificationEnabled = false,
       customAmount,
     } = body;
-    console.log("[DONATION] Incoming body:", body);
 
     // Basic validation
     if (!campaignId) {
@@ -154,7 +153,6 @@ export async function POST(request: NextRequest) {
         predefinedAmount: !customAmount,
       },
     })
-    console.log("[DONATION] Created donation:", donation);
 
     // Update campaign statistics (atomically with a transaction)
     await prisma.$transaction(async (tx) => {

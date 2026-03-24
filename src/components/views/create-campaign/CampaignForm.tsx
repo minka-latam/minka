@@ -698,14 +698,10 @@ export function CampaignForm() {
   const ensureMediaIsUploaded = async (): Promise<boolean> => {
     // If uploadedUrls is empty but we have mediaFiles, try to upload them now
     if (uploadedUrls.length === 0 && mediaFiles.length > 0) {
-      console.log(
-        "Fixing media URLs - uploadedUrls is empty but we have mediaFiles"
-      );
       try {
         // Upload the files
         const urls = await uploadFiles(mediaFiles);
         if (urls.length > 0) {
-          console.log("Successfully uploaded media files:", urls);
           return true;
         } else {
           console.error("Failed to upload media files");
@@ -749,9 +745,6 @@ export function CampaignForm() {
 
       // Validate that we have uploaded URLs
       if (!uploadedUrls.length) {
-        console.log(
-          "No uploaded URLs but we have media files - attempting to fix"
-        );
 
         // Try to ensure media is uploaded
         setIsSubmitting(true);
@@ -768,11 +761,6 @@ export function CampaignForm() {
           setIsSubmitting(false);
           return;
         }
-
-        console.log(
-          "Media upload fixed, proceeding with uploaded URLs:",
-          uploadedUrls
-        );
       }
 
       try {
@@ -791,14 +779,6 @@ export function CampaignForm() {
           })),
         };
 
-        console.log("Saving draft with data:", {
-          formFields: Object.keys(formData),
-          goalAmount: draftData.goalAmount,
-          goalAmountType: typeof draftData.goalAmount,
-          mediaCount: uploadedUrls.length,
-          firstMediaUrl: uploadedUrls[0],
-        });
-
         // Save the draft and get campaign ID
         const newCampaignId = await saveCampaignDraft(draftData);
 
@@ -814,8 +794,6 @@ export function CampaignForm() {
           });
           return;
         }
-
-        console.log("Campaign draft saved with ID:", newCampaignId);
 
         // Start fade out animation before changing step
         setAnimationDirection("next");
@@ -944,7 +922,6 @@ export function CampaignForm() {
 
     // Create a preview URL
     const previewUrl = URL.createObjectURL(file);
-    console.log("Created preview URL:", previewUrl);
 
     // Set the image to edit
     setImageToEdit(previewUrl);
@@ -961,7 +938,6 @@ export function CampaignForm() {
   // Add handler for saving edited image
   const handleSaveEditedImage = async (editedUrl: string) => {
     try {
-      console.log("Saving edited image...");
 
       // Create file from edited image dataURL first
       const blob = dataURLtoBlob(editedUrl);
@@ -974,11 +950,8 @@ export function CampaignForm() {
 
       // Create an object URL from the blob for preview
       const objectUrl = URL.createObjectURL(blob);
-      console.log("Created object URL for preview:", objectUrl);
 
       if (editingImageIndex !== null) {
-        // If editing an existing image
-        console.log(`Updating image at index ${editingImageIndex}`);
         const newPreviewUrls = [...mediaPreviewUrls];
 
         // Clean up old URL
@@ -995,22 +968,14 @@ export function CampaignForm() {
         newMediaFiles[editingImageIndex] = file;
         setMediaFiles(newMediaFiles);
       } else {
-        // If adding a new image
-        console.log("Adding new image");
         setMediaPreviewUrls((prev) => [...prev, objectUrl]);
         setMediaFiles((prev) => [...prev, file]);
       }
-
-      // Start upload
-      console.log("Starting file upload...");
       const result = await uploadFile(file);
-      console.log("Upload result:", result);
 
       if (!result.success) {
         throw new Error("Failed to upload file");
       }
-
-      console.log("File upload completed, uploaded URLs now:", uploadedUrls);
       setUploadingFile(null);
 
       // Reset editing state
@@ -1150,7 +1115,6 @@ export function CampaignForm() {
     }
 
     try {
-      console.log("Otra persona form data:", otraPersonaForm);
 
       toast({
         title: "Beneficiario agregado",
@@ -1202,14 +1166,6 @@ export function CampaignForm() {
         });
         return;
       }
-
-      // Here you could save the legal entity data to the campaign
-      // For now, we'll just log it and proceed
-      console.log("Selected Legal Entity:", {
-        id: selectedEntity.id,
-        name: selectedEntity.name,
-        taxId: selectedEntity.taxId,
-      });
 
       toast({
         title: "Persona Jurídica seleccionada",
@@ -1301,13 +1257,6 @@ export function CampaignForm() {
     if (mediaPreviewUrls.length === 0 || uploadedUrls.length === 0) {
       errors.media = "Debes subir al menos una imagen";
     }
-
-    // Log validation information
-    console.log("Form validation:", {
-      mediaPreviewUrls: mediaPreviewUrls.length,
-      uploadedUrls: uploadedUrls.length,
-      errors,
-    });
 
     setFormErrors(errors);
     return Object.keys(errors).length === 0;

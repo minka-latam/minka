@@ -20,12 +20,6 @@ function CampaignVerificationPageContent() {
   const searchParams = useSearchParams();
   const campaignId = searchParams.get("id");
 
-  // Add logging to help debug campaign ID retrieval
-  console.log("Campaign Verification Page - URL params:", {
-    rawParams: searchParams.toString(),
-    campaignId,
-  });
-
   return (
     <div className="min-h-screen bg-gradient-to-r from-white to-[#f5f7e9]">
       <Header />

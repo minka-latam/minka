@@ -253,9 +253,6 @@ function CustomCampaignDetails({
 // Async function to fetch related campaigns
 async function fetchRelatedCampaigns(category: string, id: string) {
   try {
-    console.log(
-      `Client: Fetching related campaigns for category ${category} excluding ${id}`
-    );
     const response = await fetch(
       `/api/campaign/related?category=${category}&excludeId=${id}`
     );
@@ -283,12 +280,6 @@ export default function CampaignClientPage({ id }: { id: string }) {
 
   // Debug campaign ID
   useEffect(() => {
-    console.log("CampaignClientPage: Campaign ID received:", id);
-    console.log(
-      "CampaignClientPage: Campaign data:",
-      campaign?.id,
-      campaign?.title
-    );
   }, [id, campaign]);
 
   useEffect(() => {

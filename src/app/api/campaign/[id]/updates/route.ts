@@ -121,14 +121,6 @@ export async function POST(
     }
 
     try {
-      // Try to create with all fields (youtubeUrl and imageUrl might not exist yet in the schema)
-      console.log("Creating update with data:", {
-        title,
-        content: message,
-        youtubeUrl: youtubeUrl || null,
-        imageUrl: imageUrl || null,
-        campaignId,
-      });
 
       const newUpdate = await db.campaignUpdate.create({
         data: {
@@ -140,8 +132,6 @@ export async function POST(
           status: "active",
         },
       });
-
-      console.log("Created update in database:", newUpdate);
 
       // Transform the response to match what the front-end expects
       const formattedUpdate = {
@@ -171,8 +161,6 @@ export async function POST(
         },
       });
 
-      console.log("Created update (fallback) in database:", newUpdate);
-
       // Then separately try to update with the media fields
       try {
         const updatedUpdate = await db.campaignUpdate.update({
@@ -182,8 +170,6 @@ export async function POST(
             imageUrl: imageUrl || null,
           },
         });
-
-        console.log("Updated with media fields:", updatedUpdate);
 
         // Transform the response using the updated data
         const formattedUpdate = {
@@ -221,10 +207,7 @@ export async function POST(
   } catch (error) {
     console.error("Error creating campaign update:", error);
     return NextResponse.json(
-      {
-        error: "Internal server error",
-        details: error instanceof Error ? error.message : String(error),
-      },
+      { error: "Internal server error" },
       { status: 500 }
     );
   }
@@ -320,10 +303,7 @@ export async function DELETE(
   } catch (error) {
     console.error("Error deleting campaign update:", error);
     return NextResponse.json(
-      {
-        error: "Internal server error",
-        details: error instanceof Error ? error.message : String(error),
-      },
+      { error: "Internal server error" },
       { status: 500 }
     );
   }

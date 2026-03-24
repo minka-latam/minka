@@ -6,7 +6,6 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const id = (await params).id;
-  console.log(`Public API: Redirecting to main campaign API for ID: ${id}`);
 
   if (!id) {
     console.error("Public API: Campaign ID is required but not provided");

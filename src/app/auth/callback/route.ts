@@ -41,8 +41,6 @@ export async function GET(request: NextRequest) {
         );
       }
 
-      console.log("Successfully authenticated user:", data.user.id);
-
       // Check for returnUrl in the callback URL
       const returnUrl = requestUrl.searchParams.get("returnUrl");
 
@@ -54,7 +52,6 @@ export async function GET(request: NextRequest) {
 
         // If the user doesn't have a profile, create one
         if (!existingProfile) {
-          console.log("Creating new profile for user:", data.user.id);
 
           // Get user metadata from Supabase
           const { data: userData } = await supabase.auth.getUser();
@@ -83,10 +80,7 @@ export async function GET(request: NextRequest) {
               verificationStatus: true,
             },
           });
-
-          console.log("Successfully created profile for user:", data.user.id);
         } else {
-          console.log("Using existing profile for user:", data.user.id);
           // Update verification status for existing users
           await prisma.profile.update({
             where: { id: data.user.id },
@@ -100,10 +94,8 @@ export async function GET(request: NextRequest) {
 
       // Redirect to returnUrl if provided, otherwise to dashboard
       if (returnUrl) {
-        console.log(`Redirecting to returnUrl: ${returnUrl}`);
         return NextResponse.redirect(new URL(returnUrl, request.url));
       } else {
-        console.log("Redirecting to dashboard (no returnUrl)");
         return NextResponse.redirect(new URL("/dashboard", request.url));
       }
     } catch (error) {

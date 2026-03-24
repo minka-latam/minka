@@ -122,11 +122,6 @@ export async function POST(request: NextRequest) {
 
     // Create a system notification log for admin tracking
     try {
-      console.log("Creating system notification log...");
-      console.log(
-        "Prisma systemNotificationLog available:",
-        !!prisma.systemNotificationLog
-      );
 
       const logResult = await prisma.systemNotificationLog.create({
         data: {
@@ -137,11 +132,6 @@ export async function POST(request: NextRequest) {
           recipientCount: allEligibleUserIds.length,
         },
       });
-
-      console.log(
-        "System notification log created successfully:",
-        logResult.id
-      );
     } catch (logError) {
       console.error("Error creating system notification log:", logError);
       // Don't fail the entire operation if logging fails

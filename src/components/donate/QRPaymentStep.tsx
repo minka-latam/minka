@@ -52,11 +52,9 @@ export function QRPaymentStep({
   useEffect(() => {
     // Prevent double execution in React Strict Mode
     if (initializationRef.current) {
-      console.log("=== useEffect skipped (already initialized) ===");
       return;
     }
     initializationRef.current = true;
-    console.log("=== useEffect running (first time) ===");
 
     loadOrGenerateQR();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -73,22 +71,16 @@ export function QRPaymentStep({
   };
 
   const storeQR = (data: { qrImage: string; alias: string; expiresAt: string }) => {
-    console.log("=== storeQR called ===");
-    console.log("donationId from props:", donationId);
-    console.log("amount from props:", amount);
     const toStore: StoredQRData = {
       ...data,
       donationId,
       amount,
       createdAt: new Date().toISOString(),
     };
-    console.log("Storing QR:", toStore);
     localStorage.setItem(QR_STORAGE_KEY, JSON.stringify(toStore));
   };
 
   const clearStoredQR = () => {
-    console.log("=== clearStoredQR called ===");
-    console.trace("clearStoredQR stack trace:");
     localStorage.removeItem(QR_STORAGE_KEY);
   };
 
@@ -98,11 +90,6 @@ export function QRPaymentStep({
 
     // Check if we have a stored QR for this donation
     const storedQR = getStoredQR();
-    console.log("=== loadOrGenerateQR called ===");
-    console.log("Stored QR:", storedQR);
-    console.log("Current donationId:", donationId);
-    console.log("Stored QR donationId:", storedQR?.donationId);
-    console.log("Match:", storedQR?.donationId === donationId);
 
     if (storedQR && storedQR.donationId === donationId) {
       // Check if the stored QR hasn't exceeded its expiration (24 hours from creation)
@@ -112,9 +99,6 @@ export function QRPaymentStep({
       const isNotExpiredLocally = (now - createdAt) < MAX_AGE;
 
       if (isNotExpiredLocally) {
-        // QR hasn't expired locally, use it
-        // We trust the local expiration more than BISA's unreliable status API
-        console.log("Found stored QR that hasn't expired locally, using it");
         setQrData({
           qrImage: storedQR.qrImage,
           alias: storedQR.alias,
@@ -123,17 +107,10 @@ export function QRPaymentStep({
         setLoading(false);
         return;
       }
-
-      // QR has exceeded 24 hours, it's definitely expired
-      console.log("Stored QR has exceeded 24 hours, clearing...");
       clearStoredQR();
     } else if (storedQR) {
-      console.log("Stored QR is for different donation, clearing...");
       clearStoredQR();
     }
-
-    // No valid stored QR, generate a new one
-    console.log("No valid stored QR found, generating new one...");
     await generateQR();
   };
 
@@ -149,7 +126,6 @@ export function QRPaymentStep({
 
       // If BISA returns error (needsRegeneration), generate new QR
       if (!data.success) {
-        console.log("BISA verification failed:", data.error);
         return false;
       }
 
@@ -180,7 +156,6 @@ export function QRPaymentStep({
   const generateQR = async () => {
     // Prevent multiple simultaneous QR generation calls
     if (isGeneratingRef.current) {
-      console.log("QR generation already in progress, skipping...");
       return;
     }
     isGeneratingRef.current = true;
@@ -227,8 +202,6 @@ export function QRPaymentStep({
       const response = await fetch(`/api/bisa/status/${alias}`);
       const data = await response.json();
 
-      console.log("Status check response:", data);
-
       // Handle BISA API errors - show error but DON'T clear the QR
       // The error might be temporary, let user retry or regenerate manually
       if (!data.success && data.needsRegeneration) {
@@ -263,9 +236,6 @@ export function QRPaymentStep({
   };
 
   const handleManualCheck = async () => {
-    console.log("=== handleManualCheck called ===");
-    console.log("qrData:", qrData);
-    console.log("initializationRef.current:", initializationRef.current);
     if (!qrData?.alias) return;
 
     setCheckingPayment(true);
@@ -274,35 +244,23 @@ export function QRPaymentStep({
     try {
       const response = await fetch(`/api/bisa/status/${qrData.alias}`);
       const data = await response.json();
-      console.log("Status check response:", data);
-      console.log("checkStatusResults result:", data.data?.status);
 
       if (data.success && data.data?.status === "PAGADO") {
-        // Payment confirmed!
-        console.log("Payment PAGADO - clearing QR and calling onPaymentConfirmed");
         isPaidRef.current = true;
         setStatus("PAID");
         clearStoredQR();
         setTimeout(() => onPaymentConfirmed(), 1500);
       } else if (data.data?.status === "PENDIENTE") {
-        // Still pending - show message but keep QR, DO NOT regenerate
-        console.log("Payment still PENDIENTE - showing message, NOT regenerating QR");
         setError("El pago aún no ha sido confirmado. Por favor, completa el pago con tu banco y vuelve a intentar.");
         setTimeout(() => setError(null), 5000);
       } else if (data.data?.status === "EXPIRADO") {
-        // Expired - show expired UI
-        console.log("Payment EXPIRADO - showing expired UI");
         setStatus("EXPIRED");
         clearStoredQR();
       } else if (data.data?.status === "INHABILITADO") {
-        // Disabled - show error
-        console.log("Payment INHABILITADO - showing error");
         setError("Este código QR ha sido inhabilitado");
         setStatus("ERROR");
         clearStoredQR();
       } else if (!data.success) {
-        // API error - show message but DON'T clear QR
-        console.log("API error - showing message but NOT clearing QR");
         setError(data.error || "Error al verificar el pago. Intenta de nuevo.");
         setTimeout(() => setError(null), 5000);
       }
@@ -311,7 +269,6 @@ export function QRPaymentStep({
       setError("Error de conexión. Intenta de nuevo.");
       setTimeout(() => setError(null), 5000);
     } finally {
-      console.log("handleManualCheck finished");
       setCheckingPayment(false);
     }
   };

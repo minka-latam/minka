@@ -22,12 +22,6 @@ export async function PATCH(
 
     // Parse the request body
     const body = await request.json();
-    console.log(
-      "Received update request for donation:",
-      donationId,
-      "with body:",
-      body
-    );
 
     // Find the donation to verify it exists
     const donation = await prisma.donation.findUnique({
@@ -63,8 +57,6 @@ export async function PATCH(
 
       message: body.message !== undefined ? body.message : undefined,
     };
-
-    console.log("Normalized update body:", normalizedBody);
 
     // Check if user is owner of the donation
     const isOwner = userId && donation.donorId === userId;
@@ -107,8 +99,6 @@ export async function PATCH(
         paymentStatus: true,
       },
     });
-
-    console.log("Successfully updated donation:", updatedDonation);
     return NextResponse.json(updatedDonation);
   } catch (error) {
     console.error("Donation update error:", error);

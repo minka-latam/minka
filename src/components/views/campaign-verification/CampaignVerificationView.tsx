@@ -285,10 +285,6 @@ export function CampaignVerificationView({
       try {
         // First try to get campaign ID from props
         if (initialCampaignId) {
-          console.log(
-            "Loading campaign from initialCampaignId:",
-            initialCampaignId
-          );
           await loadCampaignById(initialCampaignId);
         } else {
           // If not in props, check localStorage as fallback
@@ -296,18 +292,10 @@ export function CampaignVerificationView({
             "verificationCampaignId"
           );
           if (storedCampaignId) {
-            console.log(
-              "Loading campaign from localStorage:",
-              storedCampaignId
-            );
             await loadCampaignById(storedCampaignId);
             // Clear from localStorage after using it to prevent stale data in future visits
             localStorage.removeItem("verificationCampaignId");
           } else {
-            // Otherwise, fetch all unverified campaigns for selection
-            console.log(
-              "No campaign ID found, fetching all unverified campaigns"
-            );
             await fetchUnverifiedCampaigns();
           }
         }
@@ -380,11 +368,9 @@ export function CampaignVerificationView({
 
   // Function to load a specific campaign by ID
   const loadCampaignById = async (id: string) => {
-    console.log(`Attempting to load campaign with ID: ${id}`);
     try {
       // First check if the ID is valid
       if (!id || id.trim() === "") {
-        console.error("Invalid campaign ID provided:", id);
         toast({
           title: "Error",
           description: "ID de campaña inválido.",
@@ -392,8 +378,6 @@ export function CampaignVerificationView({
         });
         return;
       }
-
-      console.log(`Fetching campaign details for ID: ${id}`);
       const response = await fetch(`/api/campaign/details?id=${id}`, {
         method: "GET",
         headers: {
@@ -401,28 +385,22 @@ export function CampaignVerificationView({
         },
         credentials: "include",
       });
-
-      console.log(`API response status: ${response.status}`);
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        console.error("API error response:", errorData);
         throw new Error(
           errorData.error || `Failed to fetch campaign: ${response.statusText}`
         );
       }
 
       const data = await response.json();
-      console.log("Campaign data received:", data);
 
       if (data.campaign) {
         setSelectedCampaignId(data.campaign.id);
         setCampaignTitle(data.campaign.title);
-        console.log(`Campaign loaded successfully: ${data.campaign.title}`);
 
         // Check verification status after setting the campaign
         await checkVerificationStatus(data.campaign.id);
       } else {
-        console.error("Campaign data not found in response:", data);
         throw new Error("Campaign data not found");
       }
     } catch (error) {
@@ -873,18 +851,6 @@ export function CampaignVerificationView({
         referenceContactEmail: referenceContact.email || undefined,
         referenceContactPhone: formattedPhone,
       };
-
-      // Debug logging to check what URLs we're sending
-      console.log("Verification data being sent:", {
-        campaignId: selectedCampaignId,
-        idDocumentUrl: !!idDocumentFrontUrl,
-        supportingDocsUrlsLength:
-          verificationData.supportingDocsUrls?.length || 0,
-        supportingDocsUrls: verificationData.supportingDocsUrls,
-        idDocumentFrontUrl: !!idDocumentFrontUrl,
-        idDocumentBackUrl: !!idDocumentBackUrl,
-        originalSupportingDocsLength: supportingDocsUrls?.length || 0,
-      });
 
       const response = await fetch("/api/campaign/verification", {
         method: "POST",

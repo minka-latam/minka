@@ -98,25 +98,12 @@ export function CampaignProgress({
 
   // Debug component state
   useEffect(() => {
-    console.log("CampaignProgress: Props received:", {
-      campaignId,
-      hasSession: !!session,
-      isLoggedIn,
-      authLoading,
-      isSaved,
-    });
   }, [campaignId, session, isLoggedIn, authLoading, isSaved]);
 
   // Debug session state
   useEffect(() => {
     if (!authLoading) {
       setIsSessionLoaded(true);
-      console.log("CampaignProgress: Session state updated:", {
-        isLoggedIn,
-        hasSession: !!session,
-        email: session?.user?.email,
-        campaignId,
-      });
     }
   }, [session, authLoading, isLoggedIn, campaignId]);
 
@@ -193,7 +180,6 @@ export function CampaignProgress({
     }
 
     if (!isLoggedIn) {
-      console.log("User not logged in, session:", session);
       try {
         sessionStorage.setItem(
           SAVE_CAMPAIGN_INTENT_KEY,
@@ -227,28 +213,15 @@ export function CampaignProgress({
       return;
     }
 
-    console.log("Save toggle initiated:", {
-      campaignId: campaignId,
-      isSaved: effectiveIsSaved,
-      isLoggedIn: isLoggedIn,
-      userEmail: session?.user?.email,
-    });
-
     setIsSaving(true);
     try {
       if (effectiveIsSaved) {
-        console.log("Attempting to unsave campaign:", campaignId);
         const result = await unsaveCampaign(campaignId);
-        console.log("Unsave result:", result);
         if (result) {
-          console.log("Campaign successfully unsaved");
         }
       } else {
-        console.log("Attempting to save campaign:", campaignId);
         const result = await saveCampaign(campaignId);
-        console.log("Save result:", result);
         if (result) {
-          console.log("Campaign successfully saved");
         }
       }
     } catch (error) {
@@ -278,7 +251,6 @@ export function CampaignProgress({
           url: shareUrl,
         })
         .catch((error) => {
-          console.log("Error sharing:", error);
           // Fallback to custom share options
           setShowShareOptions(true);
         });

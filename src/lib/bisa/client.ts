@@ -84,16 +84,15 @@ export class BisaClient {
       });
 
       const data = await response.json();
-      console.log("BISA token response:", JSON.stringify(data, null, 2));
 
       if (!response.ok) {
-        console.error("BISA token request failed:", response.status, data);
+        console.error(`BISA token request failed: ${response.status}`);
         throw new Error(`Failed to get token: ${response.status} - ${data.mensaje || 'Unknown error'}`);
       }
 
       // Check for BISA error response format
       if (data.codigo === "NOK" || !data.objeto?.token) {
-        console.error("BISA returned error:", data);
+        console.error("BISA returned an invalid token response");
         throw new Error(`BISA API Error: ${data.mensaje || 'No token received'}`);
       }
 
@@ -143,7 +142,6 @@ export class BisaClient {
       });
 
       const data = await response.json();
-      console.log("BISA generateQR response:", JSON.stringify(data, null, 2));
 
       if (response.status === 401) {
         // Token might be expired, retry once with new token
@@ -152,7 +150,7 @@ export class BisaClient {
       }
 
       if (!response.ok || data.codigo === "9999") {
-        console.error("BISA generateQR error:", data);
+        console.error("BISA generateQR request failed");
         return {
           success: false,
           error: data.mensaje || `API Error: ${response.status}`,
@@ -219,7 +217,6 @@ export class BisaClient {
       }
 
       const data = await response.json();
-      console.log("BISA checkStatus response:", JSON.stringify(data, null, 2));
 
       if (data.codigo !== "0000") {
         return {

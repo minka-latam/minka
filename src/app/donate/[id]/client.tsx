@@ -186,10 +186,6 @@ export function DonatePageContent({
             pendingDonation.campaignId === campaignId &&
             now - createdAt < MAX_AGE
           ) {
-            console.log(
-              'Found pending donation:',
-              pendingDonation,
-            )
             setDonationId(pendingDonation.donationId)
             setSelectedAmount(pendingDonation.amount)
             setPaymentMethod(pendingDonation.paymentMethod)
@@ -539,10 +535,6 @@ export function DonatePageContent({
       // 🔹 Branch 2: flujo antiguo (QR / otros)
       // Check if we already have a pending donation for QR payment
       if (donationId && selectedMethod === 'qr') {
-        console.log(
-          'Reusing existing donation ID:',
-          donationId,
-        )
         setShowQRStep(true)
         setIsDonationConfirmed(true)
         setIsSubmitting(false)
@@ -611,10 +603,6 @@ export function DonatePageContent({
             PENDING_DONATION_KEY,
             JSON.stringify(pendingDonation),
           )
-          console.log(
-            'Stored pending donation:',
-            pendingDonation,
-          )
         }
       }
 
@@ -680,12 +668,6 @@ export function DonatePageContent({
     // If we have a donation ID, update the notification preference in the database
     if (donationId) {
       try {
-        console.log(
-          'Updating notification preference for donation:',
-          donationId,
-          'to:',
-          checked,
-        )
 
         // Clear any previous errors
         setErrorMessage(null)
@@ -722,11 +704,6 @@ export function DonatePageContent({
           )
           return
         }
-
-        console.log(
-          'Successfully updated notification preference:',
-          responseData,
-        )
       } catch (error) {
         console.error(
           'Error updating notification preference:',
@@ -737,10 +714,6 @@ export function DonatePageContent({
         )
       }
     } else {
-      // If no donation ID yet, the preference will be saved with the donation when submitted
-      console.log(
-        'No donation ID available, notification preference saved for next donation',
-      )
     }
   }
 
@@ -791,7 +764,6 @@ export function DonatePageContent({
           url: shareUrl,
         })
         .catch((error) => {
-          console.log('Error sharing:', error)
           // Fallback to custom share options
           setShowShareOptions(true)
         })

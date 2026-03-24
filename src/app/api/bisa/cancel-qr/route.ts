@@ -85,9 +85,6 @@ export async function POST(request: NextRequest) {
     const cancelReason = reason || "user_cancelled";
 
     if (!bisaSuccess) {
-      // Log the failed attempt but don't fail completely
-      // The QR might already be expired or disabled
-      console.warn(`Failed to disable QR for donation ${donationId}, BISA returned error`);
 
       await prisma.paymentLog.create({
         data: {

@@ -112,13 +112,6 @@ export function UserDashboardContent({
   // Debug logging to see what's in the profile object
   useEffect(() => {
     if (profile) {
-      console.log("Profile object:", profile);
-      console.log("Available keys:", Object.keys(profile));
-      console.log("identityNumber:", profile.identityNumber);
-      console.log("identity_number:", profile.identity_number);
-      console.log("birthDate:", profile.birthDate);
-      console.log("birth_date:", profile.birth_date);
-      console.log("Raw profile from props:", profile);
     }
   }, [profile]);
 

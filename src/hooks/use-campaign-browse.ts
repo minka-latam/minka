@@ -163,29 +163,20 @@ export function useCampaignBrowse() {
         url.searchParams.append("page", page.toString());
         url.searchParams.append("limit", pagination.limit.toString());
 
-        console.log("Fetching campaigns with URL:", url.toString());
-        console.log("Current filters:", filters);
-        console.log("Current sort:", sortBy);
-        console.log("Current page:", page);
-        console.log("Request ID:", requestId);
-
         const response = await fetch(url.toString(), {
           signal: abortController.signal,
         });
 
         // Check if this request is still the latest one
         if (requestId !== lastRequestIdRef.current) {
-          console.log("Request outdated, ignoring response");
           return;
         }
 
         const data = await response.json();
-        console.log("API response:", data);
 
         // Check if there is an error message in the response
         if (data.error) {
           setError(data.error);
-          console.warn("API returned error:", data.error);
           // Still use any campaigns data that might be returned (e.g., fallback data)
           if (data.campaigns && Array.isArray(data.campaigns)) {
             setCampaigns(data.campaigns);
@@ -201,7 +192,6 @@ export function useCampaignBrowse() {
           if (data.campaigns && Array.isArray(data.campaigns)) {
             setCampaigns(data.campaigns);
           } else {
-            console.error("Invalid campaigns data:", data);
             setError("Error al cargar campañas: formato inválido");
           }
 
@@ -216,13 +206,11 @@ export function useCampaignBrowse() {
       } catch (err: any) {
         // Don't set error if request was aborted
         if (err.name === "AbortError") {
-          console.log("Request was aborted");
           return;
         }
 
         // Check if this request is still the latest one
         if (requestId !== lastRequestIdRef.current) {
-          console.log("Request outdated, ignoring error");
           return;
         }
 
@@ -266,14 +254,11 @@ export function useCampaignBrowse() {
           filters.verificationStatus
         );
 
-      console.log("Fetching categories with URL:", url.toString());
-
       const response = await fetch(url.toString());
       const data = await response.json();
 
       // Check if there is an error message in the response
       if (data.error) {
-        console.warn("Categories API error:", data.error);
         // Still use any categories data that might be returned (e.g., fallback data)
         setCategories(data.categories || []);
       } else {
@@ -313,14 +298,11 @@ export function useCampaignBrowse() {
           filters.verificationStatus
         );
 
-      console.log("Fetching locations with URL:", url.toString());
-
       const response = await fetch(url.toString());
       const data = await response.json();
 
       // Check if there is an error message in the response
       if (data.error) {
-        console.warn("Locations API error:", data.error);
         // Still use any locations data that might be returned (e.g., fallback data)
         setLocations(data.locations || []);
       } else {
@@ -343,8 +325,6 @@ export function useCampaignBrowse() {
   // Update filters
   const updateFilters = useCallback(
     (newFilters: Partial<CampaignFilters>) => {
-      console.log("Updating filters with:", newFilters);
-      console.log("Previous filters:", filters);
       setFilters((prev) => {
         const updated = { ...prev, ...newFilters };
 
@@ -361,8 +341,6 @@ export function useCampaignBrowse() {
             : undefined;
           updated.location = undefined;
         }
-
-        console.log("New filters will be:", updated);
         return updated;
       });
       // Reset to page 1 when filters change
@@ -374,7 +352,6 @@ export function useCampaignBrowse() {
   // Update sort
   const updateSort = useCallback(
     (newSortBy: string) => {
-      console.log("Updating sortBy from", sortBy, "to", newSortBy);
       setSortBy(newSortBy);
       // Reset to page 1 when sort changes
       setPagination((prev) => ({ ...prev, currentPage: 1 }));
@@ -385,20 +362,17 @@ export function useCampaignBrowse() {
   // Navigate to a specific page with improved validation and state management
   const goToPage = useCallback(
     (page: number) => {
-      console.log("Navigating to page:", page);
 
       // Validate page number
       if (
         page < 1 ||
         (pagination.totalPages > 0 && page > pagination.totalPages)
       ) {
-        console.warn("Invalid page number:", page);
         return;
       }
 
       // Don't fetch if already on the requested page
       if (page === pagination.currentPage) {
-        console.log("Already on page:", page);
         return;
       }
 
@@ -410,7 +384,6 @@ export function useCampaignBrowse() {
 
   // Reset all filters
   const resetFilters = useCallback(() => {
-    console.log("Resetting all filters");
 
     // Cancel any ongoing requests
     if (abortControllerRef.current) {
@@ -439,7 +412,6 @@ export function useCampaignBrowse() {
   useEffect(() => {
     // Initial fetch on mount
     if (!isInitialized) {
-      console.log("Initial fetch on mount");
       fetchCampaigns(1, false); // Don't update pagination state immediately
       fetchCategories();
       fetchLocations();
@@ -480,7 +452,6 @@ export function useCampaignBrowse() {
   // Fetch campaigns when filters or sort change - but not on initial mount
   useEffect(() => {
     if (isInitialized) {
-      console.log("Fetching campaigns due to filter/sort change");
       // Always reset to page 1 when filters or sort change
       fetchCampaigns(1, false);
     }

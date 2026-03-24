@@ -107,7 +107,6 @@ export default function CampaignDetailPage() {
   // Add handler for saving edited image
   const handleSaveEditedImage = async (editedUrl: string) => {
     try {
-      console.log("Saving edited image...");
 
       // Create file from edited image dataURL first
       const blob = dataURLtoBlob(editedUrl);
@@ -227,9 +226,6 @@ export default function CampaignDetailPage() {
   const getProxiedImageUrl = (url: string) => {
     // Check if this is a Supabase storage URL
     if (url.includes("supabase.co") || url.includes("supabase.in")) {
-      // For Supabase storage URLs, we can use them directly
-      // But we need to ensure CORS is handled properly
-      console.log("Using original Supabase URL:", url);
       return url;
     }
     // Otherwise, return the original URL
@@ -242,9 +238,7 @@ export default function CampaignDetailPage() {
     if (index < (campaign.media?.length || 0)) {
       const media = campaign.media?.[index];
       if (media && media.media_url) {
-        console.log("Editing existing campaign media at index:", index);
         const imageUrl = getProxiedImageUrl(media.media_url);
-        console.log("Setting imageToEdit to:", imageUrl);
         setImageToEdit(imageUrl);
         setEditingImageIndex(index);
         return;
@@ -254,7 +248,6 @@ export default function CampaignDetailPage() {
     // For newly added media (not yet saved)
     const previewIndex = index - (campaign.media?.length || 0);
     if (previewIndex >= 0 && previewIndex < mediaPreviewUrls.length) {
-      console.log("Editing newly added media at index:", previewIndex);
       setImageToEdit(mediaPreviewUrls[previewIndex]);
       setEditingImageIndex(index);
     } else {
@@ -329,8 +322,6 @@ export default function CampaignDetailPage() {
 
     // Create a preview URL
     const previewUrl = URL.createObjectURL(file);
-
-    console.log("Setting imageToEdit to", previewUrl);
     // Set the image to edit
     setImageToEdit(previewUrl);
     setUploadingFile(file);
@@ -613,7 +604,6 @@ export default function CampaignDetailPage() {
         if (error || !campaignData) {
           // In development mode, use dummy data instead of showing error or redirecting
           if (process.env.NODE_ENV === "development") {
-            console.log("Using dummy campaign data for development");
             setCampaign({
               id: params.id,
               title: "Protejamos juntos el parque Nacional Amboró",
@@ -694,9 +684,6 @@ export default function CampaignDetailPage() {
       } catch (error) {
         // Suppress errors in development mode with dummy data
         if (process.env.NODE_ENV === "development") {
-          console.log(
-            "Error encountered, using dummy campaign data for development"
-          );
           const { data: session } = await supabase.auth.getSession();
 
           setCampaign({

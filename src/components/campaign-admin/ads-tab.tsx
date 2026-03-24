@@ -77,15 +77,8 @@ export function AdsTab({ campaign }: AdsTabProps) {
   const fetchUpdates = async () => {
     const updatesData = await getCampaignUpdates(campaign.id);
     if (updatesData) {
-      console.log("Fetched updates:", updatesData);
       // Log individual update data for better debugging
       updatesData.forEach((update) => {
-        console.log(`Update ${update.id}:`, {
-          title: update.title,
-          message: update.message,
-          imageUrl: update.imageUrl || "none",
-          youtubeUrl: update.youtubeUrl || "none",
-        });
       });
       setUpdates(updatesData);
     }
@@ -153,9 +146,7 @@ export function AdsTab({ campaign }: AdsTabProps) {
     // If there's an uploaded image but no image URL, upload it first
     let imageUrl = formData.imageUrl || "";
     if (uploadedImage) {
-      console.log("Uploading image before publishing update...");
       imageUrl = await uploadImage();
-      console.log("Image uploaded, URL:", imageUrl);
       if (!imageUrl) {
         console.error("Failed to get image URL after upload");
         return;
@@ -168,8 +159,6 @@ export function AdsTab({ campaign }: AdsTabProps) {
       youtubeUrl: formData.youtubeUrl,
       imageUrl: imageUrl,
     };
-
-    console.log("Sending update payload:", updatePayload);
 
     const success = await publishCampaignUpdate(campaign.id, updatePayload);
 
@@ -306,13 +295,6 @@ export function AdsTab({ campaign }: AdsTabProps) {
       const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
       const filePath = `campaign-images/${fileName}`;
 
-      console.log(
-        "Uploading to bucket:",
-        STORAGE_BUCKET,
-        "with path:",
-        filePath
-      );
-
       const { data, error } = await supabase.storage
         .from(STORAGE_BUCKET)
         .upload(filePath, file, {
@@ -329,8 +311,6 @@ export function AdsTab({ campaign }: AdsTabProps) {
       const { data: urlData } = supabase.storage
         .from(STORAGE_BUCKET)
         .getPublicUrl(filePath);
-
-      console.log("Upload successful, public URL:", urlData.publicUrl);
 
       // Store the URL in formData state to ensure it's tracked
       setFormData({
@@ -634,11 +614,6 @@ export function AdsTab({ campaign }: AdsTabProps) {
             ) : updates.length > 0 ? (
               <div className="divide-y divide-gray-200">
                 {updates.map((update) => {
-                  console.log(`Rendering update ${update.id}:`, {
-                    title: update.title,
-                    hasImage: !!update.imageUrl,
-                    hasYoutube: !!update.youtubeUrl,
-                  });
 
                   return (
                     <div key={update.id} className="py-4">

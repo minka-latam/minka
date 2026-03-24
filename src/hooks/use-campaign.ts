@@ -191,12 +191,10 @@ export function useCampaign() {
     try {
       // Perform validation checks
       if (!formData.title || !formData.description || !formData.category) {
-        console.error("Missing required fields in campaign draft data");
         throw new Error("Faltan campos requeridos en el formulario");
       }
 
       if (!formData.media || formData.media.length === 0) {
-        console.error("No media provided for campaign draft");
         throw new Error("Debes subir al menos una imagen");
       }
 
@@ -225,12 +223,6 @@ export function useCampaign() {
         payload.campaignId = campaignId;
       }
 
-      console.log("Sending draft payload:", {
-        hasMedia: !!payload.media,
-        mediaCount: payload.media?.length || 0,
-        hasId: !!payload.campaignId,
-      });
-
       const response = await fetch("/api/campaign/draft", {
         method: "POST",
         headers: {
@@ -242,7 +234,6 @@ export function useCampaign() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        console.error("API error response:", errorData);
         throw new Error(errorData.error || "Failed to save campaign draft");
       }
 

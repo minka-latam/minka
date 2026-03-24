@@ -57,8 +57,6 @@ export function useSavedCampaigns() {
       setIsLoading(true);
       setError(null);
 
-      console.log("Fetching saved campaigns for session:", !!session);
-
       const response = await fetch("/api/saved-campaign", {
         credentials: "include", // Important to include cookies
         headers: {
@@ -66,15 +64,12 @@ export function useSavedCampaigns() {
         },
       });
 
-      console.log("Fetch response status:", response.status);
-
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || "Failed to fetch saved campaigns");
       }
 
       const data = await response.json();
-      console.log(`Fetched ${data.length} saved campaigns`);
       setSavedCampaigns(data);
       updateSavedIdsCache(data);
     } catch (err) {
@@ -122,15 +117,8 @@ export function useSavedCampaigns() {
     options?: { silent?: boolean }
   ) => {
     const silent = options?.silent ?? false;
-    console.log("=== SAVE CAMPAIGN DEBUG START ===");
-    console.log("Auth loading:", authLoading);
-    console.log("Session:", session);
-    console.log("Session user:", session?.user);
-    console.log("Session user email:", session?.user?.email);
-    console.log("Campaign ID:", campaignId);
 
     if (authLoading) {
-      console.log("AUTH LOADING - aborting");
       if (!silent) {
         toast({
           title: "Cargando",
@@ -141,7 +129,6 @@ export function useSavedCampaigns() {
     }
 
     if (!session) {
-      console.log("NO SESSION - aborting");
       if (!silent) {
         toast({
           title: "Error",
@@ -153,7 +140,6 @@ export function useSavedCampaigns() {
     }
 
     if (!campaignId || campaignId.trim() === "") {
-      console.log("INVALID CAMPAIGN ID - aborting");
       if (!silent) {
         toast({
           title: "Error",
@@ -166,7 +152,6 @@ export function useSavedCampaigns() {
 
     try {
       setError(null);
-      console.log("Making API call to save campaign:", campaignId);
 
       const response = await fetch("/api/saved-campaign", {
         method: "POST",
@@ -178,15 +163,8 @@ export function useSavedCampaigns() {
         body: JSON.stringify({ campaignId: campaignId.trim() }),
       });
 
-      console.log("API Response status:", response.status);
-      console.log(
-        "API Response headers:",
-        Object.fromEntries(response.headers.entries())
-      );
-
       if (!response.ok) {
         const errorData = await response.json();
-        console.log("API Error response:", errorData);
 
         // Handle specific error cases
         if (response.status === 401) {
@@ -220,7 +198,6 @@ export function useSavedCampaigns() {
       }
 
       const data = await response.json();
-      console.log("API Success response:", data);
 
       // Refresh the list of saved campaigns
       await fetchSavedCampaigns();
@@ -232,12 +209,9 @@ export function useSavedCampaigns() {
         });
       }
       notifySavedCampaignsUpdated();
-
-      console.log("=== SAVE CAMPAIGN DEBUG END - SUCCESS ===");
       return true;
     } catch (err) {
       console.error("Error saving campaign:", err);
-      console.log("=== SAVE CAMPAIGN DEBUG END - ERROR ===");
       setError(
         err instanceof Error ? err.message : "An unknown error occurred"
       );
@@ -285,7 +259,6 @@ export function useSavedCampaigns() {
 
     try {
       setError(null);
-      console.log("Unsaving campaign:", campaignId);
 
       const response = await fetch("/api/saved-campaign", {
         method: "DELETE",
@@ -296,8 +269,6 @@ export function useSavedCampaigns() {
         credentials: "include", // Include cookies for auth
         body: JSON.stringify({ campaignId: campaignId.trim() }),
       });
-
-      console.log("Unsave response status:", response.status);
 
       if (!response.ok) {
         const errorData = await response.json();

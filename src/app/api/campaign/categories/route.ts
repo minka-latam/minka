@@ -60,15 +60,6 @@ export async function GET(request: Request) {
       ? parseInt(url.searchParams.get("fundingPercentageMax") || "100")
       : undefined;
 
-    console.log("Categories API - Received filters:", {
-      locations,
-      search,
-      verified,
-      createdAfter,
-      fundingPercentageMin,
-      fundingPercentageMax,
-    });
-
     try {
       // Use Prisma directly instead of raw SQL for better type safety and filtering
       const whereClause: any = {
@@ -141,10 +132,6 @@ export async function GET(request: Request) {
         },
       });
 
-      console.log(
-        `Categories API - Found ${campaigns.length} total campaigns matching filters`
-      );
-
       // Count the occurrences of each category
       const categoryCounts: Record<string, number> = {};
 
@@ -152,8 +139,6 @@ export async function GET(request: Request) {
         const category = campaign.category.toString();
         categoryCounts[category] = (categoryCounts[category] || 0) + 1;
       });
-
-      console.log("Categories API - Category counts:", categoryCounts);
 
       // Format the categories for the response
       const categories = Object.entries(categoryCounts)
@@ -173,7 +158,6 @@ export async function GET(request: Request) {
 
     // In development mode, return mock data as a fallback
     if (process.env.NODE_ENV === "development") {
-      console.log("Using mock categories data as fallback");
       return NextResponse.json({ categories: mockCategories });
     }
 

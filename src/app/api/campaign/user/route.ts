@@ -4,7 +4,6 @@ import { NextResponse } from "next/server";
 
 export async function GET() {
   try {
-    console.log("Starting to fetch user campaigns");
 
     // Create Supabase client with properly handled cookies
     const cookieStore = await cookies();
@@ -18,22 +17,16 @@ export async function GET() {
     } = await supabase.auth.getSession();
 
     if (sessionError) {
-      console.error("Session error:", sessionError);
+      console.error("User campaigns request rejected: session error");
       return NextResponse.json(
-        { error: "Authentication error", message: sessionError.message },
+        { error: "Authentication error" },
         { status: 401 }
       );
     }
 
     if (!session) {
-      console.log("No session found, returning empty campaigns array");
       return NextResponse.json({ campaigns: [] });
     }
-
-    console.log(
-      "User authenticated, fetching campaigns for user:",
-      session.user.id
-    );
 
     // Get user's campaigns with media join for primary image
     const { data: campaigns, error } = await supabase
@@ -64,15 +57,10 @@ export async function GET() {
     if (error) {
       console.error("Database error fetching campaigns:", error);
       return NextResponse.json(
-        {
-          error: "Failed to fetch campaigns from database",
-          details: error.message,
-        },
+        { error: "Failed to fetch campaigns from database" },
         { status: 500 }
       );
     }
-
-    console.log(`Successfully fetched ${campaigns?.length || 0} campaigns`);
 
     // Transform the campaigns data to match the expected format
     const transformedCampaigns = campaigns?.map((campaign) => {
@@ -97,8 +85,6 @@ export async function GET() {
         organizer_id: campaign.organizer_id,
       };
     });
-
-    console.log(`Transformed ${transformedCampaigns?.length || 0} campaigns`);
 
     return NextResponse.json({
       campaigns: transformedCampaigns || [],

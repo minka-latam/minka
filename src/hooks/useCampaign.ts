@@ -68,76 +68,49 @@ export function useCampaign(campaignId: string | null) {
   useEffect(() => {
     const fetchCampaign = async () => {
       if (!campaignId) {
-        console.log("useCampaign: No campaign ID provided");
         setError("No campaign ID provided");
         return;
       }
-
-      console.log(`useCampaign: Fetching campaign with ID: ${campaignId}`);
       setIsLoading(true);
       setError(null);
 
       try {
         const url = `/api/campaign/${campaignId}`;
-        console.log(`useCampaign: Making fetch request to: ${url}`);
 
         const response = await fetch(url);
-        console.log(
-          `useCampaign: Received response with status: ${response.status}`
-        );
 
         // Clone the response so we can log the raw text and still parse JSON
         const clonedResponse = response.clone();
         const rawText = await clonedResponse.text();
-        console.log(
-          `useCampaign: Raw response: ${rawText.substring(0, 200)}...`
-        );
 
         if (!response.ok) {
-          console.error(`useCampaign: API error response: ${rawText}`);
-
           try {
             const errorData = JSON.parse(rawText);
             throw new Error(errorData.error || "Failed to fetch campaign");
-          } catch (parseError) {
+          } catch {
             throw new Error(
               `Failed to fetch campaign: ${response.status} ${response.statusText}`
             );
           }
         }
 
-        try {
-          const data = JSON.parse(rawText);
-          console.log("useCampaign: Received campaign data:", data);
+        const data = JSON.parse(rawText);
 
-          if (!data || typeof data !== "object") {
-            console.error("useCampaign: Invalid data format received:", data);
-            throw new Error("Invalid campaign data format received");
-          }
-
-          // Transform data to match our expected format
-          const formattedCampaign: Campaign = {
-            ...data,
-            organizer: data.organizer
-              ? {
-                  ...data.organizer,
-                  profilePicture: data.organizer.profile_picture,
-                }
-              : null,
-          };
-
-          console.log(
-            "useCampaign: Setting campaign with formatted data:",
-            formattedCampaign
-          );
-          setCampaign(formattedCampaign);
-        } catch (parseError) {
-          console.error(
-            "useCampaign: Error parsing campaign data:",
-            parseError
-          );
-          throw parseError;
+        if (!data || typeof data !== "object") {
+          throw new Error("Invalid campaign data format received");
         }
+
+        // Transform data to match our expected format
+        const formattedCampaign: Campaign = {
+          ...data,
+          organizer: data.organizer
+            ? {
+                ...data.organizer,
+                profilePicture: data.organizer.profile_picture,
+              }
+            : null,
+        };
+        setCampaign(formattedCampaign);
       } catch (err) {
         const errorMessage =
           err instanceof Error ? err.message : "An unknown error occurred";

@@ -34,13 +34,10 @@ export async function POST(req: NextRequest) {
       error: sessionError,
     } = await supabase.auth.getSession();
 
-    // Log session debugging info for troubleshooting
-    console.log("Session check result:", !!session, "Error:", sessionError);
-
     if (sessionError) {
-      console.error("Session error:", sessionError);
+      console.error("Campaign verification request rejected: session error");
       return NextResponse.json(
-        { error: "Authentication error", details: sessionError.message },
+        { error: "Authentication error" },
         { status: 401 }
       );
     }
@@ -54,17 +51,6 @@ export async function POST(req: NextRequest) {
 
     // Validate request body
     const body = await req.json();
-
-    // Debug logging to see what data we're receiving
-    console.log("API received verification data:", {
-      campaignId: body.campaignId,
-      idDocumentUrl: !!body.idDocumentUrl,
-      supportingDocsUrlsLength: body.supportingDocsUrls?.length || 0,
-      supportingDocsUrls: body.supportingDocsUrls,
-      hasReferenceContact: !!(
-        body.referenceContactName || body.referenceContactEmail
-      ),
-    });
 
     const validatedData = verificationRequestSchema.parse(body);
 
@@ -175,15 +161,6 @@ export async function POST(req: NextRequest) {
         referenceContactPhone: validatedData.referenceContactPhone,
         verificationStatus: "pending",
       },
-    });
-
-    // Debug logging to confirm what was stored
-    console.log("Created verification record:", {
-      id: verification.id,
-      campaignId: verification.campaignId,
-      idDocumentUrl: !!verification.idDocumentUrl,
-      supportingDocsUrlsCount: verification.supportingDocsUrls?.length || 0,
-      verificationStatus: verification.verificationStatus,
     });
 
     return NextResponse.json({

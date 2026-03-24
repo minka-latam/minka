@@ -35,7 +35,6 @@ export function CausesSection() {
         if (data.campaigns && Array.isArray(data.campaigns)) {
           setCampaigns(data.campaigns);
         } else {
-          console.error("Invalid campaigns data:", data);
           setError("Error loading campaigns");
           setCampaigns([]);
         }

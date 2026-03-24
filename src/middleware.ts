@@ -32,13 +32,8 @@ export async function middleware(req: NextRequest) {
       returnUrl && returnUrl.startsWith("/") ? returnUrl : null;
 
     if (safeReturnUrl) {
-      console.log(
-        `Authenticated user redirected from auth route to returnUrl: ${safeReturnUrl}`
-      );
       return NextResponse.redirect(new URL(safeReturnUrl, req.url));
     }
-
-    console.log("Authenticated user redirected from auth route to dashboard");
     return NextResponse.redirect(new URL("/dashboard", req.url));
   }
 
@@ -46,9 +41,6 @@ export async function middleware(req: NextRequest) {
   if (!isAuthenticated && isProtectedRoute) {
     // Store the original URL to redirect back after sign-in
     const returnUrl = req.nextUrl.pathname + req.nextUrl.search;
-    console.log(
-      `Unauthenticated user redirected to sign-in. Return URL: ${returnUrl}`
-    );
 
     const signInUrl = new URL("/sign-in", req.url);
 

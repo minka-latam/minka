@@ -65,15 +65,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const fetchProfile = async (userId: string, retryCount = 0) => {
     // Skip if a fetch is already in progress for the same user
     if (profileFetchInProgress) {
-      console.log("Profile fetch already in progress, skipping redundant call");
       return null;
     }
 
     try {
       setProfileFetchInProgress(true);
-      console.log(
-        `Fetching profile for user: ${userId} (attempt ${retryCount + 1})`
-      );
 
       // Create AbortController for timeout handling
       const controller = new AbortController();
@@ -99,7 +95,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const errorData = await response
           .json()
           .catch(() => ({ error: "Network error" }));
-        console.error("Error fetching profile:", errorData);
+        console.error("Error fetching profile");
         throw new Error(errorData.error || "Failed to fetch profile");
       }
 
@@ -107,7 +103,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (data.profile) {
         setProfile(data.profile);
-        console.log("Profile fetched successfully:", data.profile);
         return data.profile;
       } else {
         throw new Error("No profile data received");
@@ -120,10 +115,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           error.message.includes("fetch"));
 
       if (retryCount < 2 && isRetryable) {
-        console.warn(
-          `Error fetching profile (attempt ${retryCount + 1}):`,
-          error instanceof Error ? error.message : error
-        );
       } else {
         console.error(
           `Error fetching profile (attempt ${retryCount + 1}):`,
@@ -139,9 +130,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           error.message.includes("network") ||
           error.message.includes("fetch"))
       ) {
-        console.log(
-          `Retrying profile fetch in ${(retryCount + 1) * 1000}ms...`
-        );
         setTimeout(
           () => fetchProfile(userId, retryCount + 1),
           (retryCount + 1) * 1000
@@ -313,7 +301,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({})); 
-        console.error("Registration API error:", response.status, errorData);
+        console.error(`Registration API error: ${response.status}`);
 
         // Use a simplified error message instead of exposing details
         const errorType = typeof errorData.error === 'string' ? errorData.error.toLowerCase() : "";
@@ -360,8 +348,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       setIsLoading(true);
 
-      console.log("Attempting sign out via API...");
-
       // Call the server-side logout endpoint
       const response = await fetch("/api/auth/logout", {
         method: "POST",
@@ -372,10 +358,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         let errorData = { error: "Logout API call failed", details: "" };
         try {
           errorData = await response.json();
-        } catch (e) {
+        } catch {
           // Ignore error if response body is not JSON
         }
-        console.error("Logout API error:", errorData);
+        console.error(`Logout API error: ${response.status}`);
         toast({
           title: "Error",
           description: `${errorData.error}${errorData.details ? `: ${errorData.details}` : ""}`,
@@ -384,10 +370,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Throw an error to stop execution
         throw new Error(errorData.error || "Logout API call failed");
       }
-
-      // API call was successful (status 2xx)
-      // The server has initiated the sign-out and cleared the cookie.
-      console.log("Logout API call successful.");
 
       // Clear state immediately after successful API call
       setUser(null);

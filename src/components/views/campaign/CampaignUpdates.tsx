@@ -18,7 +18,6 @@ interface CampaignUpdatesProps {
 
 export function CampaignUpdates({ updates }: CampaignUpdatesProps) {
   useEffect(() => {
-    console.log("Rendering campaign updates:", updates);
   }, [updates]);
 
   if (!updates || updates.length === 0) {
@@ -44,18 +43,10 @@ export function CampaignUpdates({ updates }: CampaignUpdatesProps) {
       </h2>
       <div className="space-y-6">
         {updates.map((update) => {
-          console.log(`Update ${update.id}:`, {
-            title: update.title,
-            hasYouTube: !!update.youtubeUrl,
-            youtubeUrl: update.youtubeUrl,
-            hasImage: !!update.imageUrl,
-            imageUrl: update.imageUrl,
-          });
 
           const youtubeId = update.youtubeUrl
             ? getYoutubeVideoId(update.youtubeUrl)
             : null;
-          console.log(`Update ${update.id} YouTube ID:`, youtubeId);
 
           return (
             <div

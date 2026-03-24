@@ -103,11 +103,8 @@ export default function DashboardPage() {
 
       // First, try to use the profile from auth context if it's complete
       if (authProfile && authProfile.id && authProfile.email) {
-        console.log("Using profile from auth context:", authProfile);
         profileData = authProfile;
       } else {
-        // Fallback: fetch fresh profile data from API
-        console.log("Fetching fresh profile data from API for user:", user.id);
         profileData = await getProfile(user.id);
 
         if (!profileData) {

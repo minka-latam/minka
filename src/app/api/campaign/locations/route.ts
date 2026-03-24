@@ -51,15 +51,6 @@ export async function GET(request: Request) {
       ? parseInt(url.searchParams.get("fundingPercentageMax") || "100")
       : undefined;
 
-    console.log("Locations API - Received filters:", {
-      category,
-      search,
-      verified,
-      createdAfter,
-      fundingPercentageMin,
-      fundingPercentageMax,
-    });
-
     try {
       // Use Prisma directly instead of raw SQL for better type safety and filtering
       const whereClause: any = {
@@ -130,10 +121,6 @@ export async function GET(request: Request) {
         },
       });
 
-      console.log(
-        `Locations API - Found ${campaigns.length} total campaigns matching filters`
-      );
-
       // Count the occurrences of each location
       const locationCounts: Record<string, number> = {};
 
@@ -141,8 +128,6 @@ export async function GET(request: Request) {
         const location = campaign.location.toString();
         locationCounts[location] = (locationCounts[location] || 0) + 1;
       });
-
-      console.log("Locations API - Location counts:", locationCounts);
 
       // Format the locations for the response
       const locations = Object.entries(locationCounts)
@@ -162,7 +147,6 @@ export async function GET(request: Request) {
 
     // In development mode, return mock data as a fallback
     if (process.env.NODE_ENV === "development") {
-      console.log("Using mock locations data as fallback");
       return NextResponse.json({ locations: mockLocations });
     }
 

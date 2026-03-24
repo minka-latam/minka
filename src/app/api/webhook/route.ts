@@ -107,12 +107,10 @@ export async function POST(req: Request) {
         receivedSignature,
       )
     ) {
-      console.error('[TRIPTO][WEBHOOK] invalid signature', {
-        received: receivedSignature?.slice(0, 12),
-        expected: expectedSignature.slice(0, 12),
-        webhookEvent: req.headers.get('x-webhook-event'),
-        webhookId: req.headers.get('x-webhook-id'),
-      })
+      console.error(
+        '[TRIPTO][WEBHOOK] invalid signature',
+        req.headers.get('x-webhook-event') || 'unknown',
+      )
 
       return NextResponse.json(
         { error: 'Unauthorized' },
@@ -123,11 +121,6 @@ export async function POST(req: Request) {
     const event =
       req.headers.get('x-webhook-event') || body?.event
     const data = body?.data
-
-    console.log('[TRIPTO][WEBHOOK] event ok', {
-      event,
-      paymentId: data?.paymentId,
-    })
 
     if (!event || !data) {
       return NextResponse.json(

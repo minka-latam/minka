@@ -123,19 +123,16 @@ async function debouncedRequest<T>(
   // Check cache first
   const cachedData = getCachedData(cacheKey);
   if (cachedData) {
-    console.log(`Cache hit for ${cacheKey}`);
     return cachedData;
   }
 
   // Check if this request is already in flight
   if (pendingRequests.has(cacheKey)) {
-    console.log(`Request already in flight for ${cacheKey}, reusing promise`);
     return pendingRequests.get(cacheKey) as Promise<T>;
   }
 
   // Create and store the request promise
   try {
-    console.log(`Making new request for ${cacheKey}`);
     const requestPromise = requestFn();
     pendingRequests.set(cacheKey, requestPromise);
 
@@ -196,9 +193,6 @@ export function useDb() {
       setLoading(true);
       try {
         return await debouncedRequest(cacheKey, async () => {
-          console.log(
-            `Fetching profile for user ${userId} (${includeRelated ? "with" : "without"} related data)`
-          );
 
           // Create AbortController for timeout handling
           const controller = new AbortController();
@@ -236,7 +230,6 @@ export function useDb() {
 
         // If it's a timeout error, return null gracefully
         if (error instanceof Error && error.name === "AbortError") {
-          console.warn("Profile fetch timed out");
         }
 
         return null;

@@ -27,7 +27,7 @@ export async function GET(request: Request) {
 
     if (sessionError) {
       return NextResponse.json(
-        { error: "Authentication error", message: sessionError.message },
+        { error: "Authentication error" },
         { status: 401 }
       );
     }
@@ -67,10 +67,7 @@ export async function GET(request: Request) {
 
     if (error) {
       return NextResponse.json(
-        {
-          error: "Failed to fetch campaign from database",
-          details: error.message,
-        },
+        { error: "Failed to fetch campaign from database" },
         { status: 500 }
       );
     }

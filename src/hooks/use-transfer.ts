@@ -100,9 +100,6 @@ export function useTransfer() {
 
       if (response.status === 401) {
         setIsAuthenticated(false);
-        console.log(
-          "User is not authenticated, silently returning empty results"
-        );
         return {
           transfers: [],
           totalCount: 0,

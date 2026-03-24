@@ -188,7 +188,6 @@ export function TransferFundsTab({ campaign }: TransferFundsTabProps) {
     }
 
     setIsLoading(true);
-    console.log("Submitting form with data:", formData);
 
     try {
       // Check if all required fields are filled

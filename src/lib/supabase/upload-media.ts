@@ -46,7 +46,7 @@ export async function uploadMedia(file: File): Promise<UploadResponse> {
       await supabase.auth.getSession();
 
     if (sessionError) {
-      console.error("Authentication error:", sessionError);
+      console.error("Authentication error during media upload");
       throw new Error("Error de autenticación: " + sessionError.message);
     }
 

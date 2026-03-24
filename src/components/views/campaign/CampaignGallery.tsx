@@ -17,8 +17,7 @@ export function CampaignGallery({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalImageIndex, setModalImageIndex] = useState(0);
 
-  const openModal = (index: number) => {
-    console.log("Opening modal with index:", index); // Debug log
+  const openModal = (index: number) => { // Debug log
     setModalImageIndex(index);
     setIsModalOpen(true);
   };
@@ -79,8 +78,7 @@ export function CampaignGallery({
     );
   }
 
-  const handleMainImageClick = () => {
-    console.log("Main image clicked"); // Debug log
+  const handleMainImageClick = () => { // Debug log
     openModal(selectedImage);
   };
 

@@ -213,11 +213,6 @@ export function ImageEditor({
       const ctx = canvas.getContext("2d");
       if (!ctx) return;
 
-      // Clear debug info
-      console.log("Crop:", completedCrop);
-      console.log("Scale:", scale);
-      console.log("Rotation:", rotation);
-
       // Get natural dimensions of the image
       const naturalWidth = image.naturalWidth;
       const naturalHeight = image.naturalHeight;
@@ -389,7 +384,6 @@ export function ImageEditor({
 
   // Store the final crop coordinates, adjusted for scale
   const handleCropComplete = useCallback((c: PixelCrop) => {
-    console.log("Crop complete (screen coordinates):", c);
 
     // Store the completed crop as-is (in screen coordinates)
     // The scale adjustment will happen when saving
