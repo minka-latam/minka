@@ -228,6 +228,7 @@ export async function GET(request: Request) {
           is: null,
         };
       }
+    }
 
     // Apply new filters
     if (createdAfter) {
