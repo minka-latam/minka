@@ -109,11 +109,7 @@ export default function PoliticasDePrivacidadPage() {
               Si tienes preguntas sobre estas políticas de privacidad, puedes
               contactarnos a través de nuestro{" "}
               
-                href="/help"
-                className="text-[#2c6e49] hover:underline font-medium"
-              >
-                centro de ayuda
-              </a>
+                <a href="/help" className="text-[#2c6e49] hover:underline font-medium">centro de ayuda</a>
               .
             </p>
           </div>
