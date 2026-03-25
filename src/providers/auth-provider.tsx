@@ -113,12 +113,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       setProfile(null);
-      toast({
-        title: "Error",
-        description: "No se pudo cargar la información del perfil.",
-        variant: "destructive",
-      });
       return null;
+      
     } finally {
       profileFetchInProgress.current = false;
     }
