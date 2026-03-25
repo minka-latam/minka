@@ -223,28 +223,11 @@ export async function GET(request: Request) {
           verificationStatus: "pending",
         };
       } else if (verificationStatus === "unverified") {
-        // Show campaigns that are not verified and don't have pending/approved requests
-        whereClause.AND = [
-          {
-            OR: [{ verificationStatus: false }, { verificationStatus: null }],
-          },
-          {
-            OR: [
-              {
-                verificationRequests: {
-                  is: null,
-                },
-              },
-              {
-                verificationRequests: {
-                  verificationStatus: "rejected",
-                },
-              },
-            ],
-          },
-        ];
+        whereClause.verificationStatus = false;
+        whereClause.verificationRequests = {
+          is: null,
+        };
       }
-    }
 
     // Apply new filters
     if (createdAfter) {
