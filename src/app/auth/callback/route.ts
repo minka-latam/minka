@@ -75,7 +75,7 @@ export async function GET(request: NextRequest) {
             email: data.user.email || "",
             passwordHash: "",
             profilePicture: userMetadata?.avatar_url || "",
-            identityNumber: "",
+            identityNumber: `google_${data.user.id}`,
             phone: userMetadata?.phone || "",
             birthDate: new Date(),
             address: "",
