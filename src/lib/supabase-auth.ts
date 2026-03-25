@@ -1,8 +1,11 @@
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { createBrowserClient } from "@supabase/ssr";
 
 // Client-side Supabase client (to be used in client components)
 export const createClient = () => {
-  return createClientComponentClient();
+  return createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
 };
 
 // Function to sign out
@@ -19,9 +22,7 @@ export const signOut = async () => {
 };
 
 // Function to handle social login
-export const signInWithSocial = async (
-  provider: "google" | "facebook"
-) => {
+export const signInWithSocial = async (provider: "google" | "facebook") => {
   const supabase = createClient();
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider,
