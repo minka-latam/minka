@@ -391,15 +391,23 @@ export function DonatePageContent({
 
   // Handle custom amount input
   const handleCustomAmountChange = (
-    e: React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    const value = e.target.value
-    // Only allow numbers and decimal point, max 2 decimal places
-    if (/^\d*(\.\d{0,2})?$/.test(value)) {
+  e: React.ChangeEvent<HTMLInputElement>,
+) => {
+  const value = e.target.value
+  if (/^\d*(\.\d{0,2})?$/.test(value)) {
+    const numValue = Number.parseFloat(value)
+    if (!value || numValue <= 50000) {
       setCustomAmount(value)
       setSelectedAmount(null)
+    } else {
+      toast({
+        title: "Monto inválido",
+        description: "El monto máximo de donación es Bs. 50,000.",
+        variant: "destructive",
+      })
     }
   }
+}
 
   // Handle payment method selection
   const handlePaymentMethodSelect = (method: string) => {
@@ -427,9 +435,10 @@ export function DonatePageContent({
       }, 300)
     } else if (
       step === 2 &&
-      (selectedAmount ||
-        (customAmount &&
-          Number.parseFloat(customAmount) > 0))
+    (selectedAmount ||
+    (customAmount &&
+    Number.parseFloat(customAmount) >= 1 &&
+    Number.parseFloat(customAmount) <= 50000))
     ) {
       setIsAnimating(true)
       setAnimationDirection('forward')
