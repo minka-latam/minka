@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { bisaClient } from "@/lib/bisa/client";
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
+import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
 export async function POST(request: NextRequest) {
@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     // Verify user is authenticated
     const cookieStore = await cookies();
 
-    const supabase = createRouteHandlerClient({ cookies: (() => cookieStore) as any });
+    const supabase = createServerClient({ cookies: (() => cookieStore) as any });
     const { data: { session } } = await supabase.auth.getSession();
     const user = session?.user;
 
@@ -152,3 +152,4 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
+

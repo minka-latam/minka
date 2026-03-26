@@ -1,5 +1,5 @@
-import { cookies } from "next/headers";
-import { createServerComponentClient } from "@supabase/auth-helpers-nextjs";
+﻿import { cookies } from "next/headers";
+import { createServerClient } from "@supabase/ssr";
 import { redirect } from "next/navigation";
 import { DashboardLayoutClient } from "@/components/dashboard/dashboard-layout-client";
 import { UserDashboardLayout } from "@/components/dashboard/user-dashboard-layout";
@@ -52,3 +52,4 @@ export default async function DashboardLayout({
     return <UserDashboardLayout>{children}</UserDashboardLayout>;
   }
 }
+

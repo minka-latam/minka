@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
+import { createServerClient } from "@@supabase/ssr";
 import { cookies } from "next/headers";
 import { db } from "@/lib/db";
 import { z } from "zod";
@@ -16,7 +16,7 @@ export async function PATCH(
 ) {
   try {
     const cookieStore = await cookies();
-    const supabase = createRouteHandlerClient({ cookies: (() => cookieStore) as any });
+    const supabase = createServerClient({ cookies: (() => cookieStore) as any });
     const {
       data: { session },
     } = await supabase.auth.getSession();

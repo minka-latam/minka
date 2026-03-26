@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
+﻿import { NextRequest, NextResponse } from "next/server";
+import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { db } from "@/lib/db";
 import { z } from "zod";
@@ -48,9 +48,9 @@ const campaignCreateSchema = z.object({
 
 export async function POST(req: NextRequest) {
   try {
-    // Use createRouteHandlerClient with awaited cookies
+    // Use createServerClient with awaited cookies
     const cookieStore = await cookies();
-    const supabase = createRouteHandlerClient({ cookies: (() => cookieStore) as any });
+    const supabase = createServerClient({ cookies: (() => cookieStore) as any });
 
     // Get session using supabase client
     const {
@@ -151,3 +151,4 @@ export async function POST(req: NextRequest) {
     );
   }
 }
+

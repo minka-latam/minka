@@ -1,4 +1,4 @@
-import { createServerComponentClient } from "@supabase/auth-helpers-nextjs";
+﻿import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { AdminDonationTable } from "@/components/dashboard/admin-donation-table";
@@ -147,3 +147,4 @@ export default async function DonationsPage() {
     );
   }
 }
+

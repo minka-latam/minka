@@ -1,4 +1,4 @@
-import { createServerComponentClient } from "@supabase/auth-helpers-nextjs";
+﻿import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
 // Server-side Supabase client (to be used in server components)
@@ -27,3 +27,4 @@ export const getUser = async () => {
   const session = await getSession();
   return session?.user || null;
 };
+

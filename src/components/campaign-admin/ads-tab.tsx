@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useRef } from "react";
 import {
@@ -24,7 +24,7 @@ import {
   AlertDialogCancel,
   AlertDialogAction,
 } from "@/components/ui/alert-dialog";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { createBrowserClient } from "@supabase/ssr";
 
 interface AdsTabProps {
   campaign: Record<string, any>;
@@ -299,7 +299,7 @@ export function AdsTab({ campaign }: AdsTabProps) {
       });
 
       // Upload to Supabase Storage
-      const supabase = createClientComponentClient();
+      const supabase = createBrowserClient();
       const STORAGE_BUCKET =
         process.env.NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET || "minka";
       const fileExt = "jpg";
@@ -809,3 +809,4 @@ export function AdsTab({ campaign }: AdsTabProps) {
     </div>
   );
 }
+

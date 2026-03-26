@@ -14,7 +14,7 @@ import {
 } from 'lucide-react'
 import { Header } from '@/components/views/landing-page/Header'
 import { Footer } from '@/components/views/landing-page/Footer'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { createBrowserClient } from '@@supabase/ssr'
 import { useCampaign } from '@/hooks/useCampaign'
 import { Switch } from '@/components/ui/switch'
 import { CheckIcon } from '@/components/icons/CheckIcon'
@@ -63,7 +63,7 @@ export function DonatePageContent({
   campaignId: string
 }) {
   const router = useRouter()
-  const supabase = createClientComponentClient()
+  const supabase = createBrowserClient()
 
   // Use our custom hook to fetch campaign data
   const {

@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
+import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
 const prisma = new PrismaClient();
@@ -12,7 +12,7 @@ export async function GET() {
 
     // Get the current session using Supabase
     const cookieStore = await cookies();
-    const supabase = createRouteHandlerClient({
+    const supabase = createServerClient({
       cookies: (() => cookieStore) as any,
     });
 
@@ -124,7 +124,7 @@ export async function POST(request: NextRequest) {
 
     // Get the current session using Supabase
     const cookieStore = await cookies();
-    const supabase = createRouteHandlerClient({
+    const supabase = createServerClient({
       cookies: (() => cookieStore) as any,
     });
 
@@ -235,7 +235,7 @@ export async function DELETE(request: NextRequest) {
 
     // Get the current session using Supabase
     const cookieStore = await cookies();
-    const supabase = createRouteHandlerClient({
+    const supabase = createServerClient({
       cookies: (() => cookieStore) as any,
     });
 
@@ -309,3 +309,4 @@ export async function DELETE(request: NextRequest) {
     );
   }
 }
+

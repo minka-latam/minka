@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
+﻿import { NextRequest, NextResponse } from "next/server";
+import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { db } from "@/lib/db";
 import { z } from "zod";
@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
     // Use void to prevent synchronous API warning
     void cookieStore;
 
-    const supabase = createRouteHandlerClient({
+    const supabase = createServerClient({
       cookies: (() => cookieStore) as any,
     });
 
@@ -243,3 +243,4 @@ export async function GET(req: NextRequest) {
     );
   }
 }
+

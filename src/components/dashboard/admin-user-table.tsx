@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { ProfileData } from "@/types";
 import {
@@ -15,7 +15,7 @@ import { format } from "date-fns"; // For formatting dates
 import { Pencil, Trash2 } from "lucide-react"; // Icons for actions
 import { useState } from "react";
 import { toast } from "@/components/ui/use-toast";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { createBrowserClient } from "@supabase/ssr";
 import { useRouter } from "next/navigation";
 
 // TODO: Potentially add a modal for editing user roles
@@ -26,7 +26,7 @@ interface AdminUserTableProps {
 }
 
 export function AdminUserTable({ users }: AdminUserTableProps) {
-  const supabase = createClientComponentClient();
+  const supabase = createBrowserClient();
   const router = useRouter();
   const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
   // State for edit modal (example)
@@ -163,3 +163,4 @@ export function AdminUserTable({ users }: AdminUserTableProps) {
     </>
   );
 }
+

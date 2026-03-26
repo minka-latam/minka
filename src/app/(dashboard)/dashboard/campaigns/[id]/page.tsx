@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { createBrowserClient } from "@@supabase/ssr";
 import Image from "next/image";
 import Link from "next/link";
 import { toast } from "@/components/ui/use-toast";
@@ -33,7 +33,7 @@ export default function CampaignDetailPage() {
   const [campaign, setCampaign] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("editar");
-  const supabase = createClientComponentClient();
+  const supabase = createBrowserClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Add state variables for form fields

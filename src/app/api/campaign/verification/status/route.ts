@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
+﻿import { NextRequest, NextResponse } from "next/server";
+import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { db } from "@/lib/db";
 import { z } from "zod";
@@ -58,7 +58,7 @@ export async function PUT(req: NextRequest) {
   try {
     // Authentication
     const cookieStore = await cookies();
-    const supabase = createRouteHandlerClient({
+    const supabase = createServerClient({
       cookies: (() => cookieStore) as any,
     });
 
@@ -146,3 +146,4 @@ export async function PUT(req: NextRequest) {
     );
   }
 }
+

@@ -1,8 +1,8 @@
-"use client";
+﻿"use client";
 
 import { useState, useRef, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { createBrowserClient } from "@supabase/ssr";
 import {
   PlusCircle,
   X,
@@ -157,7 +157,7 @@ export function EditCampaignTab({ campaign }: EditCampaignTabProps) {
       setIsUploadingImage(true);
 
       // Upload the file to storage
-      const supabase = createClientComponentClient();
+      const supabase = createBrowserClient();
       const fileExt = file.name.split(".").pop();
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
       const filePath = `campaign-media/${fileName}`;
@@ -870,3 +870,4 @@ function YouTubeLinks({ links, onChange }: YouTubeLinksProps) {
     </div>
   );
 }
+

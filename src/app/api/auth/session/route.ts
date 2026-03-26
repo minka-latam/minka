@@ -1,4 +1,4 @@
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
+﻿import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
@@ -8,7 +8,7 @@ export async function GET() {
     // Create Supabase client with properly handled cookies
     const cookieStore = await cookies();
 
-    const supabase = createRouteHandlerClient({ cookies: (() => cookieStore) as any });
+    const supabase = createServerClient({ cookies: (() => cookieStore) as any });
 
     // Get the session from Supabase
     const {
@@ -57,3 +57,4 @@ export async function GET() {
     );
   }
 }
+

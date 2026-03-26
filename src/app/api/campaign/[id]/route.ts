@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
+import { createServerClient } from "@@supabase/ssr";
 import { cookies } from "next/headers";
 import { prisma as db } from "@/lib/prisma";
 import { getAuthSession } from "@/lib/auth";
@@ -81,7 +81,7 @@ export async function GET(
   try {
     const cookieStore = await cookies();
 
-    const supabase = createRouteHandlerClient({ cookies: (() => cookieStore) as any });
+    const supabase = createServerClient({ cookies: (() => cookieStore) as any });
     console.log(`API: Created supabase client for campaign: ${id}`);
 
     // Fetch campaign data with organizer profile and campaign media
@@ -214,7 +214,7 @@ export async function PATCH(
 ) {
   try {
     const cookieStore = await cookies();
-    const supabase = createRouteHandlerClient({ cookies: (() => cookieStore) as any });
+    const supabase = createServerClient({ cookies: (() => cookieStore) as any });
     const {
       data: { session },
     } = await supabase.auth.getSession();
@@ -383,7 +383,7 @@ export async function DELETE(
 ) {
   try {
     const cookieStore = await cookies();
-    const supabase = createRouteHandlerClient({ cookies: (() => cookieStore) as any });
+    const supabase = createServerClient({ cookies: (() => cookieStore) as any });
     const {
       data: { session },
     } = await supabase.auth.getSession();
