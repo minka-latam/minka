@@ -7,6 +7,15 @@ import { prisma } from "@/lib/prisma";
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get("code");
+  const error = requestUrl.searchParams.get("error");
+const errorDescription = requestUrl.searchParams.get("error_description");
+
+if (error) {
+  console.error("Auth callback error:", error, errorDescription);
+  return NextResponse.redirect(
+    new URL(`/sign-in?error=${encodeURIComponent(errorDescription || error)}`, request.url)
+  );
+}
   const type = requestUrl.searchParams.get("type");
   const next = requestUrl.searchParams.get("next") || "/dashboard";
 
