@@ -376,8 +376,10 @@ export function CampaignProgress({
             height={24}
           />
           <span className="text-sm">
-            Creada hace {getRelativeTime(createdAt)}
-          </span>
+  {getRelativeTime(createdAt) === "hoy" 
+    ? "Creada hoy" 
+    : `Creada hace ${getRelativeTime(createdAt)}`}
+</span>
         </div>
       </div>
 
