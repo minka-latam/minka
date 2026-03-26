@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
+import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
-import { db } from "@/lib/db";
+import { prisma as db } from "@/lib/prisma";
 import { z } from "zod";
 import { Region } from "@prisma/client";
 
@@ -9,51 +9,44 @@ const campaignDraftSchema = z.object({
   campaignId: z.string().uuid().optional(),
   title: z.string().min(3).max(80).optional(),
   description: z.string().min(10).max(1000).optional(),
-  // Story field corresponds to "Presentación de la campaña" in the form
   story: z.string().min(10).max(600).optional(),
   beneficiariesDescription: z.string().min(10).max(600).optional(),
-  category: z
-    .enum([
-      "cultura_arte",
-      "educacion",
-      "emergencia",
-      "igualdad",
-      "medioambiente",
-      "salud",
-      "otros",
-    ])
-    .optional(),
+  category: z.enum([
+    "cultura_arte", "educacion", "emergencia", "igualdad",
+    "medioambiente", "salud", "otros",
+  ]).optional(),
   goalAmount: z.coerce.number().min(1).optional(),
   location: z.nativeEnum(Region).optional(),
-  endDate: z
-    .string()
-    .transform((str) => new Date(str))
-    .optional(),
+  endDate: z.string().transform((str) => new Date(str)).optional(),
   youtubeUrl: z.string().url().optional().or(z.literal("")),
   youtubeUrls: z.array(z.string().url()).optional(),
-  media: z
-    .array(
-      z.object({
-        mediaUrl: z.string().url(),
-        type: z.enum(["image", "video"]),
-        isPrimary: z.boolean().default(false),
-        orderIndex: z.number().int().min(0),
-      })
-    )
-    .min(1)
-    .optional(),
+  media: z.array(z.object({
+    mediaUrl: z.string().url(),
+    type: z.enum(["image", "video"]),
+    isPrimary: z.boolean().default(false),
+    orderIndex: z.number().int().min(0),
+  })).min(1).optional(),
 });
 
 export async function POST(req: NextRequest) {
   try {
-    // Use createRouteHandlerClient with awaited cookies
     const cookieStore = await cookies();
-    const supabase = createRouteHandlerClient({ cookies: (() => cookieStore) as any });
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() { return cookieStore.getAll(); },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
+            );
+          },
+        },
+      }
+    );
 
-    // Get session using supabase client
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
+    const { data: { session } } = await supabase.auth.getSession();
 
     if (!session?.user) {
       return NextResponse.json(
@@ -65,7 +58,6 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const validatedData = campaignDraftSchema.parse(body);
 
-    // Find the organizer profile
     const organizer = await db.profile.findUnique({
       where: { email: session.user.email },
     });
@@ -79,34 +71,22 @@ export async function POST(req: NextRequest) {
 
     let campaign: any;
 
-    // If campaignId is provided, update the existing campaign
     if (validatedData.campaignId) {
-      // First check if the campaign belongs to this organizer
       const existingCampaign = await db.campaign.findUnique({
-        where: {
-          id: validatedData.campaignId,
-          organizerId: organizer.id,
-        },
+        where: { id: validatedData.campaignId, organizerId: organizer.id },
       });
 
       if (!existingCampaign) {
         return NextResponse.json(
-          {
-            error: "Campaign not found or you don't have permission to edit it",
-          },
+          { error: "Campaign not found or you don't have permission to edit it" },
           { status: 404 }
         );
       }
 
-      // Calculate days remaining if endDate is provided
       const daysRemaining = validatedData.endDate
-        ? Math.ceil(
-            (validatedData.endDate.getTime() - new Date().getTime()) /
-              (1000 * 60 * 60 * 24)
-          )
+        ? Math.ceil((validatedData.endDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
         : undefined;
 
-      // Update the campaign
       campaign = await db.campaign.update({
         where: { id: validatedData.campaignId },
         data: {
@@ -124,14 +104,8 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      // Update media if provided
       if (validatedData.media && validatedData.media.length > 0) {
-        // Delete existing media
-        await db.campaignMedia.deleteMany({
-          where: { campaignId: campaign.id },
-        });
-
-        // Create new media
+        await db.campaignMedia.deleteMany({ where: { campaignId: campaign.id } });
         await Promise.all(
           validatedData.media.map((item) =>
             db.campaignMedia.create({
@@ -148,28 +122,21 @@ export async function POST(req: NextRequest) {
         );
       }
     } else {
-      // Create a new draft campaign
       campaign = await db.campaign.create({
         data: {
           title: validatedData.title || "Untitled Campaign",
           description: validatedData.description || "Draft description",
           story: validatedData.story || "",
-          beneficiariesDescription:
-            validatedData.beneficiariesDescription || "",
+          beneficiariesDescription: validatedData.beneficiariesDescription || "",
           category: validatedData.category || "otros",
           goalAmount: validatedData.goalAmount || 0,
           collectedAmount: 0,
           percentageFunded: 0,
           daysRemaining: validatedData.endDate
-            ? Math.ceil(
-                (validatedData.endDate.getTime() - new Date().getTime()) /
-                  (1000 * 60 * 60 * 24)
-              )
+            ? Math.ceil((validatedData.endDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
             : 30,
           location: validatedData.location || "la_paz",
-          endDate:
-            validatedData.endDate ||
-            new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+          endDate: validatedData.endDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
           youtubeUrl: validatedData.youtubeUrl || null,
           youtubeUrls: validatedData.youtubeUrls || [],
           verificationStatus: false,
@@ -179,7 +146,6 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      // Create media if provided
       if (validatedData.media && validatedData.media.length > 0) {
         await Promise.all(
           validatedData.media.map((item) =>
@@ -199,10 +165,7 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json(
-      {
-        message: "Campaign draft saved successfully",
-        campaignId: campaign.id,
-      },
+      { message: "Campaign draft saved successfully", campaignId: campaign.id },
       { status: 200 }
     );
   } catch (error) {
@@ -212,11 +175,7 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
-
     console.error("Error saving campaign draft:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
