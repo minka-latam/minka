@@ -19,7 +19,10 @@ interface UserDashboardLayoutProps {
 export function UserDashboardLayout({ children }: UserDashboardLayoutProps) {
   const router = useRouter();
   const [profile, setProfile] = useState<ProfileData | null>(null);
-  const supabase = createBrowserClient();
+  const supabase = createBrowserClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
   const [isCampaignPage, setIsCampaignPage] = useState(false);
 
   useEffect(() => {
