@@ -1961,18 +1961,30 @@ export function DonatePageContent({
                 </div>
               </div>
 
-              {/* Black separator */}
-              <div className='border-t border-black my-4'></div>
+              {/* Notification opt-in */}
+<div className='mt-4 flex items-center justify-between bg-[#f5f7e9] rounded-lg p-3'>
+  <div className='flex items-center gap-2'>
+    <Bell className='h-4 w-4 text-[#2c6e49]' />
+    <span className='text-sm text-gray-700'>Recibir actualizaciones</span>
+  </div>
+  <Switch
+    checked={receiveNotifications}
+    onCheckedChange={handleNotificationToggle}
+  />
+</div>
 
-              {/* Buttons */}
-              <div className='space-y-2'>
-                <button
-                  type='button'
-                  className='inline-flex justify-center border-0 bg-[#2c6e49] px-16 py-2 text-sm font-medium text-white hover:bg-[#1e4d33] focus:outline-none rounded-full'
-                  onClick={handleCloseSuccessModal}
-                >
-                  Inicio
-                </button>
+{/* Black separator */}
+<div className='border-t border-black my-4'></div>
+
+{/* Buttons */}
+<div className='space-y-2'>
+  <button
+    type='button'
+    className='inline-flex justify-center border-0 bg-[#2c6e49] px-16 py-2 text-sm font-medium text-white hover:bg-[#1e4d33] focus:outline-none rounded-full'
+    onClick={handleCloseSuccessModal}
+  >
+    Inicio
+  </button>
 
                 {/* Account creation button for unauthenticated users */}
                 {!user && (
