@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { TriptoClient } from '@/lib/tripto/client'
-import { db } from '@/lib/db'
+import { prisma as db } from '@/lib/prisma'
 
 async function getOrCreateAnonymousProfileId() {
   const existing = await db.profile.findFirst({
