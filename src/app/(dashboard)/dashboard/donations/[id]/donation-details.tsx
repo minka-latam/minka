@@ -6,7 +6,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useUserDonationDetails } from "@/hooks/use-user-donations";
 import { Button } from "@/components/ui/button";
-import { createBrowserClient } from "@@supabase/ssr";
+import { createBrowserClient } from "@supabase/ssr";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import {
   ArrowLeft,

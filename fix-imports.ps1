@@ -3,7 +3,7 @@ $files = Get-ChildItem -Path src -Recurse -Include *.ts,*.tsx | Where-Object {
 }
 foreach ($file in $files) {
     $content = Get-Content $file.FullName -Raw -Encoding UTF8
-    $content = $content -replace '(?i)@@supabase/ssr', '@supabase/ssr'
+    $content = $content -replace '(?i)@supabase/ssr', '@supabase/ssr'
     $content = $content -replace 'createServerClient', 'createServerClient'
     $content = $content -replace 'createBrowserClient', 'createBrowserClient'
     $content = $content -replace 'createServerComponentClient', 'createServerClient'

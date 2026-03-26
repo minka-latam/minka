@@ -14,7 +14,7 @@ import {
 } from 'lucide-react'
 import { Header } from '@/components/views/landing-page/Header'
 import { Footer } from '@/components/views/landing-page/Footer'
-import { createBrowserClient } from '@@supabase/ssr'
+import { createBrowserClient } from '@supabase/ssr'
 import { useCampaign } from '@/hooks/useCampaign'
 import { Switch } from '@/components/ui/switch'
 import { CheckIcon } from '@/components/icons/CheckIcon'
