@@ -665,15 +665,10 @@ export function DonatePageContent({
   }
 
   // Handle closing success modal
-  const handleCloseSuccessModal = () => {
-    setShowSuccessModal(false)
-    setIsAnimating(true)
-    setAnimationDirection('forward')
-    setTimeout(() => {
-      setStep(4) // Show step 4 with notifications options
-      setIsAnimating(false)
-    }, 300)
-  }
+ const handleCloseSuccessModal = () => {
+  setShowSuccessModal(false);
+  router.push('/');
+};
 
   // Handle notification toggle
   const handleNotificationToggle = async (
