@@ -33,7 +33,7 @@ export default function CampaignDetailPage() {
   const [campaign, setCampaign] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("editar");
-  const supabase = createBrowserClient();
+  const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Add state variables for form fields

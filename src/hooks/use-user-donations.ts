@@ -179,7 +179,7 @@ const fetchDonationDetails = async (donationId: string) => {
 };
 
 export function useUserDonations(page = 1, pageSize = 6) {
-  const supabase = createBrowserClient();
+  const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
 
   const { data, isLoading, isError, error, refetch } =
     useQuery<DonationsResponse>({
@@ -206,7 +206,7 @@ export function useUserDonations(page = 1, pageSize = 6) {
 }
 
 export function useUserDonationDetails(donationId: string | null) {
-  const supabase = createBrowserClient();
+  const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
 
   const { data, isLoading, isError, error, refetch } =
     useQuery<DonationDetailsResponse>({

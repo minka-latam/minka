@@ -25,7 +25,7 @@ export async function uploadAvatar(file: File, userId: string) {
   }
 
   try {
-    const supabase = createBrowserClient();
+    const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
 
     // Upload the file to Supabase storage
     const fileExt = file.name.split(".").pop();

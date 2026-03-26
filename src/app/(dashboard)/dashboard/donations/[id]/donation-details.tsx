@@ -25,7 +25,7 @@ interface DonationDetailsProps {
 
 export default function DonationDetails({ id }: DonationDetailsProps) {
   const router = useRouter();
-  const supabase = createBrowserClient();
+  const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [hasSession, setHasSession] = useState(false);
 

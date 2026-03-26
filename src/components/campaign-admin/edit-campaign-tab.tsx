@@ -157,7 +157,7 @@ export function EditCampaignTab({ campaign }: EditCampaignTabProps) {
       setIsUploadingImage(true);
 
       // Upload the file to storage
-      const supabase = createBrowserClient();
+      const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
       const fileExt = file.name.split(".").pop();
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
       const filePath = `campaign-media/${fileName}`;

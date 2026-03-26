@@ -299,7 +299,7 @@ export function AdsTab({ campaign }: AdsTabProps) {
       });
 
       // Upload to Supabase Storage
-      const supabase = createBrowserClient();
+      const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
       const STORAGE_BUCKET =
         process.env.NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET || "minka";
       const fileExt = "jpg";

@@ -63,7 +63,7 @@ export function DonatePageContent({
   campaignId: string
 }) {
   const router = useRouter()
-  const supabase = createBrowserClient()
+  const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
 
   // Use our custom hook to fetch campaign data
   const {

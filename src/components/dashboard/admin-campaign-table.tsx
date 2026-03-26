@@ -56,7 +56,7 @@ interface AdminCampaignTableProps {
 }
 
 export function AdminCampaignTable({ campaigns }: AdminCampaignTableProps) {
-  const supabase = createBrowserClient();
+  const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
   const router = useRouter();
   const [verifyingId, setVerifyingId] = useState<string | null>(null);
   const [unverifyingId, setUnverifyingId] = useState<string | null>(null);

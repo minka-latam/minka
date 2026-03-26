@@ -68,7 +68,7 @@ interface VerificationRequest {
 export default function CampaignVerificationPage() {
   const router = useRouter();
   const { user } = useAuth();
-  const supabase = createBrowserClient();
+  const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
   const { toast } = useToast();
 
   const [loading, setLoading] = useState(true);
