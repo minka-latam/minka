@@ -77,28 +77,27 @@ export async function GET(request: NextRequest) {
         const { data: userData } = await supabase.auth.getUser();
         const userMetadata = userData.user?.user_metadata;
 
-        await prisma.profile.create({
-          data: {
-            id: data.user.id,
-            name:
-              userMetadata?.full_name ||
-              `${userMetadata?.first_name || ""} ${userMetadata?.last_name || ""}`.trim() ||
-              data.user.email?.split("@")[0] ||
-              "User",
-            email: data.user.email || "",
-            passwordHash: "",
-            profilePicture: userMetadata?.avatar_url || "",
-            identityNumber: `google_${data.user.id}`,
-            phone: userMetadata?.phone || "",
-            birthDate: new Date(),
-            address: "",
-            bio: "",
-            location: "",
-            joinDate: new Date(),
-            status: "active",
-            verificationStatus: false, // Users are not auto-verified
-          },
-        });
+       await prisma.profile.create({
+  data: {
+    id: data.user.id,
+    name: userMetadata?.full_name ||
+      `${userMetadata?.first_name || ""} ${userMetadata?.last_name || ""}`.trim() ||
+      data.user.email?.split("@")[0] ||
+      "User",
+    email: data.user.email || "",
+    passwordHash: "",
+    profilePicture: userMetadata?.avatar_url || "",
+    identityNumber: `oauth_${data.user.id}`, // clearly marked as OAuth
+    phone: userMetadata?.phone || "pending", // pending = not yet provided
+    birthDate: new Date("1900-01-01"), // sentinel value = not yet provided
+    address: "",
+    bio: "",
+    location: "",
+    joinDate: new Date(),
+    status: "active",
+    verificationStatus: false,
+  },
+});
       }
       // Note: we no longer update verificationStatus on existing profiles
       // as user verification is not currently implemented

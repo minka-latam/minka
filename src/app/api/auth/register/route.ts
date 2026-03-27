@@ -84,27 +84,35 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Failed to create user" }, { status: 500 });
     }
 
-    try {
-      await prisma.profile.create({
-        data: {
-          id: authData.user.id,
-          name: `${firstName} ${lastName}`,
-          email,
-          passwordHash: "",
-          identityNumber: documentId,
-          phone,
-          birthDate: formattedBirthDate,
-          joinDate: new Date(),
-          status: "active",
-        },
-      });
-    } catch (dbError) {
-      console.error("Error creating profile:", dbError);
-      return NextResponse.json(
-        { error: "Failed to create user profile", details: dbError instanceof Error ? dbError.message : "Unknown error" },
-        { status: 500 }
-      );
-    }
+   try {
+  await prisma.profile.create({
+    data: {
+      id: authData.user.id,
+      name: `${firstName} ${lastName}`,
+      email,
+      passwordHash: "",
+      identityNumber: documentId,
+      phone,
+      birthDate: formattedBirthDate,
+      joinDate: new Date(),
+      status: "active",
+    },
+  });
+} catch (dbError) {
+  console.error("Error creating profile:", dbError);
+  // Clean up: delete the auth user since profile creation failed
+  // This prevents orphaned auth users with no profile
+  try {
+    await supabase.auth.admin.deleteUser(authData.user.id);
+    console.log("Cleaned up auth user after profile creation failure");
+  } catch (cleanupError) {
+    console.error("Failed to clean up auth user:", cleanupError);
+  }
+  return NextResponse.json(
+    { error: "Failed to create user profile", details: dbError instanceof Error ? dbError.message : "Unknown error" },
+    { status: 500 }
+  );
+}
 
     return NextResponse.json(
       { message: "User registered successfully", userId: authData.user.id },
