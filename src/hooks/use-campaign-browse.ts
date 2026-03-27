@@ -169,17 +169,24 @@ export function useCampaignBrowse() {
         console.log("Current page:", page);
         console.log("Request ID:", requestId);
 
-        const response = await fetch(url.toString(), {
-          signal: abortController.signal,
-        });
+       const response = await fetch(url.toString(), {
+  signal: abortController.signal,
+});
 
-        // Check if this request is still the latest one
-        if (requestId !== lastRequestIdRef.current) {
-          console.log("Request outdated, ignoring response");
-          return;
-        }
+// Check if this request is still the latest one
+if (requestId !== lastRequestIdRef.current) {
+  console.log("Request outdated, ignoring response");
+  return;
+}
 
-        const data = await response.json();
+if (!response.ok) {
+  const errorData = await response.json().catch(() => ({ error: "Error al cargar campañas" }));
+  setError(errorData.error || "Error al cargar campañas. Por favor, intenta de nuevo más tarde.");
+  setCampaigns([]);
+  return;
+}
+
+const data = await response.json();
         console.log("API response:", data);
 
         // Check if there is an error message in the response
@@ -269,7 +276,11 @@ export function useCampaignBrowse() {
       console.log("Fetching categories with URL:", url.toString());
 
       const response = await fetch(url.toString());
-      const data = await response.json();
+if (!response.ok) {
+  console.warn("API error, using empty data");
+  return;
+}
+const data = await response.json();
 
       // Check if there is an error message in the response
       if (data.error) {
