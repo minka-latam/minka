@@ -29,6 +29,22 @@ export async function POST(request: Request) {
       }
     );
 
+    // Admin client for cleanup operations (uses service role key)
+const supabaseAdmin = createServerClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  {
+    cookies: {
+      getAll() { return cookieStore.getAll(); },
+      setAll(cookiesToSet) {
+        cookiesToSet.forEach(({ name, value, options }) =>
+          cookieStore.set(name, value, options)
+        );
+      },
+    },
+  }
+);
+
     let formattedBirthDate: Date;
     try {
       const [day, month, year] = birthDate.split("/");
@@ -103,7 +119,7 @@ export async function POST(request: Request) {
   // Clean up: delete the auth user since profile creation failed
   // This prevents orphaned auth users with no profile
   try {
-    await supabase.auth.admin.deleteUser(authData.user.id);
+    await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
     console.log("Cleaned up auth user after profile creation failure");
   } catch (cleanupError) {
     console.error("Failed to clean up auth user:", cleanupError);
