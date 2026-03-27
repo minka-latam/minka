@@ -1,5 +1,4 @@
 ﻿import { useQuery } from "@tanstack/react-query";
-import { createBrowserClient } from "@supabase/ssr";
 
 type DonationMedia = {
   mediaUrl: string;
