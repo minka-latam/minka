@@ -6,7 +6,7 @@
    - Environments: .env.local, .env
 
    Creating an optimized production build ...
- ✓ Compiled successfully in 18.6s
+ ✓ Compiled successfully in 9.6s
    Skipping linting
    Checking validity of types ...
    Collecting page data ...
@@ -82,70 +82,7 @@ Details: \\?\C:\Users\leono\minka\node_modules\.pnpm\@prisma+client@6.5.0_prisma
   errorCode: undefined,
   retryable: undefined
 }
-[Error [PrismaClientInitializationError]: Unable to require(`C:\Users\leono\minka\node_modules\.pnpm\@prisma+client@6.5.0_prisma_573380e85f3173285f4ef7d2deeca3ff\node_modules\.prisma\client\query_engine-windows.dll.node`).
-The Prisma engines do not seem to be compatible with your system. Please refer to the documentation about Prisma's system requirements: https://pris.ly/d/system-requirements
-
-Details: \\?\C:\Users\leono\minka\node_modules\.pnpm\@prisma+client@6.5.0_prisma_573380e85f3173285f4ef7d2deeca3ff\node_modules\.prisma\client\query_engine-windows.dll.node is not a valid Win32 application.
-\\?\C:\Users\leono\minka\node_modules\.pnpm\@prisma+client@6.5.0_prisma_573380e85f3173285f4ef7d2deeca3ff\node_modules\.prisma\client\query_engine-windows.dll.node] {
-  clientVersion: '6.5.0',
-  errorCode: undefined,
-  retryable: undefined
-}
-[Error [PrismaClientInitializationError]: Unable to require(`C:\Users\leono\minka\node_modules\.pnpm\@prisma+client@6.5.0_prisma_573380e85f3173285f4ef7d2deeca3ff\node_modules\.prisma\client\query_engine-windows.dll.node`).
-The Prisma engines do not seem to be compatible with your system. Please refer to the documentation about Prisma's system requirements: https://pris.ly/d/system-requirements
-
-Details: \\?\C:\Users\leono\minka\node_modules\.pnpm\@prisma+client@6.5.0_prisma_573380e85f3173285f4ef7d2deeca3ff\node_modules\.prisma\client\query_engine-windows.dll.node is not a valid Win32 application.
-\\?\C:\Users\leono\minka\node_modules\.pnpm\@prisma+client@6.5.0_prisma_573380e85f3173285f4ef7d2deeca3ff\node_modules\.prisma\client\query_engine-windows.dll.node] {
-  clientVersion: '6.5.0',
-  errorCode: undefined,
-  retryable: undefined
-}
-[Error [PrismaClientInitializationError]: Unable to require(`C:\Users\leono\minka\node_modules\.pnpm\@prisma+client@6.5.0_prisma_573380e85f3173285f4ef7d2deeca3ff\node_modules\.prisma\client\query_engine-windows.dll.node`).
-The Prisma engines do not seem to be compatible with your system. Please refer to the documentation about Prisma's system requirements: https://pris.ly/d/system-requirements
-
-Details: \\?\C:\Users\leono\minka\node_modules\.pnpm\@prisma+client@6.5.0_prisma_573380e85f3173285f4ef7d2deeca3ff\node_modules\.prisma\client\query_engine-windows.dll.node is not a valid Win32 application.
-\\?\C:\Users\leono\minka\node_modules\.pnpm\@prisma+client@6.5.0_prisma_573380e85f3173285f4ef7d2deeca3ff\node_modules\.prisma\client\query_engine-windows.dll.node] {
-  clientVersion: '6.5.0',
-  errorCode: undefined,
-  retryable: undefined
-}
-[Error [PrismaClientInitializationError]: Unable to require(`C:\Users\leono\minka\node_modules\.pnpm\@prisma+client@6.5.0_prisma_573380e85f3173285f4ef7d2deeca3ff\node_modules\.prisma\client\query_engine-windows.dll.node`).
-The Prisma engines do not seem to be compatible with your system. Please refer to the documentation about Prisma's system requirements: https://pris.ly/d/system-requirements
-
-Details: \\?\C:\Users\leono\minka\node_modules\.pnpm\@prisma+client@6.5.0_prisma_573380e85f3173285f4ef7d2deeca3ff\node_modules\.prisma\client\query_engine-windows.dll.node is not a valid Win32 application.
-\\?\C:\Users\leono\minka\node_modules\.pnpm\@prisma+client@6.5.0_prisma_573380e85f3173285f4ef7d2deeca3ff\node_modules\.prisma\client\query_engine-windows.dll.node] {
-  clientVersion: '6.5.0',
-  errorCode: undefined,
-  retryable: undefined
-}
    Generating static pages (0/77) ...
-[Error [PrismaClientInitializationError]: Unable to require(`C:\Users\leono\minka\node_modules\.pnpm\@prisma+client@6.5.0_prisma_573380e85f3173285f4ef7d2deeca3ff\node_modules\.prisma\client\query_engine-windows.dll.node`).
-The Prisma engines do not seem to be compatible with your system. Please refer to the documentation about Prisma's system requirements: https://pris.ly/d/system-requirements
-
-Details: \\?\C:\Users\leono\minka\node_modules\.pnpm\@prisma+client@6.5.0_prisma_573380e85f3173285f4ef7d2deeca3ff\node_modules\.prisma\client\query_engine-windows.dll.node is not a valid Win32 application.
-\\?\C:\Users\leono\minka\node_modules\.pnpm\@prisma+client@6.5.0_prisma_573380e85f3173285f4ef7d2deeca3ff\node_modules\.prisma\client\query_engine-windows.dll.node] {
-  clientVersion: '6.5.0',
-  errorCode: undefined,
-  retryable: undefined
-}
-[Error [PrismaClientInitializationError]: Unable to require(`C:\Users\leono\minka\node_modules\.pnpm\@prisma+client@6.5.0_prisma_573380e85f3173285f4ef7d2deeca3ff\node_modules\.prisma\client\query_engine-windows.dll.node`).
-The Prisma engines do not seem to be compatible with your system. Please refer to the documentation about Prisma's system requirements: https://pris.ly/d/system-requirements
-
-Details: \\?\C:\Users\leono\minka\node_modules\.pnpm\@prisma+client@6.5.0_prisma_573380e85f3173285f4ef7d2deeca3ff\node_modules\.prisma\client\query_engine-windows.dll.node is not a valid Win32 application.
-\\?\C:\Users\leono\minka\node_modules\.pnpm\@prisma+client@6.5.0_prisma_573380e85f3173285f4ef7d2deeca3ff\node_modules\.prisma\client\query_engine-windows.dll.node] {
-  clientVersion: '6.5.0',
-  errorCode: undefined,
-  retryable: undefined
-}
-[Error [PrismaClientInitializationError]: Unable to require(`C:\Users\leono\minka\node_modules\.pnpm\@prisma+client@6.5.0_prisma_573380e85f3173285f4ef7d2deeca3ff\node_modules\.prisma\client\query_engine-windows.dll.node`).
-The Prisma engines do not seem to be compatible with your system. Please refer to the documentation about Prisma's system requirements: https://pris.ly/d/system-requirements
-
-Details: \\?\C:\Users\leono\minka\node_modules\.pnpm\@prisma+client@6.5.0_prisma_573380e85f3173285f4ef7d2deeca3ff\node_modules\.prisma\client\query_engine-windows.dll.node is not a valid Win32 application.
-\\?\C:\Users\leono\minka\node_modules\.pnpm\@prisma+client@6.5.0_prisma_573380e85f3173285f4ef7d2deeca3ff\node_modules\.prisma\client\query_engine-windows.dll.node] {
-  clientVersion: '6.5.0',
-  errorCode: undefined,
-  retryable: undefined
-}
 [Error [PrismaClientInitializationError]: Unable to require(`C:\Users\leono\minka\node_modules\.pnpm\@prisma+client@6.5.0_prisma_573380e85f3173285f4ef7d2deeca3ff\node_modules\.prisma\client\query_engine-windows.dll.node`).
 The Prisma engines do not seem to be compatible with your system. Please refer to the documentation about Prisma's system requirements: https://pris.ly/d/system-requirements
 

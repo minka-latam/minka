@@ -1,9 +1,7 @@
 ﻿import { NextRequest, NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
-
-const prisma = new PrismaClient();
 
 // GET: Fetch all saved campaigns for the current user
 export async function GET() {
