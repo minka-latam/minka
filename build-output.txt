@@ -6,7 +6,7 @@
    - Environments: .env.local, .env
 
    Creating an optimized production build ...
- ✓ Compiled successfully in 7.9s
+ ✓ Compiled successfully in 18.6s
    Skipping linting
    Checking validity of types ...
    Collecting page data ...
@@ -173,15 +173,6 @@ Details: \\?\C:\Users\leono\minka\node_modules\.pnpm\@prisma+client@6.5.0_prisma
   errorCode: undefined,
   retryable: undefined
 }
-[Error [PrismaClientInitializationError]: Unable to require(`C:\Users\leono\minka\node_modules\.pnpm\@prisma+client@6.5.0_prisma_573380e85f3173285f4ef7d2deeca3ff\node_modules\.prisma\client\query_engine-windows.dll.node`).
-The Prisma engines do not seem to be compatible with your system. Please refer to the documentation about Prisma's system requirements: https://pris.ly/d/system-requirements
-
-Details: \\?\C:\Users\leono\minka\node_modules\.pnpm\@prisma+client@6.5.0_prisma_573380e85f3173285f4ef7d2deeca3ff\node_modules\.prisma\client\query_engine-windows.dll.node is not a valid Win32 application.
-\\?\C:\Users\leono\minka\node_modules\.pnpm\@prisma+client@6.5.0_prisma_573380e85f3173285f4ef7d2deeca3ff\node_modules\.prisma\client\query_engine-windows.dll.node] {
-  clientVersion: '6.5.0',
-  errorCode: undefined,
-  retryable: undefined
-}
    Generating static pages (19/77) 
    Generating static pages (38/77) 
    Generating static pages (57/77) 
@@ -192,7 +183,7 @@ Details: \\?\C:\Users\leono\minka\node_modules\.pnpm\@prisma+client@6.5.0_prisma
 Route (app)                                         Size  First Load JS
 ┌ ○ /                                            6.49 kB         177 kB
 ├ ○ /_not-found                                    286 B         103 kB
-├ ○ /about-us                                      680 B         166 kB
+├ ○ /about-us                                      680 B         167 kB
 ├ ○ /admin/verification                          9.71 kB         146 kB
 ├ ƒ /api/admin/analytics                           286 B         103 kB
 ├ ƒ /api/admin/auth                                286 B         103 kB
@@ -257,42 +248,42 @@ Route (app)                                         Size  First Load JS
 ├ ƒ /api/webhook                                   286 B         103 kB
 ├ ƒ /auth/callback                                 286 B         103 kB
 ├ ○ /campaign                                    10.3 kB         181 kB
-├ ○ /campaign-verification                       18.8 kB         234 kB
+├ ○ /campaign-verification                       18.8 kB         235 kB
 ├ ƒ /campaign-verification/[id]                    286 B         103 kB
-├ ƒ /campaign/[id]                               13.9 kB         184 kB
-├ ○ /create-campaign                             35.9 kB         265 kB
+├ ƒ /campaign/[id]                               13.9 kB         185 kB
+├ ○ /create-campaign                             35.9 kB         266 kB
 ├ ƒ /dashboard                                   13.6 kB         227 kB
-├ ƒ /dashboard/analytics                          123 kB         275 kB
-├ ƒ /dashboard/campaigns                         12.1 kB         220 kB
-├ ƒ /dashboard/campaigns/[id]                    26.1 kB         256 kB
+├ ƒ /dashboard/analytics                          123 kB         276 kB
+├ ƒ /dashboard/campaigns                         12.1 kB         221 kB
+├ ƒ /dashboard/campaigns/[id]                    26.1 kB         257 kB
 ├ ƒ /dashboard/donations                         5.11 kB         125 kB
-├ ƒ /dashboard/donations/[id]                    10.5 kB         173 kB
-├ ƒ /dashboard/legal-entities                    13.7 kB         228 kB
+├ ƒ /dashboard/donations/[id]                    10.5 kB         174 kB
+├ ƒ /dashboard/legal-entities                    13.7 kB         229 kB
 ├ ƒ /dashboard/notifications                     10.4 kB         163 kB
 ├ ƒ /dashboard/notifications/admin               19.5 kB         202 kB
 ├ ƒ /dashboard/saved                             10.6 kB         169 kB
 ├ ƒ /dashboard/users                             4.73 kB         160 kB
-├ ƒ /dashboard/verification                      18.5 kB         193 kB
-├ ○ /donate                                      1.68 kB         167 kB
-├ ƒ /donate/[id]                                 19.6 kB         185 kB
-├ ○ /forgot-password                             8.36 kB         183 kB
-├ ○ /help                                        8.42 kB         176 kB
+├ ƒ /dashboard/verification                      18.5 kB         194 kB
+├ ○ /donate                                      1.68 kB         168 kB
+├ ƒ /donate/[id]                                 19.6 kB         186 kB
+├ ○ /forgot-password                             8.36 kB         184 kB
+├ ○ /help                                        8.42 kB         177 kB
 ├ ○ /loading-demo                                6.22 kB         116 kB
-├ ○ /politicas-de-privacidad                       667 B         166 kB
-├ ƒ /reset-password                              2.99 kB         184 kB
+├ ○ /politicas-de-privacidad                       667 B         167 kB
+├ ƒ /reset-password                              2.99 kB         185 kB
 ├ ○ /reset-processing                            4.02 kB         114 kB
 ├ ƒ /settings                                      11 kB         199 kB
 ├ ƒ /settings/notifications                       2.8 kB         112 kB
-├ ƒ /sign-in                                     7.92 kB         159 kB
-├ ○ /sign-up                                     13.5 kB         257 kB
-└ ○ /terminos                                      667 B         166 kB
+├ ƒ /sign-in                                     7.92 kB         160 kB
+├ ○ /sign-up                                     13.5 kB         258 kB
+└ ○ /terminos                                      667 B         167 kB
 + First Load JS shared by all                     102 kB
   ├ chunks/1184-f8a0280477d6896e.js              45.9 kB
   ├ chunks/73ff4069-6801f416efd3b41e.js          54.2 kB
   └ other shared chunks (total)                  2.17 kB
 
 
-ƒ Middleware                                     66.4 kB
+ƒ Middleware                                     67.1 kB
 
 ○  (Static)   prerendered as static content
 ƒ  (Dynamic)  server-rendered on demand

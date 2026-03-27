@@ -8,16 +8,20 @@ export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get("code");
   const error = requestUrl.searchParams.get("error");
-const errorDescription = requestUrl.searchParams.get("error_description");
+  const errorDescription = requestUrl.searchParams.get("error_description");
 
-if (error) {
-  console.error("Auth callback error:", error, errorDescription);
-  return NextResponse.redirect(
-    new URL(`/sign-in?error=${encodeURIComponent(errorDescription || error)}`, request.url)
-  );
-}
+  if (error) {
+    console.error("Auth callback error:", error, errorDescription);
+    return NextResponse.redirect(
+      new URL(`/sign-in?error=${encodeURIComponent(errorDescription || error)}`, request.url)
+    );
+  }
+
   const type = requestUrl.searchParams.get("type");
-  const next = requestUrl.searchParams.get("next") || "/dashboard";
+
+  // Safe redirect: only allow relative paths starting with /
+  const rawNext = requestUrl.searchParams.get("next") || "/dashboard";
+  const next = rawNext.startsWith("/") ? rawNext : "/dashboard";
 
   if (!code) {
     console.error("No code parameter provided in callback URL");
@@ -52,7 +56,7 @@ if (error) {
       );
     }
 
-    // ✅ Password recovery — redirect to reset password page
+    // Password recovery — redirect to reset password page
     if (type === "recovery") {
       return NextResponse.redirect(new URL("/reset-password", request.url));
     }
@@ -92,17 +96,19 @@ if (error) {
             location: "",
             joinDate: new Date(),
             status: "active",
-            verificationStatus: true,
+            verificationStatus: false, // Users are not auto-verified
           },
         });
-      } else {
-        await prisma.profile.update({
-          where: { id: data.user.id },
-          data: { verificationStatus: true },
-        });
       }
+      // Note: we no longer update verificationStatus on existing profiles
+      // as user verification is not currently implemented
     } catch (profileError) {
       console.error("Error handling user profile:", profileError);
+      // Redirect to sign-in if profile creation fails
+      // to avoid a logged-in user with no profile
+      return NextResponse.redirect(
+        new URL("/sign-in?error=Profile setup failed, please try again", request.url)
+      );
     }
 
     return NextResponse.redirect(new URL(next, request.url));
