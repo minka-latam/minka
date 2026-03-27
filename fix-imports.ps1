@@ -6,7 +6,7 @@ foreach ($file in $files) {
     $content = $content -replace '(?i)@supabase/ssr', '@supabase/ssr'
     $content = $content -replace 'createServerClient', 'createServerClient'
     $content = $content -replace 'createBrowserClient', 'createBrowserClient'
-    $content = $content -replace 'createServerComponentClient', 'createServerClient'
+    $content = $content -replace 'createServerClient', 'createServerClient'
     $content = $content -replace 'createMiddlewareClient', 'createServerClient'
     Set-Content -Path $file.FullName -Value $content -Encoding UTF8
     Write-Host "Fixed: $($file.Name)"

@@ -20,6 +20,7 @@ import { Switch } from '@/components/ui/switch'
 import { CheckIcon } from '@/components/icons/CheckIcon'
 import { LoadingSpinner } from '@/components/ui/loading-spinner'
 import { QRPaymentStep } from '@/components/donate/QRPaymentStep'
+import { toast } from "@/components/ui/use-toast"
 
 // Key for storing pending donation in localStorage
 const PENDING_DONATION_KEY = 'minka_pending_donation'

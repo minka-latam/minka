@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
-import { db } from "@/lib/db";
+import { prisma as db } from "@/lib/prisma";
 import { z } from "zod";
 
 // Schema for updating just the story field

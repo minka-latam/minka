@@ -31,7 +31,7 @@ export async function middleware(req: NextRequest) {
   try {
     const { data } = await supabase.auth.getSession();
     session = data.session;
-  } catch (e) {
+  } catch  {
     console.log("Session parse error - treating as unauthenticated");
   }
 
