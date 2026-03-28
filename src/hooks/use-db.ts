@@ -212,11 +212,15 @@ export function useDb() {
           clearTimeout(timeoutId);
 
           if (!response.ok) {
-            const errorData = await response
-              .json()
-              .catch(() => ({ error: "Network error" }));
-            throw new Error(errorData.error || "Failed to fetch profile");
-          }
+  if (response.status === 404) {
+    console.log(`Profile not found for user ${userId}`);
+    return null;
+  }
+  const errorData = await response
+    .json()
+    .catch(() => ({ error: "Network error" }));
+  throw new Error(errorData.error || "Failed to fetch profile");
+}
 
           const data = await response.json();
           if (!data.profile) {

@@ -1,9 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
+﻿import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
-
-const prisma = new PrismaClient();
 
 // GET: Fetch all saved campaigns for the current user
 export async function GET() {
@@ -11,9 +9,20 @@ export async function GET() {
 
     // Get the current session using Supabase
     const cookieStore = await cookies();
-    const supabase = createRouteHandlerClient({
-      cookies: (() => cookieStore) as any,
-    });
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() { return cookieStore.getAll(); },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
+            );
+          },
+        },
+      }
+    );
 
     const {
       data: { session },
@@ -111,9 +120,20 @@ export async function POST(request: NextRequest) {
 
     // Get the current session using Supabase
     const cookieStore = await cookies();
-    const supabase = createRouteHandlerClient({
-      cookies: (() => cookieStore) as any,
-    });
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() { return cookieStore.getAll(); },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
+            );
+          },
+        },
+      }
+    );
 
     const {
       data: { session },
@@ -206,9 +226,20 @@ export async function DELETE(request: NextRequest) {
 
     // Get the current session using Supabase
     const cookieStore = await cookies();
-    const supabase = createRouteHandlerClient({
-      cookies: (() => cookieStore) as any,
-    });
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() { return cookieStore.getAll(); },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
+            );
+          },
+        },
+      }
+    );
 
     const {
       data: { session },
@@ -267,3 +298,4 @@ export async function DELETE(request: NextRequest) {
     );
   }
 }
+

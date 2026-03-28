@@ -1,11 +1,11 @@
-"use client";
+﻿"use client";
 
 import React from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { createBrowserClient } from "@supabase/ssr";
 import { ArrowLeft, User } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Footer } from "@/components/views/landing-page/Footer";
@@ -19,7 +19,10 @@ interface UserDashboardLayoutProps {
 export function UserDashboardLayout({ children }: UserDashboardLayoutProps) {
   const router = useRouter();
   const [profile, setProfile] = useState<ProfileData | null>(null);
-  const supabase = createClientComponentClient();
+  const supabase = createBrowserClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
   const [isCampaignPage, setIsCampaignPage] = useState(false);
 
   useEffect(() => {
@@ -86,3 +89,4 @@ export function UserDashboardLayout({ children }: UserDashboardLayoutProps) {
     </div>
   );
 }
+

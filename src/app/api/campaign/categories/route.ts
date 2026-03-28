@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { db } from "@/lib/db";
+import { prisma as db } from "@/lib/prisma";
 
 // Interface for category count data
 interface CategoryCount {

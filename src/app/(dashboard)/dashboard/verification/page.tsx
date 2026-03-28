@@ -1,8 +1,8 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { createBrowserClient } from "@supabase/ssr";
 import { useToast } from "@/components/ui/use-toast";
 import {
   Table,
@@ -68,7 +68,7 @@ interface VerificationRequest {
 export default function CampaignVerificationPage() {
   const router = useRouter();
   const { user } = useAuth();
-  const supabase = createClientComponentClient();
+  const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
   const { toast } = useToast();
 
   const [loading, setLoading] = useState(true);
@@ -1332,3 +1332,4 @@ export default function CampaignVerificationPage() {
     </div>
   );
 }
+

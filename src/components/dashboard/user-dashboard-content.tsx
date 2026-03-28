@@ -404,6 +404,25 @@ export function UserDashboardContent({
           </div>
         </div>
 
+         {/* Edit Profile Button */}
+        <div className="flex justify-end pt-6 gap-3">
+          <Button
+            variant="outline"
+            className="flex items-center gap-2 text-[#2c6e49] border-[#2c6e49] hover:bg-[#2c6e49] hover:text-white"
+            onClick={onChangePassword}
+          >
+            Cambiar contraseña
+          </Button>
+          <Button
+            variant="outline"
+            className="flex items-center gap-2 text-[#2c6e49] border-[#2c6e49] hover:bg-[#2c6e49] hover:text-white"
+            onClick={onEditProfile}
+          >
+            <Edit size={16} />
+            Editar información
+          </Button>
+        </div>
+
         {/* Personal Information - 3 columns, 2 rows */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pt-8">
           <div>

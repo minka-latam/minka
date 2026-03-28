@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 import { TriptoClient } from "@/lib/tripto/client";
 import { prisma } from "@/lib/prisma";
 import { getAuthSession } from "@/lib/auth";
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
+import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { createDonationNotification } from "@/lib/notifications";
 
@@ -11,7 +11,20 @@ export async function POST(request: NextRequest) {
     // Get the authenticated user using Supabase client
     const cookieStore = await cookies();
 
-    const supabase = createRouteHandlerClient({ cookies: (() => cookieStore) as any });
+    const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() { return cookieStore.getAll(); },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) =>
+            cookieStore.set(name, value, options)
+          );
+        },
+      },
+    }
+  );
     const {
       data: { session },
     } = await supabase.auth.getSession();
@@ -219,3 +232,4 @@ export async function POST(request: NextRequest) {
       );
     }
 }
+

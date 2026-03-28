@@ -1,4 +1,4 @@
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { createBrowserClient } from "@supabase/ssr";
 
 const STORAGE_BUCKET =
   process.env.NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET || "minka";
@@ -39,7 +39,10 @@ export async function uploadMedia(file: File): Promise<UploadResponse> {
   }
 
   try {
-    const supabase = createClientComponentClient();
+    const supabase = createBrowserClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
     // Get the session first to verify authentication
     const { data: sessionData, error: sessionError } =

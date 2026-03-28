@@ -6,7 +6,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useUserDonationDetails } from "@/hooks/use-user-donations";
 import { Button } from "@/components/ui/button";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { createBrowserClient } from "@supabase/ssr";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import {
   ArrowLeft,
@@ -25,7 +25,7 @@ interface DonationDetailsProps {
 
 export default function DonationDetails({ id }: DonationDetailsProps) {
   const router = useRouter();
-  const supabase = createClientComponentClient();
+  const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [hasSession, setHasSession] = useState(false);
 

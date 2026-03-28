@@ -60,9 +60,7 @@ function formatCampaignData(campaign: any) {
 
   const progressData = {
     isVerified: campaign.verification_status || false,
-    createdAt: campaign.created_at
-      ? new Date(campaign.created_at).toLocaleDateString()
-      : new Date().toLocaleDateString(),
+    createdAt: campaign.created_at || new Date().toISOString(),
     currentAmount: campaign.collected_amount || 0,
     targetAmount: campaign.goal_amount || 0,
     donorsCount: campaign.donor_count || 0,

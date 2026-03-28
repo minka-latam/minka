@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -14,7 +14,7 @@ import {
 import { CampaignStatus } from "./campaign-card"; // Reusing status type
 import { ProfileData } from "@/types"; // Assuming ProfileData is in types
 import { toast } from "@/components/ui/use-toast";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { createBrowserClient } from "@supabase/ssr";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation"; // For refreshing data
 import {
@@ -56,7 +56,7 @@ interface AdminCampaignTableProps {
 }
 
 export function AdminCampaignTable({ campaigns }: AdminCampaignTableProps) {
-  const supabase = createClientComponentClient();
+  const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
   const router = useRouter();
   const [verifyingId, setVerifyingId] = useState<string | null>(null);
   const [unverifyingId, setUnverifyingId] = useState<string | null>(null);
@@ -338,3 +338,4 @@ export function AdminCampaignTable({ campaigns }: AdminCampaignTableProps) {
 // You might need to add this to your Badge component's variants
 // Example:
 // success: "border-transparent bg-green-100 text-green-800 hover:bg-green-100/80",
+

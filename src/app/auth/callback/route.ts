@@ -1,116 +1,167 @@
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
-import { cookies } from "next/headers";
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { createServerClient } from '@supabase/ssr'
+import { cookies } from 'next/headers'
+import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
+import { prisma } from '@/lib/prisma'
 
 export async function GET(request: NextRequest) {
-  const requestUrl = new URL(request.url);
-  const code = requestUrl.searchParams.get("code");
-  const type = requestUrl.searchParams.get("type");
+  const requestUrl = new URL(request.url)
+  const code = requestUrl.searchParams.get('code')
+  const error = requestUrl.searchParams.get('error')
+  const errorDescription = requestUrl.searchParams.get(
+    'error_description',
+  )
 
-  if (code) {
-    try {
-      const cookieStore = await cookies();
-      const supabase = createRouteHandlerClient({
-        cookies: (() => cookieStore) as any,
-      });
+  if (error) {
+    console.error(
+      'Auth callback error:',
+      error,
+      errorDescription,
+    )
+    return NextResponse.redirect(
+      new URL(
+        `/sign-in?error=${encodeURIComponent(errorDescription || error)}`,
+        request.url,
+      ),
+    )
+  }
 
-      // Exchange the code for a session
-      const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+  const type = requestUrl.searchParams.get('type')
 
-      if (error) {
-        console.error("Error exchanging code for session:", error.message);
-        return NextResponse.redirect(
-          new URL(
-            `/sign-in?error=${encodeURIComponent(error.message)}`,
-            request.url
-          )
-        );
-      }
+  // Safe redirect: only allow relative paths starting with /
+  const rawNext =
+    requestUrl.searchParams.get('next') || '/dashboard'
+  const next = rawNext.startsWith('/')
+    ? rawNext
+    : '/dashboard'
 
-      // For password reset flows, redirect to the processing page which will set the client-side trigger
-      if (type === "recovery") {
-        return NextResponse.redirect(new URL("/reset-processing", request.url));
-      }
+  if (!code) {
+    console.error(
+      'No code parameter provided in callback URL',
+    )
+    return NextResponse.redirect(
+      new URL(
+        '/sign-in?error=Missing authentication code',
+        request.url,
+      ),
+    )
+  }
 
-      if (!data.user) {
-        console.error("No user data returned after authentication");
-        return NextResponse.redirect(
-          new URL(`/sign-in?error=Authentication failed`, request.url)
-        );
-      }
+  try {
+    const cookieStore = await cookies()
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return cookieStore.getAll()
+          },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(
+              ({ name, value, options }) =>
+                cookieStore.set(name, value, options),
+            )
+          },
+        },
+      },
+    )
 
-      // Check for returnUrl in the callback URL
-      const returnUrl = requestUrl.searchParams.get("returnUrl");
+    const { data, error } =
+      await supabase.auth.exchangeCodeForSession(code)
 
-      // Check if the user already has a profile
-      try {
-        const existingProfile = await prisma.profile.findUnique({
-          where: { id: data.user.id },
-        });
-
-        // If the user doesn't have a profile, create one
-        if (!existingProfile) {
-
-          // Get user metadata from Supabase
-          const { data: userData } = await supabase.auth.getUser();
-          const userMetadata = userData.user?.user_metadata;
-
-          // Create a profile in the database
-          await prisma.profile.create({
-            data: {
-              id: data.user.id,
-              name:
-                userMetadata?.full_name ||
-                `${userMetadata?.first_name || ""} ${userMetadata?.last_name || ""}`.trim() ||
-                data.user.email?.split("@")[0] ||
-                "User",
-              email: data.user.email || "",
-              passwordHash: "", // We don't store the actual password
-              profilePicture: userMetadata?.avatar_url || "",
-              identityNumber: "", // This would need to be collected later
-              phone: userMetadata?.phone || "",
-              birthDate: new Date(), // This would need to be collected later
-              address: "",
-              bio: "",
-              location: "",
-              joinDate: new Date(),
-              status: "active",
-              verificationStatus: true,
-            },
-          });
-        } else {
-          // Update verification status for existing users
-          await prisma.profile.update({
-            where: { id: data.user.id },
-            data: { verificationStatus: true },
-          });
-        }
-      } catch (profileError) {
-        console.error("Error handling user profile:", profileError);
-        // Continue to redirect even if profile creation fails
-      }
-
-      // Redirect to returnUrl if provided, otherwise to dashboard
-      if (returnUrl) {
-        return NextResponse.redirect(new URL(returnUrl, request.url));
-      } else {
-        return NextResponse.redirect(new URL("/dashboard", request.url));
-      }
-    } catch (error) {
-      console.error("Unexpected error during authentication callback:", error);
+    if (error) {
+      console.error(
+        'Error exchanging code for session:',
+        error.message,
+      )
       return NextResponse.redirect(
         new URL(
-          `/sign-in?error=${encodeURIComponent("Authentication failed")}`,
-          request.url
-        )
-      );
+          `/sign-in?error=${encodeURIComponent(error.message)}`,
+          request.url,
+        ),
+      )
     }
-  } else {
-    console.error("No code parameter provided in callback URL");
+
+    // Password recovery — redirect to reset password page
+    if (type === 'recovery') {
+      return NextResponse.redirect(
+        new URL('/reset-password', request.url),
+      )
+    }
+
+    if (!data.user) {
+      return NextResponse.redirect(
+        new URL(
+          '/sign-in?error=Authentication failed',
+          request.url,
+        ),
+      )
+    }
+
+    // Handle profile creation for new OAuth users
+    try {
+      const existingProfile =
+        await prisma.profile.findUnique({
+          where: { id: data.user.id },
+        })
+
+      if (!existingProfile) {
+        const { data: userData } =
+          await supabase.auth.getUser()
+        const userMetadata = userData.user?.user_metadata
+
+        await prisma.profile.create({
+          data: {
+            id: data.user.id,
+            name:
+              userMetadata?.full_name ||
+              `${userMetadata?.first_name || ''} ${userMetadata?.last_name || ''}`.trim() ||
+              data.user.email?.split('@')[0] ||
+              'User',
+            email: data.user.email || '',
+            passwordHash: '',
+            profilePicture: userMetadata?.avatar_url || '',
+            identityNumber: `oauth_${data.user.id}`, // clearly marked as OAuth
+            phone: userMetadata?.phone || 'pending', // pending = not yet provided
+            birthDate: new Date('1900-01-01'), // sentinel value = not yet provided
+            address: '',
+            bio: '',
+            location: '',
+            joinDate: new Date(),
+            status: 'active',
+            verificationStatus: false,
+          },
+        })
+      }
+      // Note: we no longer update verificationStatus on existing profiles
+      // as user verification is not currently implemented
+    } catch (profileError) {
+      console.error(
+        'Error handling user profile:',
+        profileError,
+      )
+      // Redirect to sign-in if profile creation fails
+      // to avoid a logged-in user with no profile
+      return NextResponse.redirect(
+        new URL(
+          '/sign-in?error=Profile setup failed, please try again',
+          request.url,
+        ),
+      )
+    }
+
+    return NextResponse.redirect(new URL(next, request.url))
+  } catch (error) {
+    console.error(
+      'Unexpected error during authentication callback:',
+      error,
+    )
     return NextResponse.redirect(
-      new URL(`/sign-in?error=Missing authentication code`, request.url)
-    );
+      new URL(
+        '/sign-in?error=Authentication failed',
+        request.url,
+      ),
+    )
   }
 }

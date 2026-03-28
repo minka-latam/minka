@@ -1,4 +1,4 @@
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+﻿import { createBrowserClient } from "@supabase/ssr";
 
 const STORAGE_BUCKET =
   process.env.NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET || "avatars";
@@ -25,7 +25,7 @@ export async function uploadAvatar(file: File, userId: string) {
   }
 
   try {
-    const supabase = createClientComponentClient();
+    const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
 
     // Upload the file to Supabase storage
     const fileExt = file.name.split(".").pop();
@@ -53,3 +53,4 @@ export async function uploadAvatar(file: File, userId: string) {
     throw error;
   }
 }
+

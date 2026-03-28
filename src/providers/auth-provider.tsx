@@ -1,46 +1,56 @@
-"use client";
+'use client'
 
-import { createContext, useContext, useEffect, useState } from "react";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
-import type { User, Session } from "@supabase/auth-helpers-nextjs";
-import { useRouter } from "next/navigation";
-import { toast } from "@/components/ui/use-toast";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from 'react'
+import { createBrowserClient } from '@supabase/ssr'
+import type { User, Session } from '@supabase/supabase-js'
+import { useRouter } from 'next/navigation'
+import { toast } from '@/components/ui/use-toast'
 
-// Explicitly define Profile type to match ProfileData structure used in the app
 export interface Profile {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  address: string | null;
-  role: string;
-  created_at: string;
-  identity_number?: string;
-  birth_date?: string;
-  profile_picture?: string;
-  [key: string]: string | boolean | number | null | undefined;
+  id: string
+  name: string
+  email: string
+  phone: string
+  address: string | null
+  role: string
+  created_at: string
+  identity_number?: string
+  birth_date?: string
+  profile_picture?: string
+  [key: string]:
+    | string
+    | boolean
+    | number
+    | null
+    | undefined
 }
 
 type SignUpData = {
-  email: string;
-  password: string;
-  firstName: string;
-  lastName: string;
-  documentId: string;
-  documentCountryCode: string;
-  birthDate: string;
-  phone: string;
-};
+  email: string
+  password: string
+  firstName: string
+  lastName: string
+  documentId: string
+  documentCountryCode: string
+  birthDate: string
+  phone: string
+}
 
 type AuthContextType = {
-  user: User | null;
-  session: Session | null;
-  profile: Profile | null;
-  isLoading: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
-  signUp: (data: SignUpData) => Promise<void>;
-  signOut: () => Promise<void>;
-};
+  user: User | null
+  session: Session | null
+  profile: Profile | null
+  isLoading: boolean
+  signIn: (email: string, password: string) => Promise<void>
+  signUp: (data: SignUpData) => Promise<void>
+  signOut: () => Promise<void>
+}
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
@@ -50,368 +60,347 @@ const AuthContext = createContext<AuthContextType>({
   signIn: async () => {},
   signUp: async () => {},
   signOut: async () => {},
-});
+})
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [profileFetchInProgress, setProfileFetchInProgress] = useState(false);
-  const router = useRouter();
-  const supabase = createClientComponentClient();
+export function AuthProvider({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  const [user, setUser] = useState<User | null>(null)
+  const [session, setSession] = useState<Session | null>(
+    null,
+  )
+  const [profile, setProfile] = useState<Profile | null>(
+    null,
+  )
+  const [isLoading, setIsLoading] = useState(true)
+  const profileFetchInProgress = useRef(false)
+  const router = useRouter()
 
-  // Optimized profile fetch with timeout and retry logic
-  const fetchProfile = async (userId: string, retryCount = 0) => {
-    // Skip if a fetch is already in progress for the same user
-    if (profileFetchInProgress) {
-      return null;
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  )
+
+  const fetchProfile = async (
+    userId: string,
+    retryCount = 0,
+  ): Promise<Profile | null> => {
+    if (profileFetchInProgress.current) {
+      console.log(
+        'Perfil ya está siendo cargado, omitiendo llamada redundante',
+      )
+      return null
     }
 
     try {
-      setProfileFetchInProgress(true);
+      profileFetchInProgress.current = true
 
-      // Create AbortController for timeout handling
-      const controller = new AbortController();
+      const controller = new AbortController()
       const timeoutId = setTimeout(
         () =>
           controller.abort(
-            new DOMException("Profile fetch timed out after 10s", "AbortError")
+            new DOMException(
+              'Tiempo de espera agotado',
+              'AbortError',
+            ),
           ),
-        10000
-      ); // 10 second timeout
+        10000,
+      )
 
-      const response = await fetch(`/api/profile/${userId}`, {
-        signal: controller.signal,
-        headers: {
-          "Cache-Control": "no-cache",
-          Pragma: "no-cache",
+      const response = await fetch(
+        `/api/profile/${userId}`,
+        {
+          signal: controller.signal,
+          headers: {
+            'Cache-Control': 'no-cache',
+            Pragma: 'no-cache',
+          },
         },
-      });
+      )
 
-      clearTimeout(timeoutId);
+      clearTimeout(timeoutId)
 
       if (!response.ok) {
         const errorData = await response
           .json()
-          .catch(() => ({ error: "Network error" }));
-        console.error("Error fetching profile");
-        throw new Error(errorData.error || "Failed to fetch profile");
+          .catch(() => ({ error: 'Error de red' }))
+        throw new Error(
+          errorData.error || 'Error al obtener el perfil',
+        )
       }
 
-      const data = await response.json();
+      const data = await response.json()
 
       if (data.profile) {
-        setProfile(data.profile);
-        return data.profile;
+        setProfile(data.profile)
+        return data.profile
       } else {
-        throw new Error("No profile data received");
+        throw new Error('No se recibieron datos del perfil')
       }
     } catch (error) {
       const isRetryable =
         error instanceof Error &&
-        (error.name === "AbortError" ||
-          error.message.includes("network") ||
-          error.message.includes("fetch"));
+        (error.name === 'AbortError' ||
+          error.message.includes('network') ||
+          error.message.includes('fetch'))
 
       if (retryCount < 2 && isRetryable) {
-      } else {
-        console.error(
-          `Error fetching profile (attempt ${retryCount + 1}):`,
-          error
-        );
+        profileFetchInProgress.current = false
+        await new Promise((resolve) =>
+          setTimeout(resolve, (retryCount + 1) * 1000),
+        )
+        return fetchProfile(userId, retryCount + 1)
       }
 
-      // Retry logic for network errors (max 2 retries)
-      if (
-        retryCount < 2 &&
-        error instanceof Error &&
-        (error.name === "AbortError" ||
-          error.message.includes("network") ||
-          error.message.includes("fetch"))
-      ) {
-        setTimeout(
-          () => fetchProfile(userId, retryCount + 1),
-          (retryCount + 1) * 1000
-        );
-        return null;
-      }
-
-      // If all retries failed or it's not a retry-able error, set profile to null
-      setProfile(null);
-
-      // Only show toast for final failure
-      if (
-        retryCount >= 2 ||
-        (error instanceof Error && !error.message.includes("AbortError"))
-      ) {
-        toast({
-          title: "Error",
-          description:
-            "No se pudo cargar la información del perfil. Algunos datos pueden no estar disponibles.",
-          variant: "destructive",
-        });
-      }
-
-      return null;
+      setProfile(null)
+      return null
     } finally {
-      setProfileFetchInProgress(false);
+      profileFetchInProgress.current = false
     }
-  };
+  }
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
   useEffect(() => {
-    let isMounted = true;
+    let isMounted = true
 
     const initAuth = async () => {
       try {
-        setIsLoading(true);
+        setIsLoading(true)
         const {
           data: { session },
-        } = await supabase.auth.getSession();
-
-        if (!isMounted) return;
-
-        setSession(session);
-        setUser(session?.user ?? null);
-
-        if (session?.user) {
-          await fetchProfile(session.user.id);
-        }
+        } = await supabase.auth.getSession()
+        if (!isMounted) return
+        setSession(session)
+        setUser(session?.user ?? null)
+        if (session?.user)
+          await fetchProfile(session.user.id)
       } catch (error) {
-        console.error("Auth initialization error:", error);
+        console.error(
+          'Error al inicializar autenticación:',
+          error,
+        )
         if (isMounted) {
           toast({
-            title: "Error",
-            description: "Error initializing authentication.",
-            variant: "destructive",
-          });
+            title: 'Error',
+            description:
+              'Error al inicializar la autenticación.',
+            variant: 'destructive',
+          })
         }
       } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
+        if (isMounted) setIsLoading(false)
       }
-    };
+    }
 
-    initAuth();
+    initAuth()
 
-    // Set up auth state change listener
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, newSession) => {
-      if (!isMounted) return;
+    } = supabase.auth.onAuthStateChange(
+      async (event, newSession) => {
+        if (!isMounted) return
 
-      // Only update if the session actually changed to prevent redundant updates
-      const currentUserId = session?.user?.id;
-      const newUserId = newSession?.user?.id;
-
-      if (currentUserId !== newUserId) {
-        setSession(newSession);
-        setUser(newSession?.user ?? null);
+        setSession(newSession)
+        setUser(newSession?.user ?? null)
 
         if (newSession?.user) {
-          await fetchProfile(newSession.user.id);
+          await fetchProfile(newSession.user.id)
         } else {
-          setProfile(null);
+          setProfile(null)
         }
-      }
 
-      if (event === "SIGNED_OUT") {
-        router.push("/sign-in");
-      }
-    });
+        if (event === 'SIGNED_OUT') {
+          router.push('/sign-in')
+        }
+      },
+    )
 
     return () => {
-      isMounted = false;
-      subscription.unsubscribe();
-    };
-  }, [router, supabase]);
+      isMounted = false
+      subscription.unsubscribe()
+    }
+  }, [router])
 
-  const signIn = async (email: string, password: string) => {
+  const signIn = async (
+    email: string,
+    password: string,
+  ) => {
     try {
-      setIsLoading(true);
-
-      // Call our login API endpoint
-      const response = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+      setIsLoading(true)
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
-      });
+      })
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Authentication failed");
+        const errorData = await response.json()
+        throw new Error(
+          errorData.error || 'Error de autenticación',
+        )
       }
 
-      // Get the return URL if it exists
-      const urlParams = new URLSearchParams(window.location.search);
-      const returnUrl = urlParams.get("returnUrl");
-      const redirectPath = returnUrl || "/dashboard";
+      const urlParams = new URLSearchParams(
+        window.location.search,
+      )
+      const returnUrl = urlParams.get('returnUrl')
+      const redirectPath = returnUrl || '/dashboard'
 
-      // Prefetch the dashboard page to make redirection faster
-      router.prefetch(redirectPath);
-
-      // Keep isLoading true to show the spinner during the session refresh
-      // Don't navigate immediately, wait for the session to refresh first
+      router.prefetch(redirectPath)
 
       try {
-        // Wait for session to refresh before navigation
-        await supabase.auth.refreshSession();
-
-        // Show success message
+        await supabase.auth.refreshSession()
         toast({
-          title: "Éxito",
-          description: "Has iniciado sesión correctamente.",
-        });
-
-        // Navigate after session is refreshed
-        router.push(redirectPath);
+          title: 'Éxito',
+          description: 'Has iniciado sesión correctamente.',
+        })
+        router.push(redirectPath)
       } catch (err) {
-        console.error("Session refresh error:", err);
+        console.error('Error al refrescar sesión:', err)
         toast({
-          title: "Error",
-          description: "Error al actualizar la sesión.",
-          variant: "destructive",
-        });
+          title: 'Error',
+          description: 'Error al actualizar la sesión.',
+          variant: 'destructive',
+        })
       }
     } catch (error) {
-      console.error("Login error:", error);
-      setProfile(null);
-      throw error;
+      console.error('Error de inicio de sesión:', error)
+      setProfile(null)
+      throw error
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   const signUp = async (data: SignUpData) => {
     try {
-      setIsLoading(true);
-
-      // Call our custom registration endpoint
-      const response = await fetch("/api/auth/register", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+      setIsLoading(true)
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
-      });
+      })
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({})); 
-        console.error(`Registration API error: ${response.status}`);
+        const errorData = await response
+          .json()
+          .catch(() => ({}))
+        const errorType =
+          typeof errorData.error === 'string'
+            ? errorData.error.toLowerCase()
+            : ''
 
-        // Use a simplified error message instead of exposing details
-        const errorType = typeof errorData.error === 'string' ? errorData.error.toLowerCase() : "";
-
-        if (errorType.includes("email") || errorType.includes("exists")) {
-          // If it mentions email or general existence, likely email or ID duplication
-          if (errorType.includes("id") || errorType.includes("document")) {
-             throw new Error("document_error");
-          }
-           throw new Error("email_error");
-        } else if (
-          errorType.includes("document") ||
-          errorType.includes("identity")
+        if (
+          errorType.includes('email') ||
+          errorType.includes('exists')
         ) {
-          throw new Error("document_error");
-        } else if (errorType.includes("password")) {
-          throw new Error("password_error");
+          if (
+            errorType.includes('id') ||
+            errorType.includes('document')
+          ) {
+            throw new Error('document_error')
+          }
+          throw new Error('email_error')
+        } else if (
+          errorType.includes('document') ||
+          errorType.includes('identity')
+        ) {
+          throw new Error('document_error')
+        } else if (errorType.includes('password')) {
+          throw new Error('password_error')
         } else {
-          // Pass the actual error message if available, otherwise generic
-          throw new Error(errorData.error || "Registration failed");
+          throw new Error(
+            errorData.error || 'Error en el registro',
+          )
         }
       }
 
-      const responseData = await response.json();
-
+      const responseData = await response.json()
       toast({
-        title: "Éxito",
-        description: "Cuenta creada exitosamente. Por favor inicia sesión.",
-      });
-
-      // Redirect to sign-in page after successful registration
-      router.push("/sign-in?registered=true");
-      return responseData;
+        title: 'Éxito',
+        description:
+          'Cuenta creada exitosamente. Por favor inicia sesión.',
+      })
+      router.push('/sign-in?registered=true')
+      return responseData
     } catch (error) {
-      console.error("Registration error:", error);
-      // Let the form component handle detailed errors
-      throw error;
+      console.error('Error en registro:', error)
+      throw error
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   const signOut = async () => {
     try {
-      setIsLoading(true);
+      setIsLoading(true)
+      const response = await fetch('/api/auth/logout', {
+        method: 'POST',
+      })
 
-      // Call the server-side logout endpoint
-      const response = await fetch("/api/auth/logout", {
-        method: "POST",
-      });
-
-      // Check if the API call itself failed (network error, etc.)
       if (!response.ok) {
-        let errorData = { error: "Logout API call failed", details: "" };
-        try {
-          errorData = await response.json();
-        } catch {
-          // Ignore error if response body is not JSON
+        let errorData = {
+          error: 'Error al cerrar sesión',
+          details: '',
         }
-        console.error(`Logout API error: ${response.status}`);
+        try {
+          errorData = await response.json()
+        } catch (_) {}
         toast({
-          title: "Error",
-          description: `${errorData.error}${errorData.details ? `: ${errorData.details}` : ""}`,
-          variant: "destructive",
-        });
-        // Throw an error to stop execution
-        throw new Error(errorData.error || "Logout API call failed");
+          title: 'Error',
+          description: `${errorData.error}${errorData.details ? `: ${errorData.details}` : ''}`,
+          variant: 'destructive',
+        })
+        throw new Error(errorData.error)
       }
 
-      // Clear state immediately after successful API call
-      setUser(null);
-      setSession(null);
-      setProfile(null);
-
-      // Show success toast
+      setUser(null)
+      setSession(null)
+      setProfile(null)
       toast({
-        title: "Éxito",
-        description: "Has cerrado sesión correctamente.",
-      });
-
-      // Immediately redirect to sign-in page
-      router.push("/sign-in");
+        title: 'Éxito',
+        description: 'Has cerrado sesión correctamente.',
+      })
+      router.push('/sign-in')
     } catch (error) {
-      // Catch errors from the fetch call or the explicit throw above
-      console.error("Sign out process error:", error);
-      // Avoid showing a generic toast if a specific one was already shown
-      if (!(error instanceof Error && error.message.includes("Logout API"))) {
+      console.error('Error al cerrar sesión:', error)
+      if (
+        !(
+          error instanceof Error &&
+          error.message.includes('Error al cerrar sesión')
+        )
+      ) {
         toast({
-          title: "Error",
-          description: "An unexpected error occurred during sign out.",
-          variant: "destructive",
-        });
+          title: 'Error',
+          description:
+            'Ocurrió un error inesperado al cerrar sesión.',
+          variant: 'destructive',
+        })
       }
-
-      // Even if there's an error, make sure we clear the state
-      setUser(null);
-      setSession(null);
-      setProfile(null);
+      setUser(null)
+      setSession(null)
+      setProfile(null)
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   return (
     <AuthContext.Provider
-      value={{ user, session, profile, isLoading, signIn, signUp, signOut }}
+      value={{
+        user,
+        session,
+        profile,
+        isLoading,
+        signIn,
+        signUp,
+        signOut,
+      }}
     >
       {children}
     </AuthContext.Provider>
-  );
+  )
 }
 
-export const useAuth = () => useContext(AuthContext);
+export const useAuth = () => useContext(AuthContext)

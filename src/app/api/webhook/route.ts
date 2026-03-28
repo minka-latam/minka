@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import crypto from 'crypto'
-import { db } from '@/lib/db'
+import { prisma as db } from '@/lib/prisma'
 import {
   PaymentMethod,
   PaymentProvider,

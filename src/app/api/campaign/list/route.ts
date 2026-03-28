@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { db } from "@/lib/db";
+import { prisma as db } from "@/lib/prisma";
 
 // Fallback campaign data for development
 const mockCampaigns = [
@@ -223,26 +223,10 @@ export async function GET(request: Request) {
           verificationStatus: "pending",
         };
       } else if (verificationStatus === "unverified") {
-        // Show campaigns that are not verified and don't have pending/approved requests
-        whereClause.AND = [
-          {
-            OR: [{ verificationStatus: false }, { verificationStatus: null }],
-          },
-          {
-            OR: [
-              {
-                verificationRequests: {
-                  is: null,
-                },
-              },
-              {
-                verificationRequests: {
-                  verificationStatus: "rejected",
-                },
-              },
-            ],
-          },
-        ];
+        whereClause.verificationStatus = false;
+        whereClause.verificationRequests = {
+          is: null,
+        };
       }
     }
 
@@ -375,7 +359,7 @@ export async function GET(request: Request) {
         },
         error: "Error fetching campaigns. Please try again later.",
       },
-      { status: 200 } // Return 200 to handle errors gracefully on the client side
+      { status: 500 } // Return 500 to handle errors gracefully on the client side
     );
   }
 }

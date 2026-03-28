@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
+import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
-import { db } from "@/lib/db";
+import { prisma as db } from "@/lib/prisma";
 import { z } from "zod";
 
 // Schema for updating just the story field
@@ -16,7 +16,20 @@ export async function PATCH(
 ) {
   try {
     const cookieStore = await cookies();
-    const supabase = createRouteHandlerClient({ cookies: (() => cookieStore) as any });
+    const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() { return cookieStore.getAll(); },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) =>
+            cookieStore.set(name, value, options)
+          );
+        },
+      },
+    }
+  );
     const {
       data: { session },
     } = await supabase.auth.getSession();

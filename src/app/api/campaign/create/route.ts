@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
+﻿import { NextRequest, NextResponse } from "next/server";
+import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
-import { db } from "@/lib/db";
+import { prisma as db } from "@/lib/prisma";
 import { z } from "zod";
 
 const campaignCreateSchema = z.object({
@@ -48,9 +48,22 @@ const campaignCreateSchema = z.object({
 
 export async function POST(req: NextRequest) {
   try {
-    // Use createRouteHandlerClient with awaited cookies
+    // Use createServerClient with awaited cookies
     const cookieStore = await cookies();
-    const supabase = createRouteHandlerClient({ cookies: (() => cookieStore) as any });
+    const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() { return cookieStore.getAll(); },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) =>
+            cookieStore.set(name, value, options)
+          );
+        },
+      },
+    }
+  );
 
     // Get session using supabase client
     const {
@@ -151,3 +164,4 @@ export async function POST(req: NextRequest) {
     );
   }
 }
+

@@ -124,7 +124,7 @@ export async function GET(
       status: 200,
       headers: {
         "Content-Type": "application/json",
-        "Cache-Control": "public, max-age=300", // Cache for 5 minutes
+        "Cache-Control": "private, no-cache",
       },
     });
   } catch (error) {

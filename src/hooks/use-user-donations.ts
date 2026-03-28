@@ -1,5 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+﻿import { useQuery } from "@tanstack/react-query";
 
 type DonationMedia = {
   mediaUrl: string;
@@ -179,7 +178,6 @@ const fetchDonationDetails = async (donationId: string) => {
 };
 
 export function useUserDonations(page = 1, pageSize = 6) {
-  const supabase = createClientComponentClient();
 
   const { data, isLoading, isError, error, refetch } =
     useQuery<DonationsResponse>({
@@ -206,7 +204,6 @@ export function useUserDonations(page = 1, pageSize = 6) {
 }
 
 export function useUserDonationDetails(donationId: string | null) {
-  const supabase = createClientComponentClient();
 
   const { data, isLoading, isError, error, refetch } =
     useQuery<DonationDetailsResponse>({
@@ -226,3 +223,4 @@ export function useUserDonationDetails(donationId: string | null) {
     refetch,
   };
 }
+

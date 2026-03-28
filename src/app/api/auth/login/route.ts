@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
+import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
 
@@ -8,30 +8,32 @@ export async function POST(request: Request) {
     const requestData = await request.json();
     const { email, password } = requestData;
 
-    // Validate required fields
     if (!email || !password) {
       return NextResponse.json(
-        {
-          error: "Email and password are required",
-        },
-        {
-          status: 400,
-        }
+        { error: "Email and password are required" },
+        { status: 400 }
       );
     }
 
-    // Create a Supabase client with properly handled cookies
     const cookieStore = await cookies();
-    const supabase = createRouteHandlerClient({
-      cookies: (() => cookieStore) as any,
-    });
 
-    // Sign in the user with Supabase Auth
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() { return cookieStore.getAll(); },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
+            );
+          },
+        },
+      }
+    );
+
     const { data: authData, error: authError } =
-      await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      await supabase.auth.signInWithPassword({ email, password });
 
     if (authError) {
       return NextResponse.json({ error: authError.message }, { status: 401 });
@@ -44,9 +46,17 @@ export async function POST(request: Request) {
       );
     }
 
-    // Fetch the user's profile
     const profile = await prisma.profile.findUnique({
       where: { id: authData.user.id },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        role: true,
+        profilePicture: true,
+        status: true,
+      },
     });
 
     if (!profile) {
@@ -57,20 +67,13 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json(
-      {
-        message: "User logged in successfully",
-        user: authData.user,
-        profile,
-      },
+      { message: "User logged in successfully", user: authData.user, profile },
       { status: 200 }
     );
   } catch (error) {
     console.error("Login error:", error);
-    const errorMessage =
-      error instanceof Error ? error.message : "Unknown error";
-
     return NextResponse.json(
-      { error: "Failed to log in", details: errorMessage },
+      { error: "Failed to log in", details: error instanceof Error ? error.message : "Unknown error" },
       { status: 500 }
     );
   }

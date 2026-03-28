@@ -14,12 +14,13 @@ import {
 } from 'lucide-react'
 import { Header } from '@/components/views/landing-page/Header'
 import { Footer } from '@/components/views/landing-page/Footer'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { createBrowserClient } from '@supabase/ssr'
 import { useCampaign } from '@/hooks/useCampaign'
 import { Switch } from '@/components/ui/switch'
 import { CheckIcon } from '@/components/icons/CheckIcon'
 import { LoadingSpinner } from '@/components/ui/loading-spinner'
 import { QRPaymentStep } from '@/components/donate/QRPaymentStep'
+import { toast } from "@/components/ui/use-toast"
 
 // Key for storing pending donation in localStorage
 const PENDING_DONATION_KEY = 'minka_pending_donation'
@@ -63,7 +64,7 @@ export function DonatePageContent({
   campaignId: string
 }) {
   const router = useRouter()
-  const supabase = createClientComponentClient()
+  const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
 
   // Use our custom hook to fetch campaign data
   const {
@@ -387,15 +388,23 @@ export function DonatePageContent({
 
   // Handle custom amount input
   const handleCustomAmountChange = (
-    e: React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    const value = e.target.value
-    // Only allow numbers and decimal point, max 2 decimal places
-    if (/^\d*(\.\d{0,2})?$/.test(value)) {
+  e: React.ChangeEvent<HTMLInputElement>,
+) => {
+  const value = e.target.value
+  if (/^\d*(\.\d{0,2})?$/.test(value)) {
+    const numValue = Number.parseFloat(value)
+    if (!value || numValue <= 50000) {
       setCustomAmount(value)
       setSelectedAmount(null)
+    } else {
+      toast({
+        title: "Monto inválido",
+        description: "El monto máximo de donación es Bs. 50,000.",
+        variant: "destructive",
+      })
     }
   }
+}
 
   // Handle payment method selection
   const handlePaymentMethodSelect = (method: string) => {
@@ -423,9 +432,10 @@ export function DonatePageContent({
       }, 300)
     } else if (
       step === 2 &&
-      (selectedAmount ||
-        (customAmount &&
-          Number.parseFloat(customAmount) > 0))
+    (selectedAmount ||
+    (customAmount &&
+    Number.parseFloat(customAmount) >= 1 &&
+    Number.parseFloat(customAmount) <= 50000))
     ) {
       setIsAnimating(true)
       setAnimationDirection('forward')
@@ -644,15 +654,10 @@ export function DonatePageContent({
   }
 
   // Handle closing success modal
-  const handleCloseSuccessModal = () => {
-    setShowSuccessModal(false)
-    setIsAnimating(true)
-    setAnimationDirection('forward')
-    setTimeout(() => {
-      setStep(4) // Show step 4 with notifications options
-      setIsAnimating(false)
-    }, 300)
-  }
+ const handleCloseSuccessModal = () => {
+  setShowSuccessModal(false);
+  router.push('/');
+};
 
   // Handle notification toggle
   const handleNotificationToggle = async (
@@ -1929,18 +1934,30 @@ export function DonatePageContent({
                 </div>
               </div>
 
-              {/* Black separator */}
-              <div className='border-t border-black my-4'></div>
+              {/* Notification opt-in */}
+<div className='mt-4 flex items-center justify-between bg-[#f5f7e9] rounded-lg p-3'>
+  <div className='flex items-center gap-2'>
+    <Bell className='h-4 w-4 text-[#2c6e49]' />
+    <span className='text-sm text-gray-700'>Recibir actualizaciones</span>
+  </div>
+  <Switch
+    checked={receiveNotifications}
+    onCheckedChange={handleNotificationToggle}
+  />
+</div>
 
-              {/* Buttons */}
-              <div className='space-y-2'>
-                <button
-                  type='button'
-                  className='inline-flex justify-center border-0 bg-[#2c6e49] px-16 py-2 text-sm font-medium text-white hover:bg-[#1e4d33] focus:outline-none rounded-full'
-                  onClick={handleCloseSuccessModal}
-                >
-                  Inicio
-                </button>
+{/* Black separator */}
+<div className='border-t border-black my-4'></div>
+
+{/* Buttons */}
+<div className='space-y-2'>
+  <button
+    type='button'
+    className='inline-flex justify-center border-0 bg-[#2c6e49] px-16 py-2 text-sm font-medium text-white hover:bg-[#1e4d33] focus:outline-none rounded-full'
+    onClick={handleCloseSuccessModal}
+  >
+    Inicio
+  </button>
 
                 {/* Account creation button for unauthenticated users */}
                 {!user && (
