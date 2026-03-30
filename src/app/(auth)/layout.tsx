@@ -33,21 +33,25 @@ export default function AuthLayout({
 
   // Redirect logged-in users away from auth pages
   useEffect(() => {
-    if (user && !isLoading) {
-      const params = new URLSearchParams(window.location.search);
-      const returnUrl = params.get("returnUrl");
-      const redirectPath =
-        returnUrl && returnUrl.startsWith("/")
-          ? returnUrl
-          : "/dashboard";
-      router.replace(redirectPath);
-    }
-  }, [user, isLoading, router]);
+  if (user && !isLoading) {
+    // Don't redirect if we're on the reset-password page
+    // The user needs to be logged in to update their password
+    const isResetPasswordPage = window.location.pathname === "/reset-password";
+    if (isResetPasswordPage) return;
 
-  // If loading or already authenticated, show minimal content
-  if (isLoading || user) {
-    return <LoadingScreen />;
+    const params = new URLSearchParams(window.location.search);
+    const returnUrl = params.get("returnUrl");
+    const redirectPath =
+      returnUrl && returnUrl.startsWith("/")
+        ? returnUrl
+        : "/dashboard";
+    router.replace(redirectPath);
   }
+}, [user, isLoading, router]);
+
+if (isLoading || (user && typeof window !== "undefined" && window.location.pathname !== "/reset-password")) {
+  return <LoadingScreen />;
+}
 
   return (
     <div

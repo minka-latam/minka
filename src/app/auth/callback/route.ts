@@ -83,8 +83,19 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Password recovery — redirect to reset password page
+    // Password recovery — check both type param and session AMR
     if (type === 'recovery') {
+      return NextResponse.redirect(
+        new URL('/reset-password', request.url),
+      )
+    }
+
+    // Also check if this is a recovery session via the session AMR claims
+    const amr = data.session?.user?.app_metadata?.amr
+    const isRecovery = Array.isArray(amr)
+      ? amr.some((a: any) => a.method === 'recovery')
+      : false
+    if (isRecovery) {
       return NextResponse.redirect(
         new URL('/reset-password', request.url),
       )
