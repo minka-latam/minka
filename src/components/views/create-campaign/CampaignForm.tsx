@@ -1,5 +1,6 @@
 "use client";
 
+import { ImproveTextButton } from "@/components/ui/improve-text-button";
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -1550,9 +1551,16 @@ setCurrentStep(currentStep === 3 ? 1 : currentStep - 1);
                             }}
                             maxLength={80}
                           />
-                          <div className="text-sm text-gray-500 text-right mt-1">
-                            {formData.title.length}/80
-                          </div>
+                          <div className="flex justify-between items-center mt-1">
+  <ImproveTextButton
+    text={formData.title}
+    fieldType="title"
+    onAccept={(improved) => {
+      setFormData({ ...formData, title: improved.slice(0, 80) });
+    }}
+  />
+  <span className="text-sm text-gray-500">{formData.title.length}/80</span>
+</div>
                           {formErrors.title && (
                             <div className="error-text">{formErrors.title}</div>
                           )}
@@ -1583,9 +1591,16 @@ setCurrentStep(currentStep === 3 ? 1 : currentStep - 1);
                             }}
                             maxLength={150}
                           />
-                          <div className="text-sm text-gray-500 text-right mt-1">
-                            {formData.description.length}/150
-                          </div>
+                          <div className="flex justify-between items-center mt-1">
+  <ImproveTextButton
+    text={formData.description}
+    fieldType="description"
+    onAccept={(improved) => {
+      setFormData({ ...formData, description: improved.slice(0, 150) });
+    }}
+  />
+  <span className="text-sm text-gray-500">{formData.description.length}/150</span>
+</div>
                           {formErrors.description && (
                             <div className="error-text">
                               {formErrors.description}
@@ -2048,14 +2063,14 @@ setCurrentStep(currentStep === 3 ? 1 : currentStep - 1);
                             }
                             onSelect={(date) => {
                               if (date) {
-                                const formattedDate = format(
-                                  date,
-                                  "yyyy-MM-dd"
-                                );
-                                setFormData({
-                                  ...formData,
-                                  endDate: formattedDate,
-                                });
+                               // Fix timezone: set to noon UTC to avoid day shifting
+const fixedDate = new Date(date);
+fixedDate.setUTCHours(12, 0, 0, 0);
+const formattedDate = format(fixedDate, "yyyy-MM-dd");
+setFormData({
+  ...formData,
+  endDate: formattedDate,
+});
                                 setFormErrors({ ...formErrors, endDate: "" });
                               }
                             }}
