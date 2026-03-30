@@ -2156,7 +2156,7 @@ setCurrentStep(currentStep === 3 ? 1 : currentStep - 1);
                         // Save as draft and go to next step
                         const success = await saveCampaignDraft(apiData);
                         if (success) {
-                          setCurrentStep(2);
+                          setCurrentStep(3);
                           setCurrentSubStep(1);
                           window.scrollTo(0, 0);
                         }
