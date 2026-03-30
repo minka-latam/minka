@@ -19,11 +19,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const fieldInstructions: Record<string, string> = {
-      description: "descripción de una campaña de crowdfunding",
-      story: "historia y presentación de una campaña de crowdfunding",
-      beneficiaries: "descripción de los beneficiarios de una campaña de crowdfunding",
-    };
+   const fieldInstructions: Record<string, string> = {
+  title: "título de una campaña de crowdfunding",
+  description: "descripción de una campaña de crowdfunding",
+  story: "historia y presentación de una campaña de crowdfunding",
+  beneficiaries: "descripción de los beneficiarios de una campaña de crowdfunding",
+};
 
     const fieldContext = fieldInstructions[fieldType] || "texto de campaña";
 
