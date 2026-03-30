@@ -8,12 +8,14 @@ interface ImproveTextButtonProps {
   text: string;
   fieldType: "title" | "description" | "story" | "beneficiaries";
   onAccept: (improvedText: string) => void;
+  maxLength?: number;
 }
 
 export function ImproveTextButton({
   text,
   fieldType,
   onAccept,
+  maxLength,
 }: ImproveTextButtonProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [improvedText, setImprovedText] = useState<string | null>(null);
@@ -52,8 +54,8 @@ export function ImproveTextButton({
   };
 
   const handleAcceptImproved = () => {
-    if (improvedText) {
-      onAccept(improvedText);
+  if (improvedText) {
+    onAccept(maxLength ? improvedText.slice(0, maxLength) : improvedText);
       setIsModalOpen(false);
       setImprovedText(null);
     }

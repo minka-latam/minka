@@ -52,13 +52,14 @@ export function StoryInput({ initialValue, onUpdate, error }: StoryInputProps) {
       />
       <div className="flex justify-between items-center mt-1">
   <ImproveTextButton
-    text={value}
-    fieldType="story"
-    onAccept={(improved) => {
-      setValue(improved);
-      onUpdate(improved);
-    }}
-  />
+  text={value}
+  fieldType="story"
+  maxLength={600}
+  onAccept={(improved) => {
+    setValue(improved);
+    onUpdate(improved);
+  }}
+/>
   <span className="text-sm text-gray-500">{value.length}/600</span>
 </div>
       {error && <div className="error-text">{error}</div>}

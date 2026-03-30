@@ -246,17 +246,6 @@ const CampaignPreview = ({
                   </p>
                 </div>
 
-                {/* Beneficiaries */}
-                {campaign.beneficiariesDescription && (
-                  <div className="space-y-3 py-4 border-b border-gray-200">
-                    <h2 className="text-xl font-semibold text-[#2c6e49]">
-                      Beneficiarios
-                    </h2>
-                    <p className="text-gray-700 text-sm leading-relaxed">
-                      {campaign.beneficiariesDescription}
-                    </p>
-                  </div>
-                )}
               </div>
             </div>
 
@@ -1549,17 +1538,17 @@ setCurrentStep(currentStep === 3 ? 1 : currentStep - 1);
                                 setFormErrors({ ...formErrors, title: "" });
                               }
                             }}
-                            maxLength={80}
+                            maxLength={50}
                           />
                           <div className="flex justify-between items-center mt-1">
   <ImproveTextButton
     text={formData.title}
     fieldType="title"
     onAccept={(improved) => {
-      setFormData({ ...formData, title: improved.slice(0, 80) });
+      setFormData({ ...formData, title: improved.slice(0, 50) });
     }}
   />
-  <span className="text-sm text-gray-500">{formData.title.length}/80</span>
+  <span className="text-sm text-gray-500">{formData.title.length}/50</span>
 </div>
                           {formErrors.title && (
                             <div className="error-text">{formErrors.title}</div>
@@ -1589,17 +1578,17 @@ setCurrentStep(currentStep === 3 ? 1 : currentStep - 1);
                                 });
                               }
                             }}
-                            maxLength={150}
+                            maxLength={120}
                           />
                           <div className="flex justify-between items-center mt-1">
   <ImproveTextButton
     text={formData.description}
     fieldType="description"
     onAccept={(improved) => {
-      setFormData({ ...formData, description: improved.slice(0, 150) });
+      setFormData({ ...formData, description: improved.slice(0, 120) });
     }}
   />
-  <span className="text-sm text-gray-500">{formData.description.length}/150</span>
+  <span className="text-sm text-gray-500">{formData.description.length}/120</span>
 </div>
                           {formErrors.description && (
                             <div className="error-text">
@@ -2057,10 +2046,10 @@ setCurrentStep(currentStep === 3 ? 1 : currentStep - 1);
                           <CalendarComponent
                             mode="single"
                             selected={
-                              formData.endDate
-                                ? new Date(formData.endDate)
-                                : undefined
-                            }
+  formData.endDate
+    ? new Date(formData.endDate + "T12:00:00")
+    : undefined
+}
                             onSelect={(date) => {
                               if (date) {
                                // Fix timezone: set to noon UTC to avoid day shifting
