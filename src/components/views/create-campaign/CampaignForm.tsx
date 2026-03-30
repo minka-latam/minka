@@ -822,7 +822,8 @@ export function CampaignForm() {
         setIsAnimating(true);
         setTimeout(() => {
           // Proceed to next step
-          setCurrentStep(currentStep + 1);
+          // Skip step 2 (beneficiaries) - go from step 1 directly to step 3
+setCurrentStep(currentStep === 1 ? 3 : currentStep + 1);
           window.scrollTo(0, 0);
           // Reset animation state after a short delay
           setTimeout(() => {
@@ -907,7 +908,8 @@ export function CampaignForm() {
     setAnimationDirection("prev");
     setIsAnimating(true);
     setTimeout(() => {
-      setCurrentStep(currentStep - 1);
+      // Skip step 2 (beneficiaries) - go from step 3 directly back to step 1
+setCurrentStep(currentStep === 3 ? 1 : currentStep - 1);
       window.scrollTo(0, 0);
       // Reset animation state after a short delay
       setTimeout(() => {
@@ -2206,8 +2208,8 @@ export function CampaignForm() {
         </div>
       )}
 
-      {/* STEP #2 */}
-      {currentStep === 2 && (
+      {/* STEP #2 - Hidden: beneficiaries section removed */}
+{false && currentStep === 2 && (
         <div
           className={`form-step ${isAnimating ? (animationDirection === "next" ? "fade-out" : "fade-in") : ""} max-w-6xl mx-auto space-y-24`}
         >
