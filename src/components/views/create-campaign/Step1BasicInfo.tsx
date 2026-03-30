@@ -39,6 +39,7 @@ import { cn } from "@/lib/utils";
 import { Toast } from "@/components/ui/toast";
 import { useToast } from "@/components/ui/use-toast";
 import axios from "axios";
+import { ImproveTextButton } from "@/components/ui/improve-text-button";
 
 const formSchema = z.object({
   title: z
@@ -292,10 +293,20 @@ export function Step1BasicInfo() {
                           maxLength={150}
                         />
                       </FormControl>
-                      <div className="text-sm text-gray-500 text-right mt-1">
-                        {field.value?.length || 0}/150
-                      </div>
-                      <FormMessage />
+                      <div className="flex justify-between items-center mt-1">
+  <ImproveTextButton
+    text={field.value || ""}
+    fieldType="description"
+    onAccept={(improved) => {
+      field.onChange(improved.slice(0, 150));
+      dispatch({ type: "SET_DESCRIPTION", payload: improved.slice(0, 150) });
+    }}
+  />
+  <span className="text-sm text-gray-500">
+    {field.value?.length || 0}/150
+  </span>
+</div>
+<FormMessage />
                     </FormItem>
                   )}
                 />
