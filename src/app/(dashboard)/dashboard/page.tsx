@@ -32,7 +32,16 @@ export default function DashboardPage() {
     address: "",
   });
   const [isResetPasswordOpen, setIsResetPasswordOpen] = useState(false);
-  
+  // Auto-open reset password dialog if redirected from email link
+useEffect(() => {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get("reset_password") === "true") {
+    setIsResetPasswordOpen(true);
+    // Clean up URL without reload
+    window.history.replaceState({}, "", "/dashboard");
+  }
+}, []);
+
   const handleSuccess = () => {
      setIsResetPasswordOpen(false);
      toast({
