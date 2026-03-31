@@ -56,18 +56,22 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Password recovery — check both type param and session AMR
+    // Password recovery — set flag and redirect to dashboard
+// PasswordResetHandler on dashboard will detect the flag and open the dialog
 if (type === "recovery") {
-  return NextResponse.redirect(new URL("/reset-password", request.url));
+  const dashboardUrl = new URL("/dashboard", request.url);
+  dashboardUrl.searchParams.set("reset_password", "true");
+  return NextResponse.redirect(dashboardUrl);
 }
 
-// Also check if this is a recovery session via the session AMR claims
 const amr = data.session?.user?.app_metadata?.amr;
 const isRecovery = Array.isArray(amr)
   ? amr.some((a: any) => a.method === "recovery")
   : false;
 if (isRecovery) {
-  return NextResponse.redirect(new URL("/reset-password", request.url));
+  const dashboardUrl = new URL("/dashboard", request.url);
+  dashboardUrl.searchParams.set("reset_password", "true");
+  return NextResponse.redirect(dashboardUrl);
 }
 
     if (!data.user) {
