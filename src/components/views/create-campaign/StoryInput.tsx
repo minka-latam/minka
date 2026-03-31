@@ -37,7 +37,7 @@ export function StoryInput({ initialValue, onUpdate, error }: StoryInputProps) {
   return (
     <div className="relative" id="story">
       <label className="block text-lg font-medium mb-2">
-        Presentación de la campaña (historia)
+        Descripción de la campaña
       </label>
       <textarea
         rows={4}
