@@ -25,6 +25,7 @@ import {
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { uploadMedia } from "@/lib/supabase/upload-media";
+import { ImproveTextButton } from "@/components/ui/improve-text-button";
 
 export default function CampaignDetailPage() {
   const MAX_GOAL_AMOUNT = 150000;
@@ -1010,13 +1011,25 @@ export default function CampaignDetailPage() {
                           className="w-full p-4 border border-black rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
                           placeholder="Ingresa el nombre de tu campaña"
                           defaultValue={campaign.title || ""}
+                          maxLength={50}
                           onChange={(e) => {
                             setCampaign({ ...campaign, title: e.target.value });
                             handleFormChange();
                           }}
                         />
                       </div>
-                      <div className="text-right text-sm text-black">0/60</div>
+                      <div className="flex justify-between items-center mt-1">
+  <ImproveTextButton
+    text={campaign.title || ""}
+    fieldType="title"
+    maxLength={50}
+    onAccept={(improved) => {
+      setCampaign({ ...campaign, title: improved.slice(0, 50) });
+      handleFormChange();
+    }}
+  />
+  <span className="text-sm text-black">{(campaign.title || "").length}/50</span>
+</div>
                     </div>
 
                     {/* Detalle */}
@@ -1038,7 +1051,18 @@ export default function CampaignDetailPage() {
                           }}
                         ></textarea>
                       </div>
-                      <div className="text-right text-sm text-black">0/130</div>
+                      <div className="flex justify-between items-center mt-1">
+  <ImproveTextButton
+    text={campaign.description || ""}
+    fieldType="description"
+    maxLength={120}
+    onAccept={(improved) => {
+      setCampaign({ ...campaign, description: improved.slice(0, 120) });
+      handleFormChange();
+    }}
+  />
+  <span className="text-sm text-black">{(campaign.description || "").length}/120</span>
+</div>
                     </div>
 
                     {/* Categoría */}
@@ -1689,7 +1713,7 @@ export default function CampaignDetailPage() {
                     {/* Presentación de la campaña */}
                     <div className="space-y-2">
                       <label className="text-lg font-bold text-gray-800">
-                        Presentación de la campaña
+                        Descripción de la campaña
                       </label>
                       <div className="relative">
                         <textarea
@@ -1698,6 +1722,7 @@ export default function CampaignDetailPage() {
                           defaultValue={
                             campaign.beneficiaries_description || ""
                           }
+                          maxLength={600}
                           onChange={(e) => {
                             setCampaign({
                               ...campaign,
@@ -1707,7 +1732,18 @@ export default function CampaignDetailPage() {
                           }}
                         ></textarea>
                       </div>
-                      <div className="text-right text-sm text-black">0/600</div>
+                      <div className="flex justify-between items-center mt-1">
+  <ImproveTextButton
+    text={campaign.beneficiaries_description || ""}
+    fieldType="story"
+    maxLength={600}
+    onAccept={(improved) => {
+      setCampaign({ ...campaign, beneficiaries_description: improved.slice(0, 600) });
+      handleFormChange();
+    }}
+  />
+  <span className="text-sm text-black">{(campaign.beneficiaries_description || "").length}/600</span>
+</div>
                     </div>
 
                     {/* Información del beneficiario */}

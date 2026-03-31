@@ -39,6 +39,7 @@ import { cn } from "@/lib/utils";
 import { Toast } from "@/components/ui/toast";
 import { useToast } from "@/components/ui/use-toast";
 import axios from "axios";
+import { ImproveTextButton } from "@/components/ui/improve-text-button";
 
 const formSchema = z.object({
   title: z
@@ -107,7 +108,10 @@ export function Step1BasicInfo() {
     dispatch({ type: "SET_CATEGORY", payload: values.category });
     dispatch({ type: "SET_GOAL_AMOUNT", payload: values.goalAmount });
     dispatch({ type: "SET_LOCATION", payload: values.location });
-    dispatch({ type: "SET_END_DATE", payload: values.endDate.toISOString() });
+    // Fix timezone offset: set to noon UTC to avoid day shifting
+const endDate = new Date(values.endDate);
+endDate.setUTCHours(12, 0, 0, 0);
+dispatch({ type: "SET_END_DATE", payload: endDate.toISOString() });
 
     await saveDraft();
     nextStep();
@@ -267,10 +271,20 @@ export function Step1BasicInfo() {
                           maxLength={80}
                         />
                       </FormControl>
-                      <div className="text-sm text-gray-500 text-right mt-1">
-                        {field.value?.length || 0}/80
-                      </div>
-                      <FormMessage />
+                      <div className="flex justify-between items-center mt-1">
+  <ImproveTextButton
+    text={field.value || ""}
+    fieldType="title"
+    onAccept={(improved) => {
+      field.onChange(improved.slice(0, 80));
+      dispatch({ type: "SET_TITLE", payload: improved.slice(0, 80) });
+    }}
+  />
+  <span className="text-sm text-gray-500">
+    {field.value?.length || 0}/80
+  </span>
+</div>
+<FormMessage />
                     </FormItem>
                   )}
                 />
@@ -292,10 +306,20 @@ export function Step1BasicInfo() {
                           maxLength={150}
                         />
                       </FormControl>
-                      <div className="text-sm text-gray-500 text-right mt-1">
-                        {field.value?.length || 0}/150
-                      </div>
-                      <FormMessage />
+                      <div className="flex justify-between items-center mt-1">
+  <ImproveTextButton
+    text={field.value || ""}
+    fieldType="description"
+    onAccept={(improved) => {
+      field.onChange(improved.slice(0, 150));
+      dispatch({ type: "SET_DESCRIPTION", payload: improved.slice(0, 150) });
+    }}
+  />
+  <span className="text-sm text-gray-500">
+    {field.value?.length || 0}/150
+  </span>
+</div>
+<FormMessage />
                     </FormItem>
                   )}
                 />

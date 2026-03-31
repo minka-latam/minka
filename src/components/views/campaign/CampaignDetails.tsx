@@ -11,10 +11,9 @@ interface CampaignDetailsProps {
     bio: string
   }
   description: string
-  beneficiaries: string
 }
 
-export function CampaignDetails({ organizer, description, beneficiaries }: CampaignDetailsProps) {
+export function CampaignDetails({ organizer, description }: CampaignDetailsProps) {
   return (
     <div className="space-y-8">
       {/* Organizer Header */}
@@ -49,14 +48,6 @@ export function CampaignDetails({ organizer, description, beneficiaries }: Campa
           Descripción de la campaña
         </h2>
         <p className="text-gray-700 leading-relaxed">{description}</p>
-      </div>
-
-      {/* Beneficiaries */}
-      <div className="space-y-4 pb-8 border-b border-gray-200">
-        <h2 className="text-3xl md:text-4xl font-semibold text-[#2c6e49]">
-          Beneficiarios
-        </h2>
-        <p className="text-gray-700 leading-relaxed">{beneficiaries}</p>
       </div>
 
       {/* About Organizer */}

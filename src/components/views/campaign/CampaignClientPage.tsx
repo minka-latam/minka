@@ -110,7 +110,6 @@ function formatCategory(category: string) {
 function CustomCampaignDetails({
   organizer,
   description,
-  beneficiaries,
   isVerified,
 }: {
   organizer: {
@@ -122,7 +121,6 @@ function CustomCampaignDetails({
     bio: string;
   };
   description: string;
-  beneficiaries: string;
   isVerified: boolean;
 }) {
   return (
@@ -175,16 +173,6 @@ function CustomCampaignDetails({
         </h2>
         <p className="text-gray-700 leading-relaxed break-words whitespace-pre-wrap">
           {description}
-        </p>
-      </div>
-
-      {/* Beneficiaries */}
-      <div className="space-y-4 pb-8 border-b border-gray-200">
-        <h2 className="text-3xl md:text-4xl font-semibold text-[#2c6e49] break-words">
-          Beneficiarios
-        </h2>
-        <p className="text-gray-700 leading-relaxed break-words whitespace-pre-wrap">
-          {beneficiaries}
         </p>
       </div>
 
@@ -442,7 +430,6 @@ export default function CampaignClientPage({ id }: { id: string }) {
                 <CustomCampaignDetails
                   organizer={formattedData.organizer}
                   description={formattedData.story}
-                  beneficiaries={formattedData.beneficiaries}
                   isVerified={formattedData.progress.isVerified}
                 />
               )}

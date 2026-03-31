@@ -26,6 +26,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { ImproveTextButton } from "@/components/ui/improve-text-button";
 
 interface CampaignMedia {
   id: string;
@@ -421,9 +422,19 @@ export function EditCampaignTab({ campaign }: EditCampaignTabProps) {
                 maxLength={60}
                 required
               />
-              <div className="text-right text-xs text-gray-500 mt-1">
-                {formData.title.length}/60
-              </div>
+              <div className="flex justify-between items-center mt-1">
+  <ImproveTextButton
+    text={formData.title}
+    fieldType="title"
+    maxLength={50}
+    onAccept={(improved) => {
+      setFormData({ ...formData, title: improved.slice(0, 50) });
+    }}
+  />
+  <span className="text-xs text-gray-500">
+    {formData.title.length}/60
+  </span>
+</div>
             </div>
 
             <div>
@@ -469,9 +480,19 @@ export function EditCampaignTab({ campaign }: EditCampaignTabProps) {
                 maxLength={130}
                 required
               />
-              <div className="text-right text-xs text-gray-500 mt-1">
-                {formData.description.length}/130
-              </div>
+              <div className="flex justify-between items-center mt-1">
+  <ImproveTextButton
+    text={formData.description}
+    fieldType="description"
+    maxLength={120}
+    onAccept={(improved) => {
+      setFormData({ ...formData, description: improved.slice(0, 120) });
+    }}
+  />
+  <span className="text-xs text-gray-500">
+    {formData.description.length}/130
+  </span>
+</div>
             </div>
 
             <div>
@@ -698,7 +719,7 @@ export function EditCampaignTab({ campaign }: EditCampaignTabProps) {
                 htmlFor="beneficiariesDescription"
                 className="block text-sm font-medium text-gray-700 mb-1"
               >
-                Beneficiarios
+                Historia de la campaña
               </label>
               <textarea
                 id="beneficiariesDescription"
@@ -710,9 +731,19 @@ export function EditCampaignTab({ campaign }: EditCampaignTabProps) {
                 maxLength={600}
                 required
               />
-              <div className="text-right text-xs text-gray-500 mt-1">
-                {formData.beneficiariesDescription.length}/600
-              </div>
+              <div className="flex justify-between items-center mt-1">
+  <ImproveTextButton
+    text={formData.beneficiariesDescription}
+    fieldType="story"
+    maxLength={600}
+    onAccept={(improved) => {
+      setFormData({ ...formData, beneficiariesDescription: improved.slice(0, 600) });
+    }}
+  />
+  <span className="text-xs text-gray-500">
+    {formData.beneficiariesDescription.length}/600
+  </span>
+</div>
             </div>
           </div>
         </form>

@@ -1,5 +1,6 @@
 "use client";
 
+import { ImproveTextButton } from "@/components/ui/improve-text-button";
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -237,7 +238,7 @@ const CampaignPreview = ({
                 {/* Campaign Story */}
                 <div className="space-y-3 py-4 border-b border-gray-200">
                   <h2 className="text-xl font-semibold text-[#2c6e49]">
-                    Presentación de la campaña
+                    Descripción de la campaña
                   </h2>
                   <p className="text-gray-700 text-sm leading-relaxed">
                     {campaign.story ||
@@ -245,17 +246,6 @@ const CampaignPreview = ({
                   </p>
                 </div>
 
-                {/* Beneficiaries */}
-                {campaign.beneficiariesDescription && (
-                  <div className="space-y-3 py-4 border-b border-gray-200">
-                    <h2 className="text-xl font-semibold text-[#2c6e49]">
-                      Beneficiarios
-                    </h2>
-                    <p className="text-gray-700 text-sm leading-relaxed">
-                      {campaign.beneficiariesDescription}
-                    </p>
-                  </div>
-                )}
               </div>
             </div>
 
@@ -800,7 +790,7 @@ export function CampaignForm() {
         setIsAnimating(true);
         setTimeout(() => {
           // Proceed to next step
-          setCurrentStep(currentStep + 1);
+setCurrentStep(currentStep + 1);
           window.scrollTo(0, 0);
           // Reset animation state after a short delay
           setTimeout(() => {
@@ -1495,11 +1485,18 @@ export function CampaignForm() {
                                 setFormErrors({ ...formErrors, title: "" });
                               }
                             }}
-                            maxLength={80}
+                            maxLength={50}
                           />
-                          <div className="text-sm text-gray-500 text-right mt-1">
-                            {formData.title.length}/80
-                          </div>
+                          <div className="flex justify-between items-center mt-1">
+  <ImproveTextButton
+    text={formData.title}
+    fieldType="title"
+    onAccept={(improved) => {
+      setFormData({ ...formData, title: improved.slice(0, 50) });
+    }}
+  />
+  <span className="text-sm text-gray-500">{formData.title.length}/50</span>
+</div>
                           {formErrors.title && (
                             <div className="error-text">{formErrors.title}</div>
                           )}
@@ -1528,11 +1525,18 @@ export function CampaignForm() {
                                 });
                               }
                             }}
-                            maxLength={150}
+                            maxLength={120}
                           />
-                          <div className="text-sm text-gray-500 text-right mt-1">
-                            {formData.description.length}/150
-                          </div>
+                          <div className="flex justify-between items-center mt-1">
+  <ImproveTextButton
+    text={formData.description}
+    fieldType="description"
+    onAccept={(improved) => {
+      setFormData({ ...formData, description: improved.slice(0, 120) });
+    }}
+  />
+  <span className="text-sm text-gray-500">{formData.description.length}/120</span>
+</div>
                           {formErrors.description && (
                             <div className="error-text">
                               {formErrors.description}
@@ -1989,20 +1993,20 @@ export function CampaignForm() {
                           <CalendarComponent
                             mode="single"
                             selected={
-                              formData.endDate
-                                ? new Date(formData.endDate)
-                                : undefined
-                            }
+  formData.endDate
+    ? new Date(formData.endDate + "T12:00:00")
+    : undefined
+}
                             onSelect={(date) => {
                               if (date) {
-                                const formattedDate = format(
-                                  date,
-                                  "yyyy-MM-dd"
-                                );
-                                setFormData({
-                                  ...formData,
-                                  endDate: formattedDate,
-                                });
+                               // Fix timezone: set to noon UTC to avoid day shifting
+const fixedDate = new Date(date);
+fixedDate.setUTCHours(12, 0, 0, 0);
+const formattedDate = format(fixedDate, "yyyy-MM-dd");
+setFormData({
+  ...formData,
+  endDate: formattedDate,
+});
                                 setFormErrors({ ...formErrors, endDate: "" });
                               }
                             }}
@@ -2156,7 +2160,7 @@ export function CampaignForm() {
       )}
 
       {/* STEP #2 */}
-      {currentStep === 2 && (
+{currentStep === 2 && (
         <div
           className={`form-step ${isAnimating ? (animationDirection === "next" ? "fade-out" : "fade-in") : ""} max-w-6xl mx-auto space-y-24`}
         >

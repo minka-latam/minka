@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { ImproveTextButton } from "@/components/ui/improve-text-button";
 
 interface StoryInputProps {
   initialValue: string;
@@ -36,7 +37,7 @@ export function StoryInput({ initialValue, onUpdate, error }: StoryInputProps) {
   return (
     <div className="relative" id="story">
       <label className="block text-lg font-medium mb-2">
-        Presentación de la campaña (historia)
+        Descripción de la campaña
       </label>
       <textarea
         rows={4}
@@ -49,9 +50,18 @@ export function StoryInput({ initialValue, onUpdate, error }: StoryInputProps) {
         onBlur={() => onUpdate(value)}
         maxLength={600}
       />
-      <div className="text-sm text-gray-500 text-right mt-1">
-        {value.length}/600
-      </div>
+      <div className="flex justify-between items-center mt-1">
+  <ImproveTextButton
+  text={value}
+  fieldType="story"
+  maxLength={600}
+  onAccept={(improved) => {
+    setValue(improved);
+    onUpdate(improved);
+  }}
+/>
+  <span className="text-sm text-gray-500">{value.length}/600</span>
+</div>
       {error && <div className="error-text">{error}</div>}
     </div>
   );

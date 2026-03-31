@@ -7,6 +7,7 @@ import { useCampaignForm } from "@/components/providers/campaign-form-provider";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { InlineSpinner } from "@/components/ui/inline-spinner";
 import { Textarea } from "@/components/ui/textarea";
+import { ImproveTextButton } from "@/components/ui/improve-text-button";
 
 export function Step2Beneficiaries() {
   const { state, dispatch, nextStep, prevStep, saveDraft } = useCampaignForm();
@@ -96,9 +97,21 @@ export function Step2Beneficiaries() {
                     onChange={handleDescriptionChange}
                     maxLength={600}
                   />
-                  <div className="text-sm text-gray-500 text-right mt-1">
-                    {state.beneficiariesDescription.length}/600
-                  </div>
+                  <div className="flex justify-between items-center mt-1">
+  <ImproveTextButton
+    text={state.beneficiariesDescription}
+    fieldType="beneficiaries"
+    onAccept={(improved) => {
+      dispatch({
+        type: "SET_BENEFICIARIES_DESCRIPTION",
+        payload: improved,
+      });
+    }}
+  />
+  <span className="text-sm text-gray-500">
+    {state.beneficiariesDescription.length}/600
+  </span>
+</div>
                   {error && (
                     <div className="text-red-500 text-sm mt-1">{error}</div>
                   )}
