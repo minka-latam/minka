@@ -49,7 +49,7 @@ export default function AuthLayout({
   }
 }, [user, isLoading, router]);
 
-if (isLoading || (user && typeof window !== "undefined" && window.location.pathname !== "/reset-password")) {
+if (isLoading) {
   return <LoadingScreen />;
 }
 
