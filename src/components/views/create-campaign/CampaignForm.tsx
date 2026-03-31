@@ -238,7 +238,7 @@ const CampaignPreview = ({
                 {/* Campaign Story */}
                 <div className="space-y-3 py-4 border-b border-gray-200">
                   <h2 className="text-xl font-semibold text-[#2c6e49]">
-                    Presentación de la campaña
+                    Descripción de la campaña
                   </h2>
                   <p className="text-gray-700 text-sm leading-relaxed">
                     {campaign.story ||

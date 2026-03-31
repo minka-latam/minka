@@ -1024,6 +1024,7 @@ export default function CampaignDetailPage() {
                           className="w-full p-4 border border-black rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
                           placeholder="Ingresa el nombre de tu campaña"
                           defaultValue={campaign.title || ""}
+                          maxLength={50}
                           onChange={(e) => {
                             setCampaign({ ...campaign, title: e.target.value });
                             handleFormChange();
@@ -1040,7 +1041,7 @@ export default function CampaignDetailPage() {
       handleFormChange();
     }}
   />
-  <span className="text-sm text-black">{(campaign.title || "").length}/60</span>
+  <span className="text-sm text-black">{(campaign.title || "").length}/50</span>
 </div>
                     </div>
 
@@ -1073,7 +1074,7 @@ export default function CampaignDetailPage() {
       handleFormChange();
     }}
   />
-  <span className="text-sm text-black">{(campaign.description || "").length}/130</span>
+  <span className="text-sm text-black">{(campaign.description || "").length}/120</span>
 </div>
                     </div>
 
@@ -1725,7 +1726,7 @@ export default function CampaignDetailPage() {
                     {/* Presentación de la campaña */}
                     <div className="space-y-2">
                       <label className="text-lg font-bold text-gray-800">
-                        Presentación de la campaña
+                        Descripción de la campaña
                       </label>
                       <div className="relative">
                         <textarea
@@ -1734,6 +1735,7 @@ export default function CampaignDetailPage() {
                           defaultValue={
                             campaign.beneficiaries_description || ""
                           }
+                          maxLength={600}
                           onChange={(e) => {
                             setCampaign({
                               ...campaign,

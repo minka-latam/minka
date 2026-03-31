@@ -1,12 +1,77 @@
 ﻿import { NextRequest, NextResponse } from "next/server";
+import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
+
+const VALID_FIELD_TYPES = ["title", "description", "story", "beneficiaries"] as const;
+type FieldType = typeof VALID_FIELD_TYPES[number];
+
+const MAX_LENGTHS: Record<FieldType, number> = {
+  title: 50,
+  description: 120,
+  story: 600,
+  beneficiaries: 600,
+};
 
 export async function POST(request: NextRequest) {
   try {
-    const { text, fieldType } = await request.json();
+    // Auth check — server side
+    const cookieStore = await cookies();
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() { return cookieStore.getAll(); },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
+            );
+          },
+        },
+      }
+    );
 
-    if (!text || text.trim().length < 10) {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      return NextResponse.json(
+        { error: "Debes iniciar sesión para usar esta función" },
+        { status: 401 }
+      );
+    }
+
+    // Parse and validate request body
+    const body = await request.json();
+    const { text, fieldType } = body;
+
+    // Validate fieldType
+    if (!fieldType || !VALID_FIELD_TYPES.includes(fieldType as FieldType)) {
+      return NextResponse.json(
+        { error: "Tipo de campo inválido" },
+        { status: 400 }
+      );
+    }
+
+    // Validate text
+    if (!text || typeof text !== "string") {
+      return NextResponse.json(
+        { error: "El texto es requerido" },
+        { status: 400 }
+      );
+    }
+
+    const maxLength = MAX_LENGTHS[fieldType as FieldType];
+    const trimmedText = text.trim();
+
+    if (trimmedText.length < 10) {
       return NextResponse.json(
         { error: "El texto es muy corto para mejorar" },
+        { status: 400 }
+      );
+    }
+
+    if (trimmedText.length > maxLength) {
+      return NextResponse.json(
+        { error: `El texto excede el límite de ${maxLength} caracteres` },
         { status: 400 }
       );
     }
@@ -19,14 +84,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-   const fieldInstructions: Record<string, string> = {
-  title: "título de una campaña de crowdfunding",
-  description: "descripción de una campaña de crowdfunding",
-  story: "historia y presentación de una campaña de crowdfunding",
-  beneficiaries: "descripción de los beneficiarios de una campaña de crowdfunding",
-};
+    const fieldInstructions: Record<FieldType, string> = {
+      title: "título de una campaña de crowdfunding",
+      description: "descripción breve de una campaña de crowdfunding",
+      story: "historia y presentación de una campaña de crowdfunding",
+      beneficiaries: "descripción de los beneficiarios de una campaña de crowdfunding",
+    };
 
-    const fieldContext = fieldInstructions[fieldType] || "texto de campaña";
+    const fieldContext = fieldInstructions[fieldType as FieldType];
 
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -51,10 +116,11 @@ Instrucciones:
 - Mantén un lenguaje claro y accesible
 - No agregues información que no esté en el texto original
 - Responde ÚNICAMENTE con el texto mejorado, sin explicaciones ni comentarios
+- El texto mejorado NO debe exceder ${maxLength} caracteres
 - Mantén una longitud similar al original
 
 Texto original:
-${text}`,
+${trimmedText}`,
           },
         ],
       }),
@@ -70,7 +136,12 @@ ${text}`,
     }
 
     const data = await response.json();
-    const improvedText = data.content[0]?.text || "";
+    let improvedText = data.content[0]?.text || "";
+
+    // Enforce max length server-side as final safety net
+    if (improvedText.length > maxLength) {
+      improvedText = improvedText.slice(0, maxLength);
+    }
 
     return NextResponse.json({ improvedText });
   } catch (error) {
