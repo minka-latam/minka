@@ -32,16 +32,6 @@ export default function DashboardPage() {
     address: "",
   });
   const [isResetPasswordOpen, setIsResetPasswordOpen] = useState(false);
-  // Auto-open reset password dialog if redirected from email link
-useEffect(() => {
-  const params = new URLSearchParams(window.location.search);
-  if (params.get("reset_password") === "true") {
-    setIsResetPasswordOpen(true);
-    // Clean up URL without reload
-    window.history.replaceState({}, "", "/dashboard");
-  }
-}, []);
-
   const handleSuccess = () => {
      setIsResetPasswordOpen(false);
      toast({
@@ -49,12 +39,20 @@ useEffect(() => {
         description: "Tu contraseña ha sido actualizada correctamente",
      });
   };
-
   const router = useRouter();
-  
   // Get auth context
   const { user, profile: authProfile, isLoading: authLoading } = useAuth();
   const { getProfile, updateProfile } = useDb();
+
+  // Auto-open reset password dialog if redirected from email link
+  useEffect(() => {
+    if (isLoading || authLoading) return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("reset_password") === "true") {
+      setIsResetPasswordOpen(true);
+      window.history.replaceState({}, "", "/dashboard");
+    }
+  }, [isLoading, authLoading]);
 
   // Helper to convert any profile object to our consistent DashboardProfile format
   const formatProfileData = useCallback(
