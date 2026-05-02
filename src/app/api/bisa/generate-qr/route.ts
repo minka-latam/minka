@@ -5,14 +5,11 @@ import { bisaClient } from "@/lib/bisa/client";
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { donationId, amount, tipAmount = 0, campaignId } = body;
+    const { donationId, campaignId } = body;
 
-    if (!donationId || !amount) {
+    if (!donationId) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
-
-    // Calculate total amount including tip
-    const totalAmount = Number(amount) + Number(tipAmount);
 
     // Verify donation exists
     const donation = await prisma.donation.findUnique({
@@ -22,6 +19,10 @@ export async function POST(request: NextRequest) {
     if (!donation) {
       return NextResponse.json({ error: "Donation not found" }, { status: 404 });
     }
+
+    const baseAmount = Number(donation.amount);
+    const tipAmount = Number(donation.tip_amount || 0);
+    const payableAmount = Number(donation.total_amount || baseAmount + tipAmount);
 
     // Generate Alias: MINKA-{donationId short}-{timestamp}
     // Taking last 8 chars of donationId to ensure uniqueness but keep it short enough
@@ -41,7 +42,7 @@ export async function POST(request: NextRequest) {
 
     const response = await bisaClient.generateQR({
       alias,
-      amount: totalAmount,
+      amount: payableAmount,
       currency: "BOB",
       description: `Donacion Minka`,
       expirationDate: expirationString,
@@ -76,16 +77,18 @@ export async function POST(request: NextRequest) {
           paymentmethod: "qr",
           paymentid: qrId,
           status: "qr_generated",
-          amount: amount,
-          tipamount: Number(tipAmount),
+          amount: payableAmount,
+          tipamount: tipAmount,
           currency: "BOB",
           metadata: JSON.stringify({
             alias,
             donationId,
-            campaignId,
-            amount: Number(amount),
-            tipAmount: Number(tipAmount),
-            totalAmount,
+            campaignId: campaignId || donation.campaignId,
+            amount: baseAmount,
+            baseAmount,
+            tipAmount,
+            totalAmount: payableAmount,
+            payableAmount,
             expiresAt: expirationDate.toISOString(),
           }),
           campaignid: campaignId || donation.campaignId,

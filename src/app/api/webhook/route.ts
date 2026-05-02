@@ -207,6 +207,7 @@ export async function POST(req: Request) {
             data: {
               status: 'completed',
               amount: providerTotalAmount,
+              tipamount: tipAmount,
               currency,
               paymentmethod: PaymentMethod.credit_card,
               campaignid: campaignId,
@@ -234,6 +235,7 @@ export async function POST(req: Request) {
             paymentid: paymentId,
             status: incomingStatus,
             amount: providerTotalAmount,
+            tipamount: tipAmount,
             currency,
             campaignid: campaignId,
             donorid: donorId,
