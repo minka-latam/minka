@@ -2,6 +2,10 @@ import { NextResponse } from 'next/server'
 import crypto from 'crypto'
 import { prisma as db } from '@/lib/prisma'
 import {
+  completeDonationAccounting,
+  sendCompletedDonationNotification,
+} from '@/lib/donations/accounting'
+import {
   PaymentMethod,
   PaymentProvider,
   PaymentStatus,
@@ -160,6 +164,8 @@ export async function POST(req: Request) {
       )
     }
 
+    let completionNotification
+
     await db.$transaction(async (tx) => {
       // Idempotent PaymentLog handling (one row per paymentprovider + paymentid)
       const ensurePaymentLog = async (
@@ -266,14 +272,9 @@ export async function POST(req: Request) {
       }
 
       if (isCompletedEvent) {
-        // Idempotency: only first transition to completed should increment campaign.
-        if (
-          donation.paymentStatus !== PaymentStatus.completed
-        ) {
-          await tx.donation.update({
-            where: { id: donation.id },
-            data: {
-              paymentStatus: PaymentStatus.completed,
+        const completion = await completeDonationAccounting(tx, {
+          donationId: donation.id,
+          donationUpdate: {
               paymentProvider: 'tripto',
               paymentMethod: PaymentMethod.credit_card,
               currency,
@@ -287,39 +288,10 @@ export async function POST(req: Request) {
               total_amount:
                 donation.total_amount ??
                 (providerTotalAmount || computedTotal),
-            },
-          })
+          },
+        })
 
-          // Campaign totals: base amount only (tips excluded)
-          const updatedCampaign = await tx.campaign.update({
-            where: { id: donation.campaignId },
-            data: {
-              collectedAmount: {
-                increment: donation.amount,
-              },
-              donorCount: { increment: 1 },
-            },
-            select: {
-              collectedAmount: true,
-              goalAmount: true,
-            },
-          })
-
-          // Recompute percentageFunded after collectedAmount changes
-          const goal = Number(updatedCampaign.goalAmount)
-          const collected = Number(
-            updatedCampaign.collectedAmount,
-          )
-          const percentageFunded =
-            goal > 0 ? (collected / goal) * 100 : 0
-
-          await tx.campaign.update({
-            where: { id: donation.campaignId },
-            data: {
-              percentageFunded,
-            },
-          })
-        }
+        completionNotification = completion.notification
 
         await ensurePaymentLog('completed')
         return
@@ -352,6 +324,10 @@ export async function POST(req: Request) {
 
       await ensurePaymentLog('failed')
     })
+
+    await sendCompletedDonationNotification(
+      completionNotification,
+    )
 
     return NextResponse.json(
       { received: true },

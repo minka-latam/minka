@@ -47,6 +47,7 @@ import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
 import Image from "next/image";
+import { formatCurrency } from "@/lib/campaign-finance";
 
 interface Campaign {
   id: string;
@@ -68,6 +69,9 @@ interface Campaign {
   organizerEmail: string;
   organizerId: string;
   imageUrl?: string;
+  tipAmount: number;
+  platformFeeAmount: number;
+  totalProcessedAmount: number;
 }
 
 interface SuperAdminCampaignTableProps {
@@ -201,7 +205,7 @@ export function SuperAdminCampaignTable({
 
   return (
     <>
-      <div className="rounded-md border">
+      <div className="rounded-md border overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
@@ -297,10 +301,10 @@ export function SuperAdminCampaignTable({
                       <div className="flex items-center gap-2">
                         <DollarSign className="h-4 w-4 text-gray-500" />
                         <span className="font-medium">
-                          Bs. {campaign.collectedAmount.toLocaleString()}
+                          {formatCurrency(campaign.collectedAmount)}
                         </span>
                         <span className="text-sm text-gray-500">
-                          / Bs. {campaign.goalAmount.toLocaleString()}
+                          / {formatCurrency(campaign.goalAmount)}
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
@@ -308,13 +312,39 @@ export function SuperAdminCampaignTable({
                           <div
                             className="bg-green-600 h-2 rounded-full"
                             style={{
-                              width: `${Math.min(campaign.percentageFunded, 100)}%`,
+                              width: `${Math.min(campaign.percentageFunded || 0, 100)}%`,
                             }}
                           />
                         </div>
                         <span className="text-sm font-medium">
-                          {campaign.percentageFunded.toFixed(1)}%
+                          {(campaign.percentageFunded || 0).toFixed(1)}%
                         </span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-x-3 gap-y-1 pt-2 text-xs">
+                        <div>
+                          <p className="text-gray-500">Base donated</p>
+                          <p className="font-medium">
+                            {formatCurrency(campaign.collectedAmount)}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-gray-500">Tips</p>
+                          <p className="font-medium text-blue-700">
+                            {formatCurrency(campaign.tipAmount)}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-gray-500">Estimated 5% fee</p>
+                          <p className="font-medium text-amber-700">
+                            {formatCurrency(campaign.platformFeeAmount)}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-gray-500">Processed</p>
+                          <p className="font-medium text-gray-900">
+                            {formatCurrency(campaign.totalProcessedAmount)}
+                          </p>
+                        </div>
                       </div>
                       <div className="flex items-center gap-1 text-sm text-gray-500">
                         <Users className="h-3 w-3" />

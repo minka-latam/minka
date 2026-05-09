@@ -1,10 +1,7 @@
 ﻿import { NextRequest, NextResponse } from "next/server";
-import { TriptoClient } from "@/lib/tripto/client";
 import { prisma } from "@/lib/prisma";
-import { getAuthSession } from "@/lib/auth";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
-import { createDonationNotification } from "@/lib/notifications";
 
 export async function POST(request: NextRequest) {
   try {
@@ -113,19 +110,10 @@ export async function POST(request: NextRequest) {
       donorProfileId = anonymousProfile.id;
     }
 
-    // Get campaign info for notification
+    // Verify campaign exists before creating a pending donation.
     const campaign = await prisma.campaign.findUnique({
       where: { id: campaignId },
-      select: {
-        id: true,
-        title: true,
-        organizerId: true,
-        organizer: {
-          select: {
-            name: true,
-          },
-        },
-      },
+      select: { id: true },
     });
 
     if (!campaign) {
@@ -133,16 +121,6 @@ export async function POST(request: NextRequest) {
         { error: "Campaign not found" },
         { status: 404 }
       );
-    }
-
-    // Get donor info for notification (if not anonymous)
-    let donorName = "Donante Anónimo";
-    if (!isAnonymous && donorProfileId) {
-      const donor = await prisma.profile.findUnique({
-        where: { id: donorProfileId },
-        select: { name: true },
-      });
-      donorName = donor?.name || "Donante";
     }
 
     // Calculate total amount
@@ -167,55 +145,6 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    // Update campaign statistics (atomically with a transaction)
-    await prisma.$transaction(async (tx) => {
-      // Get the current campaign
-      const currentCampaign = await tx.campaign.findUnique({
-        where: { id: campaignId },
-        select: { collectedAmount: true, donorCount: true, goalAmount: true },
-      });
-
-      if (!currentCampaign) {
-        throw new Error("Campaign not found");
-      }
-
-      // Calculate new values
-      const newCollectedAmount =
-        Number(currentCampaign.collectedAmount) + Number(amount);
-      const newDonorCount = currentCampaign.donorCount + 1;
-      const percentageFunded =
-        (newCollectedAmount / Number(currentCampaign.goalAmount)) * 100;
-
-      // Update the campaign
-      await tx.campaign.update({
-        where: { id: campaignId },
-        data: {
-          collectedAmount: newCollectedAmount,
-          donorCount: newDonorCount,
-          percentageFunded,
-        },
-      });
-    });
-
-    // Create notification for campaign owner
-    try {
-      await createDonationNotification(
-        donation.id,
-        campaign.id,
-        campaign.organizerId,
-        donorName,
-        Number(amount),
-        campaign.title,
-        isAnonymous
-      );
-    } catch (notificationError) {
-      // Log error but don't fail the donation
-      console.error(
-        "Failed to create donation notification:",
-        notificationError
-      );
-    }
-
     return NextResponse.json(
       { success: true, donationId: donation.id },
       { status: 201 }
@@ -232,4 +161,3 @@ export async function POST(request: NextRequest) {
       );
     }
 }
-

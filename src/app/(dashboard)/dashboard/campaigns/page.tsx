@@ -34,6 +34,7 @@ import {
   CampaignCard,
   CampaignStatus,
 } from "@/components/dashboard/campaign-card";
+import { formatCurrency } from "@/lib/campaign-finance";
 
 interface Campaign {
   id: string;
@@ -55,6 +56,9 @@ interface Campaign {
   organizerEmail: string;
   organizerId: string;
   imageUrl?: string;
+  tipAmount: number;
+  platformFeeAmount: number;
+  totalProcessedAmount: number;
 }
 
 interface CampaignStats {
@@ -64,6 +68,9 @@ interface CampaignStats {
   averageFunding: number;
   verifiedCampaigns: number;
   completedCampaigns: number;
+  totalTipAmount: number;
+  totalPlatformFeeAmount: number;
+  totalProcessedAmount: number;
 }
 
 export default function SuperAdminCampaignsPage() {
@@ -169,6 +176,9 @@ export default function SuperAdminCampaignsPage() {
             organizerEmail: user?.email || "",
             organizerId: campaign.organizer_id,
             imageUrl: campaign.image_url,
+            tipAmount: 0,
+            platformFeeAmount: 0,
+            totalProcessedAmount: 0,
           })
         );
 
@@ -197,6 +207,9 @@ export default function SuperAdminCampaignsPage() {
           averageFunding: totalCampaigns > 0 ? totalRaised / totalCampaigns : 0,
           verifiedCampaigns,
           completedCampaigns,
+          totalTipAmount: 0,
+          totalPlatformFeeAmount: 0,
+          totalProcessedAmount: 0,
         });
       }
     } catch (error) {
@@ -438,7 +451,7 @@ export default function SuperAdminCampaignsPage() {
 
       {/* Stats Cards */}
       {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-gray-600 flex items-center">
@@ -463,10 +476,61 @@ export default function SuperAdminCampaignsPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                Bs. {stats.totalRaised.toLocaleString()}
+                {formatCurrency(stats.totalRaised)}
               </div>
               <p className="text-sm text-gray-600">
-                Avg: Bs. {stats.averageFunding.toLocaleString()}
+                Progress amount only
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-gray-600 flex items-center">
+                <DollarSign className="h-4 w-4 mr-2" />
+                Tips
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {formatCurrency(stats.totalTipAmount)}
+              </div>
+              <p className="text-sm text-gray-600">
+                Stored Minka contributions
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-gray-600 flex items-center">
+                <DollarSign className="h-4 w-4 mr-2" />
+                Estimated 5% Fee
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {formatCurrency(stats.totalPlatformFeeAmount)}
+              </div>
+              <p className="text-sm text-gray-600">
+                Calculated from base only
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-gray-600 flex items-center">
+                <DollarSign className="h-4 w-4 mr-2" />
+                Total Processed
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {formatCurrency(stats.totalProcessedAmount)}
+              </div>
+              <p className="text-sm text-gray-600">
+                Base plus stored tips
               </p>
             </CardContent>
           </Card>
@@ -483,10 +547,12 @@ export default function SuperAdminCampaignsPage() {
                 {stats.verifiedCampaigns}
               </div>
               <p className="text-sm text-gray-600">
-                {(
-                  (stats.verifiedCampaigns / stats.totalCampaigns) *
-                  100
-                ).toFixed(1)}
+                {stats.totalCampaigns > 0
+                  ? (
+                      (stats.verifiedCampaigns / stats.totalCampaigns) *
+                      100
+                    ).toFixed(1)
+                  : "0.0"}
                 % of total
               </p>
             </CardContent>
@@ -504,10 +570,12 @@ export default function SuperAdminCampaignsPage() {
                 {stats.completedCampaigns}
               </div>
               <p className="text-sm text-gray-600">
-                {(
-                  (stats.completedCampaigns / stats.totalCampaigns) *
-                  100
-                ).toFixed(1)}
+                {stats.totalCampaigns > 0
+                  ? (
+                      (stats.completedCampaigns / stats.totalCampaigns) *
+                      100
+                    ).toFixed(1)
+                  : "0.0"}
                 % success rate
               </p>
             </CardContent>

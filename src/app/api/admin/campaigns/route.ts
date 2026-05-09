@@ -2,6 +2,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { prisma as db } from "@/lib/prisma";
+import { calculateCampaignFinancials, toNumber } from "@/lib/campaign-finance";
 
 export async function GET(req: NextRequest) {
   try {
@@ -83,12 +84,41 @@ export async function GET(req: NextRequest) {
     // Get total count for pagination
     const totalCount = await db.campaign.count();
 
+    const campaignIds = campaigns.map((campaign) => campaign.id);
+    const donationTipsByCampaign = new Map<string, number>();
+
+    if (campaignIds.length > 0) {
+      const donations = await db.donation.findMany({
+        where: {
+          campaignId: { in: campaignIds },
+          status: "active",
+          paymentStatus: "completed",
+        },
+        select: {
+          campaignId: true,
+          tip_amount: true,
+        },
+      });
+
+      for (const donation of donations) {
+        const tipAmount = toNumber(donation.tip_amount);
+        donationTipsByCampaign.set(
+          donation.campaignId,
+          (donationTipsByCampaign.get(donation.campaignId) || 0) + tipAmount
+        );
+      }
+    }
+
     // Format the response data
     const formattedCampaigns = campaigns.map((campaign) => {
       // Calculate days remaining
       const endDate = new Date(campaign.endDate);
       const now = new Date();
       const daysRemaining = Math.max(0, Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
+      const financialBreakdown = calculateCampaignFinancials({
+        collectedAmount: campaign.collectedAmount,
+        tipAmount: donationTipsByCampaign.get(campaign.id) || 0,
+      });
 
       return {
         id: campaign.id,
@@ -110,6 +140,7 @@ export async function GET(req: NextRequest) {
         organizerEmail: campaign.organizer.email,
         organizerId: campaign.organizer.id,
         imageUrl: campaign.media[0]?.mediaUrl || null,
+        ...financialBreakdown,
       };
     });
 
