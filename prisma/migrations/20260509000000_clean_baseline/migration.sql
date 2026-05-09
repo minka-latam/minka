@@ -20,7 +20,7 @@ CREATE TYPE "PaymentMethod" AS ENUM ('credit_card', 'qr', 'bank_transfer');
 CREATE TYPE "PaymentProvider" AS ENUM ('tripto', 'bisa');
 
 -- CreateEnum
-CREATE TYPE "PaymentStatus" AS ENUM ('pending', 'completed', 'failed', 'refunded');
+CREATE TYPE "PaymentStatus" AS ENUM ('pending', 'completed', 'failed', 'refunded', 'cancelled');
 
 -- CreateEnum
 CREATE TYPE "Status" AS ENUM ('active', 'inactive');
@@ -188,6 +188,34 @@ CREATE TABLE "donations" (
 );
 
 -- CreateTable
+CREATE TABLE "bisa_tokens" (
+    "id" UUID NOT NULL,
+    "token" TEXT NOT NULL,
+    "expires_at" TIMESTAMP(3) NOT NULL,
+    "created_at" TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "bisa_tokens_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "payment_logs" (
+    "id" UUID NOT NULL DEFAULT gen_random_uuid(),
+    "paymentprovider" "PaymentProvider" NOT NULL,
+    "paymentmethod" "PaymentMethod",
+    "paymentid" TEXT NOT NULL,
+    "status" TEXT NOT NULL,
+    "amount" DECIMAL NOT NULL,
+    "tipamount" DECIMAL,
+    "currency" TEXT NOT NULL,
+    "metadata" TEXT,
+    "campaignid" UUID,
+    "donorid" UUID,
+    "createdat" TIMESTAMPTZ(6) DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "payment_logs_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "comments" (
     "id" UUID NOT NULL,
     "campaign_id" UUID NOT NULL,
@@ -298,33 +326,6 @@ CREATE TABLE "legal_entities" (
     "updated_at" TIMESTAMP(6) NOT NULL,
 
     CONSTRAINT "legal_entities_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "bisa_tokens" (
-    "id" UUID NOT NULL,
-    "token" TEXT NOT NULL,
-    "expires_at" TIMESTAMP(3) NOT NULL,
-    "created_at" TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    CONSTRAINT "bisa_tokens_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "payment_logs" (
-    "id" UUID NOT NULL,
-    "paymentProvider" "PaymentProvider" NOT NULL,
-    "paymentMethod" "PaymentMethod",
-    "paymentId" TEXT NOT NULL,
-    "status" TEXT NOT NULL,
-    "amount" DECIMAL NOT NULL,
-    "currency" TEXT NOT NULL,
-    "metadata" TEXT,
-    "campaignId" UUID,
-    "donorId" UUID,
-    "createdAt" TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    CONSTRAINT "payment_logs_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex

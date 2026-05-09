@@ -1,0 +1,122 @@
+[
+  {
+    "id": "8840da6d-b53a-4924-a980-b4198a9b4df6",
+    "checksum": "05f12a9f17be5855252837e8c01ea3e892b93b27580fb3eae10c4143583fed54",
+    "finished_at": "2025-12-03T09:44:43.863Z",
+    "migration_name": "20250228045020_initial_migration",
+    "logs": null,
+    "rolled_back_at": null,
+    "started_at": "2025-12-03T09:44:43.043Z",
+    "applied_steps_count": 1
+  },
+  {
+    "id": "0a4ae335-088b-4243-b99b-b8d8fd68da5c",
+    "checksum": "e6c70a9b93deb640a67ea3cfc50784620b589ab92d7d3eb745cbf8c63738dbcf",
+    "finished_at": "2025-12-03T09:44:45.054Z",
+    "migration_name": "20250301030843_initial_migration",
+    "logs": null,
+    "rolled_back_at": null,
+    "started_at": "2025-12-03T09:44:44.193Z",
+    "applied_steps_count": 1
+  },
+  {
+    "id": "79de76b3-3959-4814-8afe-b32ee732f21a",
+    "checksum": "e96156435921bd14439b775af27d23b8f37d669c60f3f0cb3c0d09d39857cfc3",
+    "finished_at": "2025-12-03T09:44:46.197Z",
+    "migration_name": "20250321132532_v0",
+    "logs": null,
+    "rolled_back_at": null,
+    "started_at": "2025-12-03T09:44:45.385Z",
+    "applied_steps_count": 1
+  },
+  {
+    "id": "bef157e6-dfdd-4321-947b-8627c15201a0",
+    "checksum": "2a609611b3369b66aba8e66af5dcedbd211f6cc9f41d6452fce860c6674f96ad",
+    "finished_at": "2025-12-03T09:44:47.343Z",
+    "migration_name": "20250322025748_add_notification_preferences",
+    "logs": null,
+    "rolled_back_at": null,
+    "started_at": "2025-12-03T09:44:46.527Z",
+    "applied_steps_count": 1
+  },
+  {
+    "id": "ed163377-3af6-445b-8462-e464b787e123",
+    "checksum": "5f0fa5316f90220f9ca060baaadc169dae8f72e083eee3948842fcecdced895d",
+    "finished_at": "2025-12-03T09:44:48.486Z",
+    "migration_name": "20250331125005_add_youtube_urls",
+    "logs": null,
+    "rolled_back_at": null,
+    "started_at": "2025-12-03T09:44:47.674Z",
+    "applied_steps_count": 1
+  },
+  {
+    "id": "bc812420-4579-4c00-9493-642aaf9448a7",
+    "checksum": "e304ce035f92cd7706ba7716079c3ad1dab4d62fc757e4b66af706599947544c",
+    "finished_at": "2025-12-03T09:44:49.636Z",
+    "migration_name": "20250425204155_add_region_enum",
+    "logs": null,
+    "rolled_back_at": null,
+    "started_at": "2025-12-03T09:44:48.816Z",
+    "applied_steps_count": 1
+  },
+  {
+    "id": "8b6872f0-19ed-4608-bfcb-5f0a7640517c",
+    "checksum": "f05df5153d26865dc6ba2459b8b76f35e5b46edb5901dcd828196e7c7426361d",
+    "finished_at": "2025-12-03T09:44:50.793Z",
+    "migration_name": "20250521193043_add_fund_transfers",
+    "logs": null,
+    "rolled_back_at": null,
+    "started_at": "2025-12-03T09:44:49.974Z",
+    "applied_steps_count": 1
+  },
+  {
+    "id": "69449802-1c9e-478d-97e9-d8a1188a55d6",
+    "checksum": "d89e93501400eb5ef162f862afe25de3d200f11a9204aebdf16c79e6dd0a2eaa",
+    "finished_at": "2025-12-03T09:44:51.939Z",
+    "migration_name": "20250529144843_add_province_field",
+    "logs": null,
+    "rolled_back_at": null,
+    "started_at": "2025-12-03T09:44:51.123Z",
+    "applied_steps_count": 1
+  },
+  {
+    "id": "bb9a16b2-6409-403b-8cfa-3558c209aede",
+    "checksum": "25807b14d56a919af08e81609aedf0af8e3f4b31c7eb23aaca67358233b2a7e0",
+    "finished_at": "2025-12-03T09:44:53.088Z",
+    "migration_name": "20250608203819_add_notifications_table",
+    "logs": null,
+    "rolled_back_at": null,
+    "started_at": "2025-12-03T09:44:52.268Z",
+    "applied_steps_count": 1
+  },
+  {
+    "id": "9847fd77-2e12-4189-950d-aaacefbb7833",
+    "checksum": "ac15baefa1b9ef8d65b8680fef3c703535dd95c27cb38d4d2e40b9f227a8d63a",
+    "finished_at": "2025-12-03T09:44:54.234Z",
+    "migration_name": "20250608205046_add_system_notification_logs",
+    "logs": null,
+    "rolled_back_at": null,
+    "started_at": "2025-12-03T09:44:53.417Z",
+    "applied_steps_count": 1
+  },
+  {
+    "id": "113c725a-c4b8-4f20-ba14-218ddbf9333c",
+    "checksum": "3d9574f751feb5a8084ad31d6c6c1a18d6d34ff407883bfb0d94a797bc92bb40",
+    "finished_at": "2025-12-03T09:44:55.380Z",
+    "migration_name": "20250610152339_add_legal_entities",
+    "logs": null,
+    "rolled_back_at": null,
+    "started_at": "2025-12-03T09:44:54.564Z",
+    "applied_steps_count": 1
+  },
+  {
+    "id": "bd198b9c-c0bc-47c1-a8a5-d464892825ae",
+    "checksum": "295b9262785b907d107f2ecc209bc7ad33f98c3b07482837494aa60f525df337",
+    "finished_at": "2025-12-09T22:00:28.410Z",
+    "migration_name": "00000000000000_baseline",
+    "logs": "",
+    "rolled_back_at": null,
+    "started_at": "2025-12-09T22:00:28.410Z",
+    "applied_steps_count": 0
+  }
+]
