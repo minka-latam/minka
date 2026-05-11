@@ -17,9 +17,11 @@ export async function completeDonationAccounting(
   {
     donationId,
     donationUpdate,
+    tipAmount,
   }: {
     donationId: string;
     donationUpdate?: Prisma.DonationUpdateManyMutationInput;
+    tipAmount?: number | string | Prisma.Decimal | null;
   },
 ): Promise<{
   completedNow: boolean;
@@ -61,11 +63,18 @@ export async function completeDonationAccounting(
     return { completedNow: false };
   }
 
+  const donationTipAmount = new Prisma.Decimal(
+    donation.tip_amount ?? tipAmount ?? 0,
+  );
+
   const updatedCampaign = await tx.campaign.update({
     where: { id: donation.campaignId },
     data: {
       collectedAmount: {
         increment: donation.amount,
+      },
+      tipCollected: {
+        increment: donationTipAmount,
       },
       donorCount: {
         increment: 1,

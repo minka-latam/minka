@@ -274,6 +274,7 @@ export async function POST(req: Request) {
       if (isCompletedEvent) {
         const completion = await completeDonationAccounting(tx, {
           donationId: donation.id,
+          tipAmount,
           donationUpdate: {
               paymentProvider: 'tripto',
               paymentMethod: PaymentMethod.credit_card,
