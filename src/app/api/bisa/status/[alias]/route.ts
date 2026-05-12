@@ -70,6 +70,48 @@ export async function GET(
         });
 
         completionNotification = completion.notification;
+
+        if (completion.completedNow) {
+          const tipAmount = Number(donation.tip_amount || 0);
+          const providerAmount = Number(
+            response.data?.amount ??
+              donation.total_amount ??
+              Number(donation.amount) + tipAmount
+          );
+          const paymentId =
+            response.data?.transactionId || donation.bisaQrId || alias;
+
+          const existingCompletedLog = await tx.paymentLog.findFirst({
+            where: {
+              paymentprovider: "bisa",
+              paymentid: paymentId,
+              status: "completed",
+            },
+            select: { id: true },
+          });
+
+          if (!existingCompletedLog) {
+            await tx.paymentLog.create({
+              data: {
+                paymentprovider: "bisa",
+                paymentmethod: "qr",
+                paymentid: paymentId,
+                status: "completed",
+                amount: providerAmount,
+                tipamount: tipAmount,
+                currency: response.data?.currency || "BOB",
+                metadata: JSON.stringify({
+                  alias,
+                  donationId: donation.id,
+                  bisaQrId: response.data?.qrId || donation.bisaQrId,
+                  processedAt: response.data?.processedAt,
+                }),
+                campaignid: donation.campaignId,
+                donorid: donation.donorId,
+              },
+            });
+          }
+        }
       });
 
       await sendCompletedDonationNotification(completionNotification);

@@ -37,6 +37,9 @@ export interface TransactionStatusResponse {
     payerAccount?: string;
     payerDocument?: string;
     transactionId?: string;
+    amount?: number;
+    currency?: string;
+    qrId?: string;
   };
   error?: string;
 }
@@ -125,7 +128,7 @@ export class BisaClient {
         alias: params.alias,
         callback: "000",
         detalleGlosa: params.description,
-        monto: params.amount.toFixed(1), // Postman uses "2.0" format (1 decimal)
+        monto: params.amount.toFixed(2),
         moneda: params.currency,
         fechaVencimiento: params.expirationDate,
         tipoSolicitud: "API",
@@ -238,6 +241,9 @@ export class BisaClient {
           payerAccount: objeto?.cuentaCliente,
           payerDocument: objeto?.documentoCliente,
           transactionId: objeto?.numeroOrdenOriginante,
+          amount: objeto?.monto == null ? undefined : Number(objeto.monto),
+          currency: objeto?.moneda,
+          qrId: objeto?.idQr,
         },
       };
     } catch (error) {
