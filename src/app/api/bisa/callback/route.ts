@@ -98,11 +98,7 @@ export async function POST(request: NextRequest) {
           metadata: JSON.stringify({
             alias,
             donationId: donation.id,
-            campaignId: donation.campaignId,
             bisaQrId: donation.bisaQrId,
-            payerName: nombreCliente,
-            payerAccount: cuentaCliente,
-            payerDocument: documentoCliente,
             processedAt: fechaproceso,
           }),
           campaignid: donation.campaignId,

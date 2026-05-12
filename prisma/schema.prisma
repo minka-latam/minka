@@ -143,7 +143,6 @@ model Donation {
   message             String?
   isAnonymous         Boolean        @default(false) @map("is_anonymous")
   notificationEnabled Boolean        @default(false) @map("notification_enabled")
-  status              Status         @default(active)
   createdAt           DateTime       @default(now()) @map("created_at") @db.Timestamp(6)
   updatedAt           DateTime       @updatedAt @map("updated_at") @db.Timestamp(6)
   currency            String         @default("BOB")

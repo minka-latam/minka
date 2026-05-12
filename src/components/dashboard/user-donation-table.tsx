@@ -20,7 +20,7 @@ import Link from "next/link";
 export interface UserDonationData {
   id: string;
   amount: number;
-  status: PaymentStatus | string;
+  payment_status: PaymentStatus | string;
   created_at: string;
   campaign: {
     id: string;

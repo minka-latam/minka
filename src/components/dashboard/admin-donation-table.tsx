@@ -29,12 +29,14 @@ const formatCurrency = (amount: number) => {
 export function AdminDonationTable({ donations }: AdminDonationTableProps) {
   const getStatusVariant = (status: string) => {
     switch (status?.toLowerCase()) {
+      case "completed":
       case "succeeded":
       case "successful": // Add variations if needed
         return "success";
       case "pending":
         return "secondary";
       case "failed":
+      case "cancelled":
         return "destructive";
       default:
         return "outline";
@@ -76,8 +78,8 @@ export function AdminDonationTable({ donations }: AdminDonationTableProps) {
                 {formatCurrency(donation.amount)}
               </TableCell>
               <TableCell>
-                <Badge variant={getStatusVariant(donation.status)}>
-                  {donation.status || "Unknown"}
+                <Badge variant={getStatusVariant(donation.payment_status)}>
+                  {donation.payment_status || "Unknown"}
                 </Badge>
               </TableCell>
               <TableCell>

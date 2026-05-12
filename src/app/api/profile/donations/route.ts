@@ -24,7 +24,6 @@ export async function GET(request: NextRequest) {
     const totalCount = await prisma.donation.count({
       where: {
         donorId: userId,
-        status: "active",
       },
     });
 
@@ -32,7 +31,6 @@ export async function GET(request: NextRequest) {
     const donations = await prisma.donation.findMany({
       where: {
         donorId: userId,
-        status: "active",
       },
       orderBy: {
         createdAt: "desc",
@@ -77,7 +75,6 @@ export async function GET(request: NextRequest) {
     const totalAmountResult = await prisma.donation.aggregate({
       where: {
         donorId: userId,
-        status: "active",
         paymentStatus: "completed",
       },
       _sum: {

@@ -1,7 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
-import { prisma as db } from "@/lib/prisma";
 import { prisma } from "@/lib/prisma";
 
 export async function GET(
@@ -15,13 +12,15 @@ export async function GET(
     const searchParams = request.nextUrl.searchParams;
     const page = parseInt(searchParams.get("page") || "1");
     const limit = parseInt(searchParams.get("limit") || "10");
-    const skip = (page - 1) * limit;
+    const offset = searchParams.get("offset");
+    const skip = offset ? parseInt(offset) : (page - 1) * limit;
+    const currentPage = Math.floor(skip / limit) + 1;
 
     // Get total count for pagination
     const totalCount = await prisma.donation.count({
       where: {
         campaignId,
-        status: "active",
+        paymentStatus: "completed",
       },
     });
 
@@ -29,7 +28,7 @@ export async function GET(
     const donations = await prisma.donation.findMany({
       where: {
         campaignId,
-        status: "active",
+        paymentStatus: "completed",
       },
       orderBy: {
         createdAt: "desc",
@@ -79,11 +78,11 @@ export async function GET(
     return NextResponse.json({
       data: formattedDonations,
       meta: {
-        currentPage: page,
+        currentPage,
         totalPages,
         totalCount,
-        hasNextPage: page < totalPages,
-        hasPrevPage: page > 1,
+        hasNextPage: currentPage < totalPages,
+        hasPrevPage: currentPage > 1,
       },
     });
   } catch (error) {
@@ -95,136 +94,12 @@ export async function GET(
   }
 }
 
-// Admin endpoint to manage donation status
 export async function PATCH(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  _req: NextRequest,
+  _context: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const cookieStore = await cookies();
-    const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() { return cookieStore.getAll(); },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) =>
-            cookieStore.set(name, value, options)
-          );
-        },
-      },
-    }
+  return NextResponse.json(
+    { error: "Donation status is managed by payment providers" },
+    { status: 410 }
   );
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-
-    if (!session?.user) {
-      return NextResponse.json(
-        { error: "Unauthorized - You must be logged in" },
-        { status: 401 }
-      );
-    }
-
-    const campaignId = (await params).id;
-    const body = await req.json();
-    const { donationId, status } = body;
-
-    if (!donationId || !status) {
-      return NextResponse.json(
-        { error: "Donation ID and status are required" },
-        { status: 400 }
-      );
-    }
-
-    // Validate status value
-    if (!["pending", "active", "rejected"].includes(status)) {
-      return NextResponse.json(
-        { error: "Invalid status value" },
-        { status: 400 }
-      );
-    }
-
-    // Find user profile
-    const profile = await db.profile.findUnique({
-      where: { email: session.user.email },
-    });
-
-    if (!profile) {
-      return NextResponse.json(
-        { error: "User profile not found" },
-        { status: 404 }
-      );
-    }
-
-    // Verify user is campaign owner or admin
-    const campaign = await db.campaign.findUnique({
-      where: {
-        id: campaignId,
-      },
-    });
-
-    if (!campaign) {
-      return NextResponse.json(
-        { error: "Campaign not found" },
-        { status: 404 }
-      );
-    }
-
-    if (campaign.organizerId !== profile.id && profile.role !== "admin") {
-      return NextResponse.json(
-        {
-          error:
-            "You don't have permission to manage donations for this campaign",
-        },
-        { status: 403 }
-      );
-    }
-
-    // Update donation status
-    const donation = await db.donation.update({
-      where: {
-        id: donationId,
-        campaignId: campaignId,
-      },
-      data: {
-        status,
-      },
-    });
-
-    // If the donation was activated, update the campaign's collected amount
-    if (status === "active") {
-      await db.campaign.update({
-        where: {
-          id: campaignId,
-        },
-        data: {
-          collectedAmount: {
-            increment: donation.amount,
-          },
-        },
-      });
-    } else if (status === "rejected" && donation.status === "active") {
-      // If an active donation was rejected, decrement the collected amount
-      await db.campaign.update({
-        where: {
-          id: campaignId,
-        },
-        data: {
-          collectedAmount: {
-            decrement: donation.amount,
-          },
-        },
-      });
-    }
-
-    return NextResponse.json({ success: true, donation });
-  } catch (error) {
-    console.error("Error updating donation status:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
-  }
 }

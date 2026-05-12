@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
     });
 
     const totalDonors = await prisma.donation.findMany({
-      where: { status: "active" },
+      where: { paymentStatus: "completed" },
       select: { donorId: true },
       distinct: ["donorId"],
     });
@@ -110,4 +110,3 @@ export async function GET(request: NextRequest) {
     );
   }
 }
-

@@ -149,10 +149,7 @@ export async function POST(req: Request) {
     const providerTotalAmount =
       toNumber(data.amount, 0) / 100
 
-    // Amount breakdown (stored primarily in Donation; also persisted in PaymentLog.metadata)
-    const baseAmount = toNumber(metadata.amount, 0)
     const tipAmount = toNumber(metadata.tipAmount, 0)
-    const computedTotal = baseAmount + tipAmount
 
     const isCompletedEvent = event === 'payment.completed'
     const isFailedEvent = event === 'payment.failed'
@@ -190,16 +187,9 @@ export async function POST(req: Request) {
         const metadataJson = JSON.stringify({
           event,
           donationId,
-          campaignId,
-          donorId,
-          paymentId,
-          currency,
-          amount_base: baseAmount,
-          tip_amount: tipAmount,
-          total_amount: computedTotal,
-          provider_total_amount: providerTotalAmount,
-          provider_data: data,
-          provider_metadata: metadata,
+          stripeSessionId: data.stripeSessionId
+            ? String(data.stripeSessionId)
+            : undefined,
         })
 
         // If a failed log exists and we now get completed, upgrade it
@@ -288,7 +278,7 @@ export async function POST(req: Request) {
                 donation.tip_amount ?? (tipAmount || null),
               total_amount:
                 donation.total_amount ??
-                (providerTotalAmount || computedTotal),
+                providerTotalAmount,
           },
         })
 
@@ -318,7 +308,7 @@ export async function POST(req: Request) {
               donation.tip_amount ?? (tipAmount || null),
             total_amount:
               donation.total_amount ??
-              (providerTotalAmount || computedTotal),
+              providerTotalAmount,
           },
         })
       }

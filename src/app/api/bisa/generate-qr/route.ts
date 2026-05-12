@@ -83,12 +83,6 @@ export async function POST(request: NextRequest) {
           metadata: JSON.stringify({
             alias,
             donationId,
-            campaignId: campaignId || donation.campaignId,
-            amount: baseAmount,
-            baseAmount,
-            tipAmount,
-            totalAmount: payableAmount,
-            payableAmount,
             expiresAt: expirationDate.toISOString(),
           }),
           campaignid: campaignId || donation.campaignId,
