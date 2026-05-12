@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { bisaClient } from "@/lib/bisa/client";
+import {
+  completeDonationAccounting,
+  sendCompletedDonationNotification,
+} from "@/lib/donations/accounting";
 
 export async function GET(
   request: NextRequest,
@@ -50,13 +54,13 @@ export async function GET(
 
     // If paid, update DB (paymentStatus is already known to not be "completed" from early return above)
     if (status === "PAGADO") {
+      let completionNotification;
+
       // Transaction to ensure consistency
       await prisma.$transaction(async (tx) => {
-        // Update donation
-        await tx.donation.update({
-          where: { id: donation.id },
-          data: {
-            paymentStatus: "completed",
+        const completion = await completeDonationAccounting(tx, {
+          donationId: donation.id,
+          donationUpdate: {
             bisaTransactionId: response.data?.transactionId,
             bisaPayerName: response.data?.payerName,
             bisaPayerAccount: response.data?.payerAccount,
@@ -65,19 +69,52 @@ export async function GET(
           },
         });
 
-        // Update Campaign collected amount
-        await tx.campaign.update({
-          where: { id: donation.campaignId },
-          data: {
-            collectedAmount: {
-              increment: donation.amount,
+        completionNotification = completion.notification;
+
+        if (completion.completedNow) {
+          const tipAmount = Number(donation.tip_amount || 0);
+          const providerAmount = Number(
+            response.data?.amount ??
+              donation.total_amount ??
+              Number(donation.amount) + tipAmount
+          );
+          const paymentId =
+            response.data?.transactionId || donation.bisaQrId || alias;
+
+          const existingCompletedLog = await tx.paymentLog.findFirst({
+            where: {
+              paymentprovider: "bisa",
+              paymentid: paymentId,
+              status: "completed",
             },
-            donorCount: {
-              increment: 1,
-            },
-          },
-        });
+            select: { id: true },
+          });
+
+          if (!existingCompletedLog) {
+            await tx.paymentLog.create({
+              data: {
+                paymentprovider: "bisa",
+                paymentmethod: "qr",
+                paymentid: paymentId,
+                status: "completed",
+                amount: providerAmount,
+                tipamount: tipAmount,
+                currency: response.data?.currency || "BOB",
+                metadata: JSON.stringify({
+                  alias,
+                  donationId: donation.id,
+                  bisaQrId: response.data?.qrId || donation.bisaQrId,
+                  processedAt: response.data?.processedAt,
+                }),
+                campaignid: donation.campaignId,
+                donorid: donation.donorId,
+              },
+            });
+          }
+        }
       });
+
+      await sendCompletedDonationNotification(completionNotification);
     }
 
     return NextResponse.json({

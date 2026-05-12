@@ -2,6 +2,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { prisma as db } from "@/lib/prisma";
+import { calculateCampaignFinancials } from "@/lib/campaign-finance";
 
 export async function GET(req: NextRequest) {
   try {
@@ -89,6 +90,10 @@ export async function GET(req: NextRequest) {
       const endDate = new Date(campaign.endDate);
       const now = new Date();
       const daysRemaining = Math.max(0, Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
+      const financialBreakdown = calculateCampaignFinancials({
+        collectedAmount: campaign.collectedAmount,
+        tipAmount: campaign.tipCollected,
+      });
 
       return {
         id: campaign.id,
@@ -110,6 +115,7 @@ export async function GET(req: NextRequest) {
         organizerEmail: campaign.organizer.email,
         organizerId: campaign.organizer.id,
         imageUrl: campaign.media[0]?.mediaUrl || null,
+        ...financialBreakdown,
       };
     });
 

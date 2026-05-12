@@ -93,7 +93,7 @@ export interface CampaignDonation {
   message?: string;
   isAnonymous: boolean;
   createdAt: string;
-  status?: string;
+  paymentStatus: string;
   donor: {
     id: string | null;
     name: string;
@@ -110,7 +110,6 @@ export function useCampaign() {
   const [isLoadingComments, setIsLoadingComments] = useState(false);
   const [isPostingComment, setIsPostingComment] = useState(false);
   const [isLoadingDonations, setIsLoadingDonations] = useState(false);
-  const [isUpdatingDonation, setIsUpdatingDonation] = useState(false);
   const [isReplyingToComment, setIsReplyingToComment] = useState(false);
   const [campaignId, setCampaignId] = useState<string | null>(null);
   const { toast } = useToast();
@@ -645,53 +644,6 @@ export function useCampaign() {
     }
   };
 
-  // Function to update donation status (for campaign owners/admins)
-  const updateDonationStatus = async (
-    targetCampaignId: string,
-    donationId: string,
-    status: "pending" | "active" | "rejected"
-  ): Promise<boolean> => {
-    setIsUpdatingDonation(true);
-
-    try {
-      const response = await fetch(
-        `/api/campaign/${targetCampaignId}/donations`,
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ donationId, status }),
-        }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to update donation status");
-      }
-
-      toast({
-        title: "Estado actualizado",
-        description:
-          "El estado de la donación ha sido actualizado correctamente",
-      });
-      return true;
-    } catch (error) {
-      console.error("Error updating donation status:", error);
-      toast({
-        title: "Error",
-        description:
-          error instanceof Error
-            ? error.message
-            : "Error al actualizar el estado de la donación",
-        variant: "destructive",
-      });
-      return false;
-    } finally {
-      setIsUpdatingDonation(false);
-    }
-  };
-
   // Function to reply to a campaign comment
   const replyToComment = async (
     targetCampaignId: string,
@@ -756,7 +708,6 @@ export function useCampaign() {
     isLoadingComments,
     isPostingComment,
     isLoadingDonations,
-    isUpdatingDonation,
     isReplyingToComment,
     campaignId,
     createCampaign,
@@ -770,7 +721,6 @@ export function useCampaign() {
     postCampaignComment,
     deleteCampaignComment,
     getCampaignDonations,
-    updateDonationStatus,
     replyToComment,
   };
 }

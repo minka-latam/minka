@@ -555,6 +555,7 @@ export function DonatePageContent({
       const donationData = {
         campaignId: campaignId,
         amount: donationAmount,
+        tipAmount: platformFee,
         paymentMethod: selectedMethod,
         message: '',
         isAnonymous: !user, // Explicitly set isAnonymous flag

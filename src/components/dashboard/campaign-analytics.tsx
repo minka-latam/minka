@@ -12,6 +12,7 @@ import {
   Target,
   PieChart,
 } from "lucide-react";
+import { formatCurrency } from "@/lib/campaign-finance";
 
 interface Campaign {
   id: string;
@@ -33,6 +34,9 @@ interface Campaign {
   organizerEmail: string;
   organizerId: string;
   imageUrl?: string;
+  tipAmount: number;
+  platformFeeAmount: number;
+  totalProcessedAmount: number;
 }
 
 interface CampaignAnalyticsProps {
@@ -59,6 +63,15 @@ export function CampaignAnalytics({ campaigns }: CampaignAnalyticsProps) {
   // Calculate funding metrics
   const totalGoal = campaigns.reduce((sum, c) => sum + c.goalAmount, 0);
   const totalRaised = campaigns.reduce((sum, c) => sum + c.collectedAmount, 0);
+  const totalTips = campaigns.reduce((sum, c) => sum + (c.tipAmount || 0), 0);
+  const totalPlatformFees = campaigns.reduce(
+    (sum, c) => sum + (c.platformFeeAmount || 0),
+    0
+  );
+  const totalProcessed = campaigns.reduce(
+    (sum, c) => sum + (c.totalProcessedAmount || 0),
+    0
+  );
   const overallFundingRate =
     totalGoal > 0 ? (totalRaised / totalGoal) * 100 : 0;
 
@@ -130,8 +143,7 @@ export function CampaignAnalytics({ campaigns }: CampaignAnalyticsProps) {
               {overallFundingRate.toFixed(1)}%
             </div>
             <p className="text-sm text-gray-600">
-              Bs. {totalRaised.toLocaleString()} raised of Bs.{" "}
-              {totalGoal.toLocaleString()}
+              {formatCurrency(totalRaised)} raised of {formatCurrency(totalGoal)}
             </p>
           </CardContent>
         </Card>
@@ -251,12 +263,16 @@ export function CampaignAnalytics({ campaigns }: CampaignAnalyticsProps) {
                     <div className="flex-1 min-w-0">
                       <p className="font-medium truncate">{campaign.title}</p>
                       <p className="text-sm text-gray-500">
-                        Bs. {campaign.collectedAmount.toLocaleString()} raised
+                        {formatCurrency(campaign.collectedAmount)} raised
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        Tips {formatCurrency(campaign.tipAmount)} | 5% fee{" "}
+                        {formatCurrency(campaign.platformFeeAmount)}
                       </p>
                     </div>
                     <div className="text-right">
                       <div className="font-medium text-green-600">
-                        {campaign.percentageFunded.toFixed(1)}%
+                        {(campaign.percentageFunded || 0).toFixed(1)}%
                       </div>
                       <div className="text-sm text-gray-500">
                         {campaign.donorCount} donors
@@ -275,7 +291,7 @@ export function CampaignAnalytics({ campaigns }: CampaignAnalyticsProps) {
       </div>
 
       {/* Additional Insights */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">Verification Status</CardTitle>
@@ -341,27 +357,61 @@ export function CampaignAnalytics({ campaigns }: CampaignAnalyticsProps) {
               <div className="flex justify-between">
                 <span>Avg Goal</span>
                 <span className="font-medium">
-                  Bs.{" "}
-                  {campaigns.length > 0
-                    ? Math.round(totalGoal / campaigns.length).toLocaleString()
-                    : 0}
+                  {formatCurrency(
+                    campaigns.length > 0
+                      ? Math.round(totalGoal / campaigns.length)
+                      : 0
+                  )}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span>Avg Raised</span>
                 <span className="font-medium">
-                  Bs.{" "}
-                  {campaigns.length > 0
-                    ? Math.round(
-                        totalRaised / campaigns.length
-                      ).toLocaleString()
-                    : 0}
+                  {formatCurrency(
+                    campaigns.length > 0
+                      ? Math.round(totalRaised / campaigns.length)
+                      : 0
+                  )}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span>Fully Funded</span>
                 <span className="font-medium text-green-600">
                   {campaigns.filter((c) => c.percentageFunded >= 100).length}
+                </span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Financial Breakdown</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <div className="flex justify-between gap-3">
+                <span>Base donations</span>
+                <span className="font-medium">
+                  {formatCurrency(totalRaised)}
+                </span>
+              </div>
+              <div className="flex justify-between gap-3">
+                <span>Tips</span>
+                <span className="font-medium text-blue-700">
+                  {formatCurrency(totalTips)}
+                </span>
+              </div>
+              <div className="flex justify-between gap-3">
+                <span>Estimated 5% fee</span>
+                <span className="font-medium text-amber-700">
+                  {formatCurrency(totalPlatformFees)}
+                </span>
+              </div>
+              <div className="flex justify-between gap-3 border-t pt-2">
+                <span>Total processed</span>
+                <span className="font-medium">
+                  {formatCurrency(totalProcessed)}
                 </span>
               </div>
             </div>

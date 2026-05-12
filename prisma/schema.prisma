@@ -45,6 +45,7 @@ model Campaign {
   category                 CampaignCategory
   goalAmount               Decimal               @map("goal_amount") @db.Decimal
   collectedAmount          Decimal               @default(0) @map("collected_amount") @db.Decimal
+  tipCollected             Decimal               @default(0) @map("tip_collected") @db.Decimal
   donorCount               Int                   @default(0) @map("donor_count")
   percentageFunded         Float                 @map("percentage_funded")
   daysRemaining            Int                   @map("days_remaining")
@@ -142,7 +143,6 @@ model Donation {
   message             String?
   isAnonymous         Boolean        @default(false) @map("is_anonymous")
   notificationEnabled Boolean        @default(false) @map("notification_enabled")
-  status              Status         @default(active)
   createdAt           DateTime       @default(now()) @map("created_at") @db.Timestamp(6)
   updatedAt           DateTime       @updatedAt @map("updated_at") @db.Timestamp(6)
   currency            String         @default("BOB")

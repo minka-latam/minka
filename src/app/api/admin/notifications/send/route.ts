@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
     } else if (target === "donors") {
       // For donors, we'll target users who have made donations
       const donorIds = await prisma.donation.findMany({
-        where: { status: "active" },
+        where: { paymentStatus: "completed" },
         select: { donorId: true },
         distinct: ["donorId"],
       });
@@ -163,4 +163,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-

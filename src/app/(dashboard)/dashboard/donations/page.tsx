@@ -14,7 +14,7 @@ import { PaymentStatus } from "@prisma/client";
 export interface AdminDonationData {
   id: string;
   amount: number; // Prisma uses Decimal, Supabase client likely returns number
-  status: PaymentStatus | string; // Use Prisma enum, allow string for safety
+  payment_status: PaymentStatus | string;
   created_at: string; // Prisma uses DateTime, Supabase client returns string
   campaigns:
     | {
@@ -72,7 +72,7 @@ export default async function DonationsPage() {
         `
         id,
         amount,
-        status,
+        payment_status,
         created_at,
         campaigns ( title ),
         profiles ( name, email )
@@ -111,7 +111,7 @@ export default async function DonationsPage() {
         `
         id,
         amount,
-        status,
+        payment_status,
         created_at,
         campaign_id,
         campaigns (
@@ -137,7 +137,7 @@ export default async function DonationsPage() {
       (donation: any) => ({
         id: donation.id,
         amount: donation.amount,
-        status: donation.status,
+        payment_status: donation.payment_status,
         created_at: donation.created_at,
         campaign: {
           id: donation.campaigns?.id || donation.campaign_id,
@@ -158,4 +158,3 @@ export default async function DonationsPage() {
     );
   }
 }
-

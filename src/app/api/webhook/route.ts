@@ -2,6 +2,10 @@ import { NextResponse } from 'next/server'
 import crypto from 'crypto'
 import { prisma as db } from '@/lib/prisma'
 import {
+  completeDonationAccounting,
+  sendCompletedDonationNotification,
+} from '@/lib/donations/accounting'
+import {
   PaymentMethod,
   PaymentProvider,
   PaymentStatus,
@@ -145,10 +149,7 @@ export async function POST(req: Request) {
     const providerTotalAmount =
       toNumber(data.amount, 0) / 100
 
-    // Amount breakdown (stored primarily in Donation; also persisted in PaymentLog.metadata)
-    const baseAmount = toNumber(metadata.amount, 0)
     const tipAmount = toNumber(metadata.tipAmount, 0)
-    const computedTotal = baseAmount + tipAmount
 
     const isCompletedEvent = event === 'payment.completed'
     const isFailedEvent = event === 'payment.failed'
@@ -159,6 +160,8 @@ export async function POST(req: Request) {
         { status: 200 },
       )
     }
+
+    let completionNotification
 
     await db.$transaction(async (tx) => {
       // Idempotent PaymentLog handling (one row per paymentprovider + paymentid)
@@ -184,16 +187,9 @@ export async function POST(req: Request) {
         const metadataJson = JSON.stringify({
           event,
           donationId,
-          campaignId,
-          donorId,
-          paymentId,
-          currency,
-          amount_base: baseAmount,
-          tip_amount: tipAmount,
-          total_amount: computedTotal,
-          provider_total_amount: providerTotalAmount,
-          provider_data: data,
-          provider_metadata: metadata,
+          stripeSessionId: data.stripeSessionId
+            ? String(data.stripeSessionId)
+            : undefined,
         })
 
         // If a failed log exists and we now get completed, upgrade it
@@ -207,6 +203,7 @@ export async function POST(req: Request) {
             data: {
               status: 'completed',
               amount: providerTotalAmount,
+              tipamount: tipAmount,
               currency,
               paymentmethod: PaymentMethod.credit_card,
               campaignid: campaignId,
@@ -234,6 +231,7 @@ export async function POST(req: Request) {
             paymentid: paymentId,
             status: incomingStatus,
             amount: providerTotalAmount,
+            tipamount: tipAmount,
             currency,
             campaignid: campaignId,
             donorid: donorId,
@@ -264,14 +262,10 @@ export async function POST(req: Request) {
       }
 
       if (isCompletedEvent) {
-        // Idempotency: only first transition to completed should increment campaign.
-        if (
-          donation.paymentStatus !== PaymentStatus.completed
-        ) {
-          await tx.donation.update({
-            where: { id: donation.id },
-            data: {
-              paymentStatus: PaymentStatus.completed,
+        const completion = await completeDonationAccounting(tx, {
+          donationId: donation.id,
+          tipAmount,
+          donationUpdate: {
               paymentProvider: 'tripto',
               paymentMethod: PaymentMethod.credit_card,
               currency,
@@ -284,40 +278,11 @@ export async function POST(req: Request) {
                 donation.tip_amount ?? (tipAmount || null),
               total_amount:
                 donation.total_amount ??
-                (providerTotalAmount || computedTotal),
-            },
-          })
+                providerTotalAmount,
+          },
+        })
 
-          // Campaign totals: base amount only (tips excluded)
-          const updatedCampaign = await tx.campaign.update({
-            where: { id: donation.campaignId },
-            data: {
-              collectedAmount: {
-                increment: donation.amount,
-              },
-              donorCount: { increment: 1 },
-            },
-            select: {
-              collectedAmount: true,
-              goalAmount: true,
-            },
-          })
-
-          // Recompute percentageFunded after collectedAmount changes
-          const goal = Number(updatedCampaign.goalAmount)
-          const collected = Number(
-            updatedCampaign.collectedAmount,
-          )
-          const percentageFunded =
-            goal > 0 ? (collected / goal) * 100 : 0
-
-          await tx.campaign.update({
-            where: { id: donation.campaignId },
-            data: {
-              percentageFunded,
-            },
-          })
-        }
+        completionNotification = completion.notification
 
         await ensurePaymentLog('completed')
         return
@@ -343,13 +308,17 @@ export async function POST(req: Request) {
               donation.tip_amount ?? (tipAmount || null),
             total_amount:
               donation.total_amount ??
-              (providerTotalAmount || computedTotal),
+              providerTotalAmount,
           },
         })
       }
 
       await ensurePaymentLog('failed')
     })
+
+    await sendCompletedDonationNotification(
+      completionNotification,
+    )
 
     return NextResponse.json(
       { received: true },

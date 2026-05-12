@@ -2,6 +2,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { prisma as db } from "@/lib/prisma";
+import { calculatePlatformFee } from "@/lib/campaign-finance";
 
 export async function GET(req: NextRequest) {
   try {
@@ -54,6 +55,7 @@ export async function GET(req: NextRequest) {
       completedCampaigns,
       verifiedCampaigns,
       totalRaisedResult,
+      totalTipsResult,
     ] = await Promise.all([
       db.campaign.count(),
       db.campaign.count({ where: { campaignStatus: "active" } }),
@@ -64,11 +66,19 @@ export async function GET(req: NextRequest) {
           collectedAmount: true,
         },
       }),
+      db.campaign.aggregate({
+        _sum: {
+          tipCollected: true,
+        },
+      }),
     ]);
 
-    const totalRaised = Number(totalRaisedResult._sum.collectedAmount || 0);
+    const totalRaised = Number(totalRaisedResult._sum?.collectedAmount || 0);
     const averageFunding =
       totalCampaigns > 0 ? totalRaised / totalCampaigns : 0;
+    const totalTipAmount = Number(totalTipsResult._sum?.tipCollected || 0);
+    const totalPlatformFeeAmount = calculatePlatformFee(totalRaised);
+    const totalProcessedAmount = totalRaised + totalTipAmount;
 
     return NextResponse.json({
       totalCampaigns,
@@ -77,6 +87,9 @@ export async function GET(req: NextRequest) {
       averageFunding,
       verifiedCampaigns,
       completedCampaigns,
+      totalTipAmount,
+      totalPlatformFeeAmount,
+      totalProcessedAmount,
     });
   } catch (error) {
     console.error("Error fetching campaign stats:", error);
@@ -92,4 +105,3 @@ export async function GET(req: NextRequest) {
     );
   }
 }
-

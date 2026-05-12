@@ -34,6 +34,11 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    const tipAmount = Number(donation.tip_amount || 0);
+    const payableAmount = Number(
+      donation.total_amount ?? Number(donation.amount) + tipAmount
+    );
+
     // Call BISA API to disable QR
     const success = await bisaClient.disableQR(alias);
 
@@ -45,12 +50,12 @@ export async function POST(request: NextRequest) {
           paymentmethod: "qr",
           paymentid: donation.bisaQrId || alias,
           status: "disable_failed",
-          amount: donation.amount,
+          amount: payableAmount,
+          tipamount: tipAmount,
           currency: "BOB",
           metadata: JSON.stringify({
             alias,
             donationId: donation.id,
-            campaignId: donation.campaignId,
             reason: reason || "user_cancelled",
             error: "BISA API failed to disable QR",
           }),
@@ -76,12 +81,12 @@ export async function POST(request: NextRequest) {
           paymentmethod: "qr",
           paymentid: donation.bisaQrId || alias,
           status: "qr_disabled",
-          amount: donation.amount,
+          amount: payableAmount,
+          tipamount: tipAmount,
           currency: "BOB",
           metadata: JSON.stringify({
             alias,
             donationId: donation.id,
-            campaignId: donation.campaignId,
             reason: reason || "user_cancelled",
           }),
           campaignid: donation.campaignId,

@@ -96,6 +96,10 @@ export async function POST(request: NextRequest) {
     const bisaSuccess = await bisaClient.disableQR(donation.bisaAlias);
 
     const cancelReason = reason || "user_cancelled";
+    const tipAmount = Number(donation.tip_amount || 0);
+    const payableAmount = Number(
+      donation.total_amount ?? Number(donation.amount) + tipAmount
+    );
 
     if (!bisaSuccess) {
 
@@ -105,12 +109,12 @@ export async function POST(request: NextRequest) {
           paymentmethod: "qr",
           paymentid: donation.bisaQrId || donation.bisaAlias || donation.id,
           status: "cancel_failed",
-          amount: donation.amount,
+          amount: payableAmount,
+          tipamount: tipAmount,
           currency: "BOB",
           metadata: JSON.stringify({
             alias: donation.bisaAlias,
             donationId: donation.id,
-            campaignId: donation.campaignId,
             reason: cancelReason,
             cancelledBy: profile.id,
             error: "BISA API failed to disable QR",
@@ -136,12 +140,12 @@ export async function POST(request: NextRequest) {
           paymentmethod: "qr",
           paymentid: donation.bisaQrId || donation.bisaAlias || donation.id,
           status: "cancelled",
-          amount: donation.amount,
+          amount: payableAmount,
+          tipamount: tipAmount,
           currency: "BOB",
           metadata: JSON.stringify({
             alias: donation.bisaAlias,
             donationId: donation.id,
-            campaignId: donation.campaignId,
             reason: cancelReason,
             cancelledBy: profile.id,
             bisaDisabled: bisaSuccess,
@@ -162,4 +166,3 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
-

@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import {
+  completeDonationAccounting,
+  sendCompletedDonationNotification,
+} from "@/lib/donations/accounting";
 
 export async function POST(request: NextRequest) {
   // 1. Verify Basic Auth
@@ -53,18 +57,24 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ codigo: "0000", mensaje: "Already processed" });
     }
 
+    const expectedAmount = Number(
+      donation.total_amount ?? Number(donation.amount) + Number(donation.tip_amount || 0)
+    );
+    const providerAmount = Number.isFinite(Number(monto)) ? Number(monto) : expectedAmount;
+
     // Verify amount
-    if (Math.abs(Number(donation.amount) - Number(monto)) > 0.01) {
-      console.error(`Amount mismatch for ${alias}: expected ${donation.amount}, got ${monto}`);
+    if (Math.abs(expectedAmount - providerAmount) > 0.01) {
+      console.error(`Amount mismatch for ${alias}: expected ${expectedAmount}, got ${monto}`);
       return NextResponse.json({ codigo: "9999", mensaje: "Amount mismatch" });
     }
 
+    let completionNotification;
+
     // Update DB
     await prisma.$transaction(async (tx) => {
-      await tx.donation.update({
-        where: { id: donation.id },
-        data: {
-          paymentStatus: "completed",
+      const completion = await completeDonationAccounting(tx, {
+        donationId: donation.id,
+        donationUpdate: {
           bisaTransactionId: numeroOrdenOriginante,
           bisaPayerName: nombreCliente,
           bisaPayerAccount: cuentaCliente,
@@ -73,17 +83,7 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      await tx.campaign.update({
-        where: { id: donation.campaignId },
-        data: {
-          collectedAmount: {
-            increment: donation.amount,
-          },
-          donorCount: {
-            increment: 1,
-          },
-        },
-      });
+      completionNotification = completion.notification;
 
       // Create payment log for completed payment
       await tx.paymentLog.create({
@@ -92,16 +92,13 @@ export async function POST(request: NextRequest) {
           paymentmethod: "qr",
           paymentid: numeroOrdenOriginante || donation.bisaQrId || alias,
           status: "completed",
-          amount: monto || donation.amount,
+          amount: providerAmount,
+          tipamount: Number(donation.tip_amount || 0),
           currency: moneda || "BOB",
           metadata: JSON.stringify({
             alias,
             donationId: donation.id,
-            campaignId: donation.campaignId,
             bisaQrId: donation.bisaQrId,
-            payerName: nombreCliente,
-            payerAccount: cuentaCliente,
-            payerDocument: documentoCliente,
             processedAt: fechaproceso,
           }),
           campaignid: donation.campaignId,
@@ -109,6 +106,8 @@ export async function POST(request: NextRequest) {
         },
       });
     });
+
+    await sendCompletedDonationNotification(completionNotification);
 
     return NextResponse.json({ codigo: "0000", mensaje: "Success" });
 
