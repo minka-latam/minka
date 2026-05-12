@@ -203,26 +203,235 @@ export function SuperAdminCampaignTable({
     );
   };
 
+  const renderCampaignActions = (campaign: Campaign) => (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" className="h-8 w-8 p-0">
+          <MoreHorizontal className="h-4 w-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+
+        <DropdownMenuItem asChild>
+          <Link href={`/campaign/${campaign.id}`}>
+            <Eye className="mr-2 h-4 w-4" />
+            View Campaign
+          </Link>
+        </DropdownMenuItem>
+
+        <DropdownMenuItem asChild>
+          <Link href={`/dashboard/campaigns/${campaign.id}`}>
+            <Pencil className="mr-2 h-4 w-4" />
+            Edit Campaign
+          </Link>
+        </DropdownMenuItem>
+
+        {isAdmin && (
+          <>
+            <DropdownMenuSeparator />
+
+            {campaign.verificationStatus ? (
+              <DropdownMenuItem
+                onClick={() =>
+                  openConfirmDialog("unverify", campaign.id, campaign.title)
+                }
+                className="text-amber-600"
+              >
+                <XCircle className="mr-2 h-4 w-4" />
+                Revoke Verification
+              </DropdownMenuItem>
+            ) : (
+              <DropdownMenuItem
+                onClick={() =>
+                  openConfirmDialog("verify", campaign.id, campaign.title)
+                }
+                className="text-green-600"
+              >
+                <CheckCircle className="mr-2 h-4 w-4" />
+                Verify Campaign
+              </DropdownMenuItem>
+            )}
+          </>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+
+  const renderFundingSummary = (
+    campaign: Campaign,
+    variant: "table" | "card" = "table"
+  ) => (
+    <div className="space-y-2">
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+        <span className="font-medium">
+          {formatCurrency(campaign.collectedAmount)}
+        </span>
+        <span className="text-sm text-gray-500">
+          / {formatCurrency(campaign.goalAmount)}
+        </span>
+      </div>
+      <div className="flex items-center gap-2">
+        <div className="w-full bg-gray-200 rounded-full h-2">
+          <div
+            className="bg-green-600 h-2 rounded-full"
+            style={{
+              width: `${Math.min(campaign.percentageFunded || 0, 100)}%`,
+            }}
+          />
+        </div>
+        <span className="text-sm font-medium">
+          {(campaign.percentageFunded || 0).toFixed(1)}%
+        </span>
+      </div>
+      <div
+        className={
+          variant === "card"
+            ? "flex flex-wrap items-center gap-x-6 gap-y-1 pt-2 text-sm"
+            : "grid grid-cols-2 gap-x-6 gap-y-2 pt-3 text-sm 2xl:grid-cols-4"
+        }
+      >
+        <div className={variant === "card" ? "flex items-baseline gap-1.5" : undefined}>
+          <p className="text-gray-500">Recaudado</p>
+          <p className={variant === "card" ? "font-semibold" : "text-base font-semibold"}>
+            {formatCurrency(campaign.collectedAmount)}
+          </p>
+        </div>
+        <div className={variant === "card" ? "flex items-baseline gap-1.5" : undefined}>
+          <p className="text-gray-500">Tips</p>
+          <p className={variant === "card" ? "font-semibold text-green-600" : "text-base font-semibold text-green-600"}>
+            {formatCurrency(campaign.tipAmount)}
+          </p>
+        </div>
+        <div className={variant === "card" ? "flex items-baseline gap-1.5" : undefined}>
+          <p className="text-gray-500">5% fee</p>
+          <p className={variant === "card" ? "font-semibold text-green-700" : "text-base font-semibold text-green-700"}>
+            {formatCurrency(campaign.platformFeeAmount)}
+          </p>
+        </div>
+        <div className={variant === "card" ? "flex items-baseline gap-1.5" : undefined}>
+          <p className="text-gray-500">Total</p>
+          <p className={variant === "card" ? "font-semibold text-gray-900" : "text-base font-semibold text-gray-900"}>
+            {formatCurrency(campaign.totalProcessedAmount)}
+          </p>
+        </div>
+        <div className="flex items-center gap-1 text-gray-500">
+          <Users className="h-3 w-3" />
+          <span>{campaign.donorCount} donadores</span>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <>
-      <div className="rounded-md border overflow-x-auto">
-        <Table>
+      <div className="space-y-3 xl:hidden">
+        {campaigns.length === 0 ? (
+          <div className="rounded-md border py-8 text-center text-muted-foreground">
+            No campaigns found.
+          </div>
+        ) : (
+          campaigns.map((campaign) => (
+            <div key={campaign.id} className="rounded-md border bg-white p-4">
+              <div className="flex items-start gap-3">
+                <Checkbox
+                  checked={selectedCampaigns.includes(campaign.id)}
+                  onCheckedChange={(checked) =>
+                    handleSelectCampaign(campaign.id, checked as boolean)
+                  }
+                  className="mt-1"
+                />
+                {campaign.imageUrl && (
+                  <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-md">
+                    <Image
+                      src={campaign.imageUrl}
+                      alt={campaign.title}
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                )}
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="font-medium">{campaign.title}</p>
+                      <p className="line-clamp-2 text-sm text-gray-500">
+                        {campaign.description}
+                      </p>
+                    </div>
+                    {renderCampaignActions(campaign)}
+                  </div>
+
+                  <div className="mt-3 grid gap-2 text-sm sm:grid-cols-2">
+                    <div>
+                      <p className="text-xs text-gray-500">Organizer</p>
+                      <p className="font-medium">{campaign.organizerName}</p>
+                      <p className="truncate text-gray-500">
+                        {campaign.organizerEmail}
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+                      <Badge className={getCategoryColor(campaign.category)}>
+                        {campaign.category.replace("_", " ")}
+                      </Badge>
+                      {getStatusBadge(campaign.status)}
+                      {campaign.verificationStatus ? (
+                        <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
+                          <CheckCircle className="mr-1 h-3 w-3" />
+                          Verified
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline">
+                          <XCircle className="mr-1 h-3 w-3" />
+                          Not Verified
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-xs text-gray-500">
+                    <span>
+                      {campaign.daysRemaining > 0
+                        ? `${campaign.daysRemaining} days left`
+                        : "Ended"}
+                    </span>
+                    <span>{campaign.location}</span>
+                    <span>
+                      {formatDistanceToNow(new Date(campaign.createdAt), {
+                        addSuffix: true,
+                        locale: es,
+                      })}
+                    </span>
+                  </div>
+
+                  <div className="mt-3">
+                    {renderFundingSummary(campaign, "card")}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      <div className="hidden rounded-md border xl:block">
+        <Table className="w-full table-auto">
           <TableHeader>
             <TableRow>
-              <TableHead className="w-12">
+              <TableHead className="w-[3rem]">
                 <Checkbox
                   checked={selectedCampaigns.length === campaigns.length}
                   onCheckedChange={handleSelectAll}
                 />
               </TableHead>
-              <TableHead>Campaign</TableHead>
-              <TableHead>Organizer</TableHead>
-              <TableHead>Category</TableHead>
-              <TableHead>Funding</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Verified</TableHead>
-              <TableHead>Created</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead className="w-[22%]">Campaign</TableHead>
+              <TableHead className="w-[16%]">Organizer</TableHead>
+              <TableHead className="w-[9%]">Category</TableHead>
+              <TableHead className="w-[31%]">Funding</TableHead>
+              <TableHead className="w-[7%]">Status</TableHead>
+              <TableHead className="w-[8%]">Verified</TableHead>
+              <TableHead className="w-[6%]">Created</TableHead>
+              <TableHead className="w-[3rem] text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -297,60 +506,7 @@ export function SuperAdminCampaignTable({
                   </TableCell>
 
                   <TableCell>
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <DollarSign className="h-4 w-4 text-gray-500" />
-                        <span className="font-medium">
-                          {formatCurrency(campaign.collectedAmount)}
-                        </span>
-                        <span className="text-sm text-gray-500">
-                          / {formatCurrency(campaign.goalAmount)}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="w-full bg-gray-200 rounded-full h-2">
-                          <div
-                            className="bg-green-600 h-2 rounded-full"
-                            style={{
-                              width: `${Math.min(campaign.percentageFunded || 0, 100)}%`,
-                            }}
-                          />
-                        </div>
-                        <span className="text-sm font-medium">
-                          {(campaign.percentageFunded || 0).toFixed(1)}%
-                        </span>
-                      </div>
-                      <div className="grid grid-cols-2 gap-x-3 gap-y-1 pt-2 text-xs">
-                        <div>
-                          <p className="text-gray-500">Base donated</p>
-                          <p className="font-medium">
-                            {formatCurrency(campaign.collectedAmount)}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-gray-500">Tips</p>
-                          <p className="font-medium text-blue-700">
-                            {formatCurrency(campaign.tipAmount)}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-gray-500">Estimated 5% fee</p>
-                          <p className="font-medium text-amber-700">
-                            {formatCurrency(campaign.platformFeeAmount)}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-gray-500">Processed</p>
-                          <p className="font-medium text-gray-900">
-                            {formatCurrency(campaign.totalProcessedAmount)}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-1 text-sm text-gray-500">
-                        <Users className="h-3 w-3" />
-                        <span>{campaign.donorCount} donors</span>
-                      </div>
-                    </div>
+                    {renderFundingSummary(campaign)}
                   </TableCell>
 
                   <TableCell>{getStatusBadge(campaign.status)}</TableCell>
@@ -372,7 +528,7 @@ export function SuperAdminCampaignTable({
                   </TableCell>
 
                   <TableCell>
-                    <div className="text-sm">
+                    <div className="text-sm leading-tight">
                       {formatDistanceToNow(new Date(campaign.createdAt), {
                         addSuffix: true,
                         locale: es,
@@ -381,66 +537,7 @@ export function SuperAdminCampaignTable({
                   </TableCell>
 
                   <TableCell className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-
-                        <DropdownMenuItem asChild>
-                          <Link href={`/campaign/${campaign.id}`}>
-                            <Eye className="mr-2 h-4 w-4" />
-                            View Campaign
-                          </Link>
-                        </DropdownMenuItem>
-
-                        <DropdownMenuItem asChild>
-                          <Link href={`/dashboard/campaigns/${campaign.id}`}>
-                            <Pencil className="mr-2 h-4 w-4" />
-                            Edit Campaign
-                          </Link>
-                        </DropdownMenuItem>
-
-                        {isAdmin && (
-                          <>
-                            <DropdownMenuSeparator />
-
-                            {campaign.verificationStatus ? (
-                              <DropdownMenuItem
-                                onClick={() =>
-                                  openConfirmDialog(
-                                    "unverify",
-                                    campaign.id,
-                                    campaign.title
-                                  )
-                                }
-                                className="text-amber-600"
-                              >
-                                <XCircle className="mr-2 h-4 w-4" />
-                                Revoke Verification
-                              </DropdownMenuItem>
-                            ) : (
-                              <DropdownMenuItem
-                                onClick={() =>
-                                  openConfirmDialog(
-                                    "verify",
-                                    campaign.id,
-                                    campaign.title
-                                  )
-                                }
-                                className="text-green-600"
-                              >
-                                <CheckCircle className="mr-2 h-4 w-4" />
-                                Verify Campaign
-                              </DropdownMenuItem>
-                            )}
-                          </>
-                        )}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    {renderCampaignActions(campaign)}
                   </TableCell>
                 </TableRow>
               ))
