@@ -1,5 +1,6 @@
 ﻿import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getOrCreateCampaignAnonymousProfileId } from "@/lib/donations/anonymous-donor";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
@@ -79,37 +80,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // For anonymous donations, we need to handle the profile differently
-    let donorProfileId = userId;
-
-    if (isAnonymous) {
-      // If donation is anonymous, find or create an anonymous profile
-      // We'll check if an anonymous profile exists in our system
-      let anonymousProfile = await prisma.profile.findFirst({
-        where: {
-          email: "anonymous@minka.org",
-          identityNumber: "ANONYMOUS",
-          name: "Donante Anónimo",
-        },
-      });
-
-      if (!anonymousProfile) {
-        // Create an anonymous profile if it doesn't exist
-        anonymousProfile = await prisma.profile.create({
-          data: {
-            email: "anonymous@minka.org",
-            identityNumber: "ANONYMOUS",
-            name: "Donante Anónimo",
-            passwordHash: "not-applicable",
-            phone: "0000000000",
-            birthDate: new Date("1900-01-01"),
-          },
-        });
-      }
-
-      donorProfileId = anonymousProfile.id;
-    }
-
     // Verify campaign exists before creating a pending donation.
     const campaign = await prisma.campaign.findUnique({
       where: { id: campaignId },
@@ -122,6 +92,10 @@ export async function POST(request: NextRequest) {
         { status: 404 }
       );
     }
+
+    const donorProfileId = isAnonymous
+      ? await getOrCreateCampaignAnonymousProfileId(campaignId)
+      : userId;
 
     // Calculate total amount
     const totalAmount = Number(amount) + Number(tipAmount);

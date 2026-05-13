@@ -1,33 +1,7 @@
 import { NextResponse } from 'next/server'
 import { TriptoClient } from '@/lib/tripto/client'
 import { prisma as db } from '@/lib/prisma'
-
-async function getOrCreateAnonymousProfileId() {
-  const existing = await db.profile.findFirst({
-    where: {
-      email: 'anonymous@minka.org',
-      identityNumber: 'ANONYMOUS',
-      name: 'Donante Anónimo',
-    },
-    select: { id: true },
-  })
-
-  if (existing?.id) return existing.id
-
-  const created = await db.profile.create({
-    data: {
-      email: 'anonymous@minka.org',
-      identityNumber: 'ANONYMOUS',
-      name: 'Donante Anónimo',
-      passwordHash: 'not-applicable',
-      phone: '0000000000',
-      birthDate: new Date(), // Add a default birthDate to fulfill schema
-    },
-    select: { id: true },
-  })
-
-  return created.id
-}
+import { getOrCreateCampaignAnonymousProfileId } from '@/lib/donations/anonymous-donor'
 
 export async function POST(req: Request) {
   try {
@@ -87,11 +61,9 @@ export async function POST(req: Request) {
       )
     }
 
-    const donorProfileId =
-      donorId ??
-      (isAnonymous
-        ? await getOrCreateAnonymousProfileId()
-        : null)
+    const donorProfileId = isAnonymous
+      ? await getOrCreateCampaignAnonymousProfileId(campaignId)
+      : donorId
 
     if (!donorProfileId) {
       return NextResponse.json(

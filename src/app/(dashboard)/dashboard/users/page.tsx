@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { AdminUserTable } from "@/components/dashboard/admin-user-table";
 import { ProfileData } from "@/types"; // Assuming ProfileData includes id, name, email, role, created_at
+import { CAMPAIGN_ANONYMOUS_EMAIL_PREFIX } from "@/lib/donations/anonymous-donor";
 
 export default async function ManageUsersPage() {
   const cookieStore = await cookies();
@@ -45,6 +46,7 @@ export default async function ManageUsersPage() {
   const { data: users, error } = await supabase
     .from("profiles")
     .select("id, name, email, role, created_at, phone, address")
+    .not("email", "like", `${CAMPAIGN_ANONYMOUS_EMAIL_PREFIX}%@minka.org`)
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -72,4 +74,3 @@ export default async function ManageUsersPage() {
     </div>
   );
 }
-

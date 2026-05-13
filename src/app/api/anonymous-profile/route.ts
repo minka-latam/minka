@@ -1,40 +1,31 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getOrCreateCampaignAnonymousProfile } from "@/lib/donations/anonymous-donor";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    // Find the anonymous profile or create it if it doesn't exist
-    let anonymousProfile = await prisma.profile.findFirst({
-      where: {
-        email: "anonymous@minka.org",
-        identityNumber: "ANONYMOUS",
-        name: "Donante Anónimo",
-      },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-      },
+    const campaignId = request.nextUrl.searchParams.get("campaignId");
+
+    if (!campaignId) {
+      return NextResponse.json(
+        { error: "campaignId is required for anonymous profiles" },
+        { status: 400 }
+      );
+    }
+
+    const campaign = await prisma.campaign.findUnique({
+      where: { id: campaignId },
+      select: { id: true },
     });
 
-    if (!anonymousProfile) {
-      // Create an anonymous profile if it doesn't exist
-      anonymousProfile = await prisma.profile.create({
-        data: {
-          email: "anonymous@minka.org",
-          identityNumber: "ANONYMOUS",
-          name: "Donante Anónimo",
-          passwordHash: "not-applicable",
-          phone: "0000000000",
-          birthDate: new Date("1900-01-01"),
-        },
-        select: {
-          id: true,
-          email: true,
-          name: true,
-        },
-      });
+    if (!campaign) {
+      return NextResponse.json(
+        { error: "Campaign not found" },
+        { status: 404 }
+      );
     }
+
+    const anonymousProfile = await getOrCreateCampaignAnonymousProfile(campaignId);
 
     return NextResponse.json({ profile: anonymousProfile });
   } catch (error) {

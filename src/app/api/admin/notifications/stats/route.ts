@@ -1,7 +1,9 @@
 ﻿import { NextRequest, NextResponse } from "next/server";
+import { Prisma, Status, UserRole } from "@prisma/client";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
+import { technicalAnonymousProfileExclusion } from "@/lib/donations/anonymous-donor";
 
 export async function GET(request: NextRequest) {
   try {
@@ -42,34 +44,48 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Get total users by category
-    const totalUsers = await prisma.profile.count({
-      where: { status: "active" },
-    });
+    const activeRealUserWhere: Prisma.ProfileWhereInput = {
+      status: Status.active,
+      ...technicalAnonymousProfileExclusion(),
+    };
 
-    const totalDonors = await prisma.donation.findMany({
-      where: { paymentStatus: "completed" },
-      select: { donorId: true },
-      distinct: ["donorId"],
+    const activeRealUsers = await prisma.profile.findMany({
+      where: activeRealUserWhere,
+      select: { id: true },
+    });
+    const activeRealUserIds = activeRealUsers.map((user) => user.id);
+    const totalUsers = activeRealUserIds.length;
+
+    const totalDonors = await prisma.profile.count({
+      where: {
+        ...activeRealUserWhere,
+        donations: {
+          some: {
+            paymentStatus: "completed",
+            isAnonymous: false,
+          },
+        },
+      },
     });
 
     const totalOrganizers = await prisma.profile.count({
       where: {
-        status: "active",
-        role: "organizer",
+        ...activeRealUserWhere,
+        role: UserRole.organizer,
       },
     });
 
     const totalAdmins = await prisma.profile.count({
       where: {
-        status: "active",
-        role: "admin",
+        ...activeRealUserWhere,
+        role: UserRole.admin,
       },
     });
 
     // Get notification preferences stats
     const usersWithNewsUpdates = await prisma.notificationPreference.count({
       where: {
+        userId: { in: activeRealUserIds },
         newsUpdates: true,
         status: "active",
       },
@@ -77,6 +93,7 @@ export async function GET(request: NextRequest) {
 
     const usersWithCampaignUpdates = await prisma.notificationPreference.count({
       where: {
+        userId: { in: activeRealUserIds },
         campaignUpdates: true,
         status: "active",
       },
@@ -84,7 +101,10 @@ export async function GET(request: NextRequest) {
 
     // Users without preferences default to receiving news
     const usersWithPreferences = await prisma.notificationPreference.count({
-      where: { status: "active" },
+      where: {
+        userId: { in: activeRealUserIds },
+        status: "active",
+      },
     });
 
     const usersWithoutPreferences = totalUsers - usersWithPreferences;
@@ -95,7 +115,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       totalUsers,
-      totalDonors: totalDonors.length,
+      totalDonors,
       totalOrganizers,
       totalAdmins,
       usersWithNewsUpdates: effectiveNewsSubscribers,

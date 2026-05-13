@@ -2,6 +2,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
+import { technicalAnonymousProfileExclusion } from "@/lib/donations/anonymous-donor";
 
 export async function POST(request: NextRequest) {
   try {
@@ -60,6 +61,7 @@ export async function POST(request: NextRequest) {
     // Build query to get target users
     let whereClause: any = {
       status: "active",
+      ...technicalAnonymousProfileExclusion(),
     };
 
     // Filter by role if needed
@@ -68,13 +70,12 @@ export async function POST(request: NextRequest) {
     } else if (target === "admins") {
       whereClause.role = "admin";
     } else if (target === "donors") {
-      // For donors, we'll target users who have made donations
-      const donorIds = await prisma.donation.findMany({
-        where: { paymentStatus: "completed" },
-        select: { donorId: true },
-        distinct: ["donorId"],
-      });
-      whereClause.id = { in: donorIds.map((d) => d.donorId) };
+      whereClause.donations = {
+        some: {
+          paymentStatus: "completed",
+          isAnonymous: false,
+        },
+      };
     }
     // For "all", we don't add additional filters
 
