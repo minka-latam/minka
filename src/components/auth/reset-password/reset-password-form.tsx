@@ -96,17 +96,20 @@ export function ResetPasswordForm({ onSuccess }: ResetPasswordFormProps) {
 
         if (error) throw error;
 
+        await supabase.auth.signOut();
+
         // Show success message
         toast({
           title: "Éxito",
-          description: "Tu contraseña ha sido actualizada correctamente.",
+          description:
+            "Tu contraseña ha sido actualizada. Inicia sesión con tu nueva contraseña.",
         });
 
         if (onSuccess) {
           onSuccess();
         } else {
           // Redirect to sign in page
-          router.push("/sign-in");
+          router.replace("/sign-in?reset=success");
         }
       } catch (error) {
         console.error("Error resetting password:", error);

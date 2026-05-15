@@ -83,18 +83,12 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Password recovery — set flag and redirect to dashboard
-    // PasswordResetHandler on dashboard will detect the flag and open the dialog
+    // Password recovery creates a temporary session that can update the password.
+    // Send the user directly to the reset form instead of the dashboard.
     if (type === 'recovery') {
-      const dashboardUrl = new URL(
-        '/dashboard',
-        request.url,
+      return NextResponse.redirect(
+        new URL('/reset-password', request.url),
       )
-      dashboardUrl.searchParams.set(
-        'reset_password',
-        'true',
-      )
-      return NextResponse.redirect(dashboardUrl)
     }
 
     const amr = data.session?.user?.app_metadata?.amr
@@ -102,15 +96,9 @@ export async function GET(request: NextRequest) {
       ? amr.some((a: any) => a.method === 'recovery')
       : false
     if (isRecovery) {
-      const dashboardUrl = new URL(
-        '/dashboard',
-        request.url,
+      return NextResponse.redirect(
+        new URL('/reset-password', request.url),
       )
-      dashboardUrl.searchParams.set(
-        'reset_password',
-        'true',
-      )
-      return NextResponse.redirect(dashboardUrl)
     }
 
     if (!data.user) {

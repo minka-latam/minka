@@ -3,6 +3,20 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 export async function middleware(req: NextRequest) {
+  if (
+    req.nextUrl.pathname === '/dashboard' &&
+    req.nextUrl.searchParams.has('code')
+  ) {
+    const callbackUrl = new URL('/auth/callback', req.url)
+    req.nextUrl.searchParams.forEach((value, key) => {
+      callbackUrl.searchParams.set(key, value)
+    })
+    if (!callbackUrl.searchParams.has('type')) {
+      callbackUrl.searchParams.set('type', 'recovery')
+    }
+    return NextResponse.redirect(callbackUrl)
+  }
+
   let res = NextResponse.next({
     request: { headers: req.headers },
   })
@@ -78,6 +92,7 @@ export async function middleware(req: NextRequest) {
 
 export const config = {
   matcher: [
+    '/dashboard',
     '/dashboard/:path*',
     '/profile/:path*',
     '/campaign/create/:path*',

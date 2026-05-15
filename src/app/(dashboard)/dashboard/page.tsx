@@ -20,6 +20,7 @@ import { ResetPasswordDialog } from "@/components/auth/reset-password/reset-pass
 type DashboardProfile = ProfileData;
 
 export default function DashboardPage() {
+  const router = useRouter();
   const [profile, setProfile] = useState<DashboardProfile | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -32,15 +33,27 @@ export default function DashboardPage() {
     address: "",
   });
   const [isResetPasswordOpen, setIsResetPasswordOpen] = useState(false);
-  // Auto-open reset password dialog if redirected from email link
-useEffect(() => {
-  const params = new URLSearchParams(window.location.search);
-  if (params.get("reset_password") === "true") {
-    setIsResetPasswordOpen(true);
-    // Clean up URL without reload
-    window.history.replaceState({}, "", "/dashboard");
-  }
-}, []);
+  // Defensive fallback for old or misdirected recovery links.
+  // If Supabase sends /dashboard?code=..., route it through the auth callback.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get("code");
+
+    if (code) {
+      const callbackParams = new URLSearchParams(params);
+      if (!callbackParams.has("type")) {
+        callbackParams.set("type", "recovery");
+      }
+      router.replace(`/auth/callback?${callbackParams.toString()}`);
+      return;
+    }
+
+    if (params.get("reset_password") === "true") {
+      setIsResetPasswordOpen(true);
+      // Clean up URL without reload
+      window.history.replaceState({}, "", "/dashboard");
+    }
+  }, [router]);
 
   const handleSuccess = () => {
      setIsResetPasswordOpen(false);
@@ -50,8 +63,6 @@ useEffect(() => {
      });
   };
 
-  const router = useRouter();
-  
   // Get auth context
   const { user, profile: authProfile, isLoading: authLoading } = useAuth();
   const { getProfile, updateProfile } = useDb();
