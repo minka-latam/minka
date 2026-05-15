@@ -44,12 +44,15 @@ export function ForgotPasswordForm() {
       try {
         setIsLoading(true)
         const supabase = createClient()
+        const appOrigin =
+          process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, '') ||
+          window.location.origin
 
         const { error } =
           await supabase.auth.resetPasswordForEmail(
             data.email,
             {
-              redirectTo: `${window.location.origin}/auth/callback`,
+              redirectTo: `${appOrigin}/auth/confirm`,
             },
           )
 

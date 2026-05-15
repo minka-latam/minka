@@ -33,27 +33,15 @@ export default function DashboardPage() {
     address: "",
   });
   const [isResetPasswordOpen, setIsResetPasswordOpen] = useState(false);
-  // Defensive fallback for old or misdirected recovery links.
-  // If Supabase sends /dashboard?code=..., route it through the auth callback.
+  // Auto-open reset password dialog for older recovery links.
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const code = params.get("code");
-
-    if (code) {
-      const callbackParams = new URLSearchParams(params);
-      if (!callbackParams.has("type")) {
-        callbackParams.set("type", "recovery");
-      }
-      router.replace(`/auth/callback?${callbackParams.toString()}`);
-      return;
-    }
-
     if (params.get("reset_password") === "true") {
       setIsResetPasswordOpen(true);
       // Clean up URL without reload
       window.history.replaceState({}, "", "/dashboard");
     }
-  }, [router]);
+  }, []);
 
   const handleSuccess = () => {
      setIsResetPasswordOpen(false);
