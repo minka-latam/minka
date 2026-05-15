@@ -163,7 +163,6 @@ export async function GET(request: Request) {
     // Build the where clause with filters
     const whereClause: any = {
       campaignStatus: "active",
-      status: "active",
     };
 
     // Apply filters if they exist

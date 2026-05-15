@@ -493,6 +493,9 @@ export default function CampaignDetailPage() {
   const isDraftCampaign =
     campaign?.campaign_status === "draft" ||
     campaign?.campaignStatus === "draft";
+  const isCancelledCampaign =
+    campaign?.campaign_status === "cancelled" ||
+    campaign?.campaignStatus === "cancelled";
   const canDeleteCampaign =
     campaign?.campaign_status === "draft" ||
     campaign?.campaignStatus === "draft" ||
@@ -541,7 +544,7 @@ export default function CampaignDetailPage() {
 
   const handleDeleteCampaign = async () => {
     const confirmed = window.confirm(
-      "¿Eliminar esta campaña borrador? Esta acción no se puede deshacer."
+      "¿Cancelar esta campaña? Ya no será pública ni aceptará donaciones, pero sus registros se conservarán."
     );
     if (!confirmed) return;
 
@@ -553,19 +556,19 @@ export default function CampaignDetailPage() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || "No se pudo eliminar la campaña.");
+        throw new Error(errorData.error || "No se pudo cancelar la campaña.");
       }
 
       toast({
-        title: "Campaña eliminada",
-        description: "El borrador fue eliminado correctamente.",
+        title: "Campaña cancelada",
+        description: "La campaña ya no es pública y sus registros se conservaron.",
       });
       router.push("/dashboard/campaigns");
     } catch (error) {
       console.error("Error deleting campaign:", error);
       toast({
         title: "Error",
-        description: "No se pudo eliminar la campaña.",
+        description: "No se pudo cancelar la campaña.",
         variant: "destructive",
       });
     } finally {
@@ -574,10 +577,18 @@ export default function CampaignDetailPage() {
   };
 
   useEffect(() => {
+    if (
+      isCancelledCampaign &&
+      (activeTab === "editar" || activeTab === "anuncios")
+    ) {
+      setActiveTab("donaciones");
+      return;
+    }
+
     if (isDraftCampaign && activeTab !== "editar") {
       setActiveTab("editar");
     }
-  }, [isDraftCampaign, activeTab]);
+  }, [isCancelledCampaign, isDraftCampaign, activeTab]);
 
   useEffect(() => {
     async function getCampaignDetails() {
@@ -682,6 +693,12 @@ export default function CampaignDetailPage() {
 
         setCampaign(enhancedCampaignData);
         setOriginalCampaign(enhancedCampaignData);
+        if (
+          enhancedCampaignData.campaign_status === "cancelled" ||
+          enhancedCampaignData.campaignStatus === "cancelled"
+        ) {
+          setActiveTab("donaciones");
+        }
       } catch (error) {
         // Suppress errors in development mode with dummy data
         if (process.env.NODE_ENV === "development") {
@@ -855,7 +872,7 @@ export default function CampaignDetailPage() {
                     className="h-8 px-4 rounded-full border-red-600 text-red-600 hover:bg-red-50"
                   >
                     <Trash2 className="w-4 h-4 mr-2" />
-                    {isDeleting ? "Eliminando..." : "Eliminar"}
+                    {isDeleting ? "Cancelando..." : "Cancelar"}
                   </Button>
                 )}
               </div>
@@ -901,29 +918,45 @@ export default function CampaignDetailPage() {
         {/* Custom Tab Navigation */}
         <div className="flex justify-between px-4 md:px-8 lg:px-16 xl:px-24 gap-2 pb-0">
           <button
-            onClick={() => setActiveTab("editar")}
+            disabled={isCancelledCampaign}
+            onClick={() => {
+              if (!isCancelledCampaign) setActiveTab("editar");
+            }}
             className={`relative flex items-center gap-2 py-3 px-3 sm:px-6 rounded-t-lg transition-colors flex-1 justify-center border border-[#2c6e49] border-b-0 ${
-              activeTab === "editar"
+              isCancelledCampaign
+                ? "bg-gray-100 text-gray-500 cursor-not-allowed opacity-75"
+                : activeTab === "editar"
                 ? "bg-white text-[#1a5535] after:absolute after:bottom-[-1px] after:left-0 after:right-0 after:h-[1px] after:bg-white after:z-10"
                 : "bg-[#f2f8f5] text-[#1a5535] hover:bg-[#e8f5ed]"
             }`}
           >
             <span className="text-xs sm:text-sm">Editar campaña</span>
             <Image src="/icons/edit.svg" alt="Edit" width={16} height={16} />
+            {isCancelledCampaign && (
+              <span className="pointer-events-none absolute inset-0 rounded-t-lg bg-black/10" />
+            )}
           </button>
 
           {!isDraftCampaign && (
             <>
               <button
-                onClick={() => setActiveTab("anuncios")}
+                disabled={isCancelledCampaign}
+                onClick={() => {
+                  if (!isCancelledCampaign) setActiveTab("anuncios");
+                }}
                 className={`relative flex items-center gap-2 py-3 px-3 sm:px-6 rounded-t-lg transition-colors flex-1 justify-center border border-[#2c6e49] border-b-0 ${
-                  activeTab === "anuncios"
+                  isCancelledCampaign
+                    ? "bg-gray-100 text-gray-500 cursor-not-allowed opacity-75"
+                    : activeTab === "anuncios"
                     ? "bg-white text-[#1a5535] after:absolute after:bottom-[-1px] after:left-0 after:right-0 after:h-[1px] after:bg-white after:z-10"
                     : "bg-[#f2f8f5] text-[#1a5535] hover:bg-[#e8f5ed]"
                 }`}
               >
                 <span className="text-xs sm:text-sm">Publicar anuncios</span>
                 <Image src="/icons/add_2.svg" alt="Add" width={16} height={16} />
+                {isCancelledCampaign && (
+                  <span className="pointer-events-none absolute inset-0 rounded-t-lg bg-black/10" />
+                )}
               </button>
 
               <button

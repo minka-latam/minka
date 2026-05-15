@@ -1,6 +1,7 @@
 ﻿import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getOrCreateCampaignAnonymousProfileId } from "@/lib/donations/anonymous-donor";
+import { canReceiveCampaignPayments } from "@/lib/campaigns/visibility";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
@@ -83,13 +84,23 @@ export async function POST(request: NextRequest) {
     // Verify campaign exists before creating a pending donation.
     const campaign = await prisma.campaign.findUnique({
       where: { id: campaignId },
-      select: { id: true },
+      select: {
+        id: true,
+        campaignStatus: true,
+      },
     });
 
     if (!campaign) {
       return NextResponse.json(
         { error: "Campaign not found" },
         { status: 404 }
+      );
+    }
+
+    if (!canReceiveCampaignPayments(campaign)) {
+      return NextResponse.json(
+        { error: "Campaign is not accepting donations" },
+        { status: 400 }
       );
     }
 

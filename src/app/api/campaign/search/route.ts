@@ -16,7 +16,6 @@ export async function GET(req: NextRequest) {
     const whereClause: any = {
       campaignStatus: "active",
       verificationStatus: true,
-      status: "active",
     };
 
     // Add search query if provided

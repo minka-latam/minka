@@ -83,7 +83,6 @@ export async function GET(
             endDate: true,
             verificationStatus: true,
             campaignStatus: true,
-            status: true,
             createdAt: true,
             updatedAt: true,
           },

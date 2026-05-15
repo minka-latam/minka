@@ -3,6 +3,10 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { prisma as db } from "@/lib/prisma";
 import { createCommentNotification } from "@/lib/notifications";
+import {
+  findPublicOrOwnedCampaignById,
+  isPublicCampaign,
+} from "@/lib/campaigns/visibility";
 
 export async function GET(
   req: NextRequest,
@@ -13,6 +17,15 @@ export async function GET(
     const { searchParams } = new URL(req.url);
     const limit = parseInt(searchParams.get("limit") || "20");
     const offset = parseInt(searchParams.get("offset") || "0");
+
+    const campaign = await findPublicOrOwnedCampaignById(campaignId);
+
+    if (!campaign) {
+      return NextResponse.json(
+        { error: "Campaign not found" },
+        { status: 404 }
+      );
+    }
 
     // Get the comments for this campaign
     const comments = await db.comment.findMany({
@@ -112,6 +125,7 @@ export async function POST(
         id: true,
         title: true,
         organizerId: true,
+        campaignStatus: true,
       },
     });
 
@@ -119,6 +133,13 @@ export async function POST(
       return NextResponse.json(
         { error: "Campaign not found" },
         { status: 404 }
+      );
+    }
+
+    if (!isPublicCampaign(existingCampaign)) {
+      return NextResponse.json(
+        { error: "Campaign is not accepting comments" },
+        { status: 400 }
       );
     }
 

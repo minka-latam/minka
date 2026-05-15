@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { findPublicOrOwnedCampaignById } from "@/lib/campaigns/visibility";
 
 export async function GET(
   request: NextRequest,
@@ -7,6 +8,15 @@ export async function GET(
 ) {
   try {
     const campaignId = (await params).id;
+
+    const campaign = await findPublicOrOwnedCampaignById(campaignId);
+
+    if (!campaign) {
+      return NextResponse.json(
+        { error: "Campaign not found" },
+        { status: 404 }
+      );
+    }
 
     // Get URL parameters for pagination
     const searchParams = request.nextUrl.searchParams;

@@ -8,7 +8,6 @@ export async function GET() {
       where: {
         campaignStatus: "active",
         verificationStatus: true,
-        status: "active",
       },
       orderBy: [{ percentageFunded: "desc" }, { donorCount: "desc" }],
       include: {
