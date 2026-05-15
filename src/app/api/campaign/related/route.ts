@@ -24,7 +24,6 @@ export async function GET(req: NextRequest) {
         },
         campaignStatus: "active",
         verificationStatus: true,
-        status: "active",
       },
       orderBy: [{ percentageFunded: "desc" }, { createdAt: "desc" }],
       include: {
@@ -52,7 +51,6 @@ export async function GET(req: NextRequest) {
           },
           campaignStatus: "active",
           verificationStatus: true,
-          status: "active",
           NOT: {
             id: {
               in: relatedCampaigns.map((c) => c.id),

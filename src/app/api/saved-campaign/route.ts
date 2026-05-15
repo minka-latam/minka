@@ -2,6 +2,7 @@
 import { prisma } from "@/lib/prisma";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { isPublicCampaign } from "@/lib/campaigns/visibility";
 
 // GET: Fetch all saved campaigns for the current user
 export async function GET() {
@@ -55,6 +56,9 @@ export async function GET() {
       where: {
         profileId: profile.id,
         status: "active",
+        campaign: {
+          campaignStatus: "active",
+        },
       },
       include: {
         campaign: {
@@ -168,6 +172,13 @@ export async function POST(request: NextRequest) {
 
     if (!campaign) {
       console.error("Save campaign target not found");
+      return NextResponse.json(
+        { error: "Campaign not found" },
+        { status: 404 }
+      );
+    }
+
+    if (!isPublicCampaign(campaign)) {
       return NextResponse.json(
         { error: "Campaign not found" },
         { status: 404 }
@@ -298,4 +309,3 @@ export async function DELETE(request: NextRequest) {
     );
   }
 }
-

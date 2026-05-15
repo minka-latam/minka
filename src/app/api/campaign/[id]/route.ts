@@ -3,6 +3,7 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { prisma as db } from '@/lib/prisma'
 import { getAuthSession } from '@/lib/auth'
+import { isPublicCampaign } from '@/lib/campaigns/visibility'
 
 // Define interfaces to help with typing
 interface OrganizerProfile {
@@ -102,6 +103,9 @@ export async function GET(
     console.log(
       `API: Created supabase client for campaign: ${id}`,
     )
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
 
     // Fetch campaign data with organizer profile and campaign media
     console.log(
@@ -125,6 +129,7 @@ export async function GET(
         verification_status,
         created_at,
         campaign_status,
+        organizer_id,
         organizer:profiles!organizer_id(id, name, location, profile_picture, join_date, active_campaigns_count, bio),
         media:campaign_media(id, media_url, is_primary, type, order_index),
         updates:campaign_updates(id, title, content, image_url, youtube_url, created_at),
@@ -172,6 +177,27 @@ export async function GET(
       )
     }
     const campaign = data as any
+    const profileWhere: Array<{ id: string } | { email: string }> = []
+    if (session?.user?.id) profileWhere.push({ id: session.user.id })
+    if (session?.user?.email)
+      profileWhere.push({ email: session.user.email })
+    const requester =
+      profileWhere.length > 0
+        ? await db.profile.findFirst({
+            where: { OR: profileWhere },
+            select: { id: true, role: true },
+          })
+        : null
+    const canViewCancelled =
+      requester?.role === 'admin' ||
+      requester?.id === campaign.organizer_id
+
+    if (!isPublicCampaign(campaign) && !canViewCancelled) {
+      return NextResponse.json(
+        { error: 'Campaign not found' },
+        { status: 404 },
+      )
+    }
 
     // Format the response with proper type handling
     const formattedCampaign: Campaign = {
@@ -319,6 +345,13 @@ export async function PATCH(
             "You don't have permission to update this campaign",
         },
         { status: 403 },
+      )
+    }
+
+    if (existingCampaign.campaignStatus === 'cancelled') {
+      return NextResponse.json(
+        { error: 'Cancelled campaigns cannot be updated' },
+        { status: 400 },
       )
     }
 
@@ -527,6 +560,23 @@ export async function DELETE(
       )
     }
 
+    if (existingCampaign.campaignStatus === 'cancelled') {
+      return NextResponse.json(
+        { message: 'Campaign is already cancelled' },
+        { status: 200 },
+      )
+    }
+
+    if (existingCampaign.campaignStatus === 'completed') {
+      return NextResponse.json(
+        {
+          error:
+            'Completed campaigns cannot be cancelled from this endpoint',
+        },
+        { status: 400 },
+      )
+    }
+
     if (
       existingCampaign.campaignStatus !== 'draft' &&
       existingCampaign.campaignStatus !== 'active'
@@ -534,18 +584,21 @@ export async function DELETE(
       return NextResponse.json(
         {
           error:
-            'Only draft or active campaigns can be deleted from this endpoint',
+            'Only draft or active campaigns can be cancelled from this endpoint',
         },
         { status: 400 },
       )
     }
 
-    await db.campaign.delete({
+    await db.campaign.update({
       where: { id: campaignId },
+      data: {
+        campaignStatus: 'cancelled',
+      },
     })
 
     return NextResponse.json(
-      { message: 'Campaign deleted successfully' },
+      { message: 'Campaign cancelled successfully' },
       { status: 200 },
     )
   } catch (error) {

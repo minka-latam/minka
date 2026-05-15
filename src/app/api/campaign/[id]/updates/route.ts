@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { prisma as db } from "@/lib/prisma";
+import {
+  findPublicCampaignById,
+  isPublicCampaign,
+} from "@/lib/campaigns/visibility";
 
 export async function GET(
   req: NextRequest,
@@ -9,6 +13,15 @@ export async function GET(
 ) {
   try {
     const campaignId = (await params).id;
+
+    const campaign = await findPublicCampaignById(campaignId);
+
+    if (!campaign) {
+      return NextResponse.json(
+        { error: "Campaign not found" },
+        { status: 404 }
+      );
+    }
 
     // Get the updates for this campaign
     const updates = await db.campaignUpdate.findMany({
@@ -101,6 +114,13 @@ export async function POST(
       return NextResponse.json(
         { error: "Campaign not found" },
         { status: 404 }
+      );
+    }
+
+    if (!isPublicCampaign(existingCampaign)) {
+      return NextResponse.json(
+        { error: "Campaign is not accepting updates" },
+        { status: 400 }
       );
     }
 

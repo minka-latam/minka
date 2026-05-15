@@ -1,7 +1,6 @@
 "use client";
 
-import Link from "next/link";
-import { Edit, CheckCircle } from "lucide-react";
+import { Edit, CheckCircle, EyeIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -40,6 +39,7 @@ export function CampaignCard({
   isVerified = false,
 }: CampaignCardProps) {
   const router = useRouter();
+  const isCancelled = status === "cancelled";
 
   // Handle verify button click
   const handleVerifyClick = (e: React.MouseEvent) => {
@@ -76,7 +76,9 @@ export function CampaignCard({
 
   return (
     <div
-      className="cursor-pointer rounded-lg overflow-hidden bg-white border border-gray-100 h-[380px] grid grid-rows-[160px_1fr_auto] hover:shadow-md transition-all duration-200"
+      className={`cursor-pointer rounded-lg overflow-hidden bg-white border border-gray-100 h-[380px] grid grid-rows-[160px_1fr_auto] hover:shadow-md transition-all duration-200 ${
+        isCancelled ? "opacity-75 grayscale-[15%]" : ""
+      }`}
       onClick={handleCardClick}
     >
       {/* Image Section - Fixed height */}
@@ -88,6 +90,7 @@ export function CampaignCard({
           className="object-cover"
           sizes="(max-width: 768px) 100vw, 384px"
         />
+        {isCancelled && <div className="absolute inset-0 bg-black/25" />}
       </div>
 
       {/* Content Section - Scrollable if needed */}
@@ -103,7 +106,15 @@ export function CampaignCard({
             />
           )}
           <span
-            className={`text-xs font-medium py-1 px-2 rounded-full ${status === "active" ? "text-green-600 bg-green-100" : status === "completed" ? "text-red-600 bg-red-100" : "text-gray-600 bg-gray-100"} flex items-center gap-1`}
+            className={`text-xs font-medium py-1 px-2 rounded-full ${
+              status === "active"
+                ? "text-green-600 bg-green-100"
+                : status === "cancelled"
+                  ? "text-red-700 bg-red-50"
+                  : status === "completed"
+                    ? "text-red-600 bg-red-100"
+                    : "text-gray-600 bg-gray-100"
+            } flex items-center gap-1`}
           >
             <span className="text-lg inline-block leading-none">•</span>{" "}
             {getStatusDisplay()}
@@ -164,8 +175,8 @@ export function CampaignCard({
               className="text-[#2c6e49] hover:bg-[#f0f7f1] flex items-center justify-start w-full text-xs sm:text-sm px-1 py-1 h-auto font-medium gap-0"
               onClick={() => router.push(`/dashboard/campaigns/${id}`)}
             >
-              <span className="truncate">Administrar Campaña</span>
-              <Edit className="ml-1 flex-shrink-0 h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="truncate">{isCancelled?'Ver info':'Administrar Campaña'}</span>
+              {!isCancelled ?  <Edit className="ml-1 flex-shrink-0 h-3 w-3 sm:h-4 sm:w-4" />: <EyeIcon className="ml-1 flex-shrink-0 h-3 w-3 sm:h-4 sm:w-4"/> }
             </Button>
           </div>
         ) : (
@@ -175,8 +186,7 @@ export function CampaignCard({
             className="text-[#2c6e49] hover:bg-[#f0f7f1] flex items-center justify-center gap-2 px-1 py-1 h-auto text-xs sm:text-sm font-medium"
             onClick={() => router.push(`/dashboard/campaigns/${id}`)}
           >
-            <span className="truncate">Administrar Campaña</span>
-            <Edit className="ml-1 flex-shrink-0 h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="truncate">{isCancelled?'Ver info':'Administrar Campaña'}</span> {!isCancelled ?  <Edit className="ml-1 flex-shrink-0 h-3 w-3 sm:h-4 sm:w-4" />: <EyeIcon className="ml-1 flex-shrink-0 h-3 w-3 sm:h-4 sm:w-4"/> }
           </Button>
         )}
       </div>

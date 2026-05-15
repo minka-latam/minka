@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { TriptoClient } from '@/lib/tripto/client'
 import { prisma as db } from '@/lib/prisma'
 import { getOrCreateCampaignAnonymousProfileId } from '@/lib/donations/anonymous-donor'
+import { canReceiveCampaignPayments } from '@/lib/campaigns/visibility'
 
 export async function POST(req: Request) {
   try {
@@ -37,6 +38,16 @@ export async function POST(req: Request) {
       return NextResponse.json(
         { success: false, error: 'Campaign not found' },
         { status: 404 },
+      )
+    }
+
+    if (!canReceiveCampaignPayments(campaign)) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Campaign is not accepting donations',
+        },
+        { status: 400 },
       )
     }
 

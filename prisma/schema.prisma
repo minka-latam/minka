@@ -54,7 +54,6 @@ model Campaign {
   verificationStatus       Boolean               @default(false) @map("verification_status")
   verificationDate         DateTime?             @map("verification_date") @db.Timestamp(6)
   campaignStatus           CampaignStatus        @default(draft) @map("campaign_status")
-  status                   Status                @default(active)
   organizerId              String                @map("organizer_id") @db.Uuid
   createdAt                DateTime              @default(now()) @map("created_at") @db.Timestamp(6)
   updatedAt                DateTime              @updatedAt @map("updated_at") @db.Timestamp(6)
@@ -97,7 +96,7 @@ model CampaignVerification {
   status                Status             @default(active)
   createdAt             DateTime           @default(now()) @map("created_at") @db.Timestamp(6)
   updatedAt             DateTime           @updatedAt @map("updated_at") @db.Timestamp(6)
-  campaign              Campaign           @relation("CampaignVerificationRequests", fields: [campaignId], references: [id], onDelete: Cascade)
+  campaign              Campaign           @relation("CampaignVerificationRequests", fields: [campaignId], references: [id], onDelete: Restrict)
 
   @@map("campaign_verifications")
 }
@@ -112,7 +111,7 @@ model CampaignMedia {
   status     Status    @default(active)
   createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
   updatedAt  DateTime  @updatedAt @map("updated_at") @db.Timestamp(6)
-  campaign   Campaign  @relation("CampaignMedia", fields: [campaignId], references: [id], onDelete: Cascade)
+  campaign   Campaign  @relation("CampaignMedia", fields: [campaignId], references: [id], onDelete: Restrict)
 
   @@map("campaign_media")
 }
@@ -127,7 +126,7 @@ model CampaignUpdate {
   updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamp(6)
   imageUrl   String?  @map("image_url")
   youtubeUrl String?  @map("youtube_url")
-  campaign   Campaign @relation("CampaignUpdates", fields: [campaignId], references: [id], onDelete: Cascade)
+  campaign   Campaign @relation("CampaignUpdates", fields: [campaignId], references: [id], onDelete: Restrict)
 
   @@map("campaign_updates")
 }
@@ -161,7 +160,7 @@ model Donation {
   bisaQrId            String?        @map("bisa_qr_id")
   bisaQrImage         String?        @map("bisa_qr_image")
   bisaTransactionId   String?        @map("bisa_transaction_id")
-  campaign            Campaign       @relation("CampaignDonations", fields: [campaignId], references: [id], onDelete: Cascade)
+  campaign            Campaign       @relation("CampaignDonations", fields: [campaignId], references: [id], onDelete: Restrict)
   donor               Profile        @relation("DonorDonations", fields: [donorId], references: [id], onDelete: Cascade)
   notifications       Notification[] @relation("DonationNotifications")
 
@@ -202,7 +201,7 @@ model Comment {
   status        Status         @default(active)
   createdAt     DateTime       @default(now()) @map("created_at") @db.Timestamp(6)
   updatedAt     DateTime       @updatedAt @map("updated_at") @db.Timestamp(6)
-  campaign      Campaign       @relation("CampaignComments", fields: [campaignId], references: [id], onDelete: Cascade)
+  campaign      Campaign       @relation("CampaignComments", fields: [campaignId], references: [id], onDelete: Restrict)
   profile       Profile        @relation("ProfileComments", fields: [profileId], references: [id], onDelete: Cascade)
   notifications Notification[] @relation("CommentNotifications")
 
@@ -216,7 +215,7 @@ model SavedCampaign {
   status     Status   @default(active)
   createdAt  DateTime @default(now()) @map("created_at") @db.Timestamp(6)
   updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamp(6)
-  campaign   Campaign @relation("CampaignSaved", fields: [campaignId], references: [id], onDelete: Cascade)
+  campaign   Campaign @relation("CampaignSaved", fields: [campaignId], references: [id], onDelete: Restrict)
   profile    Profile  @relation("ProfileSavedCampaigns", fields: [profileId], references: [id], onDelete: Cascade)
 
   @@map("saved_campaigns")
@@ -247,7 +246,7 @@ model Notification {
   status     Status           @default(active)
   createdAt  DateTime         @default(now()) @map("created_at") @db.Timestamp(6)
   updatedAt  DateTime         @updatedAt @map("updated_at") @db.Timestamp(6)
-  campaign   Campaign?        @relation("CampaignNotifications", fields: [campaignId], references: [id], onDelete: Cascade)
+  campaign   Campaign?        @relation("CampaignNotifications", fields: [campaignId], references: [id], onDelete: Restrict)
   comment    Comment?         @relation("CommentNotifications", fields: [commentId], references: [id], onDelete: Cascade)
   donation   Donation?        @relation("DonationNotifications", fields: [donationId], references: [id], onDelete: Cascade)
   user       Profile          @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
@@ -283,7 +282,7 @@ model FundTransfer {
   notes             String?
   createdAt         DateTime          @default(now()) @map("created_at") @db.Timestamp(6)
   updatedAt         DateTime          @updatedAt @map("updated_at") @db.Timestamp(6)
-  campaign          Campaign          @relation("CampaignFundTransfers", fields: [campaignId], references: [id], onDelete: Cascade)
+  campaign          Campaign          @relation("CampaignFundTransfers", fields: [campaignId], references: [id], onDelete: Restrict)
 
   @@map("fund_transfers")
 }

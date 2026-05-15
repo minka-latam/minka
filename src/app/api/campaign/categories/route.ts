@@ -64,7 +64,6 @@ export async function GET(request: Request) {
       // Use Prisma directly instead of raw SQL for better type safety and filtering
       const whereClause: any = {
         campaignStatus: "active",
-        status: "active",
       };
 
       // Apply filters if they exist

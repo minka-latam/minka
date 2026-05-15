@@ -13,6 +13,7 @@
     "lint": "next lint",
     "prisma:validate": "prisma validate --schema prisma/schema.prisma",
     "prisma:migrate:status": "prisma migrate status --schema prisma/schema.prisma",
+    "prisma:migrate:deploy": "prisma migrate deploy --schema prisma/schema.prisma",
     "prisma:diff:live": "set -a; . ./.env; set +a; prisma migrate diff --from-schema-datamodel prisma/schema.prisma --to-url \"$DIRECT_URL\" --script",
     "prisma:seed": "tsx prisma/seed.ts"
   },

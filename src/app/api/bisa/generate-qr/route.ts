@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { bisaClient } from "@/lib/bisa/client";
+import { canReceiveCampaignPayments } from "@/lib/campaigns/visibility";
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,10 +15,25 @@ export async function POST(request: NextRequest) {
     // Verify donation exists
     const donation = await prisma.donation.findUnique({
       where: { id: donationId },
+      include: {
+        campaign: {
+          select: {
+            id: true,
+            campaignStatus: true,
+          },
+        },
+      },
     });
 
     if (!donation) {
       return NextResponse.json({ error: "Donation not found" }, { status: 404 });
+    }
+
+    if (!canReceiveCampaignPayments(donation.campaign)) {
+      return NextResponse.json(
+        { error: "Campaign is not accepting donations" },
+        { status: 400 }
+      );
     }
 
     const baseAmount = Number(donation.amount);
