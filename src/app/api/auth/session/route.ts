@@ -1,7 +1,10 @@
 ﻿import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import {
+  formatProfileForApi,
+  getProfileById,
+} from "@/lib/profile-utils";
 
 export async function GET() {
   try {
@@ -37,10 +40,9 @@ export async function GET() {
       return NextResponse.json({ authenticated: false }, { status: 200 });
     }
 
-    // Fetch the user's profile from the database
-    const profile = await prisma.profile.findUnique({
-      where: { id: session.user.id },
-    });
+    // Fetch with raw SQL because OAuth users can have nullable completion
+    // fields while the generated Prisma client may lag.
+    const profile = await getProfileById(session.user.id);
 
     if (!profile) {
       return NextResponse.json(
@@ -55,7 +57,7 @@ export async function GET() {
         authenticated: true,
         profileComplete: true,
         user: session.user,
-        profile,
+        profile: formatProfileForApi(profile),
       },
       { status: 200 }
     );
@@ -70,4 +72,3 @@ export async function GET() {
     );
   }
 }
-

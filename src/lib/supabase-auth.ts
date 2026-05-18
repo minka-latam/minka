@@ -22,12 +22,16 @@ export const signOut = async () => {
 };
 
 // Function to handle social login
-export const signInWithSocial = async (provider: "google" | "facebook") => {
+export const signInWithSocial = async (provider: "google") => {
   const supabase = createClient();
+  const appOrigin =
+    process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ||
+    window.location.origin;
+
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider,
     options: {
-      redirectTo: `${window.location.origin}/auth/callback`,
+      redirectTo: `${appOrigin}/auth/callback`,
     },
   });
 

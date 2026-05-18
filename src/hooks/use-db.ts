@@ -7,12 +7,12 @@ export interface ProfileData {
   id: string;
   name: string;
   email: string;
-  phone: string;
+  phone: string | null;
   address: string | null;
   role: string;
   created_at: string;
-  identity_number?: string;
-  birth_date?: string;
+  identity_number?: string | null;
+  birth_date?: string | null;
   profile_picture?: string | null;
   [key: string]: string | boolean | number | null | undefined;
 }
@@ -193,7 +193,6 @@ export function useDb() {
       setLoading(true);
       try {
         return await debouncedRequest(cacheKey, async () => {
-
           // Create AbortController for timeout handling
           const controller = new AbortController();
           const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout
@@ -212,15 +211,16 @@ export function useDb() {
           clearTimeout(timeoutId);
 
           if (!response.ok) {
-  if (response.status === 404) {
-    console.log(`Profile not found for user ${userId}`);
-    return null;
-  }
-  const errorData = await response
-    .json()
-    .catch(() => ({ error: "Network error" }));
-  throw new Error(errorData.error || "Failed to fetch profile");
-}
+            if (response.status === 404) {
+              console.log(`Profile not found for user ${userId}`);
+              return null;
+            }
+
+            const errorData = await response
+              .json()
+              .catch(() => ({ error: "Network error" }));
+            throw new Error(errorData.error || "Failed to fetch profile");
+          }
 
           const data = await response.json();
           if (!data.profile) {
@@ -244,6 +244,41 @@ export function useDb() {
     []
   );
 
+  const ensureProfile = useCallback(async (): Promise<ProfileData | null> => {
+    setLoading(true);
+    try {
+      const response = await fetch("/api/profile/ensure", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Cache-Control": "no-cache",
+          Pragma: "no-cache",
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response
+          .json()
+          .catch(() => ({ error: "Network error" }));
+        throw new Error(errorData.error || "Failed to ensure profile");
+      }
+
+      const data = await response.json();
+      if (!data.profile) {
+        throw new Error("No profile data received");
+      }
+
+      cache.delete(`profile:${data.profile.id}:basic`);
+      cache.delete(`profile:${data.profile.id}:full`);
+      return data.profile;
+    } catch (error) {
+      console.error("Error ensuring profile:", error);
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   const updateProfile = useCallback(
     async (
       userId: string,
@@ -266,7 +301,8 @@ export function useDb() {
         }
 
         // Invalidate profile cache after update
-        cache.delete(`profile:${userId}`);
+        cache.delete(`profile:${userId}:basic`);
+        cache.delete(`profile:${userId}:full`);
 
         return {};
       } catch (error) {
@@ -672,6 +708,7 @@ export function useDb() {
       getSession,
       // Profile
       getProfile,
+      ensureProfile,
       updateProfile,
       // Campaigns
       getCampaigns,
@@ -691,6 +728,7 @@ export function useDb() {
       loading,
       getSession,
       getProfile,
+      ensureProfile,
       updateProfile,
       getCampaigns,
       getOrganizers,

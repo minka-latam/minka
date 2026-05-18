@@ -31,6 +31,8 @@ import {
   getPhonePlaceholder,
 } from "@/utils/phone-formatter";
 
+const MAX_DOCUMENT_LENGTH = 32;
+
 // Custom phone validation that depends on country code
 const createPhoneValidation = (countryCode: string) => {
   return z
@@ -228,7 +230,7 @@ export function SignUpForm() {
     }
   }
 
-  async function handleSocialSignIn(provider: "google" | "facebook") {
+  async function handleSocialSignIn(provider: "google") {
     if (socialLoading) return;
 
     try {
@@ -338,6 +340,7 @@ export function SignUpForm() {
                             : "Ingresa tu documento"
             }
             className="flex-1 rounded-l-none border-black border-l-0"
+            maxLength={MAX_DOCUMENT_LENGTH}
             aria-invalid={errors.documentId ? "true" : "false"}
             disabled={isLoading || isSubmitting}
           />
@@ -621,24 +624,7 @@ export function SignUpForm() {
       </div>
 
       {/* Social Login Buttons */}
-      <div className="grid grid-cols-2 gap-4">
-        <Button
-          type="button"
-          variant="outline"
-          className="flex items-center justify-center border border-black rounded-md h-11"
-          onClick={() => handleSocialSignIn("facebook")}
-          disabled={!!socialLoading || isLoading || isSubmitting}
-        >
-          <Image
-            src="/social-icons/Facebook.svg"
-            alt="Facebook"
-            width={20}
-            height={20}
-          />
-          <span className="ml-2">
-            {socialLoading === "facebook" ? "Cargando..." : "Facebook"}
-          </span>
-        </Button>
+      <div className="grid grid-cols-1 gap-4">
         <Button
           type="button"
           variant="outline"

@@ -22,11 +22,7 @@ import { toast } from "@/components/ui/use-toast";
 import { useUpload } from "@/hooks/use-upload";
 import { useDb } from "@/hooks/use-db";
 import { InlineSpinner } from "@/components/ui/inline-spinner";
-import {
-  formatDocumentForDisplay,
-  parseDocumentId,
-  getDocumentTypeName,
-} from "@/utils/document-formatter";
+import { formatDocumentForDisplay } from "@/utils/document-formatter";
 
 interface UserDashboardContentProps {
   profile: ProfileData | null;
@@ -115,7 +111,7 @@ export function UserDashboardContent({
     }
   }, [profile]);
 
-  const formatDate = (dateString?: string) => {
+  const formatDate = (dateString?: string | null) => {
     if (!dateString) return "";
 
     const date = new Date(dateString);
@@ -428,13 +424,13 @@ export function UserDashboardContent({
           <div>
             <h3 className="text-gray-500 mb-2">Nombre completo</h3>
             <p className="text-gray-800 font-medium">
-              {profile?.name || "No disponible"}
+              {profile?.name || "Ingresa tu Nombre completo"}
             </p>
           </div>
           <div>
             <h3 className="text-gray-500 mb-2">Fecha de nacimiento</h3>
             <p className="text-gray-800 font-medium">
-              {birthDate || "No disponible"}
+              {birthDate || "Ingresa tu Fecha de nacimiento"}
             </p>
           </div>
           <div>
@@ -448,19 +444,19 @@ export function UserDashboardContent({
           <div>
             <h3 className="text-gray-500 mb-2">Correo electrónico</h3>
             <p className="text-gray-800 font-medium">
-              {profile?.email || "No disponible"}
+              {profile?.email || "Ingresa tu Correo electrónico"}
             </p>
           </div>
           <div>
             <h3 className="text-gray-500 mb-2">Teléfono</h3>
             <p className="text-gray-800 font-medium">
-              {profile?.phone || "No disponible"}
+              {profile?.phone || "Ingresa tu Teléfono"}
             </p>
           </div>
           <div>
             <h3 className="text-gray-500 mb-2">Dirección</h3>
             <p className="text-gray-800 font-medium">
-              {profile?.address || "No disponible"}
+              {profile?.address || "Ingresa tu Dirección"}
             </p>
           </div>
         </div>

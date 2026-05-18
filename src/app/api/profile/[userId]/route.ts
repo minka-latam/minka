@@ -1,5 +1,10 @@
 import { prisma } from "@/lib/prisma";
 import { NextRequest } from "next/server";
+import {
+  formatProfileForApi,
+  getProfileById,
+  type ProfileRow,
+} from "@/lib/profile-utils";
 
 export async function GET(
   request: NextRequest,
@@ -16,29 +21,7 @@ export async function GET(
       });
     }
 
-    // Fetch the profile with essential data only for faster loading
-    const profile = await prisma.profile.findUnique({
-      where: { id: userId },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        phone: true,
-        address: true,
-        role: true,
-        profilePicture: true,
-        identityNumber: true,
-        birthDate: true,
-        bio: true,
-        location: true,
-        verificationStatus: true,
-        status: true,
-        createdAt: true,
-        updatedAt: true,
-        activeCampaignsCount: true,
-        // Exclude password and other sensitive fields
-      },
-    });
+    const profile = await getProfileById(userId);
 
     if (!profile) {
       return new Response(JSON.stringify({ error: "Profile not found" }), {
@@ -51,18 +34,7 @@ export async function GET(
     const { searchParams } = new URL(request.url);
     const includeRelated = searchParams.get("include_related") === "true";
 
-    let result: any = {
-      ...profile,
-      // Convert dates to ISO strings for consistency
-      createdAt: profile.createdAt.toISOString(),
-      updatedAt: profile.updatedAt.toISOString(),
-      birthDate: profile.birthDate?.toISOString() || null,
-      // Map field names for compatibility
-      created_at: profile.createdAt.toISOString(),
-      profile_picture: profile.profilePicture,
-      identity_number: profile.identityNumber,
-      birth_date: profile.birthDate?.toISOString() || null,
-    };
+    let result: any = formatProfileForApi(profile);
 
     // Only fetch related data if specifically requested (for dashboard, we don't need it initially)
     if (includeRelated) {
@@ -167,6 +139,9 @@ export async function PATCH(
       "profilePicture",
       "profile_picture",
       "birthDate",
+      "birth_date",
+      "identityNumber",
+      "identity_number",
       "verificationStatus",
       "status",
     ];
@@ -184,49 +159,84 @@ export async function PATCH(
       );
     }
 
-    const profile = await prisma.profile.update({
-      where: { id: userId },
-      data: {
-        name: json.name,
-        phone: json.phone,
-        profilePicture: json.profilePicture || json.profile_picture,
-        address: json.address,
-        bio: json.bio,
-        location: json.location,
-        birthDate: json.birthDate ? new Date(json.birthDate) : undefined,
-        verificationStatus: json.verificationStatus,
-        status: json.status,
-      },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        phone: true,
-        address: true,
-        role: true,
-        profilePicture: true,
-        identityNumber: true,
-        birthDate: true,
-        bio: true,
-        location: true,
-        verificationStatus: true,
-        status: true,
-        createdAt: true,
-        updatedAt: true,
-      },
-    });
+    const profilePicture = json.profilePicture ?? json.profile_picture;
+    const identityNumber = json.identityNumber ?? json.identity_number;
+    const birthDate = json.birthDate ?? json.birth_date;
 
-    // Format response consistently
-    const result: any = {
-      ...profile,
-      createdAt: profile.createdAt.toISOString(),
-      updatedAt: profile.updatedAt.toISOString(),
-      birthDate: profile.birthDate?.toISOString() || null,
-      created_at: profile.createdAt.toISOString(),
-      profile_picture: profile.profilePicture,
-      identity_number: profile.identityNumber,
-      birth_date: profile.birthDate?.toISOString() || null,
-    };
+    const [profile] = await prisma.$queryRaw<ProfileRow[]>`
+      update public.profiles
+      set
+        name = case
+          when ${Object.hasOwn(json, "name")} then coalesce(nullif(${json.name ?? ""}, ''), name)
+          else name
+        end,
+        phone = case
+          when ${Object.hasOwn(json, "phone")} then nullif(${json.phone ?? ""}, '')
+          else phone
+        end,
+        profile_picture = case
+          when ${Object.hasOwn(json, "profilePicture") || Object.hasOwn(json, "profile_picture")}
+            then nullif(${profilePicture ?? ""}, '')
+          else profile_picture
+        end,
+        identity_number = case
+          when ${Object.hasOwn(json, "identityNumber") || Object.hasOwn(json, "identity_number")}
+            then nullif(${identityNumber ?? ""}, '')
+          else identity_number
+        end,
+        address = case
+          when ${Object.hasOwn(json, "address")} then nullif(${json.address ?? ""}, '')
+          else address
+        end,
+        bio = case
+          when ${Object.hasOwn(json, "bio")} then nullif(${json.bio ?? ""}, '')
+          else bio
+        end,
+        location = case
+          when ${Object.hasOwn(json, "location")} then nullif(${json.location ?? ""}, '')
+          else location
+        end,
+        birth_date = case
+          when ${Object.hasOwn(json, "birthDate") || Object.hasOwn(json, "birth_date")}
+            then nullif(${birthDate ?? ""}, '')::date
+          else birth_date
+        end,
+        verification_status = case
+          when ${Object.hasOwn(json, "verificationStatus")} then ${json.verificationStatus ?? false}
+          else verification_status
+        end,
+        status = case
+          when ${Object.hasOwn(json, "status")} then ${json.status ?? "active"}::"Status"
+          else status
+        end,
+        updated_at = current_timestamp
+      where id = ${userId}::uuid
+      returning
+        id::text,
+        name,
+        email,
+        phone,
+        address,
+        role::text,
+        profile_picture as "profilePicture",
+        identity_number as "identityNumber",
+        birth_date as "birthDate",
+        bio,
+        location,
+        verification_status as "verificationStatus",
+        status::text,
+        created_at as "createdAt",
+        updated_at as "updatedAt"
+    `;
+
+    if (!profile) {
+      return new Response(JSON.stringify({ error: "Profile not found" }), {
+        status: 404,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    const result = formatProfileForApi(profile);
 
     return new Response(JSON.stringify({ profile: result }), {
       status: 200,

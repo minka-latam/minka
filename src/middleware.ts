@@ -3,6 +3,20 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 export async function middleware(req: NextRequest) {
+  const pathname =
+    req.nextUrl.pathname.replace(/\/$/, '') || '/'
+  const isOAuthCallbackFallback =
+    req.nextUrl.searchParams.has('code') &&
+    ['/', '/sign-in', '/sign-up'].includes(
+      pathname,
+    )
+
+  if (isOAuthCallbackFallback) {
+    const callbackUrl = new URL('/auth/callback', req.url)
+    callbackUrl.search = req.nextUrl.search
+    return NextResponse.redirect(callbackUrl)
+  }
+
   let res = NextResponse.next({
     request: { headers: req.headers },
   })
@@ -78,12 +92,13 @@ export async function middleware(req: NextRequest) {
 
 export const config = {
   matcher: [
+    '/',
     '/dashboard/:path*',
     '/profile/:path*',
     '/campaign/create/:path*',
     '/create-campaign/:path*',
     '/create-campaign',
-    '/sign-in',
-    '/sign-up',
+    '/sign-in/:path*',
+    '/sign-up/:path*',
   ],
 }
