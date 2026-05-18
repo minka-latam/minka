@@ -2,7 +2,10 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { prisma } from '@/lib/prisma'
+import {
+  ensureProfileForUser,
+  profileNeedsCompletion,
+} from '@/lib/profile-utils'
 
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url)
@@ -110,41 +113,19 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    const userMetadata = data.user.user_metadata ?? {}
+    const isGoogleAuth =
+      data.user.app_metadata?.provider === 'google' ||
+      userMetadata.iss === 'https://accounts.google.com'
+
+    let shouldCompleteProfile = false
+
     // Handle profile creation for new OAuth users
     try {
-      const existingProfile =
-        await prisma.profile.findUnique({
-          where: { id: data.user.id },
-        })
+      const profile = await ensureProfileForUser(data.user)
 
-      if (!existingProfile) {
-        const { data: userData } =
-          await supabase.auth.getUser()
-        const userMetadata = userData.user?.user_metadata
-
-        await prisma.profile.create({
-          data: {
-            id: data.user.id,
-            name:
-              userMetadata?.full_name ||
-              `${userMetadata?.first_name || ''} ${userMetadata?.last_name || ''}`.trim() ||
-              data.user.email?.split('@')[0] ||
-              'User',
-            email: data.user.email || '',
-            passwordHash: '',
-            profilePicture: userMetadata?.avatar_url || '',
-            identityNumber: `oauth_${data.user.id}`, // clearly marked as OAuth
-            phone: userMetadata?.phone || 'pending', // pending = not yet provided
-            birthDate: new Date('1900-01-01'), // sentinel value = not yet provided
-            address: '',
-            bio: '',
-            location: '',
-            joinDate: new Date(),
-            status: 'active',
-            verificationStatus: false,
-          },
-        })
-      }
+      shouldCompleteProfile =
+        isGoogleAuth && (!profile || profileNeedsCompletion(profile))
       // Note: we no longer update verificationStatus on existing profiles
       // as user verification is not currently implemented
     } catch (profileError) {
@@ -162,7 +143,12 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    return NextResponse.redirect(new URL(next, request.url))
+    const redirectUrl = new URL(next, request.url)
+    if (shouldCompleteProfile) {
+      redirectUrl.searchParams.set('complete_profile', '1')
+    }
+
+    return NextResponse.redirect(redirectUrl)
   } catch (error) {
     console.error(
       'Unexpected error during authentication callback:',

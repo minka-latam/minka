@@ -19,7 +19,7 @@ export function parseDocumentId(documentId?: string | null): FormattedDocument {
     countryCode: "",
     documentNumber: "",
     flag: "",
-    displayText: "No disponible",
+    displayText: "Pendiente",
     isValid: false,
   };
 

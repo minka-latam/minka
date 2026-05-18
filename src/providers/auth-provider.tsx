@@ -16,12 +16,12 @@ export interface Profile {
   id: string
   name: string
   email: string
-  phone: string
+  phone: string | null
   address: string | null
   role: string
   created_at: string
-  identity_number?: string
-  birth_date?: string
+  identity_number?: string | null
+  birth_date?: string | null
   profile_picture?: string
   [key: string]:
     | string
@@ -83,6 +83,24 @@ export function AuthProvider({
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
   )
 
+  const ensureProfile = async (): Promise<Profile | null> => {
+    const response = await fetch('/api/profile/ensure', {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        'Cache-Control': 'no-cache',
+        Pragma: 'no-cache',
+      },
+    })
+
+    if (!response.ok) {
+      return null
+    }
+
+    const data = await response.json()
+    return data.profile ?? null
+  }
+
   const fetchProfile = async (
     userId: string,
     retryCount = 0,
@@ -121,6 +139,14 @@ export function AuthProvider({
       )
 
       clearTimeout(timeoutId)
+
+      if (response.status === 404) {
+        const ensuredProfile = await ensureProfile()
+        if (ensuredProfile?.id === userId) {
+          setProfile(ensuredProfile)
+          return ensuredProfile
+        }
+      }
 
       if (!response.ok) {
         const errorData = await response

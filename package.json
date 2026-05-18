@@ -15,7 +15,9 @@
     "prisma:migrate:status": "prisma migrate status --schema prisma/schema.prisma",
     "prisma:migrate:deploy": "prisma migrate deploy --schema prisma/schema.prisma",
     "prisma:diff:live": "set -a; . ./.env; set +a; prisma migrate diff --from-schema-datamodel prisma/schema.prisma --to-url \"$DIRECT_URL\" --script",
-    "prisma:seed": "tsx prisma/seed.ts"
+    "prisma:seed": "tsx prisma/seed.ts",
+    "storage:cleanup-campaign-media": "tsx scripts/cleanup-orphan-campaign-media.ts",
+    "storage:cleanup-campaign-documents": "tsx scripts/cleanup-orphan-campaign-media.ts --prefix campaign-documents"
   },
   "dependencies": {
     "@hookform/resolvers": "^4.1.0",

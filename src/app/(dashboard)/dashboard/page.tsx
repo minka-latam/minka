@@ -15,9 +15,28 @@ import { useAuth, Profile } from "@/providers/auth-provider";
 import { useDb } from "@/hooks/use-db";
 import { PasswordResetHandler } from "@/components/auth/reset-password/password-reset-handler";
 import { ResetPasswordDialog } from "@/components/auth/reset-password/reset-password-dialog";
+import { DocumentCountrySelector } from "@/components/ui/document-country-selector";
+import {
+  getDocumentTypeName,
+  parseDocumentId,
+} from "@/utils/document-formatter";
 
 // Ensure ProfileData and Profile have compatible shapes for our purposes
 type DashboardProfile = ProfileData;
+
+const MAX_NAME_LENGTH = 120;
+const MAX_DOCUMENT_LENGTH = 32;
+const MAX_PHONE_LENGTH = 32;
+const MAX_ADDRESS_LENGTH = 180;
+
+const getDateInputValue = (dateVal: string | Date | null | undefined) => {
+  if (!dateVal) return "";
+  if (dateVal instanceof Date) return dateVal.toISOString().slice(0, 10);
+  return dateVal.slice(0, 10);
+};
+
+const getDocumentPlaceholder = (countryCode: string) =>
+  `Ingresa tu ${getDocumentTypeName(countryCode).toLowerCase()}`;
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -30,6 +49,9 @@ export default function DashboardPage() {
     name: "",
     email: "",
     phone: "",
+    documentCountryCode: "BO",
+    documentId: "",
+    birthDate: "",
     address: "",
   });
   const [isResetPasswordOpen, setIsResetPasswordOpen] = useState(false);
@@ -53,7 +75,7 @@ export default function DashboardPage() {
 
   // Get auth context
   const { user, profile: authProfile, isLoading: authLoading } = useAuth();
-  const { getProfile, updateProfile } = useDb();
+  const { getProfile, ensureProfile, updateProfile } = useDb();
 
   // Helper to convert any profile object to our consistent DashboardProfile format
   const formatProfileData = useCallback(
@@ -69,26 +91,47 @@ export default function DashboardPage() {
         return new Date().toISOString();
       };
 
-      const result: DashboardProfile = {
+      return {
         id: data.id || "",
         name: data.name || "",
         email: data.email || "",
-        phone: data.phone || "",
+        phone: data.phone || null,
         address: data.address || null,
         role: data.role || "user",
         created_at:
           data.created_at || data.createdAt || getISOString(new Date()),
+        updated_at:
+          data.updated_at || data.updatedAt || getISOString(new Date()),
         profile_picture: data.profile_picture || data.profilePicture || null,
         identity_number: data.identity_number || data.identityNumber,
         birth_date: data.birth_date || data.birthDate,
-        // Include any other fields that might be expected
-        ...data,
+        bio: data.bio || null,
+        location: data.location || null,
+        verification_status:
+          data.verification_status ?? data.verificationStatus ?? false,
+        status: data.status || "active",
+        active_campaigns_count:
+          data.active_campaigns_count ?? data.activeCampaignsCount ?? 0,
       };
-
-      return result;
     },
     []
   );
+
+  const getProfileFormData = useCallback((profile: DashboardProfile) => {
+    const parsedDocument = parseDocumentId(profile.identity_number);
+
+    return {
+      name: profile.name || "",
+      email: profile.email || "",
+      phone: profile.phone || "",
+      documentCountryCode: parsedDocument.isValid
+        ? parsedDocument.countryCode
+        : "BO",
+      documentId: parsedDocument.isValid ? parsedDocument.documentNumber : "",
+      birthDate: getDateInputValue(profile.birth_date),
+      address: profile.address || "",
+    };
+  }, []);
 
   // Optimized profile loading that prioritizes auth context
   const loadProfile = useCallback(async () => {
@@ -116,6 +159,10 @@ export default function DashboardPage() {
         profileData = await getProfile(user.id);
 
         if (!profileData) {
+          profileData = await ensureProfile();
+        }
+
+        if (!profileData || profileData.id !== user.id) {
           throw new Error("No se pudo cargar la información del perfil");
         }
       }
@@ -126,12 +173,7 @@ export default function DashboardPage() {
       setIsAdmin(formattedProfile.role === "admin");
 
       // Initialize form data
-      setProfileForm({
-        name: formattedProfile.name || "",
-        email: formattedProfile.email || "",
-        phone: formattedProfile.phone || "",
-        address: formattedProfile.address || "",
-      });
+      setProfileForm(getProfileFormData(formattedProfile));
     } catch (error) {
       console.error("Error loading profile:", error);
       const errorMessage =
@@ -148,12 +190,35 @@ export default function DashboardPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [user, authProfile, authLoading, router, getProfile, formatProfileData]);
+  }, [
+    user,
+    authProfile,
+    authLoading,
+    router,
+    getProfile,
+    ensureProfile,
+    formatProfileData,
+    getProfileFormData,
+  ]);
 
   // Load profile when dependencies change
   useEffect(() => {
     loadProfile();
   }, [loadProfile]);
+
+  useEffect(() => {
+    if (!profile) return;
+
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("complete_profile") !== "1") return;
+
+    setIsEditModalOpen(true);
+    params.delete("complete_profile");
+    const nextUrl = params.toString()
+      ? `${window.location.pathname}?${params.toString()}`
+      : window.location.pathname;
+    window.history.replaceState({}, "", nextUrl);
+  }, [profile]);
 
   // Function to refresh profile data after updates
   const refreshProfileData = useCallback(async () => {
@@ -164,20 +229,16 @@ export default function DashboardPage() {
       setError(null);
 
       // Always fetch fresh data from the API after updates
-      const freshProfileData = await getProfile(user.id);
+      const freshProfileData =
+        (await getProfile(user.id)) || (await ensureProfile());
 
-      if (freshProfileData) {
+      if (freshProfileData && freshProfileData.id === user.id) {
         const formattedProfile = formatProfileData(freshProfileData);
         setProfile(formattedProfile);
         setIsAdmin(formattedProfile.role === "admin");
 
         // Update form data with fresh profile data
-        setProfileForm({
-          name: formattedProfile.name || "",
-          email: formattedProfile.email || "",
-          phone: formattedProfile.phone || "",
-          address: formattedProfile.address || "",
-        });
+        setProfileForm(getProfileFormData(formattedProfile));
       }
     } catch (error) {
       console.error("Error refreshing profile data:", error);
@@ -189,16 +250,20 @@ export default function DashboardPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [user, getProfile, formatProfileData]);
+  }, [user, getProfile, ensureProfile, formatProfileData, getProfileFormData]);
 
   const handleSaveChanges = async () => {
     try {
       if (!profile) return;
 
       const { error } = await updateProfile(profile.id, {
-        name: profileForm.name,
-        phone: profileForm.phone,
-        address: profileForm.address,
+        name: profileForm.name.trim(),
+        phone: profileForm.phone.trim(),
+        identityNumber: profileForm.documentId.trim()
+          ? `${profileForm.documentCountryCode}-${profileForm.documentId.trim()}`
+          : "",
+        birthDate: profileForm.birthDate || undefined,
+        address: profileForm.address.trim(),
       });
 
       if (error) throw error;
@@ -321,7 +386,68 @@ export default function DashboardPage() {
                 onChange={(e) =>
                   setProfileForm({ ...profileForm, name: e.target.value })
                 }
+                maxLength={MAX_NAME_LENGTH}
                 placeholder="Ingresa tu nombre completo"
+                className="w-full border border-black bg-transparent"
+              />
+            </div>
+
+            {/* Identity Number Field */}
+            <div className="space-y-2">
+              <label
+                htmlFor="documentId"
+                className="block text-gray-700 font-medium"
+              >
+                Cédula de Identidad
+              </label>
+              <div className="flex">
+                <DocumentCountrySelector
+                  value={profileForm.documentCountryCode}
+                  onValueChange={(documentCountryCode) =>
+                    setProfileForm({
+                      ...profileForm,
+                      documentCountryCode,
+                    })
+                  }
+                  className="flex-shrink-0"
+                />
+                <Input
+                  id="documentId"
+                  value={profileForm.documentId}
+                  onChange={(e) =>
+                    setProfileForm({
+                      ...profileForm,
+                      documentId: e.target.value,
+                    })
+                  }
+                  maxLength={MAX_DOCUMENT_LENGTH}
+                  placeholder={getDocumentPlaceholder(
+                    profileForm.documentCountryCode
+                  )}
+                  className="flex-1 rounded-l-none border-black border-l-0 bg-transparent"
+                />
+              </div>
+            </div>
+
+            {/* Birth Date Field */}
+            <div className="space-y-2">
+              <label
+                htmlFor="birthDate"
+                className="block text-gray-700 font-medium"
+              >
+                Fecha de nacimiento
+              </label>
+              <Input
+                id="birthDate"
+                type="date"
+                value={profileForm.birthDate}
+                onChange={(e) =>
+                  setProfileForm({
+                    ...profileForm,
+                    birthDate: e.target.value,
+                  })
+                }
+                placeholder="Ingresa tu fecha"
                 className="w-full border border-black bg-transparent"
               />
             </div>
@@ -335,10 +461,6 @@ export default function DashboardPage() {
                 Teléfono
               </label>
               <div className="flex w-full border border-black rounded-md overflow-hidden">
-                <div className="flex items-center px-3 py-2 bg-transparent border-r border-black">
-                  <span className="mr-2">🇧🇴</span>
-                  <span>+591</span>
-                </div>
                 <input
                   id="phone"
                   type="tel"
@@ -346,7 +468,8 @@ export default function DashboardPage() {
                   onChange={(e) =>
                     setProfileForm({ ...profileForm, phone: e.target.value })
                   }
-                  placeholder="33445567"
+                  maxLength={MAX_PHONE_LENGTH}
+                  placeholder="Ingresa tu teléfono"
                   className="flex-1 h-11 px-3 py-2 bg-transparent border-0 focus:outline-none focus:ring-0"
                 />
               </div>
@@ -366,6 +489,7 @@ export default function DashboardPage() {
                 onChange={(e) =>
                   setProfileForm({ ...profileForm, address: e.target.value })
                 }
+                maxLength={MAX_ADDRESS_LENGTH}
                 placeholder="Ingresa tu dirección"
                 className="w-full border border-black bg-transparent"
               />

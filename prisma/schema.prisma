@@ -13,15 +13,15 @@ model Profile {
   activeCampaignsCount   Int                     @default(0) @map("active_campaigns_count")
   address                String?
   bio                    String?
-  birthDate              DateTime                @map("birth_date") @db.Date
+  birthDate              DateTime?               @map("birth_date") @db.Date
   createdAt              DateTime                @default(now()) @map("created_at") @db.Timestamp(6)
   email                  String                  @unique
-  identityNumber         String                  @unique @map("identity_number")
+  identityNumber         String?                 @unique @map("identity_number")
   joinDate               DateTime                @default(now()) @map("join_date") @db.Date
   location               String?
   name                   String
   passwordHash           String                  @map("password_hash")
-  phone                  String
+  phone                  String?
   profilePicture         String?                 @map("profile_picture")
   status                 Status                  @default(active)
   updatedAt              DateTime                @updatedAt @map("updated_at") @db.Timestamp(6)
