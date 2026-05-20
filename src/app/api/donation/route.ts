@@ -4,6 +4,7 @@ import { getOrCreateCampaignAnonymousProfileId } from "@/lib/donations/anonymous
 import { canReceiveCampaignPayments } from "@/lib/campaigns/visibility";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { parseDonationCreateBody } from "@/lib/api/donation-dto";
 
 export async function POST(request: NextRequest) {
   try {
@@ -40,7 +41,7 @@ export async function POST(request: NextRequest) {
       isAnonymous = false,
       notificationEnabled = false,
       customAmount,
-    } = body;
+    } = parseDonationCreateBody(body);
 
     // Basic validation
     if (!campaignId) {

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma as db } from '@/lib/prisma'
 import { PaymentStatus } from '@prisma/client'
+import { formatDonationStatusDto } from '@/lib/api/donation-dto'
 
 export async function GET(req: Request) {
   try {
@@ -39,19 +40,7 @@ export async function GET(req: Request) {
 
     return NextResponse.json({
       success: true,
-      donation: {
-        ...donation,
-        // normaliza decimals si Prisma devuelve Decimal/string
-        amount: Number(donation.amount),
-        tip_amount:
-          donation.tip_amount == null
-            ? null
-            : Number(donation.tip_amount),
-        total_amount:
-          donation.total_amount == null
-            ? null
-            : Number(donation.total_amount),
-      },
+      donation: formatDonationStatusDto(donation),
     })
   } catch (err) {
     console.error('[DONATION_STATUS][ERROR]', err)
