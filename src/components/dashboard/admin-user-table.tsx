@@ -15,7 +15,6 @@ import { format } from "date-fns"; // For formatting dates
 import { Pencil, Trash2 } from "lucide-react"; // Icons for actions
 import { useState } from "react";
 import { toast } from "@/components/ui/use-toast";
-import { createBrowserClient } from "@supabase/ssr";
 import { useRouter } from "next/navigation";
 
 // TODO: Potentially add a modal for editing user roles
@@ -26,7 +25,6 @@ interface AdminUserTableProps {
 }
 
 export function AdminUserTable({ users }: AdminUserTableProps) {
-  const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
   const router = useRouter();
   const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
   // State for edit modal (example)
@@ -36,7 +34,7 @@ export function AdminUserTable({ users }: AdminUserTableProps) {
     // Optional: Add a confirmation dialog here
     if (
       !confirm(
-        `Are you sure you want to delete user ${userEmail}? This action might require additional backend logic for full cleanup.`
+        `Are you sure you want to deactivate user ${userEmail}? They will no longer be treated as an active user.`
       )
     ) {
       return;
@@ -44,28 +42,26 @@ export function AdminUserTable({ users }: AdminUserTableProps) {
 
     setDeletingUserId(userId);
     try {
-      // IMPORTANT: Deleting users directly might have consequences.
-      // This typically requires backend functions (Supabase Edge Functions)
-      // to handle related data (campaigns, donations, auth user etc.) properly.
-      // Calling delete directly on 'profiles' might leave orphaned data.
-      // For now, we'll just delete the profile row as a placeholder.
-      const { error } = await supabase
-        .from("profiles")
-        .delete()
-        .eq("id", userId);
+      const response = await fetch(`/api/admin/users/${userId}`, {
+        method: "DELETE",
+      });
 
-      if (error) throw error;
+      const responseData = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(responseData.error || "Could not deactivate the user.");
+      }
 
       toast({
-        title: "User Deleted",
-        description: `User ${userEmail} profile has been deleted.`,
+        title: "User Deactivated",
+        description: `User ${userEmail} has been deactivated.`,
       });
       router.refresh(); // Refresh data
     } catch (error: any) {
       console.error("Error deleting user:", error);
       toast({
-        title: "Deletion Failed",
-        description: error.message || "Could not delete the user.",
+        title: "Deactivation Failed",
+        description: error.message || "Could not deactivate the user.",
         variant: "destructive",
       });
     } finally {
@@ -134,10 +130,10 @@ export function AdminUserTable({ users }: AdminUserTableProps) {
                     disabled={deletingUserId === user.id}
                   >
                     {deletingUserId === user.id ? (
-                      "Deleting..."
+                      "Deactivating..."
                     ) : (
                       <>
-                        <Trash2 className="mr-1 h-4 w-4" /> Delete
+                        <Trash2 className="mr-1 h-4 w-4" /> Deactivate
                       </>
                     )}
                   </Button>
@@ -163,4 +159,3 @@ export function AdminUserTable({ users }: AdminUserTableProps) {
     </>
   );
 }
-

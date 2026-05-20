@@ -33,6 +33,7 @@ model Profile {
   notifications          Notification[]          @relation("UserNotifications")
   savedCampaigns         SavedCampaign[]         @relation("ProfileSavedCampaigns")
   systemNotificationLogs SystemNotificationLog[] @relation("AdminSystemNotifications")
+  adminAuditLogs         AdminAuditLog[]         @relation("AdminAuditLogs")
 
   @@map("profiles")
 }
@@ -267,6 +268,21 @@ model SystemNotificationLog {
   admin          Profile  @relation("AdminSystemNotifications", fields: [adminId], references: [id], onDelete: Cascade)
 
   @@map("system_notification_logs")
+}
+
+model AdminAuditLog {
+  id         String   @id @default(uuid()) @db.Uuid
+  adminId    String   @map("admin_id") @db.Uuid
+  action     String
+  entityType String   @map("entity_type")
+  entityId   String?  @map("entity_id") @db.Uuid
+  metadata   Json     @default("{}")
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamp(6)
+  admin      Profile  @relation("AdminAuditLogs", fields: [adminId], references: [id], onDelete: Restrict)
+
+  @@index([adminId])
+  @@index([entityType, entityId])
+  @@map("admin_audit_logs")
 }
 
 model FundTransfer {

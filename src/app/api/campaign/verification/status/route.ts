@@ -1,8 +1,11 @@
 ﻿import { NextRequest, NextResponse } from "next/server";
-import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
 import { prisma as db } from "@/lib/prisma";
 import { z } from "zod";
+import {
+  adminAuthErrorResponse,
+  createAdminAuditLog,
+  requireAdminProfile,
+} from "@/lib/admin-auth";
 
 // Schema for verification status update
 const updateStatusSchema = z.object({
@@ -56,92 +59,85 @@ export async function GET(req: NextRequest) {
 // Route handler for PUT request to update verification status (admin only)
 export async function PUT(req: NextRequest) {
   try {
-    // Authentication
-    const cookieStore = await cookies();
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() { return cookieStore.getAll(); },
-          setAll(cookiesToSet) {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
-            );
-          },
-        },
-      }
-    );
-
-    const {
-      data: { session },
-      error: sessionError,
-    } = await supabase.auth.getSession();
-
-    if (sessionError || !session?.user) {
-      return NextResponse.json(
-        { error: "Authentication error" },
-        { status: 401 }
-      );
-    }
-
-    // Check if user is admin
-    const profile = await db.profile.findUnique({
-      where: { email: session.user.email },
-    });
-
-    if (!profile || profile.role !== "admin") {
-      return NextResponse.json(
-        { error: "Only administrators can update verification status" },
-        { status: 403 }
-      );
-    }
+    const admin = await requireAdminProfile();
 
     // Validate request body
     const body = await req.json();
     const { campaignId, status, notes } = updateStatusSchema.parse(body);
 
-    // Update verification status
-    const updatedVerification = await db.campaignVerification.update({
-      where: {
-        campaignId,
-      },
-      data: {
-        verificationStatus: status,
-        approvalDate: status === "approved" ? new Date() : null,
-        notes: notes,
+    const campaign = await db.campaign.findUnique({
+      where: { id: campaignId },
+      select: {
+        id: true,
+        title: true,
+        verificationStatus: true,
+        verificationRequests: {
+          select: {
+            verificationStatus: true,
+          },
+        },
       },
     });
 
-    // Update the campaign verification status based on the verification status
-    if (status === "approved") {
-      await db.campaign.update({
-        where: {
-          id: campaignId,
-        },
-        data: {
-          verificationStatus: true,
-          verificationDate: new Date(),
-        },
-      });
-    } else {
-      // For rejected or pending status, set campaign verification to false
-      await db.campaign.update({
-        where: {
-          id: campaignId,
-        },
-        data: {
-          verificationStatus: false,
-          verificationDate: null,
-        },
-      });
+    if (!campaign) {
+      return NextResponse.json(
+        { error: "Campaign not found" },
+        { status: 404 }
+      );
     }
+
+    const approvalDate = status === "approved" ? new Date() : null;
+
+    const updatedVerification = await db.$transaction(async (tx) => {
+      const verification = await tx.campaignVerification.upsert({
+        where: { campaignId },
+        create: {
+          campaignId,
+          verificationStatus: status,
+          approvalDate,
+          notes,
+        },
+        update: {
+          verificationStatus: status,
+          approvalDate,
+          notes,
+        },
+      });
+
+      await tx.campaign.update({
+        where: { id: campaignId },
+        data: {
+          verificationStatus: status === "approved",
+          verificationDate: approvalDate,
+        },
+      });
+
+      return verification;
+    });
+
+    await createAdminAuditLog({
+      adminId: admin.id,
+      action: "campaign_verification.update",
+      entityType: "campaign",
+      entityId: campaignId,
+      metadata: {
+        campaignTitle: campaign.title,
+        previousCampaignVerified: campaign.verificationStatus,
+        previousVerificationStatus:
+          campaign.verificationRequests?.verificationStatus ?? null,
+        newVerificationStatus: status,
+        notes: notes ?? null,
+      },
+    });
 
     return NextResponse.json({
       message: `Verification status updated to ${status}`,
       verification: updatedVerification,
     });
   } catch (error) {
+    const authResponse = adminAuthErrorResponse(error);
+    if (authResponse) return authResponse;
+
     console.error("Error updating verification status:", error);
 
     if (error instanceof z.ZodError) {
@@ -157,4 +153,3 @@ export async function PUT(req: NextRequest) {
     );
   }
 }
-
