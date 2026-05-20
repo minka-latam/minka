@@ -41,7 +41,7 @@ cp .env.example .env.local
    - Go to [supabase.com](https://supabase.com)
    - Create a new project
    - Get your project credentials from Settings > API
-   - Create a storage bucket named "avatars" in Storage
+   - Apply the Supabase migrations to provision the `minka` storage bucket and policies
 
 5. Configure your `.env.local`:
 ```env
@@ -54,7 +54,8 @@ DATABASE_URL="postgresql://postgres.[YOUR-PROJECT-REF]:[YOUR-PASSWORD]@aws-0-[YO
 DIRECT_URL="postgresql://postgres.[YOUR-PROJECT-REF]:[YOUR-PASSWORD]@aws-0-[YOUR-REGION].pooler.supabase.com:5432/postgres"
 
 # Storage
-NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET=avatars
+NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET=minka
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 ```
 
 6. Initialize Prisma:

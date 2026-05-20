@@ -1,7 +1,6 @@
 import { createBrowserClient } from "@supabase/ssr";
+import { STORAGE_BUCKET, STORAGE_PREFIXES } from "@/lib/storage/config";
 
-const STORAGE_BUCKET =
-  process.env.NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET || "minka";
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const ACCEPTED_FILE_TYPES = [
   // Images
@@ -60,11 +59,11 @@ export async function uploadMedia(file: File): Promise<UploadResponse> {
     }
 
     // Determine folder based on file type
-    let folder = "campaign-images";
+    let folder: string = STORAGE_PREFIXES.campaignImages;
     if (file.type === "application/pdf") {
-      folder = "campaign-documents";
+      folder = STORAGE_PREFIXES.campaignDocuments;
     } else if (file.type.startsWith("application/")) {
-      folder = "campaign-documents";
+      folder = STORAGE_PREFIXES.campaignDocuments;
     }
 
     // Create a unique filename

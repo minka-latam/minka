@@ -1,43 +1,38 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthSession } from "@/lib/auth";
 import { createClient } from "@supabase/supabase-js";
+import { STORAGE_BUCKET, STORAGE_PREFIXES } from "@/lib/storage/config";
 
 function getEnv() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  const storageBucket = process.env.NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET || "minka";
+  const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!supabaseUrl) throw new Error("Missing NEXT_PUBLIC_SUPABASE_URL");
-  if (!supabaseAnonKey) throw new Error("Missing NEXT_PUBLIC_SUPABASE_ANON_KEY");
+  if (!supabaseServiceRoleKey) throw new Error("Missing SUPABASE_SERVICE_ROLE_KEY");
 
-  return { supabaseUrl, supabaseAnonKey, storageBucket };
+  return { supabaseUrl, supabaseServiceRoleKey };
 }
-
-// Ensure storage buckets exist
-const ensureStorageBuckets = async (supabase: ReturnType<typeof createClient>, storageBucket: string) => {
-  const { data: buckets } = await supabase.storage.listBuckets();
-
-  if (!buckets?.find((bucket) => bucket.name === storageBucket)) {
-    await supabase.storage.createBucket(storageBucket, {
-      public: true,
-    });
-  }
-};
 
 export async function POST(req: NextRequest) {
   try {
     // Read env vars at request-time (prevents build-time crash)
-    const { supabaseUrl, supabaseAnonKey, storageBucket } = getEnv();
-    const supabase: ReturnType<typeof createClient> = createClient(supabaseUrl, supabaseAnonKey);
+    const { supabaseUrl, supabaseServiceRoleKey } = getEnv();
+    const supabase: ReturnType<typeof createClient> = createClient(
+      supabaseUrl,
+      supabaseServiceRoleKey,
+      {
+        auth: {
+          persistSession: false,
+          autoRefreshToken: false,
+        },
+      }
+    );
 
     // Check authentication
     const session = await getAuthSession();
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-
-    // Ensure storage buckets exist
-    await ensureStorageBuckets(supabase, storageBucket);
 
     const formData = await req.formData();
     const file = formData.get("file") as File;
@@ -69,7 +64,9 @@ export async function POST(req: NextRequest) {
 
     // Determine the file type and folder
     const isVideo = file.type.startsWith("video");
-    const folder = isVideo ? "campaign-videos" : "campaign-images";
+    const folder = isVideo
+      ? STORAGE_PREFIXES.campaignVideos
+      : STORAGE_PREFIXES.campaignImages;
 
     // Create a unique filename
     const fileExt = file.name.split(".").pop();
@@ -78,7 +75,7 @@ export async function POST(req: NextRequest) {
 
     // Upload file to Supabase Storage
     const { error } = await supabase.storage
-      .from(storageBucket)
+      .from(STORAGE_BUCKET)
       .upload(filePath, file, {
         cacheControl: "3600",
         upsert: false,
@@ -95,7 +92,7 @@ export async function POST(req: NextRequest) {
     // Get the public URL for the file
     const {
       data: { publicUrl },
-    } = supabase.storage.from(storageBucket).getPublicUrl(filePath);
+    } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(filePath);
 
     return NextResponse.json({
       success: true,

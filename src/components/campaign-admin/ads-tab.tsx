@@ -25,6 +25,7 @@ import {
   AlertDialogAction,
 } from "@/components/ui/alert-dialog";
 import { createBrowserClient } from "@supabase/ssr";
+import { STORAGE_BUCKET, STORAGE_PREFIXES } from "@/lib/storage/config";
 
 interface AdsTabProps {
   campaign: Record<string, any>;
@@ -289,11 +290,9 @@ export function AdsTab({ campaign }: AdsTabProps) {
 
       // Upload to Supabase Storage
       const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
-      const STORAGE_BUCKET =
-        process.env.NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET || "minka";
       const fileExt = "jpg";
       const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
-      const filePath = `campaign-images/${fileName}`;
+      const filePath = `${STORAGE_PREFIXES.campaignImages}/${fileName}`;
 
       const { data, error } = await supabase.storage
         .from(STORAGE_BUCKET)
@@ -784,4 +783,3 @@ export function AdsTab({ campaign }: AdsTabProps) {
     </div>
   );
 }
-
