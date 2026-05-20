@@ -12,10 +12,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { CampaignStatus } from "./campaign-card"; // Reusing status type
-import { ProfileData } from "@/types"; // Assuming ProfileData is in types
 import { toast } from "@/components/ui/use-toast";
-import { createBrowserClient } from "@supabase/ssr";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation"; // For refreshing data
 import {
   CheckCircle,
@@ -56,46 +54,34 @@ interface AdminCampaignTableProps {
 }
 
 export function AdminCampaignTable({ campaigns }: AdminCampaignTableProps) {
-  const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
   const router = useRouter();
   const [verifyingId, setVerifyingId] = useState<string | null>(null);
   const [unverifyingId, setUnverifyingId] = useState<string | null>(null);
-  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [selectedCampaign, setSelectedCampaign] =
     useState<FormattedCampaign | null>(null);
   const [processingAction, setProcessingAction] = useState(false);
 
-  // Check if the user is a super admin
-  useEffect(() => {
-    const checkSuperAdmin = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
-      if (session) {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("role")
-          .eq("id", session.user.id)
-          .single();
-
-        setIsSuperAdmin(profile?.role === "admin");
-      }
-    };
-
-    checkSuperAdmin();
-  }, [supabase]);
-
   const handleVerifyCampaign = async (campaignId: string) => {
     setVerifyingId(campaignId);
     try {
-      const { error } = await supabase
-        .from("campaigns")
-        .update({ verification_status: true })
-        .eq("id", campaignId);
+      const response = await fetch("/api/campaign/verification/status", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          campaignId,
+          status: "approved",
+          notes: "Verified by admin",
+        }),
+      });
 
-      if (error) throw error;
+      const responseData = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(responseData.error || "Could not verify the campaign.");
+      }
 
       toast({
         title: "Campaign Verified",
@@ -128,13 +114,25 @@ export function AdminCampaignTable({ campaigns }: AdminCampaignTableProps) {
     setUnverifyingId(selectedCampaign.id);
 
     try {
-      // Update campaign verification status
-      const { error } = await supabase
-        .from("campaigns")
-        .update({ verification_status: false })
-        .eq("id", selectedCampaign.id);
+      const response = await fetch("/api/campaign/verification/status", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          campaignId: selectedCampaign.id,
+          status: "pending",
+          notes: "Verification revoked by admin",
+        }),
+      });
 
-      if (error) throw error;
+      const responseData = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(
+          responseData.error || "No se pudo revocar la verificación."
+        );
+      }
 
       toast({
         title: "Verificación Revocada",
@@ -210,7 +208,7 @@ export function AdminCampaignTable({ campaigns }: AdminCampaignTableProps) {
                   )}
                 </TableCell>
                 <TableCell className="text-right space-x-2">
-                  {campaign.isVerified && isSuperAdmin ? (
+                  {campaign.isVerified ? (
                     <Button
                       variant="outline"
                       size="sm"
@@ -338,4 +336,3 @@ export function AdminCampaignTable({ campaigns }: AdminCampaignTableProps) {
 // You might need to add this to your Badge component's variants
 // Example:
 // success: "border-transparent bg-green-100 text-green-800 hover:bg-green-100/80",
-

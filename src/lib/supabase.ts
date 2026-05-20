@@ -1,9 +1,8 @@
 import { createClient } from "@supabase/supabase-js";
+import { STORAGE_BUCKET, STORAGE_PREFIXES } from "@/lib/storage/config";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const storageBucket =
-  process.env.NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET || "minka";
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
@@ -11,7 +10,9 @@ export const uploadMedia = async (
   file: File
 ): Promise<{ url: string; type: "image" | "video" }> => {
   const isVideo = file.type.startsWith("video");
-  const folder = isVideo ? "campaign-videos" : "campaign-images";
+  const folder = isVideo
+    ? STORAGE_PREFIXES.campaignVideos
+    : STORAGE_PREFIXES.campaignImages;
 
   // Create a unique file name
   const fileExt = file.name.split(".").pop();
@@ -20,7 +21,7 @@ export const uploadMedia = async (
 
   // Upload file to Supabase Storage
   const { data, error } = await supabase.storage
-    .from(storageBucket)
+    .from(STORAGE_BUCKET)
     .upload(filePath, file, {
       cacheControl: "3600",
       upsert: false,
@@ -33,7 +34,7 @@ export const uploadMedia = async (
   // Get public URL for the file
   const {
     data: { publicUrl },
-  } = supabase.storage.from(storageBucket).getPublicUrl(filePath);
+  } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(filePath);
 
   return {
     url: publicUrl,

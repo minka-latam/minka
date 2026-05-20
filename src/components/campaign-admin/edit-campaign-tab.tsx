@@ -27,6 +27,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { ImproveTextButton } from "@/components/ui/improve-text-button";
+import { STORAGE_BUCKET, STORAGE_PREFIXES } from "@/lib/storage/config";
 
 interface CampaignMedia {
   id: string;
@@ -161,17 +162,17 @@ export function EditCampaignTab({ campaign }: EditCampaignTabProps) {
       const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
       const fileExt = file.name.split(".").pop();
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
-      const filePath = `campaign-media/${fileName}`;
+      const filePath = `${STORAGE_PREFIXES.campaignImages}/${fileName}`;
 
       const { data: uploadData, error: uploadError } = await supabase.storage
-        .from("campaign-media")
+        .from(STORAGE_BUCKET)
         .upload(filePath, file);
 
       if (uploadError) throw uploadError;
 
       // Get the public URL for the file
       const { data: publicUrlData } = supabase.storage
-        .from("campaign-media")
+        .from(STORAGE_BUCKET)
         .getPublicUrl(filePath);
 
       // Now use the API to add the media to the campaign
@@ -901,4 +902,3 @@ function YouTubeLinks({ links, onChange }: YouTubeLinksProps) {
     </div>
   );
 }
-

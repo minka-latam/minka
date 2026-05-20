@@ -47,6 +47,7 @@ export default async function ManageUsersPage() {
     .from("profiles")
     .select("id, name, email, role, created_at, phone, address")
     .not("email", "like", `${CAMPAIGN_ANONYMOUS_EMAIL_PREFIX}%@minka.org`)
+    .eq("status", "active")
     .order("created_at", { ascending: false });
 
   if (error) {

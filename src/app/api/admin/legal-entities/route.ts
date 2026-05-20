@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";;
+import { prisma } from "@/lib/prisma";
 import { z } from "zod";
+import {
+  adminAuthErrorResponse,
+  createAdminAuditLog,
+  requireAdminProfile,
+} from "@/lib/admin-auth";
 
 
 // Validation schema for legal entity
@@ -24,6 +29,8 @@ const legalEntitySchema = z.object({
 // GET - Fetch all legal entities
 export async function GET(request: NextRequest) {
   try {
+    await requireAdminProfile();
+
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get("page") || "1");
     const limit = parseInt(searchParams.get("limit") || "10");
@@ -77,6 +84,9 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
+    const authResponse = adminAuthErrorResponse(error);
+    if (authResponse) return authResponse;
+
     console.error("Error fetching legal entities:", error);
     return NextResponse.json(
       { error: "Failed to fetch legal entities" },
@@ -88,6 +98,7 @@ export async function GET(request: NextRequest) {
 // POST - Create new legal entity
 export async function POST(request: NextRequest) {
   try {
+    const admin = await requireAdminProfile();
     const body = await request.json();
 
     // Validate input
@@ -122,11 +133,25 @@ export async function POST(request: NextRequest) {
       data: createData,
     });
 
+    await createAdminAuditLog({
+      adminId: admin.id,
+      action: "legal_entity.create",
+      entityType: "legal_entity",
+      entityId: legalEntity.id,
+      metadata: {
+        name: legalEntity.name,
+        isActive: legalEntity.isActive,
+      },
+    });
+
     return NextResponse.json({
       message: "Legal entity created successfully",
       legalEntity,
     });
   } catch (error) {
+    const authResponse = adminAuthErrorResponse(error);
+    if (authResponse) return authResponse;
+
     console.error("Error creating legal entity:", error);
 
     if (error instanceof z.ZodError) {
@@ -146,6 +171,7 @@ export async function POST(request: NextRequest) {
 // PUT - Update legal entity
 export async function PUT(request: NextRequest) {
   try {
+    const admin = await requireAdminProfile();
     const body = await request.json();
     const { id, ...updateData } = body;
 
@@ -200,11 +226,25 @@ export async function PUT(request: NextRequest) {
       data: updateDataForPrisma,
     });
 
+    await createAdminAuditLog({
+      adminId: admin.id,
+      action: "legal_entity.update",
+      entityType: "legal_entity",
+      entityId: updatedEntity.id,
+      metadata: {
+        name: updatedEntity.name,
+        changedFields: Object.keys(updateDataForPrisma),
+      },
+    });
+
     return NextResponse.json({
       message: "Legal entity updated successfully",
       legalEntity: updatedEntity,
     });
   } catch (error) {
+    const authResponse = adminAuthErrorResponse(error);
+    if (authResponse) return authResponse;
+
     console.error("Error updating legal entity:", error);
 
     if (error instanceof z.ZodError) {
@@ -224,6 +264,7 @@ export async function PUT(request: NextRequest) {
 // DELETE - Delete/deactivate legal entity
 export async function DELETE(request: NextRequest) {
   try {
+    const admin = await requireAdminProfile();
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
 
@@ -264,6 +305,17 @@ export async function DELETE(request: NextRequest) {
         },
       });
 
+      await createAdminAuditLog({
+        adminId: admin.id,
+        action: "legal_entity.deactivate",
+        entityType: "legal_entity",
+        entityId: existingEntity.id,
+        metadata: {
+          name: existingEntity.name,
+          campaignCount: existingEntity._count.campaigns,
+        },
+      });
+
       return NextResponse.json({
         message:
           "Legal entity deactivated successfully (has associated campaigns)",
@@ -274,11 +326,25 @@ export async function DELETE(request: NextRequest) {
         where: { id },
       });
 
+      await createAdminAuditLog({
+        adminId: admin.id,
+        action: "legal_entity.delete",
+        entityType: "legal_entity",
+        entityId: existingEntity.id,
+        metadata: {
+          name: existingEntity.name,
+          campaignCount: existingEntity._count.campaigns,
+        },
+      });
+
       return NextResponse.json({
         message: "Legal entity deleted successfully",
       });
     }
   } catch (error) {
+    const authResponse = adminAuthErrorResponse(error);
+    if (authResponse) return authResponse;
+
     console.error("Error deleting legal entity:", error);
     return NextResponse.json(
       { error: "Failed to delete legal entity" },

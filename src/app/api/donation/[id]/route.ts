@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getAuthSession } from "@/lib/auth";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
@@ -51,6 +50,16 @@ export async function PATCH(
       );
     }
 
+    const requestedPaymentStatus =
+      body.paymentStatus !== undefined || body.payment_status !== undefined;
+
+    if (requestedPaymentStatus) {
+      return NextResponse.json(
+        { error: "Donation payment status is managed by payment providers" },
+        { status: 400 }
+      );
+    }
+
     // Convert property names if they come in with incorrect casing
     // This handles any inconsistency between frontend and backend naming
     const normalizedBody = {
@@ -59,13 +68,6 @@ export async function PATCH(
           ? body.notificationEnabled
           : body.notification_enabled !== undefined
             ? body.notification_enabled
-            : undefined,
-
-      paymentStatus:
-        body.paymentStatus !== undefined
-          ? body.paymentStatus
-          : body.payment_status !== undefined
-            ? body.payment_status
             : undefined,
 
       message: body.message !== undefined ? body.message : undefined,
@@ -101,7 +103,6 @@ export async function PATCH(
         // Only allow updating these fields if user is owner
         ...(isOwner
           ? {
-              paymentStatus: normalizedBody.paymentStatus,
               message: normalizedBody.message,
             }
           : {}),
@@ -110,6 +111,7 @@ export async function PATCH(
         id: true,
         notificationEnabled: true,
         paymentStatus: true,
+        message: true,
       },
     });
     return NextResponse.json(updatedDonation);
