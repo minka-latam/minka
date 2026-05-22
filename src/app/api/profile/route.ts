@@ -1,84 +1,43 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { Status, UserRole, type Prisma } from "@prisma/client";
+
+import { adminAuthErrorResponse, requireAdminProfile } from "@/lib/admin-auth";
 import { prisma } from "@/lib/prisma";
-import type { UserRole, Status, Prisma } from "@prisma/client";
 
-export async function POST(req: Request) {
-  try {
-    const json = await req.json();
-    const { 
-      email,
-      name,
-      phone,
-      identityNumber,
-      profilePicture,
-      role = "user",
-      status = "active"
-    } = json;
+const roleValues = new Set<string>(Object.values(UserRole));
+const statusValues = new Set<string>(Object.values(Status));
 
-    if (!email || !name) {
-      return new Response(JSON.stringify({ error: "Email and name are required" }), {
-        status: 400,
-        headers: { "Content-Type": "application/json" },
-      });
-    }
-
-    // Check if profile already exists
-    const existingProfile = await prisma.profile.findUnique({
-      where: { email },
-    });
-
-    if (existingProfile) {
-      return new Response(
-        JSON.stringify({ error: "Profile already exists for this email" }),
-        {
-          status: 409,
-          headers: { "Content-Type": "application/json" },
-        }
-      );
-    }
-
-    // Create profile with all required fields
-    const profile = await prisma.profile.create({
-      data: {
-        email,
-        name,
-        phone,
-        identityNumber,
-        profilePicture: profilePicture || "",
-        role: role as UserRole,
-        status: status as Status,
-        passwordHash: "",
-        address: "",
-        bio: "",
-        location: "",
-        birthDate: new Date(),
-        joinDate: new Date(),
-        activeCampaignsCount: 0,
-        verificationStatus: false,
-      },
-    });
-
-    return new Response(JSON.stringify({ profile }), {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
-    });
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
-    return new Response(
-      JSON.stringify({ error: "Internal server error", details: errorMessage }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
-      }
-    );
-  }
+export async function POST() {
+  return NextResponse.json(
+    {
+      error:
+        "Profile creation through this endpoint is disabled. Use the authenticated profile setup flow.",
+    },
+    { status: 405, headers: { Allow: "GET" } },
+  );
 }
 
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
   try {
+    await requireAdminProfile();
+
     const { searchParams } = new URL(req.url);
     const role = searchParams.get("role");
     const status = searchParams.get("status");
+
+    if (role && !roleValues.has(role)) {
+      return NextResponse.json(
+        { error: "Invalid role filter" },
+        { status: 400 },
+      );
+    }
+
+    if (status && !statusValues.has(status)) {
+      return NextResponse.json(
+        { error: "Invalid status filter" },
+        { status: 400 },
+      );
+    }
 
     const whereClause: Prisma.ProfileWhereInput = {};
 
@@ -87,17 +46,45 @@ export async function GET(req: Request) {
 
     const profiles = await prisma.profile.findMany({
       where: whereClause,
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        status: true,
+        verificationStatus: true,
+        profilePicture: true,
+        activeCampaignsCount: true,
+        createdAt: true,
+        updatedAt: true,
+      },
       orderBy: {
         createdAt: "desc",
       },
     });
 
-    return NextResponse.json({ profiles });
+    return NextResponse.json({
+      profiles: profiles.map((profile) => ({
+        id: profile.id,
+        name: profile.name,
+        email: profile.email,
+        role: profile.role,
+        status: profile.status,
+        verification_status: profile.verificationStatus,
+        profile_picture: profile.profilePicture,
+        active_campaigns_count: profile.activeCampaignsCount,
+        created_at: profile.createdAt.toISOString(),
+        updated_at: profile.updatedAt.toISOString(),
+      })),
+    });
   } catch (error) {
+    const authResponse = adminAuthErrorResponse(error);
+    if (authResponse) return authResponse;
+
     console.error("Error fetching profiles:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

@@ -55,10 +55,22 @@ export function formatProfileForApi(profile: ProfileRow) {
   };
 }
 
-function metadataString(
-  metadata: Record<string, unknown>,
-  keys: string[],
-) {
+export function formatAdminProfileForApi(profile: ProfileRow) {
+  return {
+    id: profile.id,
+    name: profile.name,
+    email: profile.email,
+    role: profile.role,
+    profile_picture: profile.profilePicture,
+    verification_status: profile.verificationStatus,
+    status: profile.status,
+    created_at: profile.createdAt.toISOString(),
+    updated_at: profile.updatedAt.toISOString(),
+    active_campaigns_count: profile.activeCampaignsCount ?? 0,
+  };
+}
+
+function metadataString(metadata: Record<string, unknown>, keys: string[]) {
   for (const key of keys) {
     const value = metadata[key];
     if (typeof value === "string" && value.trim()) {
@@ -70,30 +82,16 @@ function metadataString(
 }
 
 function profileNameFromUser(user: User) {
-  const metadata =
-    (user.user_metadata as Record<string, unknown> | null) ?? {};
-  const fullName = metadataString(metadata, [
-    "full_name",
-    "name",
-  ]);
+  const metadata = (user.user_metadata as Record<string, unknown> | null) ?? {};
+  const fullName = metadataString(metadata, ["full_name", "name"]);
 
   if (fullName) return fullName;
 
-  const firstName = metadataString(metadata, [
-    "first_name",
-    "given_name",
-  ]);
-  const lastName = metadataString(metadata, [
-    "last_name",
-    "family_name",
-  ]);
+  const firstName = metadataString(metadata, ["first_name", "given_name"]);
+  const lastName = metadataString(metadata, ["last_name", "family_name"]);
   const combinedName = `${firstName ?? ""} ${lastName ?? ""}`.trim();
 
-  return (
-    combinedName ||
-    user.email?.split("@")[0] ||
-    "Usuario"
-  );
+  return combinedName || user.email?.split("@")[0] || "Usuario";
 }
 
 export async function getProfileById(userId: string) {
@@ -124,15 +122,10 @@ export async function getProfileById(userId: string) {
 }
 
 export async function ensureProfileForUser(user: User) {
-  const metadata =
-    (user.user_metadata as Record<string, unknown> | null) ?? {};
+  const metadata = (user.user_metadata as Record<string, unknown> | null) ?? {};
   const name = profileNameFromUser(user);
-  const email =
-    user.email || metadataString(metadata, ["email"]) || "";
-  const profilePicture = metadataString(metadata, [
-    "avatar_url",
-    "picture",
-  ]);
+  const email = user.email || metadataString(metadata, ["email"]) || "";
+  const profilePicture = metadataString(metadata, ["avatar_url", "picture"]);
 
   const [profile] = await prisma.$queryRaw<ProfileRow[]>`
     insert into public.profiles (
