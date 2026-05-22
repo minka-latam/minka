@@ -34,6 +34,9 @@ model Profile {
   savedCampaigns         SavedCampaign[]         @relation("ProfileSavedCampaigns")
   systemNotificationLogs SystemNotificationLog[] @relation("AdminSystemNotifications")
   adminAuditLogs         AdminAuditLog[]         @relation("AdminAuditLogs")
+  createdBankAccounts    CampaignBankAccount[]   @relation("CampaignBankAccountsCreatedBy")
+  requestedTransfers     FundTransfer[]          @relation("FundTransfersRequestedBy")
+  reviewedTransfers      FundTransfer[]          @relation("FundTransfersReviewedBy")
 
   @@map("profiles")
 }
@@ -75,6 +78,7 @@ model Campaign {
   comments                 Comment[]             @relation("CampaignComments")
   donations                Donation[]            @relation("CampaignDonations")
   fundTransfers            FundTransfer[]        @relation("CampaignFundTransfers")
+  bankAccounts             CampaignBankAccount[] @relation("CampaignBankAccounts")
   notifications            Notification[]        @relation("CampaignNotifications")
   savedBy                  SavedCampaign[]       @relation("CampaignSaved")
 
@@ -285,21 +289,52 @@ model AdminAuditLog {
   @@map("admin_audit_logs")
 }
 
-model FundTransfer {
+model CampaignBankAccount {
   id                String            @id @default(uuid()) @db.Uuid
   campaignId        String            @map("campaign_id") @db.Uuid
   accountHolderName String            @map("account_holder_name")
   bankName          String            @map("bank_name")
   accountNumber     String            @map("account_number")
-  amount            Decimal           @db.Decimal
-  status            TransferStatus    @default(processing)
-  frequency         TransferFrequency @default(monthly_once)
-  transferDate      DateTime?         @map("transfer_date") @db.Timestamp(6)
-  notes             String?
+  accountType       String?           @map("account_type")
+  status            BankAccountStatus @default(active)
+  createdById       String            @map("created_by_id") @db.Uuid
+  replacedAt        DateTime?         @map("replaced_at") @db.Timestamp(6)
   createdAt         DateTime          @default(now()) @map("created_at") @db.Timestamp(6)
   updatedAt         DateTime          @updatedAt @map("updated_at") @db.Timestamp(6)
-  campaign          Campaign          @relation("CampaignFundTransfers", fields: [campaignId], references: [id], onDelete: Restrict)
+  campaign          Campaign          @relation("CampaignBankAccounts", fields: [campaignId], references: [id], onDelete: Restrict)
+  createdBy         Profile           @relation("CampaignBankAccountsCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  transfers         FundTransfer[]    @relation("FundTransferBankAccount")
 
+  @@index([campaignId])
+  @@index([createdById])
+  @@map("campaign_bank_accounts")
+}
+
+model FundTransfer {
+  id                    String               @id @default(uuid()) @db.Uuid
+  campaignId            String               @map("campaign_id") @db.Uuid
+  campaignBankAccountId String?              @map("campaign_bank_account_id") @db.Uuid
+  accountHolderName     String               @map("account_holder_name")
+  bankName              String               @map("bank_name")
+  accountNumber         String               @map("account_number")
+  amount                Decimal              @db.Decimal
+  status                TransferStatus       @default(processing)
+  transferDate          DateTime?            @map("transfer_date") @db.Timestamp(6)
+  requestedById         String               @map("requested_by_id") @db.Uuid
+  reviewedById          String?              @map("reviewed_by_id") @db.Uuid
+  reviewedAt            DateTime?            @map("reviewed_at") @db.Timestamp(6)
+  completedAt           DateTime?            @map("completed_at") @db.Timestamp(6)
+  notes                 String?
+  createdAt             DateTime             @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt             DateTime             @updatedAt @map("updated_at") @db.Timestamp(6)
+  campaign              Campaign             @relation("CampaignFundTransfers", fields: [campaignId], references: [id], onDelete: Restrict)
+  campaignBankAccount   CampaignBankAccount? @relation("FundTransferBankAccount", fields: [campaignBankAccountId], references: [id], onDelete: SetNull)
+  requestedBy           Profile              @relation("FundTransfersRequestedBy", fields: [requestedById], references: [id], onDelete: Restrict)
+  reviewedBy            Profile?             @relation("FundTransfersReviewedBy", fields: [reviewedById], references: [id], onDelete: Restrict)
+
+  @@index([campaignBankAccountId])
+  @@index([requestedById])
+  @@index([reviewedById])
   @@map("fund_transfers")
 }
 
@@ -505,14 +540,13 @@ enum Province {
 enum TransferStatus {
   processing
   completed
-  rejected
   cancelled
 }
 
-enum TransferFrequency {
-  monthly_once
-  monthly_twice
-  every_90_days
+enum BankAccountStatus {
+  active
+  replaced
+  disabled
 }
 
 enum NotificationType {

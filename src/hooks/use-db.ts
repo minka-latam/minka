@@ -614,12 +614,7 @@ export function useDb() {
   const createFundTransfer = useCallback(
     async (data: {
       campaignId: string;
-      accountHolderName: string;
-      bankName: string;
-      accountNumber: string;
       amount: number;
-      status: string;
-      frequency?: string;
     }): Promise<{ error?: any; transferId?: string }> => {
       setLoading(true);
       try {
@@ -631,7 +626,7 @@ export function useDb() {
               "Content-Type": "application/json",
             },
             credentials: "include",
-            body: JSON.stringify(data),
+            body: JSON.stringify({ amount: data.amount }),
           }
         );
 
