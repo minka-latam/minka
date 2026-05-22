@@ -3,6 +3,7 @@ import { TriptoClient } from '@/lib/tripto/client'
 import { prisma as db } from '@/lib/prisma'
 import { getOrCreateCampaignAnonymousProfileId } from '@/lib/donations/anonymous-donor'
 import { canReceiveCampaignPayments } from '@/lib/campaigns/visibility'
+import { parseDonationCreateBody } from '@/lib/api/donation-dto'
 
 export async function POST(req: Request) {
   try {
@@ -17,7 +18,7 @@ export async function POST(req: Request) {
       isAnonymous = false,
       notificationEnabled = false,
       paymentMethod = 'card',
-    } = body
+    } = parseDonationCreateBody(body)
 
     if (!campaignId || !amount) {
       return NextResponse.json(

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { parseDonationPatchBody } from "@/lib/api/donation-dto";
 
 export async function PATCH(
   request: NextRequest,
@@ -34,6 +35,7 @@ export async function PATCH(
 
     // Parse the request body
     const body = await request.json();
+    const patchInput = parseDonationPatchBody(body);
 
     // Find the donation to verify it exists
     const donation = await prisma.donation.findUnique({
@@ -51,7 +53,7 @@ export async function PATCH(
     }
 
     const requestedPaymentStatus =
-      body.paymentStatus !== undefined || body.payment_status !== undefined;
+      patchInput.paymentStatus !== undefined;
 
     if (requestedPaymentStatus) {
       return NextResponse.json(
@@ -60,17 +62,9 @@ export async function PATCH(
       );
     }
 
-    // Convert property names if they come in with incorrect casing
-    // This handles any inconsistency between frontend and backend naming
     const normalizedBody = {
-      notificationEnabled:
-        body.notificationEnabled !== undefined
-          ? body.notificationEnabled
-          : body.notification_enabled !== undefined
-            ? body.notification_enabled
-            : undefined,
-
-      message: body.message !== undefined ? body.message : undefined,
+      notificationEnabled: patchInput.notificationEnabled,
+      message: patchInput.message !== undefined ? patchInput.message : undefined,
     };
 
     // Check if user is owner of the donation

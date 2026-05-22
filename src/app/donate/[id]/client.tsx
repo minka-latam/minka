@@ -287,7 +287,7 @@ export function DonatePageContent({
             data?.donation?.amount ?? 0,
           )
           const dbTip = Number(
-            data?.donation?.tip_amount ?? 0,
+            data?.donation?.tipAmount ?? 0,
           )
 
           // 1) amount: set either selectedAmount (if matches predefined) or customAmount

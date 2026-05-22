@@ -29,6 +29,7 @@ import { useAuth } from "@/providers/auth-provider";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { useToast } from "@/components/ui/use-toast";
 import { SuperAdminCampaignTable } from "@/components/dashboard/super-admin-campaign-table";
+import { AdminFundTransfersTable } from "@/components/dashboard/admin-fund-transfers-table";
 import { CampaignAnalytics } from "@/components/dashboard/campaign-analytics";
 import {
   CampaignCard,
@@ -591,6 +592,8 @@ export default function SuperAdminCampaignsPage() {
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
+          <AdminFundTransfersTable />
+
           {/* Filters */}
           <Card>
             <CardContent className="pt-6">

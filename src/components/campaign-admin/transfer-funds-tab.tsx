@@ -1,280 +1,259 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { type ChangeEvent, useEffect, useState } from "react";
 import {
-  ArrowRight,
-  AlertCircle,
-  CheckCircle2,
   ChevronLeft,
   ChevronRight,
-  X,
-  Check,
   Edit,
+  ShieldCheck,
+  X,
+  XCircle,
 } from "lucide-react";
-import {
-  useTransfer,
-  FundTransferFormData,
-  TransferHistoryItem,
-} from "@/hooks/use-transfer";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { toast } from "@/components/ui/use-toast";
-import { LoadingSpinner } from "@/components/ui/loading-spinner";
-import { ButtonSpinner } from "@/components/ui/inline-spinner";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-  DialogClose,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+
+import {
+  CampaignBankAccount,
+  TransferHistoryItem,
+  useTransfer,
+} from "@/hooks/use-transfer";
+import { ButtonSpinner } from "@/components/ui/inline-spinner";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { toast } from "@/components/ui/use-toast";
+import { MIN_TRANSFER_AMOUNT } from "@/lib/campaign-finance";
 
 interface TransferFundsTabProps {
   campaign: Record<string, any>;
 }
 
+type BankAccountFormData = {
+  accountHolderName: string;
+  bankName: string;
+  accountNumber: string;
+  accountType: string;
+};
+
+const EMPTY_BANK_ACCOUNT: BankAccountFormData = {
+  accountHolderName: "",
+  bankName: "",
+  accountNumber: "",
+  accountType: "",
+};
+
 export function TransferFundsTab({ campaign }: TransferFundsTabProps) {
-  const [isLoading, setIsLoading] = useState(false);
-  const [showSaveBar, setShowSaveBar] = useState(false);
-  const [transferFrequency, setTransferFrequency] =
-    useState<string>("monthly_once");
+  const [showAccountModal, setShowAccountModal] = useState(false);
+  const [showTransferConfirmation, setShowTransferConfirmation] =
+    useState(false);
+  const [bankAccount, setBankAccount] = useState<CampaignBankAccount | null>(
+    null,
+  );
+  const [bankAccountForm, setBankAccountForm] =
+    useState<BankAccountFormData>(EMPTY_BANK_ACCOUNT);
+  const [transferAmount, setTransferAmount] = useState(0);
+  const [availableAmount, setAvailableAmount] = useState(
+    Number(campaign.collectedAmount || 0),
+  );
+  const [hasProcessingTransfer, setHasProcessingTransfer] = useState(false);
+  const [transferHistory, setTransferHistory] = useState<TransferHistoryItem[]>(
+    [],
+  );
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [transferHistory, setTransferHistory] = useState<TransferHistoryItem[]>(
-    []
-  );
   const [totalCount, setTotalCount] = useState(0);
-  const [hasMore, setHasMore] = useState(false);
-  const [showAccountModal, setShowAccountModal] = useState(false);
-  const [transferSuccess, setTransferSuccess] = useState(false);
-  const [availableAmount, setAvailableAmount] = useState(
-    campaign.collectedAmount || 0
-  );
-  const [maskedAccountNumber, setMaskedAccountNumber] = useState<string | null>(
-    null
-  );
-  const [editMode, setEditMode] = useState(false);
-  const [hasSavedAccount, setHasSavedAccount] = useState(false);
 
   const {
     isCreatingTransfer,
     isLoadingTransfers,
+    getBankAccount,
+    saveBankAccount,
     createFundTransfer,
+    cancelFundTransfer,
     getTransferHistory,
   } = useTransfer();
 
-  const initialFormState = useMemo<FundTransferFormData>(
-    () => ({
-      accountHolderName: "",
-      bankName: "",
-      accountNumber: "",
-      amount: 0,
-    }),
-    []
-  );
-
-  const [formData, setFormData] =
-    useState<FundTransferFormData>(initialFormState);
-
-  // Load transfer history and check for existing transfers
   useEffect(() => {
-    if (campaign?.id) {
-      loadTransferHistory();
-      checkExistingBankAccount();
-    }
+    if (!campaign?.id) return;
+    loadBankAccount();
+    loadTransferHistory(1);
   }, [campaign?.id]);
 
-  // Load transfer history when page changes
   useEffect(() => {
-    if (campaign?.id && currentPage > 1) {
-      loadTransferHistory();
-    }
+    if (!campaign?.id || currentPage === 1) return;
+    loadTransferHistory(currentPage);
   }, [currentPage]);
 
-  // Check for form changes
-  useEffect(() => {
-    const formChanged =
-      formData.accountHolderName.trim() !==
-        initialFormState.accountHolderName ||
-      formData.bankName !== initialFormState.bankName ||
-      formData.accountNumber.trim() !== initialFormState.accountNumber ||
-      (formData.amount > 0 && formData.amount !== initialFormState.amount);
+  const loadBankAccount = async () => {
+    const account = await getBankAccount(campaign.id);
+    setBankAccount(account);
 
-    setShowSaveBar(formChanged);
-  }, [formData, initialFormState]);
-
-  // Check if there's an existing bank account associated with this campaign
-  const checkExistingBankAccount = async () => {
-    try {
-      // First try to get the latest transfer to extract bank details
-      const result = await getTransferHistory(campaign.id, 1, 0);
-
-      if (result && result.transfers.length > 0) {
-        const latestTransfer = result.transfers[0];
-
-        // Use the bank details from the latest transfer
-        setFormData({
-          ...formData,
-          accountHolderName: latestTransfer.accountHolderName || "",
-          bankName: latestTransfer.bankName || "",
-          accountNumber: latestTransfer.accountNumber || "",
-          amount: 0, // Reset amount
-        });
-
-        // Mask the account number for display
-        if (latestTransfer.accountNumber) {
-          const masked = maskAccountNumber(latestTransfer.accountNumber);
-          setMaskedAccountNumber(masked);
-          setHasSavedAccount(true);
-        }
-      } else if (campaign.accountDetails) {
-        // Fallback to campaign.accountDetails if available
-        const { accountHolderName, bankName, accountNumber } =
-          campaign.accountDetails;
-
-        setFormData({
-          ...formData,
-          accountHolderName: accountHolderName || "",
-          bankName: bankName || "",
-          accountNumber: accountNumber || "",
-        });
-
-        // Mask the account number for display
-        if (accountNumber) {
-          const masked = maskAccountNumber(accountNumber);
-          setMaskedAccountNumber(masked);
-          setHasSavedAccount(true);
-        }
-      }
-    } catch (error) {
-      console.error("Error checking existing bank account:", error);
+    if (account) {
+      setBankAccountForm({
+        accountHolderName: account.accountHolderName,
+        bankName: account.bankName,
+        accountNumber: account.accountNumber,
+        accountType: account.accountType || "",
+      });
     }
   };
 
-  const loadTransferHistory = async () => {
-    if (!campaign?.id) return;
-
+  const loadTransferHistory = async (page = currentPage) => {
     const limit = 10;
-    const offset = (currentPage - 1) * limit;
-
+    const offset = (page - 1) * limit;
     const result = await getTransferHistory(campaign.id, limit, offset);
 
-    if (result) {
-      setTransferHistory(result.transfers);
-      setTotalCount(result.totalCount);
-      setHasMore(result.hasMore);
-      setTotalPages(Math.ceil(result.totalCount / limit));
-    }
+    if (!result) return;
+
+    setTransferHistory(result.transfers);
+    setTotalCount(result.totalCount);
+    setTotalPages(Math.max(1, Math.ceil(result.totalCount / limit)));
+    setAvailableAmount(result.availableAmount);
+    setHasProcessingTransfer(result.hasProcessingTransfer);
   };
 
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
+  const handleBankAccountInputChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: name === "amount" ? parseFloat(value) || 0 : value,
-    });
+    setBankAccountForm((current) => ({
+      ...current,
+      [name]: value,
+    }));
   };
 
-  const handleSubmit = async (e?: React.FormEvent) => {
-    if (e) {
-      e.preventDefault();
-    }
+  const handleTransferAmountChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setTransferAmount(Number(e.target.value) || 0);
+  };
 
-    setIsLoading(true);
-
-    try {
-      // Check if all required fields are filled
-      if (
-        !formData.accountHolderName ||
-        !formData.bankName ||
-        !formData.accountNumber
-      ) {
-        toast({
-          title: "Campos incompletos",
-          description: "Por favor completa todos los campos requeridos.",
-          variant: "destructive",
-        });
-        setIsLoading(false);
-        return;
-      }
-
-      // If submitting just bank account info without a transfer, set amount to 0
-      let dataToSubmit = { ...formData };
-      if (!dataToSubmit.amount) {
-        dataToSubmit.amount = 0;
-      }
-
-      const result = await createFundTransfer(campaign.id, {
-        ...dataToSubmit,
-        frequency: transferFrequency as any,
-      });
-
-      // Success case - the API returned success:true
-      if (result && result.success) {
-        setTransferSuccess(true);
-        setHasSavedAccount(true);
-        setShowSaveBar(false);
-        setShowAccountModal(false);
-
-        // Update masked account number
-        if (formData.accountNumber) {
-          const masked = maskAccountNumber(formData.accountNumber);
-          setMaskedAccountNumber(masked);
-        }
-
-        // Show success message
-        toast({
-          title: "Información guardada",
-          description:
-            "La información de cuenta ha sido guardada correctamente.",
-        });
-
-        // Reload transfer history
-        loadTransferHistory();
-      } else {
-        // API returned but not with success:true
-        toast({
-          title: "No se pudo procesar la solicitud",
-          description: "Por favor verifica los datos e intenta nuevamente.",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      console.error("Error requesting transfer:", error);
+  const handleOpenBankAccountModal = () => {
+    if (hasProcessingTransfer) {
       toast({
-        title: "Error",
+        title: "Transferencia en proceso",
         description:
-          "Ocurrió un error al procesar tu solicitud. Por favor intenta nuevamente.",
+          "No puedes cambiar la cuenta bancaria mientras hay una transferencia en proceso.",
         variant: "destructive",
       });
-      return { success: false };
-    } finally {
-      setIsLoading(false);
+      return;
+    }
+
+    setBankAccountForm(
+      bankAccount
+        ? {
+            accountHolderName: bankAccount.accountHolderName,
+            bankName: bankAccount.bankName,
+            accountNumber: bankAccount.accountNumber,
+            accountType: bankAccount.accountType || "",
+          }
+        : EMPTY_BANK_ACCOUNT,
+    );
+    setShowAccountModal(true);
+  };
+
+  const handleSaveBankAccount = async () => {
+    if (
+      !bankAccountForm.accountHolderName.trim() ||
+      !bankAccountForm.bankName.trim() ||
+      !bankAccountForm.accountNumber.trim()
+    ) {
+      toast({
+        title: "Campos incompletos",
+        description: "Completa titular, banco y número de cuenta.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const result = await saveBankAccount(campaign.id, bankAccountForm);
+
+    if (result.success && result.bankAccount) {
+      setBankAccount(result.bankAccount);
+      setShowAccountModal(false);
+      await loadTransferHistory();
     }
   };
 
-  const handleCancel = () => {
-    setFormData(initialFormState);
-    setShowSaveBar(false);
-    setShowAccountModal(false);
+  const validateTransferRequest = () => {
+    if (!bankAccount) {
+      toast({
+        title: "Cuenta bancaria requerida",
+        description: "Primero registra la cuenta bancaria de la campaña.",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    const minimumAmount = getMinimumTransferAmount();
+
+    if (transferAmount < minimumAmount || transferAmount > availableAmount) {
+      toast({
+        title: "Monto inválido",
+        description: `Solicita entre Bs. ${minimumAmount.toLocaleString()} y ${formatCurrency(
+          availableAmount,
+        )}.`,
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    return true;
   };
 
-  const goToPage = (page: number) => {
-    if (page < 1 || page > totalPages) return;
-    setCurrentPage(page);
+  const handleRequestTransfer = () => {
+    if (!validateTransferRequest()) return;
+    setShowTransferConfirmation(true);
+  };
+
+  const handleCancelTransferConfirmation = () => {
+    setShowTransferConfirmation(false);
+    setTransferAmount(0);
+  };
+
+  const submitTransferRequest = async () => {
+    if (!validateTransferRequest()) {
+      setShowTransferConfirmation(false);
+      return;
+    }
+
+    const result = await createFundTransfer(campaign.id, {
+      amount: transferAmount,
+    });
+
+    if (result.success) {
+      setShowTransferConfirmation(false);
+      setTransferAmount(0);
+      if (result.availableAmount !== undefined) {
+        setAvailableAmount(result.availableAmount);
+      }
+      await loadTransferHistory(1);
+      setCurrentPage(1);
+    }
+  };
+
+  const handleCancelTransfer = async (transferId: string) => {
+    const result = await cancelFundTransfer(campaign.id, transferId);
+
+    if (result.success) {
+      await loadTransferHistory(1);
+      setCurrentPage(1);
+    }
+  };
+
+  const hasReachedCampaignEndDate = () => {
+    const endDateValue = campaign.end_date || campaign.endDate;
+    if (!endDateValue) return false;
+
+    const todayKey = new Date().toISOString().slice(0, 10);
+    const endDateKey = new Date(endDateValue).toISOString().slice(0, 10);
+    return endDateKey <= todayKey;
+  };
+
+  const getMinimumTransferAmount = () => {
+    if (availableAmount < MIN_TRANSFER_AMOUNT && hasReachedCampaignEndDate()) {
+      return availableAmount;
+    }
+
+    return MIN_TRANSFER_AMOUNT;
   };
 
   const maskAccountNumber = (accountNumber: string): string => {
     if (!accountNumber || accountNumber.length < 5) return accountNumber;
-
-    // Only show the last 4 digits
     return `*****${accountNumber.slice(-4)}`;
   };
 
@@ -286,491 +265,463 @@ export function TransferFundsTab({ campaign }: TransferFundsTabProps) {
   const formatDate = (dateString: string) => {
     try {
       return format(new Date(dateString), "dd/MM/yyyy", { locale: es });
-    } catch (error) {
+    } catch {
       return "Fecha inválida";
     }
   };
 
-  const canWithdraw = availableAmount > 0;
+  const goToPage = (page: number) => {
+    if (page < 1 || page > totalPages) return;
+    setCurrentPage(page);
+  };
 
-  // Determine if form is valid based on context
-  const isFormValid = useMemo(() => {
-    // Bank account details are always required
-    const accountDetailsValid =
-      formData.accountHolderName.trim() !== "" &&
-      formData.bankName !== "" &&
-      formData.accountNumber.trim() !== "";
+  const minimumTransferAmount = getMinimumTransferAmount();
+  const canRequestTransfer =
+    Boolean(bankAccount) &&
+    !hasProcessingTransfer &&
+    availableAmount > 0 &&
+    transferAmount >= minimumTransferAmount &&
+    transferAmount <= availableAmount &&
+    !isCreatingTransfer;
 
-    // If we're just registering an account, we don't need a transfer amount
-    if (!hasSavedAccount) {
-      return accountDetailsValid;
-    }
-
-    // If making a transfer with an existing account, amount is required and must be valid
-    if (hasSavedAccount && formData.amount > 0) {
-      return accountDetailsValid && formData.amount <= availableAmount;
-    }
-
-    // Default case - just require account details
-    return accountDetailsValid;
-  }, [formData, hasSavedAccount, availableAmount]);
-
-  // Custom modal implementation
   const renderBankAccountModal = () => {
     if (!showAccountModal) return null;
 
     return (
-      <>
-        {/* Modal backdrop */}
+      <div
+        className="fixed inset-0 bg-black bg-opacity-40 z-50 flex items-center justify-center"
+        onClick={() => setShowAccountModal(false)}
+      >
         <div
-          className="fixed inset-0 bg-black bg-opacity-40 z-50 flex items-center justify-center"
-          onClick={() => setShowAccountModal(false)}
+          className="bg-white w-full max-w-md relative overflow-hidden"
+          onClick={(e) => e.stopPropagation()}
         >
-          {/* Modal container */}
-          <div
-            className="bg-white w-full max-w-md relative overflow-hidden"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Modal header */}
-            <div className="bg-[#FDF9ED] w-full px-6 py-4 flex items-center justify-between">
-              <span className="text-[#2c6e49] text-xl font-medium">
-                Destino de fondos
-              </span>
-              <X
-                className="h-4 w-4 text-[#2c6e49] cursor-pointer"
-                onClick={() => setShowAccountModal(false)}
+          <div className="bg-[#FDF9ED] w-full px-6 py-4 flex items-center justify-between">
+            <span className="text-[#2c6e49] text-xl font-medium">
+              Cuenta bancaria
+            </span>
+            <button
+              type="button"
+              className="text-[#2c6e49]"
+              onClick={() => setShowAccountModal(false)}
+              aria-label="Cerrar"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+
+          <div className="p-6">
+            <div className="mb-6">
+              <label className="block mb-2">Titular de la cuenta</label>
+              <input
+                type="text"
+                name="accountHolderName"
+                maxLength={120}
+                placeholder="Ingresa nombre completo"
+                value={bankAccountForm.accountHolderName}
+                onChange={handleBankAccountInputChange}
+                className="w-full border border-gray-400 p-3 rounded-md"
               />
             </div>
 
-            {/* Modal content */}
-            <div className="p-6">
-              <div className="mb-6">
-                <label className="block mb-2">Titular de la cuenta</label>
-                <input
-                  type="text"
-                  name="accountHolderName"
-                  placeholder="Ingresa nombre completo"
-                  value={formData.accountHolderName}
-                  onChange={handleInputChange}
-                  className="w-full border border-gray-400 p-3 rounded-md"
-                />
-              </div>
+            <div className="mb-6">
+              <label className="block mb-2">Número de cuenta</label>
+              <input
+                type="text"
+                name="accountNumber"
+                maxLength={64}
+                placeholder="Ingresa número de cuenta"
+                value={bankAccountForm.accountNumber}
+                onChange={handleBankAccountInputChange}
+                className="w-full border border-gray-400 p-3 rounded-md"
+              />
+            </div>
 
-              <div className="mb-6">
-                <label className="block mb-2">Número de cuenta</label>
-                <input
-                  type="text"
-                  name="accountNumber"
-                  placeholder="Ingresa número de cuenta"
-                  value={formData.accountNumber}
-                  onChange={handleInputChange}
-                  className="w-full border border-gray-400 p-3 rounded-md"
-                />
-              </div>
+            <div className="mb-6">
+              <label className="block mb-2">Banco de destino</label>
+              <input
+                type="text"
+                name="bankName"
+                maxLength={120}
+                placeholder="Ingresa banco de destino"
+                value={bankAccountForm.bankName}
+                onChange={handleBankAccountInputChange}
+                className="w-full border border-gray-400 p-3 rounded-md"
+              />
+            </div>
 
-              <div className="mb-6">
-                <label className="block mb-2">Banco de destino</label>
-                <input
-                  type="text"
-                  name="bankName"
-                  placeholder="Ingresa banco de destino"
-                  value={formData.bankName}
-                  onChange={handleInputChange}
-                  className="w-full border border-gray-400 p-3 rounded-md"
-                />
-              </div>
+            <div className="mb-6">
+              <label className="block mb-2">Tipo de cuenta</label>
+              <input
+                type="text"
+                name="accountType"
+                maxLength={50}
+                placeholder="Caja de ahorro, cuenta corriente, etc."
+                value={bankAccountForm.accountType}
+                onChange={handleBankAccountInputChange}
+                className="w-full border border-gray-400 p-3 rounded-md"
+              />
+            </div>
 
-              {canWithdraw && hasSavedAccount && (
-                <div className="mb-6">
-                  <label className="block mb-2">Monto a transferir</label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
-                      Bs.
-                    </span>
-                    <input
-                      type="number"
-                      name="amount"
-                      min="0"
-                      max={availableAmount}
-                      step="0.01"
-                      placeholder="0.00"
-                      value={formData.amount || ""}
-                      onChange={handleInputChange}
-                      className="w-full pl-10 border border-gray-400 p-3 rounded-md"
-                    />
-                  </div>
-                  <p className="text-sm text-gray-500 mt-1">
-                    Monto disponible: {formatCurrency(availableAmount)}
-                  </p>
-                </div>
-              )}
-
-              <div className="flex justify-center mt-8">
-                <button
-                  type="button"
-                  disabled={!isFormValid || isCreatingTransfer}
-                  onClick={handleSubmit}
-                  className="bg-[#2c6e49] hover:bg-[#1e4d33] text-white py-3 px-12 rounded-3xl"
-                >
-                  {isCreatingTransfer ? (
-                    <div className="flex items-center justify-center">
-                      <ButtonSpinner />
-                      <span>Procesando...</span>
-                    </div>
-                  ) : (
-                    "Guardar informacion"
-                  )}
-                </button>
-              </div>
+            <div className="flex justify-center mt-8">
+              <button
+                type="button"
+                disabled={isCreatingTransfer}
+                onClick={handleSaveBankAccount}
+                className="bg-[#2c6e49] hover:bg-[#1e4d33] disabled:opacity-60 text-white py-3 px-12 rounded-3xl"
+              >
+                {isCreatingTransfer ? (
+                  <span className="flex items-center justify-center">
+                    <ButtonSpinner />
+                    <span>Guardando...</span>
+                  </span>
+                ) : (
+                  "Guardar cuenta bancaria"
+                )}
+              </button>
             </div>
           </div>
         </div>
-      </>
+      </div>
+    );
+  };
+
+  const renderTransferConfirmationModal = () => {
+    if (!showTransferConfirmation) return null;
+
+    return (
+      <div className="fixed inset-0 z-50 flex items-end bg-black/60 sm:items-center sm:justify-center sm:p-4">
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="transfer-confirmation-title"
+          className="max-h-[92vh] w-full overflow-y-auto rounded-t-3xl bg-white shadow-2xl sm:max-w-2xl sm:rounded-2xl"
+        >
+          <div className="bg-[#FDF9ED] px-5 py-5 sm:px-8">
+            <div className="flex items-start gap-3">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#2c6e49] text-white">
+                <ShieldCheck className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-[#2c6e49]">
+                  Retiro de fondos
+                </p>
+                <h3
+                  id="transfer-confirmation-title"
+                  className="mt-1 text-xl font-bold leading-tight text-[#1f2933] sm:text-2xl"
+                >
+                  ¡Importante antes de retirar tus fondos!
+                </h3>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-4 px-5 py-5 text-sm leading-6 text-gray-700 sm:px-8">
+            <div className="rounded-xl border border-[#dfeadd] bg-[#f7fbf7] p-4">
+              <p className="text-xs font-medium text-gray-500">
+                Solicitud a enviar
+              </p>
+              <p className="mt-1 text-2xl font-bold text-[#2c6e49]">
+                {formatCurrency(transferAmount)}
+              </p>
+              {bankAccount && (
+                <p className="mt-1 text-xs text-gray-600">
+                  {bankAccount.bankName} · Nº{" "}
+                  {maskAccountNumber(bankAccount.accountNumber)}
+                </p>
+              )}
+            </div>
+
+            <p>
+              Al continuar con el retiro de fondos, declaras haber leído,
+              comprendido y aceptado los Términos y Condiciones y las Políticas
+              de Uso de Minka disponibles en esta plataforma.
+            </p>
+            <p>
+              Asimismo, confirmas que los datos personales y bancarios
+              proporcionados, incluyendo el nombre del titular y número de
+              cuenta bancaria, son correctos, completos y se encuentran
+              vigentes.
+            </p>
+            <p>
+              Minka realizará las transferencias utilizando exclusivamente la
+              información registrada por el usuario. En consecuencia, Minka no
+              se hace responsable por errores, pérdidas, retrasos,
+              transferencias no procesadas o fondos enviados a cuentas
+              incorrectas debido a información errónea, incompleta o
+              desactualizada proporcionada por el usuario.
+            </p>
+            <p>
+              Al seleccionar “Aceptar y continuar”, autorizas expresamente el
+              procesamiento de la transferencia bajo los datos ingresados.
+            </p>
+          </div>
+
+          <div className="sticky bottom-0 flex flex-col gap-3 border-t border-gray-100 bg-white px-5 py-4 sm:flex-row sm:justify-end sm:px-8">
+            <button
+              type="button"
+              disabled={isCreatingTransfer}
+              onClick={handleCancelTransferConfirmation}
+              className="order-2 rounded-full border border-gray-300 px-5 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60 sm:order-1"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              disabled={isCreatingTransfer}
+              onClick={submitTransferRequest}
+              className="order-1 rounded-full bg-[#2c6e49] px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-[#1e4d33] disabled:opacity-60 sm:order-2"
+            >
+              {isCreatingTransfer ? (
+                <span className="flex items-center justify-center">
+                  <ButtonSpinner />
+                  <span>Enviando...</span>
+                </span>
+              ) : (
+                "Aceptar y continuar"
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
     );
   };
 
   return (
     <div className="w-full px-6 md:px-8 lg:px-16 xl:px-24 py-6 flex flex-col min-h-[calc(100vh-200px)]">
-      {/* Content Section - Full Width */}
       <div className="w-full flex-1 flex flex-col">
-        <div>
-          {/* Main Amount Display */}
-          <div className="mb-6">
-            <h3 className="text-3xl md:text-4xl font-bold mb-2 text-[#2c6e49]">
-              {formatCurrency(availableAmount)}
-            </h3>
-            <p className="text-sm text-gray-600">Fondos disponibles</p>
-          </div>
+        <div className="mb-6">
+          <h3 className="text-3xl md:text-4xl font-bold mb-2 text-[#2c6e49]">
+            {formatCurrency(availableAmount)}
+          </h3>
+          <p className="text-sm text-gray-600">Fondos disponibles</p>
+        </div>
 
-          {/* Account Number Display */}
-          <div className="mb-6 flex items-center">
-            {maskedAccountNumber ? (
-              <>
-                <span className="text-sm">Nº {maskedAccountNumber}</span>
-                <button
-                  className="ml-2 text-[#2B6D48]"
-                  onClick={() => {
-                    setEditMode(true);
-                    setShowAccountModal(true);
-                  }}
-                >
-                  <Edit size={18} />
-                </button>
-              </>
-            ) : (
+        <div className="mb-8">
+          <p className="text-sm mb-2">Cuenta bancaria de la campaña</p>
+          {bankAccount ? (
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="text-sm">
+                {bankAccount.bankName} - Nº{" "}
+                {maskAccountNumber(bankAccount.accountNumber)}
+              </span>
               <button
-                className="px-3 py-1.5 text-sm text-gray-600 border border-dashed border-[#2B6D48] rounded-md hover:bg-[#f0f8f4] flex items-center gap-2 transition-colors duration-200"
-                onClick={() => {
-                  setEditMode(false);
-                  setShowAccountModal(true);
-                }}
+                type="button"
+                className="text-[#2B6D48] disabled:text-gray-400"
+                onClick={handleOpenBankAccountModal}
+                disabled={hasProcessingTransfer}
+                aria-label="Editar cuenta bancaria"
               >
-                <span>Sin cuenta registrada - </span>
-                <span className="text-[#2B6D48] font-medium">
-                  Registrar cuenta
-                </span>
-                <svg
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  className="text-[#2B6D48]"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M12 4V20M4 12H20"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
+                <Edit size={18} />
               </button>
-            )}
-          </div>
-
-          {/* Destination Selector */}
-          <div className="mb-6">
-            <p className="text-sm mb-2">Destino de fondos</p>
+              {hasProcessingTransfer && (
+                <span className="text-xs text-gray-500">
+                  Edición bloqueada por transferencia en proceso
+                </span>
+              )}
+            </div>
+          ) : (
             <button
-              className={`inline-flex px-6 py-2 border ${hasSavedAccount ? "border-[#2c6e49]" : "border-gray-300"} rounded-full ${hasSavedAccount ? "bg-white text-[#2c6e49] hover:bg-[#f0f8f4]" : "bg-gray-50 text-gray-500 hover:bg-gray-100"} font-medium text-sm`}
-              onClick={() => {
-                setEditMode(false);
-                if (!hasSavedAccount) {
-                  // If there's no saved account, show the modal to add one
-                  setShowAccountModal(true);
-                  toast({
-                    title: "Cuenta bancaria necesaria",
-                    description:
-                      "Primero debes registrar una cuenta bancaria para poder transferir fondos.",
-                  });
-                } else {
-                  // If there's an existing account, just set the amount
-                  setFormData({
-                    ...formData,
-                    amount: 0, // Reset amount for new transfer
-                  });
-                  setShowAccountModal(true);
-                }
-              }}
+              type="button"
+              className="px-3 py-1.5 text-sm text-gray-600 border border-dashed border-[#2B6D48] rounded-md hover:bg-[#f0f8f4] transition-colors duration-200"
+              onClick={handleOpenBankAccountModal}
             >
-              {hasSavedAccount
-                ? "Nueva transferencia"
-                : "Registrar cuenta bancaria"}
+              <span>Sin cuenta registrada - </span>
+              <span className="text-[#2B6D48] font-medium">
+                Registrar cuenta
+              </span>
             </button>
+          )}
+        </div>
+
+        <div className="border-t border-gray-200 my-8"></div>
+
+        <div className="mb-8 max-w-md">
+          <h3 className="text-xl font-bold mb-3">Solicitar transferencia</h3>
+          <p className="text-sm text-gray-600 mb-5">
+            Minka procesa las transferencias manualmente. Una solicitud puede
+            tardar hasta 5 días hábiles.
+          </p>
+
+          <label className="block mb-2">Monto a transferir</label>
+          <div className="relative">
+            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
+              Bs.
+            </span>
+            <input
+              type="number"
+              min={minimumTransferAmount}
+              max={availableAmount}
+              step="10"
+              placeholder="0.00"
+              value={transferAmount || ""}
+              onChange={handleTransferAmountChange}
+              disabled={
+                !bankAccount ||
+                hasProcessingTransfer ||
+                availableAmount < minimumTransferAmount
+              }
+              className="w-full pl-10 border border-gray-400 p-3 rounded-md"
+            />
           </div>
+          <p className="text-sm text-gray-500 mt-1">
+            Mínimo: {formatCurrency(minimumTransferAmount)}. Disponible:{" "}
+            {formatCurrency(availableAmount)}.
+          </p>
+          {availableAmount > 0 && availableAmount < minimumTransferAmount && (
+            <p className="mt-2 text-sm text-amber-700">
+              Debes tener al menos {formatCurrency(minimumTransferAmount)}{" "}
+              disponibles para solicitar una transferencia.
+            </p>
+          )}
+          {availableAmount > 0 &&
+            availableAmount < MIN_TRANSFER_AMOUNT &&
+            hasReachedCampaignEndDate() && (
+              <p className="mt-2 text-sm text-[#2c6e49]">
+                La campaña ya llegó a su fecha de finalización, por eso puedes
+                solicitar el saldo restante.
+              </p>
+            )}
 
-          {/* Separator before frequency section */}
-          <div className="border-t border-gray-200 my-8"></div>
+          <button
+            type="button"
+            disabled={!canRequestTransfer}
+            onClick={handleRequestTransfer}
+            className="mt-5 bg-[#2c6e49] hover:bg-[#1e4d33] disabled:opacity-60 text-white py-3 px-8 rounded-3xl"
+          >
+            {isCreatingTransfer ? (
+              <span className="flex items-center justify-center">
+                <ButtonSpinner />
+                <span>Procesando...</span>
+              </span>
+            ) : (
+              "Solicitar transferencia"
+            )}
+          </button>
+        </div>
 
-          {/* Frequency of Transfer Section */}
-          <div className="mb-8">
-            <h3 className="text-xl font-bold mb-6">
-              Frecuencia de transferencia
-            </h3>
-            <div className="space-y-4">
-              <div className="flex items-center">
-                <input
-                  type="radio"
-                  id="monthly_once"
-                  name="transferFrequency"
-                  value="monthly_once"
-                  checked={transferFrequency === "monthly_once"}
-                  onChange={() => setTransferFrequency("monthly_once")}
-                  className="h-5 w-5 text-black border-gray-500"
-                />
-                <label htmlFor="monthly_once" className="ml-3 text-sm">
-                  1 vez al mes
-                </label>
-              </div>
+        <div className="border-t border-gray-200 my-8"></div>
 
-              <div className="flex items-center">
-                <input
-                  type="radio"
-                  id="monthly_twice"
-                  name="transferFrequency"
-                  value="monthly_twice"
-                  checked={transferFrequency === "monthly_twice"}
-                  onChange={() => setTransferFrequency("monthly_twice")}
-                  className="h-5 w-5 text-black border-gray-500"
-                />
-                <label htmlFor="monthly_twice" className="ml-3 text-sm">
-                  2 veces al mes
-                </label>
-              </div>
+        <div className="mt-4">
+          <h3 className="text-xl font-bold mb-6">
+            Historial de transferencias ({totalCount})
+          </h3>
 
-              <div className="flex items-center">
-                <input
-                  type="radio"
-                  id="every_90_days"
-                  name="transferFrequency"
-                  value="every_90_days"
-                  checked={transferFrequency === "every_90_days"}
-                  onChange={() => setTransferFrequency("every_90_days")}
-                  className="h-5 w-5 text-black border-gray-500"
-                />
-                <label htmlFor="every_90_days" className="ml-3 text-sm">
-                  Cada 90 días
-                </label>
+          {isLoadingTransfers ? (
+            <div className="flex justify-center py-12">
+              <LoadingSpinner size="lg" />
+            </div>
+          ) : transferHistory.length > 0 ? (
+            <div className="flex-1 flex flex-col overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-gray-200">
+                    <th className="text-left py-3 px-4 font-medium text-gray-600">
+                      Monto
+                    </th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-600">
+                      Fecha
+                    </th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-600">
+                      Cuenta
+                    </th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-600">
+                      Estado
+                    </th>
+                    <th className="text-right py-3 px-4 font-medium text-gray-600">
+                      Acción
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {transferHistory.map((transfer) => (
+                    <tr key={transfer.id} className="bg-white">
+                      <td className="py-4 px-4 text-gray-700">
+                        {formatCurrency(transfer.amount)}
+                      </td>
+                      <td className="py-4 px-4 text-gray-700">
+                        {formatDate(transfer.createdAt)}
+                      </td>
+                      <td className="py-4 px-4 text-gray-700">
+                        {maskAccountNumber(transfer.accountNumber)}
+                      </td>
+                      <td className="py-4 px-4">
+                        <span
+                          className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            transfer.status === "completed"
+                              ? "bg-green-100 text-green-800"
+                              : transfer.status === "processing"
+                                ? "bg-yellow-100 text-yellow-800"
+                                : "bg-gray-100 text-gray-800"
+                          }`}
+                        >
+                          {transfer.status === "completed"
+                            ? "Completado"
+                            : transfer.status === "processing"
+                              ? "En proceso"
+                              : "Cancelado"}
+                        </span>
+                      </td>
+                      <td className="py-4 px-4 text-right">
+                        {transfer.status === "processing" ? (
+                          <button
+                            type="button"
+                            className="inline-flex items-center gap-1 rounded-md border border-red-200 px-3 py-1.5 text-xs font-medium text-red-700 hover:bg-red-50 disabled:opacity-60"
+                            disabled={isCreatingTransfer}
+                            onClick={() => handleCancelTransfer(transfer.id)}
+                          >
+                            <XCircle className="h-3.5 w-3.5" />
+                            Cancelar
+                          </button>
+                        ) : (
+                          <span className="text-xs text-gray-400">-</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+
+              {totalPages > 1 && (
+                <div className="flex justify-center items-center gap-2 mt-8">
+                  <button
+                    className="flex items-center px-4 py-2 rounded-full border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none"
+                    onClick={() => goToPage(currentPage - 1)}
+                    disabled={currentPage === 1}
+                  >
+                    <ChevronLeft className="h-4 w-4 mr-1" />
+                    <span>Anterior</span>
+                  </button>
+
+                  <span className="text-sm text-gray-600">
+                    {currentPage} / {totalPages}
+                  </span>
+
+                  <button
+                    className="flex items-center px-4 py-2 rounded-full border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none"
+                    onClick={() => goToPage(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                  >
+                    <span>Siguiente</span>
+                    <ChevronRight className="h-4 w-4 ml-1" />
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="flex items-center justify-center py-12">
+              <div className="bg-gray-50 p-8 rounded-lg text-center w-full">
+                <p className="text-gray-600">
+                  No hay ninguna transferencia registrada por el momento.
+                </p>
               </div>
             </div>
-          </div>
-
-          {/* Separator after frequency section */}
-          <div className="border-t border-gray-200 my-8"></div>
-
-          {/* Transfer History Section */}
-          <div className="mt-12">
-            <h3 className="text-xl font-bold mb-6">
-              Historial de transferencias ({totalCount})
-            </h3>
-
-            {isLoadingTransfers ? (
-              <div className="flex justify-center py-12">
-                <LoadingSpinner size="lg" />
-              </div>
-            ) : transferHistory.length > 0 ? (
-              <div className="flex-1 flex flex-col">
-                {/* Table Header */}
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-gray-200">
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">
-                        Monto
-                      </th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">
-                        Fecha
-                      </th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">
-                        Cuenta
-                      </th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">
-                        Estado
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {transferHistory.map((transfer) => (
-                      <tr key={transfer.id} className="bg-white">
-                        <td className="py-4 px-4 text-gray-700">
-                          {formatCurrency(transfer.amount)}
-                        </td>
-                        <td className="py-4 px-4 text-gray-700">
-                          {formatDate(transfer.createdAt)}
-                        </td>
-                        <td className="py-4 px-4 text-gray-700">
-                          {maskAccountNumber(transfer.accountNumber)}
-                        </td>
-                        <td className="py-4 px-4">
-                          <span
-                            className={`px-2 py-1 rounded-full text-xs font-medium ${
-                              transfer.status === "completed"
-                                ? "bg-green-100 text-green-800"
-                                : transfer.status === "processing"
-                                  ? "bg-yellow-100 text-yellow-800"
-                                  : transfer.status === "rejected"
-                                    ? "bg-red-100 text-red-800"
-                                    : "bg-gray-100 text-gray-800"
-                            }`}
-                          >
-                            {transfer.status === "completed"
-                              ? "Completado"
-                              : transfer.status === "processing"
-                                ? "En proceso"
-                                : transfer.status === "rejected"
-                                  ? "Rechazado"
-                                  : "Cancelado"}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-
-                {/* Pagination */}
-                {totalPages > 1 && (
-                  <div className="flex justify-center items-center gap-2 mt-8">
-                    <button
-                      className="flex items-center px-4 py-2 rounded-full border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none"
-                      onClick={() => goToPage(currentPage - 1)}
-                      disabled={currentPage === 1}
-                    >
-                      <ChevronLeft className="h-4 w-4 mr-1" />
-                      <span>Anterior</span>
-                    </button>
-
-                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                      // Show pages around current page
-                      let pageNum;
-                      if (totalPages <= 5) {
-                        pageNum = i + 1;
-                      } else if (currentPage <= 3) {
-                        pageNum = i + 1;
-                      } else if (currentPage >= totalPages - 2) {
-                        pageNum = totalPages - 4 + i;
-                      } else {
-                        pageNum = currentPage - 2 + i;
-                      }
-
-                      return (
-                        <button
-                          key={pageNum}
-                          className={`h-10 w-10 rounded-full flex items-center justify-center text-sm ${
-                            currentPage === pageNum
-                              ? "bg-green-700 text-white border border-green-700"
-                              : "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
-                          }`}
-                          onClick={() => goToPage(pageNum)}
-                        >
-                          {pageNum}
-                        </button>
-                      );
-                    })}
-
-                    {totalPages > 5 && currentPage < totalPages - 2 && (
-                      <>
-                        <span className="px-1 text-gray-500">...</span>
-                        <button
-                          className="h-10 w-10 rounded-full flex items-center justify-center text-sm border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
-                          onClick={() => goToPage(totalPages)}
-                        >
-                          {totalPages}
-                        </button>
-                      </>
-                    )}
-
-                    <button
-                      className="flex items-center px-4 py-2 rounded-full border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none"
-                      onClick={() => goToPage(currentPage + 1)}
-                      disabled={currentPage === totalPages}
-                    >
-                      <span>Siguiente</span>
-                      <ChevronRight className="h-4 w-4 ml-1" />
-                    </button>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="flex items-center justify-center py-12">
-                <div className="bg-gray-50 p-8 rounded-lg text-center w-full">
-                  <div className="flex justify-center">
-                    <svg
-                      width="48"
-                      height="48"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <circle
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="#3b82f6"
-                        strokeWidth="1.5"
-                      />
-                      <path
-                        d="M12 12L12 16"
-                        stroke="#3b82f6"
-                        strokeWidth="1.5"
-                        strokeLinecap="round"
-                      />
-                      <circle cx="12" cy="8" r="1" fill="#3b82f6" />
-                    </svg>
-                  </div>
-                  <p className="mt-4 text-gray-600">
-                    No hay ninguna transferencia registrada por el momento.
-                  </p>
-                </div>
-              </div>
-            )}
-          </div>
+          )}
         </div>
       </div>
 
-      {/* Render custom modal */}
       {renderBankAccountModal()}
-
-      {/* Save Changes Bar */}
-      {showSaveBar && !showAccountModal && (
-        <div className="fixed bottom-0 left-0 right-0 bg-gray-100 py-4 px-6 border-t border-gray-200 z-50 flex justify-between items-center">
-          <Button
-            type="button"
-            variant="outline"
-            className="border-gray-300 bg-white"
-            onClick={handleCancel}
-          >
-            Cancelar
-          </Button>
-          <Button
-            type="button"
-            className="bg-[#2c6e49] hover:bg-[#1e4d33] text-white"
-            disabled={isCreatingTransfer || !isFormValid}
-            onClick={handleSubmit}
-          >
-            {isCreatingTransfer ? "Procesando..." : "Solicitar transferencia"}
-          </Button>
-        </div>
-      )}
+      {renderTransferConfirmationModal()}
     </div>
   );
 }
