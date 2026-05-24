@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
 import { prisma as db } from '@/lib/prisma'
-import { PaymentStatus } from '@prisma/client'
 import { formatDonationStatusDto } from '@/lib/api/donation-dto'
 
 export async function GET(req: Request) {
@@ -51,43 +50,13 @@ export async function GET(req: Request) {
   }
 }
 
-export async function POST(req: Request) {
-  try {
-    const body = await req.json().catch(() => null)
-    const donationId = body?.donationId as
-      | string
-      | undefined
-
-    if (!donationId) {
-      return NextResponse.json(
-        { success: false, error: 'Missing donationId' },
-        { status: 400 },
-      )
-    }
-
-    // Mark only pending Tripto-card donations as failed (never downgrade completed)
-    const result = await db.donation.updateMany({
-      where: {
-        id: donationId,
-        paymentStatus: PaymentStatus.pending,
-        paymentProvider: 'tripto',
-        // optional extra safety:
-        paymentMethod: 'credit_card',
-      },
-      data: {
-        paymentStatus: PaymentStatus.failed,
-      },
-    })
-
-    return NextResponse.json({
-      success: true,
-      updatedCount: result.count,
-    })
-  } catch (err) {
-    console.error('[DONATION_STATUS][POST]', err)
-    return NextResponse.json(
-      { success: false, error: 'Internal error' },
-      { status: 500 },
-    )
-  }
+export async function POST() {
+  return NextResponse.json(
+    {
+      success: false,
+      error:
+        'Donation payment status is managed by payment providers',
+    },
+    { status: 405 },
+  )
 }
