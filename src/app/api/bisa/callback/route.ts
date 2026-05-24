@@ -111,24 +111,21 @@ export async function POST(request: NextRequest) {
       }
 
       // Create payment log for completed payment
-      await tx.paymentLog.create({
-        data: {
-          paymentprovider: "bisa",
-          paymentmethod: "qr",
-          paymentid: numeroOrdenOriginante || donation.bisaQrId || alias,
-          status: "completed",
-          amount: confirmedProviderAmount,
-          tipamount: Number(donation.tip_amount || 0),
-          currency: BISA_PAYMENT_CURRENCY,
-          metadata: JSON.stringify({
-            alias,
-            donationId: donation.id,
-            bisaQrId: donation.bisaQrId,
-            processedAt: fechaproceso,
-          }),
-          campaignid: donation.campaignId,
-          donorid: donation.donorId,
-        },
+      await createCompletedPaymentLogIfMissing(tx, {
+        paymentprovider: "bisa",
+        paymentmethod: "qr",
+        paymentid: numeroOrdenOriginante || donation.bisaQrId || alias,
+        amount: confirmedProviderAmount,
+        tipamount: Number(donation.tip_amount || 0),
+        currency: moneda || "BOB",
+        metadata: JSON.stringify({
+          alias,
+          donationId: donation.id,
+          bisaQrId: donation.bisaQrId,
+          processedAt: fechaproceso,
+        }),
+        campaignid: donation.campaignId,
+        donorid: donation.donorId,
       });
         
       await createCompletedPaymentLogIfMissing(tx, {
