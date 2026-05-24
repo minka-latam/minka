@@ -5,6 +5,14 @@ import {
   completeDonationAccounting,
   sendCompletedDonationNotification,
 } from "@/lib/donations/accounting";
+import {
+  BISA_AMOUNT_TOLERANCE,
+  BISA_EXPECTED_CURRENCY,
+  expectedDonationTotal,
+  normalizeCurrency,
+  parseProviderAmount,
+  validateProviderPayment,
+} from "@/lib/payments/provider-validation";
 
 export async function GET(
   request: NextRequest,
@@ -54,6 +62,37 @@ export async function GET(
 
     // If paid, update DB (paymentStatus is already known to not be "completed" from early return above)
     if (status === "PAGADO") {
+      const expectedAmount = expectedDonationTotal(donation);
+      const providerAmount = parseProviderAmount(response.data.amount);
+      const providerCurrency = normalizeCurrency(response.data.currency);
+      const validation = validateProviderPayment({
+        expectedAmount,
+        providerAmount,
+        expectedCurrency: BISA_EXPECTED_CURRENCY,
+        providerCurrency,
+        amountTolerance: BISA_AMOUNT_TOLERANCE,
+      });
+
+      if (!validation.ok) {
+        console.error("[BISA][STATUS_VALIDATION]", {
+          alias,
+          reason: validation.reason,
+          expectedAmount,
+          providerAmount,
+          expectedCurrency: BISA_EXPECTED_CURRENCY,
+          providerCurrency,
+        });
+
+        return NextResponse.json(
+          {
+            success: false,
+            error: validation.message,
+          },
+          { status: 409 },
+        );
+      }
+      const confirmedProviderAmount = providerAmount as number;
+
       let completionNotification;
 
       // Transaction to ensure consistency
@@ -73,11 +112,6 @@ export async function GET(
 
         if (completion.completedNow) {
           const tipAmount = Number(donation.tip_amount || 0);
-          const providerAmount = Number(
-            response.data?.amount ??
-              donation.total_amount ??
-              Number(donation.amount) + tipAmount
-          );
           const paymentId =
             response.data?.transactionId || donation.bisaQrId || alias;
 
@@ -97,9 +131,9 @@ export async function GET(
                 paymentmethod: "qr",
                 paymentid: paymentId,
                 status: "completed",
-                amount: providerAmount,
+                amount: confirmedProviderAmount,
                 tipamount: tipAmount,
-                currency: response.data?.currency || "BOB",
+                currency: BISA_EXPECTED_CURRENCY,
                 metadata: JSON.stringify({
                   alias,
                   donationId: donation.id,
