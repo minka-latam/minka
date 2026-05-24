@@ -56,6 +56,10 @@ DIRECT_URL="postgresql://postgres.[YOUR-PROJECT-REF]:[YOUR-PASSWORD]@aws-0-[YOUR
 # Storage
 NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET=minka
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+
+# BISA callback authentication
+BISA_CALLBACK_USERNAME=your-callback-username
+BISA_CALLBACK_PASSWORD=your-callback-password
 ```
 
 6. Initialize Prisma:

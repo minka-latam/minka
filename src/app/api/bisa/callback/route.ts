@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
 import {
   completeDonationAccounting,
@@ -13,26 +14,76 @@ import {
 } from "@/lib/payments/provider-validation";
 import { createCompletedPaymentLogIfMissing } from "@/lib/payments/payment-log";
 
-export async function POST(request: NextRequest) {
-  // 1. Verify Basic Auth
-  const authHeader = request.headers.get("Authorization");
-  if (!authHeader || !authHeader.startsWith("Basic ")) {
-    return NextResponse.json({ codigo: "9999", mensaje: "Unauthorized" }, { status: 401 });
+function hasCredentialValue(value: string | undefined): value is string {
+  return typeof value === "string" && value.length > 0;
+}
+
+function timingSafeEqualString(a: string, b: string) {
+  const aBuffer = Buffer.from(a);
+  const bBuffer = Buffer.from(b);
+
+  if (aBuffer.length !== bBuffer.length) {
+    return false;
   }
 
-  const base64Credentials = authHeader.split(" ")[1];
-  const credentials = Buffer.from(base64Credentials, "base64").toString("utf-8");
-  const [username, password] = credentials.split(":");
+  return crypto.timingSafeEqual(aBuffer, bBuffer);
+}
 
+function parseBasicAuthCredentials(authHeader: string) {
+  if (!authHeader.startsWith("Basic ")) {
+    return null;
+  }
+
+  try {
+    const encodedCredentials = authHeader.slice("Basic ".length);
+    const credentials = Buffer.from(encodedCredentials, "base64").toString("utf-8");
+    const separatorIndex = credentials.indexOf(":");
+
+    if (separatorIndex === -1) {
+      return null;
+    }
+
+    return {
+      username: credentials.slice(0, separatorIndex),
+      password: credentials.slice(separatorIndex + 1),
+    };
+  } catch {
+    return null;
+  }
+}
+
+export async function POST(request: NextRequest) {
+  // 1. Verify Basic Auth
   const expectedUsername = process.env.BISA_CALLBACK_USERNAME;
   const expectedPassword = process.env.BISA_CALLBACK_PASSWORD;
 
-  // Only check credentials if they are set in env, otherwise skip (dev mode or insecure)
-  // But for security, we should enforce it.
-  if (expectedUsername && expectedPassword) {
-    if (username !== expectedUsername || password !== expectedPassword) {
-      return NextResponse.json({ codigo: "9999", mensaje: "Invalid credentials" }, { status: 401 });
-    }
+  if (
+    !hasCredentialValue(expectedUsername) ||
+    !hasCredentialValue(expectedPassword)
+  ) {
+    console.error(
+      "[BISA][CALLBACK_AUTH] Missing BISA_CALLBACK_USERNAME or BISA_CALLBACK_PASSWORD",
+    );
+
+    return NextResponse.json(
+      { codigo: "9999", mensaje: "Callback credentials are not configured" },
+      { status: 500 },
+    );
+  }
+
+  const authHeader = request.headers.get("Authorization");
+  if (!authHeader) {
+    return NextResponse.json({ codigo: "9999", mensaje: "Unauthorized" }, { status: 401 });
+  }
+
+  const credentials = parseBasicAuthCredentials(authHeader);
+
+  if (
+    !credentials ||
+    !timingSafeEqualString(credentials.username, expectedUsername) ||
+    !timingSafeEqualString(credentials.password, expectedPassword)
+  ) {
+    return NextResponse.json({ codigo: "9999", mensaje: "Invalid credentials" }, { status: 401 });
   }
 
   try {
