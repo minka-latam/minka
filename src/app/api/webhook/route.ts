@@ -5,6 +5,7 @@ import {
   completeDonationAccounting,
   sendCompletedDonationNotification,
 } from '@/lib/donations/accounting'
+import { createCompletedPaymentLogIfMissing } from '@/lib/payments/payment-log'
 import {
   PaymentMethod,
   PaymentProvider,
@@ -261,7 +262,22 @@ export async function POST(req: Request) {
           return
         }
 
-        // Otherwise create the first log row for this payment id
+        if (incomingStatus === 'completed') {
+          await createCompletedPaymentLogIfMissing(tx, {
+            paymentprovider: PaymentProvider.tripto,
+            paymentmethod: PaymentMethod.credit_card,
+            paymentid: paymentId,
+            amount: providerTotalAmount,
+            tipamount: tipAmount,
+            currency,
+            campaignid: campaignId,
+            donorid: donorId,
+            metadata: metadataJson,
+          })
+          return
+        }
+
+        // Otherwise create the first failed log row for this payment id
         await tx.paymentLog.create({
           data: {
             paymentprovider: PaymentProvider.tripto,
