@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { PaymentStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { findPublicOrOwnedCampaignById } from "@/lib/campaigns/visibility";
 
@@ -30,7 +31,7 @@ export async function GET(
     const totalCount = await prisma.donation.count({
       where: {
         campaignId,
-        paymentStatus: "completed",
+        paymentStatus: PaymentStatus.completed,
       },
     });
 
@@ -38,7 +39,7 @@ export async function GET(
     const donations = await prisma.donation.findMany({
       where: {
         campaignId,
-        paymentStatus: "completed",
+        paymentStatus: PaymentStatus.completed,
       },
       orderBy: {
         createdAt: "desc",
