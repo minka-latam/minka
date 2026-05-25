@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { bisaClient } from "@/lib/bisa/client";
+import {
+  canAccessBisaDonation,
+  isPendingBisaDonation,
+} from "@/lib/bisa/qr-authorization";
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { alias, reason } = body;
+    const { alias, reason, qrAccessToken } = body;
 
     if (!alias) {
       return NextResponse.json({ error: "Alias is required" }, { status: 400 });
@@ -14,24 +18,31 @@ export async function POST(request: NextRequest) {
     // Verify donation exists
     const donation = await prisma.donation.findFirst({
       where: { bisaAlias: alias },
+      include: {
+        campaign: {
+          select: { organizerId: true },
+        },
+      },
     });
 
     if (!donation) {
       return NextResponse.json({ error: "Donation not found" }, { status: 404 });
     }
 
-    // Check if already cancelled or completed
-    if (donation.paymentStatus === "completed") {
-      return NextResponse.json({
-        error: "Cannot disable a completed payment"
-      }, { status: 400 });
+    const hasAccess = await canAccessBisaDonation({
+      donation,
+      accessToken: qrAccessToken,
+    });
+
+    if (!hasAccess) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 
-    if (donation.paymentStatus === "cancelled") {
-      return NextResponse.json({
-        success: true,
-        message: "QR already disabled"
-      });
+    if (!isPendingBisaDonation(donation)) {
+      return NextResponse.json(
+        { error: "Only pending BISA QR donations can be disabled" },
+        { status: 400 }
+      );
     }
 
     const tipAmount = Number(donation.tip_amount || 0);
@@ -63,17 +74,26 @@ export async function POST(request: NextRequest) {
           donorid: donation.donorId,
         },
       });
-      return NextResponse.json({ error: "Failed to disable QR" }, { status: 500 });
+      return NextResponse.json({ error: "Failed to disable QR" }, { status: 502 });
     }
 
     // Update donation status and create payment log
     await prisma.$transaction(async (tx) => {
-      await tx.donation.update({
-        where: { id: donation.id },
+      const updateResult = await tx.donation.updateMany({
+        where: {
+          id: donation.id,
+          paymentStatus: "pending",
+          paymentProvider: "bisa",
+          paymentMethod: "qr",
+        },
         data: {
           paymentStatus: "cancelled",
         },
       });
+
+      if (updateResult.count === 0) {
+        throw new Error("Donation is no longer pending");
+      }
 
       await tx.paymentLog.create({
         data: {

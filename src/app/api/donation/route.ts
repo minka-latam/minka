@@ -5,6 +5,7 @@ import { canReceiveCampaignPayments } from "@/lib/campaigns/visibility";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { parseDonationCreateBody } from "@/lib/api/donation-dto";
+import { createBisaQrAccessToken } from "@/lib/bisa/qr-access-token";
 
 export async function POST(request: NextRequest) {
   try {
@@ -132,7 +133,17 @@ export async function POST(request: NextRequest) {
     })
 
     return NextResponse.json(
-      { success: true, donationId: donation.id },
+      {
+        success: true,
+        donationId: donation.id,
+        qrAccessToken:
+          paymentMethod === "qr"
+            ? createBisaQrAccessToken({
+                donationId: donation.id,
+                campaignId,
+              })
+            : undefined,
+      },
       { status: 201 }
     );
     } catch (err: any) {
