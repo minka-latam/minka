@@ -11,6 +11,7 @@ import {
   parseProviderAmount,
   validateProviderPayment,
 } from "@/lib/payments/provider-validation";
+import { createCompletedPaymentLogIfMissing } from "@/lib/payments/payment-log";
 
 export async function POST(request: NextRequest) {
   // 1. Verify Basic Auth
@@ -36,15 +37,15 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { 
-      alias, 
-      numeroOrdenOriginante, 
-      monto, 
-      moneda, 
+    const {
+      alias,
+      numeroOrdenOriginante,
+      monto,
+      moneda,
       fechaproceso, // Postman uses lowercase 'fechaproceso'
-      cuentaCliente, 
-      nombreCliente, 
-      documentoCliente 
+      cuentaCliente,
+      nombreCliente,
+      documentoCliente
     } = body;
 
     if (!alias) {
@@ -105,6 +106,10 @@ export async function POST(request: NextRequest) {
 
       completionNotification = completion.notification;
 
+      if (!completion.completedNow) {
+        return;
+      }
+
       // Create payment log for completed payment
       await tx.paymentLog.create({
         data: {
@@ -124,6 +129,23 @@ export async function POST(request: NextRequest) {
           campaignid: donation.campaignId,
           donorid: donation.donorId,
         },
+      });
+        
+      await createCompletedPaymentLogIfMissing(tx, {
+        paymentprovider: "bisa",
+        paymentmethod: "qr",
+        paymentid: numeroOrdenOriginante || donation.bisaQrId || alias,
+        amount: confirmedProviderAmount,
+        tipamount: Number(donation.tip_amount || 0),
+        currency: moneda || "BOB",
+        metadata: JSON.stringify({
+          alias,
+          donationId: donation.id,
+          bisaQrId: donation.bisaQrId,
+          processedAt: fechaproceso,
+        }),
+        campaignid: donation.campaignId,
+        donorid: donation.donorId,
       });
     });
 

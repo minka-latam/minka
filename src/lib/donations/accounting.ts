@@ -51,7 +51,7 @@ export async function completeDonationAccounting(
   const completion = await tx.donation.updateMany({
     where: {
       id: donation.id,
-      paymentStatus: { not: PaymentStatus.completed },
+      paymentStatus: PaymentStatus.pending,
     },
     data: {
       ...donationUpdate,
