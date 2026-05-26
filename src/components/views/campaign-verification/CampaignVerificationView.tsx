@@ -47,7 +47,7 @@ interface Campaign {
   id: string;
   title: string;
   image_url: string;
-  verification_status: string | null;
+  verification_status: boolean;
   status: string;
 }
 
