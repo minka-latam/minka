@@ -178,23 +178,6 @@ export async function POST(request: NextRequest) {
         campaignid: donation.campaignId,
         donorid: donation.donorId,
       });
-        
-      await createCompletedPaymentLogIfMissing(tx, {
-        paymentprovider: "bisa",
-        paymentmethod: "qr",
-        paymentid: numeroOrdenOriginante || donation.bisaQrId || alias,
-        amount: confirmedProviderAmount,
-        tipamount: Number(donation.tip_amount || 0),
-        currency: moneda || "BOB",
-        metadata: JSON.stringify({
-          alias,
-          donationId: donation.id,
-          bisaQrId: donation.bisaQrId,
-          processedAt: fechaproceso,
-        }),
-        campaignid: donation.campaignId,
-        donorid: donation.donorId,
-      });
     });
 
     await sendCompletedDonationNotification(completionNotification);

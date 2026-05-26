@@ -2,11 +2,25 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { bisaClient } from "@/lib/bisa/client";
 import { canReceiveCampaignPayments } from "@/lib/campaigns/visibility";
+import {
+  canAccessBisaDonation,
+  isPendingBisaDonation,
+} from "@/lib/bisa/qr-authorization";
+
+function formatExpirationDate(date: Date) {
+  return date.toLocaleString("es-BO", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { donationId, campaignId } = body;
+    const { donationId, campaignId, qrAccessToken } = body;
 
     if (!donationId) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
@@ -20,6 +34,7 @@ export async function POST(request: NextRequest) {
           select: {
             id: true,
             campaignStatus: true,
+            organizerId: true,
           },
         },
       },
@@ -29,11 +44,49 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Donation not found" }, { status: 404 });
     }
 
+    if (campaignId && campaignId !== donation.campaignId) {
+      return NextResponse.json({ error: "Campaign mismatch" }, { status: 400 });
+    }
+
+    if (!isPendingBisaDonation(donation)) {
+      return NextResponse.json(
+        { error: "Only pending BISA QR donations can generate QR codes" },
+        { status: 400 }
+      );
+    }
+
+    const hasAccess = await canAccessBisaDonation({
+      donation,
+      accessToken: qrAccessToken,
+    });
+
+    if (!hasAccess) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+    }
+
     if (!canReceiveCampaignPayments(donation.campaign)) {
       return NextResponse.json(
         { error: "Campaign is not accepting donations" },
         { status: 400 }
       );
+    }
+
+    if (
+      donation.bisaAlias &&
+      donation.bisaQrImage &&
+      donation.bisaQrExpiresAt &&
+      donation.bisaQrExpiresAt > new Date()
+    ) {
+      return NextResponse.json({
+        success: true,
+        data: {
+          qrId: donation.bisaQrId,
+          qrImage: donation.bisaQrImage,
+          alias: donation.bisaAlias,
+          expiresAt: formatExpirationDate(donation.bisaQrExpiresAt),
+          reused: true,
+        },
+      });
     }
 
     const baseAmount = Number(donation.amount);
@@ -75,8 +128,13 @@ export async function POST(request: NextRequest) {
 
     // Update donation with QR details and create payment log
     await prisma.$transaction(async (tx) => {
-      await tx.donation.update({
-        where: { id: donationId },
+      const updateResult = await tx.donation.updateMany({
+        where: {
+          id: donationId,
+          paymentStatus: "pending",
+          paymentProvider: "bisa",
+          paymentMethod: "qr",
+        },
         data: {
           bisaAlias: alias,
           bisaQrId: qrId,
@@ -85,6 +143,10 @@ export async function POST(request: NextRequest) {
           paymentProvider: "bisa",
         },
       });
+
+      if (updateResult.count === 0) {
+        throw new Error("Donation is no longer pending");
+      }
 
       // Create payment log for QR generation
       await tx.paymentLog.create({
@@ -101,26 +163,17 @@ export async function POST(request: NextRequest) {
             donationId,
             expiresAt: expirationDate.toISOString(),
           }),
-          campaignid: campaignId || donation.campaignId,
+          campaignid: donation.campaignId,
           donorid: donation.donorId,
         },
       });
-    });
-
-    // Format expiration date for display (dd/MM/yyyy HH:mm)
-    const formattedExpiration = expirationDate.toLocaleString('es-BO', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
     });
 
     return NextResponse.json({
       success: true,
       data: {
         ...response.data,
-        expiresAt: formattedExpiration,
+        expiresAt: formatExpirationDate(expirationDate),
       },
     });
 

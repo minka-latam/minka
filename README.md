@@ -60,6 +60,7 @@ SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 # BISA callback authentication
 BISA_CALLBACK_USERNAME=your-callback-username
 BISA_CALLBACK_PASSWORD=your-callback-password
+BISA_QR_ACCESS_SECRET=your-random-qr-access-secret
 ```
 
 6. Initialize Prisma:
