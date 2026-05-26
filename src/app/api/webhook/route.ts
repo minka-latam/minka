@@ -10,6 +10,17 @@ import {
   PaymentProvider,
   PaymentStatus,
 } from '@prisma/client'
+import {
+  expectedDonationTotal,
+  normalizeCurrency,
+  parseProviderAmount,
+  TRIPTO_OPEN_AMOUNT_TOLERANCE,
+  validateProviderPayment,
+} from '@/lib/payments/provider-validation'
+
+const TRIPTO_SIGNATURE_TOLERANCE_SECONDS = Number(
+  process.env.TRIPTO_SIGNATURE_TOLERANCE_SECONDS || 300,
+)
 
 function toNumber(value: unknown, fallback = 0) {
   const n = Number(value)
@@ -25,6 +36,17 @@ function parseTV1Signature(sig: string) {
     if (k && v) out[k] = v
   }
   return { t: out.t, v1: out.v1 }
+}
+
+function isFreshTimestamp(timestamp: string) {
+  const signedAt = Number(timestamp)
+  if (!Number.isFinite(signedAt)) return false
+
+  const now = Math.floor(Date.now() / 1000)
+  return (
+    Math.abs(now - signedAt) <=
+    TRIPTO_SIGNATURE_TOLERANCE_SECONDS
+  )
 }
 
 function timingSafeEqualHex(a: string, b: string) {
@@ -89,6 +111,15 @@ export async function POST(req: Request) {
         )
       }
 
+      if (!isFreshTimestamp(t)) {
+        console.error('[TRIPTO][WEBHOOK] stale signature timestamp')
+
+        return NextResponse.json(
+          { error: 'Stale signature timestamp' },
+          { status: 401 },
+        )
+      }
+
       expectedSignature = crypto
         .createHmac('sha256', webhookSecret)
         .update(`${t}.${rawBody}`)
@@ -143,11 +174,16 @@ export async function POST(req: Request) {
     const paymentId = data.paymentId
       ? String(data.paymentId)
       : null
-    const currency = String(data.currency || 'BOB')
+    const currency = normalizeCurrency(data.currency)
 
     // Tripto amount comes in cents
+    const providerAmountMinor = parseProviderAmount(data.amount)
     const providerTotalAmount =
-      toNumber(data.amount, 0) / 100
+      providerAmountMinor == null
+        ? null
+        : providerAmountMinor / 100
+    const loggedProviderAmount = providerTotalAmount ?? 0
+    const loggedProviderCurrency = currency || 'UNKNOWN'
 
     const tipAmount = toNumber(metadata.tipAmount, 0)
 
@@ -167,6 +203,7 @@ export async function POST(req: Request) {
       // Idempotent PaymentLog handling (one row per paymentprovider + paymentid)
       const ensurePaymentLog = async (
         incomingStatus: 'completed' | 'failed',
+        validationError?: Record<string, unknown>,
       ) => {
         if (!paymentId) return
 
@@ -190,6 +227,7 @@ export async function POST(req: Request) {
           stripeSessionId: data.stripeSessionId
             ? String(data.stripeSessionId)
             : undefined,
+          validationError,
         })
 
         // If a failed log exists and we now get completed, upgrade it
@@ -202,9 +240,9 @@ export async function POST(req: Request) {
             where: { id: existing.id },
             data: {
               status: 'completed',
-              amount: providerTotalAmount,
+              amount: loggedProviderAmount,
               tipamount: tipAmount,
-              currency,
+              currency: loggedProviderCurrency,
               paymentmethod: PaymentMethod.credit_card,
               campaignid: campaignId,
               donorid: donorId,
@@ -230,9 +268,9 @@ export async function POST(req: Request) {
             paymentmethod: PaymentMethod.credit_card,
             paymentid: paymentId,
             status: incomingStatus,
-            amount: providerTotalAmount,
+            amount: loggedProviderAmount,
             tipamount: tipAmount,
-            currency,
+            currency: loggedProviderCurrency,
             campaignid: campaignId,
             donorid: donorId,
             metadata: metadataJson,
@@ -262,13 +300,66 @@ export async function POST(req: Request) {
       }
 
       if (isCompletedEvent) {
+        const expectedAmount = expectedDonationTotal(donation)
+        const expectedCurrency =
+          normalizeCurrency(metadata.expectedCurrency) ||
+          normalizeCurrency(donation.currency)
+        const expectedCurrencyForWrite =
+          expectedCurrency || 'UNKNOWN'
+        const validation = validateProviderPayment({
+          expectedAmount,
+          providerAmount: providerTotalAmount,
+          expectedCurrency: expectedCurrencyForWrite,
+          providerCurrency: currency,
+          amountTolerance: TRIPTO_OPEN_AMOUNT_TOLERANCE,
+        })
+
+        if (!validation.ok) {
+          console.error('[TRIPTO][WEBHOOK_VALIDATION]', {
+            donationId: donation.id,
+            reason: validation.reason,
+            expectedAmount,
+            providerAmount: providerTotalAmount,
+            expectedCurrency,
+            providerCurrency: currency,
+          })
+
+          if (
+            donation.paymentStatus !== PaymentStatus.completed
+          ) {
+            await tx.donation.update({
+              where: { id: donation.id },
+              data: {
+                paymentStatus: PaymentStatus.failed,
+                paymentProvider: 'tripto',
+                paymentMethod: PaymentMethod.credit_card,
+                currency: expectedCurrencyForWrite,
+                triptoPaymentId: paymentId,
+                triptoSessionId: data.stripeSessionId
+                  ? String(data.stripeSessionId)
+                  : null,
+              },
+            })
+          }
+
+          await ensurePaymentLog('failed', {
+            reason: validation.reason,
+            message: validation.message,
+            expectedAmount,
+            providerAmount: providerTotalAmount,
+            expectedCurrency,
+            providerCurrency: currency,
+          })
+          return
+        }
+
         const completion = await completeDonationAccounting(tx, {
           donationId: donation.id,
           tipAmount,
           donationUpdate: {
               paymentProvider: 'tripto',
               paymentMethod: PaymentMethod.credit_card,
-              currency,
+              currency: expectedCurrencyForWrite,
               triptoPaymentId: paymentId,
               triptoSessionId: data.stripeSessionId
                 ? String(data.stripeSessionId)
@@ -278,7 +369,7 @@ export async function POST(req: Request) {
                 donation.tip_amount ?? (tipAmount || null),
               total_amount:
                 donation.total_amount ??
-                providerTotalAmount,
+                expectedAmount,
           },
         })
 
@@ -299,7 +390,7 @@ export async function POST(req: Request) {
             paymentStatus: PaymentStatus.failed,
             paymentProvider: 'tripto',
             paymentMethod: PaymentMethod.credit_card,
-            currency,
+            currency: loggedProviderCurrency,
             triptoPaymentId: paymentId,
             triptoSessionId: data.stripeSessionId
               ? String(data.stripeSessionId)
@@ -308,7 +399,7 @@ export async function POST(req: Request) {
               donation.tip_amount ?? (tipAmount || null),
             total_amount:
               donation.total_amount ??
-              providerTotalAmount,
+              loggedProviderAmount,
           },
         })
       }

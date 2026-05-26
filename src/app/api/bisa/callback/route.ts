@@ -4,6 +4,13 @@ import {
   completeDonationAccounting,
   sendCompletedDonationNotification,
 } from "@/lib/donations/accounting";
+import {
+  BISA_PAYMENT_CURRENCY,
+  expectedDonationTotal,
+  normalizeCurrency,
+  parseProviderAmount,
+  validateProviderPayment,
+} from "@/lib/payments/provider-validation";
 
 export async function POST(request: NextRequest) {
   // 1. Verify Basic Auth
@@ -57,16 +64,29 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ codigo: "0000", mensaje: "Already processed" });
     }
 
-    const expectedAmount = Number(
-      donation.total_amount ?? Number(donation.amount) + Number(donation.tip_amount || 0)
-    );
-    const providerAmount = Number.isFinite(Number(monto)) ? Number(monto) : expectedAmount;
+    const expectedAmount = expectedDonationTotal(donation);
+    const providerAmount = parseProviderAmount(monto);
+    const providerCurrency = normalizeCurrency(moneda);
+    const validation = validateProviderPayment({
+      expectedAmount,
+      providerAmount,
+      expectedCurrency: BISA_PAYMENT_CURRENCY,
+      providerCurrency,
+      amountTolerance: 0,
+    });
 
-    // Verify amount
-    if (Math.abs(expectedAmount - providerAmount) > 0.01) {
-      console.error(`Amount mismatch for ${alias}: expected ${expectedAmount}, got ${monto}`);
-      return NextResponse.json({ codigo: "9999", mensaje: "Amount mismatch" });
+    if (!validation.ok) {
+      console.error("[BISA][CALLBACK_VALIDATION]", {
+        alias,
+        reason: validation.reason,
+        expectedAmount,
+        providerAmount,
+        expectedCurrency: BISA_PAYMENT_CURRENCY,
+        providerCurrency,
+      });
+      return NextResponse.json({ codigo: "9999", mensaje: validation.message });
     }
+    const confirmedProviderAmount = providerAmount as number;
 
     let completionNotification;
 
@@ -92,9 +112,9 @@ export async function POST(request: NextRequest) {
           paymentmethod: "qr",
           paymentid: numeroOrdenOriginante || donation.bisaQrId || alias,
           status: "completed",
-          amount: providerAmount,
+          amount: confirmedProviderAmount,
           tipamount: Number(donation.tip_amount || 0),
-          currency: moneda || "BOB",
+          currency: BISA_PAYMENT_CURRENCY,
           metadata: JSON.stringify({
             alias,
             donationId: donation.id,

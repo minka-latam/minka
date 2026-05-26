@@ -8,6 +8,7 @@ export type DonationCreateInput = {
   amount?: unknown;
   tipAmount: unknown;
   paymentMethod?: unknown;
+  currency?: unknown;
   message?: string;
   isAnonymous: boolean;
   notificationEnabled: boolean;
@@ -56,6 +57,8 @@ export function parseDonationCreateBody(
     amount: data.amount,
     tipAmount: read(data, "tipAmount", "tip_amount") ?? 0,
     paymentMethod: read(data, "paymentMethod", "payment_method"),
+    currency:
+      read(data, "currency", "cardCurrency") ?? data.card_currency,
     message: stringValue(data.message),
     isAnonymous: booleanValue(read(data, "isAnonymous", "is_anonymous")) ?? false,
     notificationEnabled:

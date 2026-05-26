@@ -4,6 +4,7 @@ import { prisma as db } from '@/lib/prisma'
 import { getOrCreateCampaignAnonymousProfileId } from '@/lib/donations/anonymous-donor'
 import { canReceiveCampaignPayments } from '@/lib/campaigns/visibility'
 import { parseDonationCreateBody } from '@/lib/api/donation-dto'
+import { resolveTriptoCardCurrency } from '@/lib/payments/provider-validation'
 
 export async function POST(req: Request) {
   try {
@@ -18,6 +19,7 @@ export async function POST(req: Request) {
       isAnonymous = false,
       notificationEnabled = false,
       paymentMethod = 'card',
+      currency,
     } = parseDonationCreateBody(body)
 
     if (!campaignId || !amount) {
@@ -89,6 +91,8 @@ export async function POST(req: Request) {
     }
 
     const totalAmount = Number(amount) + Number(tipAmount)
+    const expectedAmountMinor = Math.round(totalAmount * 100)
+    const cardCurrency = resolveTriptoCardCurrency(currency)
 
     const pendingDonation = await db.donation.create({
       data: {
@@ -97,6 +101,7 @@ export async function POST(req: Request) {
         amount: Number(amount),
         tip_amount: Number(tipAmount),
         total_amount: totalAmount,
+        currency: cardCurrency,
         paymentStatus: 'pending',
         paymentProvider: 'tripto',
         paymentMethod: 'credit_card' as any,
@@ -122,6 +127,9 @@ export async function POST(req: Request) {
       donorId: donorProfileId,
       amount: String(amount),
       tipAmount: String(tipAmount),
+      expectedTotalAmount: String(totalAmount),
+      expectedAmountMinor: String(expectedAmountMinor),
+      expectedCurrency: cardCurrency,
       message,
       isAnonymous: isAnonymous ? 'true' : 'false',
       notificationEnabled: notificationEnabled
@@ -137,9 +145,9 @@ export async function POST(req: Request) {
       name: campaign.title,
       description: campaign.description || null,
       imageUrl,
-      suggestedAmount: Math.round(totalAmount * 100),
-      minAmount: Math.round(totalAmount * 100 - 1),
-      maxAmount: Math.round(totalAmount * 100 + 1),
+      suggestedAmount: expectedAmountMinor,
+      minAmount: expectedAmountMinor - 1,
+      maxAmount: expectedAmountMinor + 1,
       submitType: 'pay' as const,
       afterPayment: {
         type: 'redirect' as const,
