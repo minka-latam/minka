@@ -1672,19 +1672,13 @@ export function DonatePageContent({
                     <Button
                       className='bg-[#2c6e49] hover:bg-[#1e4d33] text-white px-8 py-3 rounded-full'
                       onClick={async () => {
-                        await fetch(
-                          '/api/donation/status',
-                          {
-                            method: 'POST',
-                            headers: {
-                              'Content-Type':
-                                'application/json',
-                            },
-                            body: JSON.stringify({
-                              donationId:
-                                activeDonationIdRef.current,
-                            }),
-                          },
+                        activeDonationIdRef.current = null
+                        setActiveDonationId(null)
+                        setDonationId(null)
+                        window.history.replaceState(
+                          {},
+                          '',
+                          window.location.pathname,
                         )
                         handleConfirmDonation()
                       }}
