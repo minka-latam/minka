@@ -49,14 +49,3 @@ export async function GET(req: Request) {
     )
   }
 }
-
-export async function POST() {
-  return NextResponse.json(
-    {
-      success: false,
-      error:
-        'Donation payment status is managed by payment providers',
-    },
-    { status: 405 },
-  )
-}
