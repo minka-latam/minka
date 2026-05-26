@@ -1,8 +1,6 @@
-export const BISA_EXPECTED_CURRENCY = "BOB";
-export const TRIPTO_EXPECTED_CURRENCY =
-  (process.env.TRIPTO_EXPECTED_CURRENCY || "USD").trim().toUpperCase();
-
-export const BISA_AMOUNT_TOLERANCE = 0.01;
+export const BISA_PAYMENT_CURRENCY = "BOB";
+export const TRIPTO_CARD_CURRENCIES = ["USD", "EUR"] as const;
+export const DEFAULT_TRIPTO_CARD_CURRENCY = "USD";
 export const TRIPTO_OPEN_AMOUNT_TOLERANCE = 0.01;
 
 type DonationAmountSource = {
@@ -25,6 +23,21 @@ export function normalizeCurrency(value: unknown) {
   return currency || null;
 }
 
+export function resolveTriptoCardCurrency(value: unknown) {
+  const currency = normalizeCurrency(value);
+
+  if (
+    currency &&
+    TRIPTO_CARD_CURRENCIES.includes(
+      currency as (typeof TRIPTO_CARD_CURRENCIES)[number]
+    )
+  ) {
+    return currency;
+  }
+
+  return DEFAULT_TRIPTO_CARD_CURRENCY;
+}
+
 export function parseProviderAmount(value: unknown) {
   const amount = Number(value);
   return Number.isFinite(amount) ? amount : null;
@@ -37,6 +50,10 @@ export function expectedDonationTotal(donation: DonationAmountSource) {
   const amount = Number(donation.amount);
   const tip = Number(donation.tip_amount || 0);
   return amount + tip;
+}
+
+function toMinorUnits(value: number) {
+  return Math.round(value * 100);
 }
 
 export function validateProviderPayment({
@@ -74,7 +91,14 @@ export function validateProviderPayment({
     };
   }
 
-  if (Math.abs(expectedAmount - providerAmount) > amountTolerance) {
+  const expectedMinorAmount = toMinorUnits(expectedAmount);
+  const providerMinorAmount = toMinorUnits(providerAmount);
+  const toleranceMinorAmount = toMinorUnits(amountTolerance);
+
+  if (
+    Math.abs(expectedMinorAmount - providerMinorAmount) >
+    toleranceMinorAmount
+  ) {
     return {
       ok: false,
       reason: "amount_mismatch",

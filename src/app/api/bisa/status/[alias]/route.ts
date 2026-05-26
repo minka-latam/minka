@@ -6,8 +6,7 @@ import {
   sendCompletedDonationNotification,
 } from "@/lib/donations/accounting";
 import {
-  BISA_AMOUNT_TOLERANCE,
-  BISA_EXPECTED_CURRENCY,
+  BISA_PAYMENT_CURRENCY,
   expectedDonationTotal,
   normalizeCurrency,
   parseProviderAmount,
@@ -68,9 +67,9 @@ export async function GET(
       const validation = validateProviderPayment({
         expectedAmount,
         providerAmount,
-        expectedCurrency: BISA_EXPECTED_CURRENCY,
+        expectedCurrency: BISA_PAYMENT_CURRENCY,
         providerCurrency,
-        amountTolerance: BISA_AMOUNT_TOLERANCE,
+        amountTolerance: 0,
       });
 
       if (!validation.ok) {
@@ -79,7 +78,7 @@ export async function GET(
           reason: validation.reason,
           expectedAmount,
           providerAmount,
-          expectedCurrency: BISA_EXPECTED_CURRENCY,
+          expectedCurrency: BISA_PAYMENT_CURRENCY,
           providerCurrency,
         });
 
@@ -133,7 +132,7 @@ export async function GET(
                 status: "completed",
                 amount: confirmedProviderAmount,
                 tipamount: tipAmount,
-                currency: BISA_EXPECTED_CURRENCY,
+                currency: BISA_PAYMENT_CURRENCY,
                 metadata: JSON.stringify({
                   alias,
                   donationId: donation.id,

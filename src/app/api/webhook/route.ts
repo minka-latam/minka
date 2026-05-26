@@ -14,7 +14,6 @@ import {
   expectedDonationTotal,
   normalizeCurrency,
   parseProviderAmount,
-  TRIPTO_EXPECTED_CURRENCY,
   TRIPTO_OPEN_AMOUNT_TOLERANCE,
   validateProviderPayment,
 } from '@/lib/payments/provider-validation'
@@ -304,12 +303,13 @@ export async function POST(req: Request) {
         const expectedAmount = expectedDonationTotal(donation)
         const expectedCurrency =
           normalizeCurrency(metadata.expectedCurrency) ||
-          normalizeCurrency(donation.currency) ||
-          TRIPTO_EXPECTED_CURRENCY
+          normalizeCurrency(donation.currency)
+        const expectedCurrencyForWrite =
+          expectedCurrency || 'UNKNOWN'
         const validation = validateProviderPayment({
           expectedAmount,
           providerAmount: providerTotalAmount,
-          expectedCurrency,
+          expectedCurrency: expectedCurrencyForWrite,
           providerCurrency: currency,
           amountTolerance: TRIPTO_OPEN_AMOUNT_TOLERANCE,
         })
@@ -333,7 +333,7 @@ export async function POST(req: Request) {
                 paymentStatus: PaymentStatus.failed,
                 paymentProvider: 'tripto',
                 paymentMethod: PaymentMethod.credit_card,
-                currency: expectedCurrency,
+                currency: expectedCurrencyForWrite,
                 triptoPaymentId: paymentId,
                 triptoSessionId: data.stripeSessionId
                   ? String(data.stripeSessionId)
@@ -359,7 +359,7 @@ export async function POST(req: Request) {
           donationUpdate: {
               paymentProvider: 'tripto',
               paymentMethod: PaymentMethod.credit_card,
-              currency: expectedCurrency,
+              currency: expectedCurrencyForWrite,
               triptoPaymentId: paymentId,
               triptoSessionId: data.stripeSessionId
                 ? String(data.stripeSessionId)

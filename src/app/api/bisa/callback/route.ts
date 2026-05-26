@@ -5,8 +5,7 @@ import {
   sendCompletedDonationNotification,
 } from "@/lib/donations/accounting";
 import {
-  BISA_AMOUNT_TOLERANCE,
-  BISA_EXPECTED_CURRENCY,
+  BISA_PAYMENT_CURRENCY,
   expectedDonationTotal,
   normalizeCurrency,
   parseProviderAmount,
@@ -71,9 +70,9 @@ export async function POST(request: NextRequest) {
     const validation = validateProviderPayment({
       expectedAmount,
       providerAmount,
-      expectedCurrency: BISA_EXPECTED_CURRENCY,
+      expectedCurrency: BISA_PAYMENT_CURRENCY,
       providerCurrency,
-      amountTolerance: BISA_AMOUNT_TOLERANCE,
+      amountTolerance: 0,
     });
 
     if (!validation.ok) {
@@ -82,7 +81,7 @@ export async function POST(request: NextRequest) {
         reason: validation.reason,
         expectedAmount,
         providerAmount,
-        expectedCurrency: BISA_EXPECTED_CURRENCY,
+        expectedCurrency: BISA_PAYMENT_CURRENCY,
         providerCurrency,
       });
       return NextResponse.json({ codigo: "9999", mensaje: validation.message });
@@ -115,7 +114,7 @@ export async function POST(request: NextRequest) {
           status: "completed",
           amount: confirmedProviderAmount,
           tipamount: Number(donation.tip_amount || 0),
-          currency: BISA_EXPECTED_CURRENCY,
+          currency: BISA_PAYMENT_CURRENCY,
           metadata: JSON.stringify({
             alias,
             donationId: donation.id,
