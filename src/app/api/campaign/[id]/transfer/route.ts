@@ -62,6 +62,13 @@ type FundTransferRow = {
   updatedAt: Date;
 };
 
+type TransferBalanceSummary = {
+  confirmedBaseAmount: Prisma.Decimal;
+  confirmedTipAmount: Prisma.Decimal;
+  reservedTransferAmount: Prisma.Decimal;
+  availableAmount: Prisma.Decimal;
+};
+
 async function getAuthorizedCampaignUser(
   campaignId: string,
 ): Promise<
@@ -121,23 +128,48 @@ async function getAuthorizedCampaignUser(
   return { campaign, userProfile };
 }
 
-async function getAvailableTransferAmount(campaignId: string) {
+async function getTransferBalanceSummary(
+  campaignId: string,
+): Promise<TransferBalanceSummary> {
   const rows = await prisma.$queryRaw<
-    Array<{ availableAmount: Prisma.Decimal }>
+    Array<{
+      confirmedBaseAmount: Prisma.Decimal;
+      confirmedTipAmount: Prisma.Decimal;
+      reservedTransferAmount: Prisma.Decimal;
+      availableAmount: Prisma.Decimal;
+    }>
   >`
-    select greatest(
-      c.collected_amount - coalesce(sum(ft.amount) filter (
-        where ft.status in ('processing', 'completed')
-      ), 0),
-      0
-    ) as "availableAmount"
-    from public.campaigns c
-    left join public.fund_transfers ft on ft.campaign_id = c.id
-    where c.id = ${campaignId}::uuid
-    group by c.id, c.collected_amount
+    with confirmed_donations as (
+      select
+        coalesce(sum(amount), 0) as base_amount,
+        coalesce(sum(tip_amount), 0) as tip_amount
+      from public.donations
+      where campaign_id = ${campaignId}::uuid
+        and payment_status = 'completed'
+    ),
+    reserved_transfers as (
+      select coalesce(sum(amount), 0) as amount
+      from public.fund_transfers
+      where campaign_id = ${campaignId}::uuid
+        and status in ('processing', 'completed')
+    )
+    select
+      cd.base_amount as "confirmedBaseAmount",
+      cd.tip_amount as "confirmedTipAmount",
+      rt.amount as "reservedTransferAmount",
+      greatest(cd.base_amount - rt.amount, 0) as "availableAmount"
+    from confirmed_donations cd
+    cross join reserved_transfers rt
   `;
 
-  return rows[0]?.availableAmount ?? new Prisma.Decimal(0);
+  return (
+    rows[0] ?? {
+      confirmedBaseAmount: new Prisma.Decimal(0),
+      confirmedTipAmount: new Prisma.Decimal(0),
+      reservedTransferAmount: new Prisma.Decimal(0),
+      availableAmount: new Prisma.Decimal(0),
+    }
+  );
 }
 
 async function getActiveBankAccount(campaignId: string) {
@@ -198,7 +230,7 @@ export async function GET(
     const auth = await getAuthorizedCampaignUser(campaignId);
     if (auth.response) return auth.response;
 
-    const [transfers, totalRows, availableAmount, processingRows] =
+    const [transfers, totalRows, balanceSummary, processingRows] =
       await Promise.all([
         prisma.$queryRaw<FundTransferRow[]>`
           select
@@ -227,7 +259,7 @@ export async function GET(
           from public.fund_transfers
           where campaign_id = ${campaignId}::uuid
         `,
-        getAvailableTransferAmount(campaignId),
+        getTransferBalanceSummary(campaignId),
         prisma.$queryRaw<Array<{ id: string }>>`
           select id
           from public.fund_transfers
@@ -243,7 +275,11 @@ export async function GET(
       transfers: transfers.map(serializeTransfer),
       totalCount,
       hasMore: offset + limit < totalCount,
-      availableAmount: availableAmount.toString(),
+      availableAmount: balanceSummary.availableAmount.toString(),
+      confirmedBaseAmount: balanceSummary.confirmedBaseAmount.toString(),
+      confirmedTipAmount: balanceSummary.confirmedTipAmount.toString(),
+      reservedTransferAmount:
+        balanceSummary.reservedTransferAmount.toString(),
       hasProcessingTransfer: processingRows.length > 0,
     });
   } catch (error) {
@@ -293,7 +329,8 @@ export async function POST(
       );
     }
 
-    const availableAmount = await getAvailableTransferAmount(campaignId);
+    const balanceSummary = await getTransferBalanceSummary(campaignId);
+    const availableAmount = balanceSummary.availableAmount;
     const minimumAllowedAmount = getMinimumAllowedAmount(
       availableAmount,
       campaign.endDate,
@@ -355,6 +392,11 @@ export async function POST(
       message: "Solicitud de transferencia creada exitosamente",
       transferId: rows[0]?.id,
       availableAmount: availableAmount.minus(amount).toString(),
+      confirmedBaseAmount: balanceSummary.confirmedBaseAmount.toString(),
+      confirmedTipAmount: balanceSummary.confirmedTipAmount.toString(),
+      reservedTransferAmount: balanceSummary.reservedTransferAmount
+        .plus(amount)
+        .toString(),
     });
   } catch (error) {
     if (error instanceof z.ZodError) {

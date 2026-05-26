@@ -53,6 +53,10 @@ export function TransferFundsTab({ campaign }: TransferFundsTabProps) {
   const [availableAmount, setAvailableAmount] = useState(
     Number(campaign.collectedAmount || 0),
   );
+  const [confirmedBaseAmount, setConfirmedBaseAmount] = useState(
+    Number(campaign.collectedAmount || 0),
+  );
+  const [reservedTransferAmount, setReservedTransferAmount] = useState(0);
   const [hasProcessingTransfer, setHasProcessingTransfer] = useState(false);
   const [transferHistory, setTransferHistory] = useState<TransferHistoryItem[]>(
     [],
@@ -107,6 +111,8 @@ export function TransferFundsTab({ campaign }: TransferFundsTabProps) {
     setTotalCount(result.totalCount);
     setTotalPages(Math.max(1, Math.ceil(result.totalCount / limit)));
     setAvailableAmount(result.availableAmount);
+    setConfirmedBaseAmount(result.confirmedBaseAmount);
+    setReservedTransferAmount(result.reservedTransferAmount);
     setHasProcessingTransfer(result.hasProcessingTransfer);
   };
 
@@ -494,7 +500,27 @@ export function TransferFundsTab({ campaign }: TransferFundsTabProps) {
           <h3 className="text-3xl md:text-4xl font-bold mb-2 text-[#2c6e49]">
             {formatCurrency(availableAmount)}
           </h3>
-          <p className="text-sm text-gray-600">Fondos disponibles</p>
+          <p className="text-sm text-gray-600">
+            Saldo transferible disponible
+          </p>
+          <div className="mt-4 grid gap-3 text-sm text-gray-700 sm:grid-cols-2">
+            <div className="rounded-md border border-gray-200 bg-white p-3">
+              <p className="text-xs text-gray-500">Donaciones confirmadas</p>
+              <p className="font-semibold">
+                {formatCurrency(confirmedBaseAmount)}
+              </p>
+            </div>
+            <div className="rounded-md border border-gray-200 bg-white p-3">
+              <p className="text-xs text-gray-500">Ya solicitado/enviado</p>
+              <p className="font-semibold">
+                {formatCurrency(reservedTransferAmount)}
+              </p>
+            </div>
+          </div>
+          <p className="mt-3 text-xs text-gray-500">
+            El saldo transferible usa solo donaciones confirmadas y descuenta
+            solicitudes en proceso o completadas.
+          </p>
         </div>
 
         <div className="mb-8">
@@ -540,7 +566,8 @@ export function TransferFundsTab({ campaign }: TransferFundsTabProps) {
           <h3 className="text-xl font-bold mb-3">Solicitar transferencia</h3>
           <p className="text-sm text-gray-600 mb-5">
             Minka procesa las transferencias manualmente. Una solicitud puede
-            tardar hasta 5 días hábiles.
+            tardar hasta 5 días hábiles. Solo puede haber una solicitud de
+            transferencia en proceso a la vez.
           </p>
 
           <label className="block mb-2">Monto a transferir</label>
