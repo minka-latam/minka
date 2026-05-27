@@ -512,7 +512,6 @@ export default function CampaignDetailPage() {
         },
         body: JSON.stringify({
           campaignStatus: "active",
-          verificationStatus: false,
         }),
       });
 
