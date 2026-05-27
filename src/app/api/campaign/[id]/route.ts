@@ -314,6 +314,19 @@ export async function PATCH(
 
     const body = await req.json()
 
+    if (
+      Object.hasOwn(body, 'verificationStatus') ||
+      Object.hasOwn(body, 'verification_status')
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            'Campaign verification status can only be changed by the admin verification workflow',
+        },
+        { status: 403 },
+      )
+    }
+
     // Find the organizer profile by email
     const organizer = await db.profile.findUnique({
       where: { email: session.user.email },
@@ -372,7 +385,6 @@ export async function PATCH(
       youtubeUrl,
       youtubeUrls,
       campaignStatus,
-      verificationStatus,
       recipient,
       recipientType,
       beneficiaryName,
@@ -431,8 +443,6 @@ export async function PATCH(
       updateData.youtubeUrls = youtubeUrls
     if (campaignStatus !== undefined)
       updateData.campaignStatus = campaignStatus
-    if (verificationStatus !== undefined)
-      updateData.verificationStatus = verificationStatus
     if (presentation !== undefined)
       updateData.presentation = presentation
 
@@ -448,11 +458,6 @@ export async function PATCH(
       updateData.beneficiaryReason = beneficiaryReason
     if (legalEntityId !== undefined)
       updateData.legalEntityId = legalEntityId
-
-    // Only set verification date if explicitly verifying the campaign
-    if (verificationStatus === true) {
-      updateData.verificationDate = new Date()
-    }
 
     const statusAffectsActiveCount =
       campaignStatus !== undefined &&
