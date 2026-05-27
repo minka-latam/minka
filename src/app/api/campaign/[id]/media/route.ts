@@ -331,6 +331,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id: campaignId } = await params;
     const cookieStore = await cookies();
     const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -372,7 +373,7 @@ export async function PATCH(
     // Check if the campaign exists and user has permission
     const campaign = await db.campaign.findUnique({
       where: {
-        id: (await params).id,
+        id: campaignId,
       },
     });
 
@@ -397,23 +398,41 @@ export async function PATCH(
     if (body.action === "set_primary") {
       const validatedData = setPrimarySchema.parse(body);
 
-      // First, unset all primary flags
-      await db.campaignMedia.updateMany({
+      const targetMedia = await db.campaignMedia.findFirst({
         where: {
-          campaignId: (await params).id,
-        },
-        data: {
-          isPrimary: false,
+          id: validatedData.mediaId,
+          campaignId,
         },
       });
 
-      // Then, set the specified one as primary
-      const media = await db.campaignMedia.update({
+      if (!targetMedia) {
+        return NextResponse.json({ error: "Media not found" }, { status: 404 });
+      }
+
+      await db.$transaction([
+        db.campaignMedia.updateMany({
+          where: {
+            campaignId,
+          },
+          data: {
+            isPrimary: false,
+          },
+        }),
+        db.campaignMedia.updateMany({
+          where: {
+            id: validatedData.mediaId,
+            campaignId,
+          },
+          data: {
+            isPrimary: true,
+          },
+        }),
+      ]);
+
+      const media = await db.campaignMedia.findFirst({
         where: {
           id: validatedData.mediaId,
-        },
-        data: {
-          isPrimary: true,
+          campaignId,
         },
       });
 
@@ -446,6 +465,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id: campaignId } = await params;
     const cookieStore = await cookies();
     const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -487,7 +507,7 @@ export async function DELETE(
     // Check if the campaign exists and user has permission
     const campaign = await db.campaign.findUnique({
       where: {
-        id: (await params).id,
+        id: campaignId,
       },
     });
 
@@ -517,9 +537,10 @@ export async function DELETE(
     }
 
     // Find the media record to check if it exists
-    const mediaRecord = await db.campaignMedia.findUnique({
+    const mediaRecord = await db.campaignMedia.findFirst({
       where: {
         id: mediaId,
+        campaignId,
       },
     });
 
@@ -531,17 +552,22 @@ export async function DELETE(
     const isPrimary = mediaRecord.isPrimary;
 
     // Delete the media
-    await db.campaignMedia.delete({
+    const deleteResult = await db.campaignMedia.deleteMany({
       where: {
         id: mediaId,
+        campaignId,
       },
     });
+
+    if (deleteResult.count === 0) {
+      return NextResponse.json({ error: "Media not found" }, { status: 404 });
+    }
 
     // If this was the primary image and there are other images, make another one primary
     if (isPrimary) {
       const nextMedia = await db.campaignMedia.findFirst({
         where: {
-          campaignId: (await params).id,
+          campaignId,
         },
         orderBy: {
           orderIndex: "asc",
@@ -549,9 +575,10 @@ export async function DELETE(
       });
 
       if (nextMedia) {
-        await db.campaignMedia.update({
+        await db.campaignMedia.updateMany({
           where: {
             id: nextMedia.id,
+            campaignId,
           },
           data: {
             isPrimary: true,
