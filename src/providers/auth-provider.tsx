@@ -11,6 +11,7 @@ import { createBrowserClient } from '@supabase/ssr'
 import type { User, Session } from '@supabase/supabase-js'
 import { useRouter } from 'next/navigation'
 import { toast } from '@/components/ui/use-toast'
+import { getSafeAuthRedirectPath } from '@/lib/auth-redirect'
 
 export interface Profile {
   id: string
@@ -254,42 +255,37 @@ export function AuthProvider({
   ) => {
     try {
       setIsLoading(true)
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      })
+      const { data, error } =
+        await supabase.auth.signInWithPassword({
+          email,
+          password,
+        })
 
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(
-          errorData.error || 'Error de autenticación',
-        )
+      if (error) {
+        throw new Error(error.message)
       }
+
+      if (!data.session || !data.user) {
+        throw new Error('Error de autenticación')
+      }
+
+      setSession(data.session)
+      setUser(data.user)
 
       const urlParams = new URLSearchParams(
         window.location.search,
       )
-      const returnUrl = urlParams.get('returnUrl')
-      const redirectPath = returnUrl || '/dashboard'
+      const redirectPath = getSafeAuthRedirectPath(
+        urlParams.get('returnUrl'),
+      )
 
-      router.prefetch(redirectPath)
+      toast({
+        title: 'Éxito',
+        description: 'Has iniciado sesión correctamente.',
+      })
 
-      try {
-        await supabase.auth.refreshSession()
-        toast({
-          title: 'Éxito',
-          description: 'Has iniciado sesión correctamente.',
-        })
-        router.push(redirectPath)
-      } catch (err) {
-        console.error('Error al refrescar sesión:', err)
-        toast({
-          title: 'Error',
-          description: 'Error al actualizar la sesión.',
-          variant: 'destructive',
-        })
-      }
+      router.replace(redirectPath)
+      router.refresh()
     } catch (error) {
       console.error('Error de inicio de sesión:', error)
       setProfile(null)

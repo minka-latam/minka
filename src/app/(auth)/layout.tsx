@@ -10,6 +10,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/providers/auth-provider";
 import { LoadingScreen } from "@/components/ui/loading-screen";
 import { Header } from "@/components/views/landing-page/Header";
+import { getSafeAuthRedirectPath } from "@/lib/auth-redirect";
 
 const quicksand = Quicksand({
   variable: "--font-quicksand",
@@ -40,11 +41,7 @@ export default function AuthLayout({
     if (isResetPasswordPage) return;
 
     const params = new URLSearchParams(window.location.search);
-    const returnUrl = params.get("returnUrl");
-    const redirectPath =
-      returnUrl && returnUrl.startsWith("/")
-        ? returnUrl
-        : "/dashboard";
+    const redirectPath = getSafeAuthRedirectPath(params.get("returnUrl"));
     router.replace(redirectPath);
   }
 }, [user, isLoading, router]);

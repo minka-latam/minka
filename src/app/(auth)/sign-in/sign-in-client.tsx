@@ -5,6 +5,7 @@ import { useAuth } from "@/providers/auth-provider";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { LoadingScreen } from "@/components/ui/loading-screen";
+import { getSafeAuthRedirectPath } from "@/lib/auth-redirect";
 
 // Use a loading boundary for the form component
 const SignInForm = dynamic(
@@ -36,10 +37,11 @@ export function SignInClient() {
     if (user && !isLoading) {
       setIsRedirecting(true);
       const urlParams = new URLSearchParams(window.location.search);
-      const returnUrl = urlParams.get("returnUrl");
-      const redirectPath =
-        returnUrl && returnUrl.startsWith("/") ? returnUrl : "/dashboard";
+      const redirectPath = getSafeAuthRedirectPath(
+        urlParams.get("returnUrl")
+      );
       router.replace(redirectPath);
+      router.refresh();
     }
   }, [user, isLoading, router]);
 
