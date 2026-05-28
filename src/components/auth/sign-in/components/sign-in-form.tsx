@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
@@ -13,7 +13,6 @@ import { z } from "zod";
 import { Mail, Lock, Info, Eye, EyeOff } from "lucide-react";
 import { signInWithSocial } from "@/lib/supabase-auth";
 import { LoadingScreen } from "@/components/ui/loading-screen";
-import { useRouter } from "next/navigation";
 
 const signInFormSchema = z.object({
   email: z
@@ -33,17 +32,6 @@ export function SignInForm() {
   const [socialLoading, setSocialLoading] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const { signIn } = useAuth();
-  const router = useRouter();
-
-  // Pre-fetch the dashboard page to speed up navigation
-  useEffect(() => {
-    router.prefetch("/dashboard");
-    const params = new URLSearchParams(window.location.search);
-    const returnUrl = params.get("returnUrl");
-    if (returnUrl && returnUrl.startsWith("/")) {
-      router.prefetch(returnUrl);
-    }
-  }, [router]);
 
   const {
     register,

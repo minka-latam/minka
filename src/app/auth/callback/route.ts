@@ -7,6 +7,7 @@ import {
   getProfileById,
   profileNeedsCompletion,
 } from "@/lib/profile-utils";
+import { getSafeAuthRedirectPath } from "@/lib/auth-redirect";
 
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
@@ -26,9 +27,7 @@ export async function GET(request: NextRequest) {
 
   const type = requestUrl.searchParams.get("type");
 
-  // Safe redirect: only allow relative paths starting with /
-  const rawNext = requestUrl.searchParams.get("next") || "/dashboard";
-  const next = rawNext.startsWith("/") ? rawNext : "/dashboard";
+  const next = getSafeAuthRedirectPath(requestUrl.searchParams.get("next"));
 
   if (!code) {
     console.error("No code parameter provided in callback URL");
