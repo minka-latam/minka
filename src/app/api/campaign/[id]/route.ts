@@ -5,6 +5,7 @@ import { prisma as db } from '@/lib/prisma'
 import { getAuthSession } from '@/lib/auth'
 import { refreshOrganizerActiveCampaignsCount } from '@/lib/campaigns/active-count'
 import { isPublicCampaign } from '@/lib/campaigns/visibility'
+import { notifyCampaignSubmittedForReview } from '@/lib/campaign-review-email'
 import { CampaignStatus } from '@prisma/client'
 
 // Define interfaces to help with typing
@@ -60,6 +61,8 @@ interface Campaign {
   verification_status?: boolean
   created_at?: string
   campaign_status?: string
+  submitted_for_review_at?: string | null
+  reviewed_at?: string | null
   organizer: OrganizerProfile | null
   media: CampaignMedia[]
   updates?: CampaignUpdate[]
@@ -131,6 +134,8 @@ export async function GET(
         verification_status,
         created_at,
         campaign_status,
+        submitted_for_review_at,
+        reviewed_at,
         organizer_id,
         organizer:profiles!organizer_id(id, name, location, profile_picture, join_date, active_campaigns_count, bio),
         media:campaign_media(id, media_url, is_primary, type, order_index),
@@ -218,6 +223,9 @@ export async function GET(
       verification_status: campaign.verification_status,
       created_at: campaign.created_at,
       campaign_status: campaign.campaign_status,
+      submitted_for_review_at:
+        campaign.submitted_for_review_at,
+      reviewed_at: campaign.reviewed_at,
       organizer: campaign.organizer
         ? {
             id: campaign.organizer.id,
@@ -441,8 +449,44 @@ export async function PATCH(
       updateData.youtubeUrl = youtubeUrl
     if (youtubeUrls !== undefined)
       updateData.youtubeUrls = youtubeUrls
-    if (campaignStatus !== undefined)
-      updateData.campaignStatus = campaignStatus
+
+    let submittedForReviewAt: Date | null = null
+    const isReviewSubmission =
+      campaignStatus === CampaignStatus.active &&
+      existingCampaign.campaignStatus === CampaignStatus.draft
+    const shouldSendReviewEmail =
+      isReviewSubmission &&
+      !existingCampaign.submittedForReviewAt
+
+    if (campaignStatus !== undefined) {
+      if (campaignStatus === CampaignStatus.active) {
+        if (existingCampaign.campaignStatus === CampaignStatus.draft) {
+          updateData.campaignStatus = CampaignStatus.draft
+
+          if (!existingCampaign.submittedForReviewAt) {
+            submittedForReviewAt = new Date()
+            updateData.submittedForReviewAt =
+              submittedForReviewAt
+            updateData.reviewedAt = null
+          }
+        } else if (
+          existingCampaign.campaignStatus ===
+          CampaignStatus.active
+        ) {
+          updateData.campaignStatus = CampaignStatus.active
+        } else {
+          return NextResponse.json(
+            {
+              error:
+                'Only draft campaigns can be submitted for review',
+            },
+            { status: 400 },
+          )
+        }
+      } else {
+        updateData.campaignStatus = campaignStatus
+      }
+    }
     if (presentation !== undefined)
       updateData.presentation = presentation
 
@@ -460,10 +504,11 @@ export async function PATCH(
       updateData.legalEntityId = legalEntityId
 
     const statusAffectsActiveCount =
-      campaignStatus !== undefined &&
-      existingCampaign.campaignStatus !== campaignStatus &&
+      updateData.campaignStatus !== undefined &&
+      existingCampaign.campaignStatus !==
+        updateData.campaignStatus &&
       (existingCampaign.campaignStatus === CampaignStatus.active ||
-        campaignStatus === CampaignStatus.active)
+        updateData.campaignStatus === CampaignStatus.active)
 
     const campaign = await db.$transaction(async (tx) => {
       const updatedCampaign = await tx.campaign.update({
@@ -482,6 +527,16 @@ export async function PATCH(
 
       return updatedCampaign
     })
+
+    if (shouldSendReviewEmail && submittedForReviewAt) {
+      await notifyCampaignSubmittedForReview({
+        campaignId,
+        campaignTitle: existingCampaign.title,
+        organizerName: organizer.name,
+        organizerEmail: organizer.email,
+        submittedAt: submittedForReviewAt,
+      })
+    }
 
     // If media was provided, update the media records
     if (media && Array.isArray(media) && media.length > 0) {
@@ -508,7 +563,10 @@ export async function PATCH(
 
     return NextResponse.json(
       {
-        message: 'Campaign updated successfully',
+        message: isReviewSubmission
+          ? 'Campaign submitted for review successfully'
+          : 'Campaign updated successfully',
+        submittedForReview: isReviewSubmission,
         campaign,
       },
       { status: 200 },
