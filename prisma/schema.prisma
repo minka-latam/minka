@@ -58,6 +58,8 @@ model Campaign {
   verificationStatus       Boolean               @default(false) @map("verification_status")
   verificationDate         DateTime?             @map("verification_date") @db.Timestamp(6)
   campaignStatus           CampaignStatus        @default(draft) @map("campaign_status")
+  submittedForReviewAt     DateTime?             @map("submitted_for_review_at") @db.Timestamp(6)
+  reviewedAt               DateTime?             @map("reviewed_at") @db.Timestamp(6)
   organizerId              String                @map("organizer_id") @db.Uuid
   createdAt                DateTime              @default(now()) @map("created_at") @db.Timestamp(6)
   updatedAt                DateTime              @updatedAt @map("updated_at") @db.Timestamp(6)

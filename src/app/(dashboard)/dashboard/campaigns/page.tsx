@@ -29,6 +29,7 @@ import { useAuth } from "@/providers/auth-provider";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { useToast } from "@/components/ui/use-toast";
 import { SuperAdminCampaignTable } from "@/components/dashboard/super-admin-campaign-table";
+import { AdminCampaignApprovalsTable } from "@/components/dashboard/admin-campaign-approvals-table";
 import { AdminFundTransfersTable } from "@/components/dashboard/admin-fund-transfers-table";
 import { CampaignAnalytics } from "@/components/dashboard/campaign-analytics";
 import {
@@ -51,6 +52,7 @@ interface Campaign {
   status: "draft" | "active" | "completed" | "cancelled";
   verificationStatus: boolean;
   verificationDate?: string;
+  submittedForReviewAt?: string | null;
   createdAt: string;
   endDate: string;
   organizerName: string;
@@ -171,6 +173,7 @@ export default function SuperAdminCampaignsPage() {
             status: campaign.status,
             verificationStatus: campaign.verification_status,
             verificationDate: null,
+            submittedForReviewAt: campaign.submitted_for_review_at,
             createdAt: campaign.created_at,
             endDate: "",
             organizerName: "You",
@@ -408,6 +411,7 @@ export default function SuperAdminCampaignsPage() {
                 progress={campaign.percentageFunded}
                 status={campaign.status as CampaignStatus}
                 isVerified={campaign.verificationStatus}
+                submittedForReviewAt={campaign.submittedForReviewAt}
               />
             ))}
           </div>
@@ -592,7 +596,10 @@ export default function SuperAdminCampaignsPage() {
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
-          <AdminFundTransfersTable />
+          <AdminCampaignApprovalsTable
+            onCampaignUpdate={() => fetchCampaignsData(isAdmin)}
+          />
+          <AdminFundTransfersTable hideWhenEmpty />
 
           {/* Filters */}
           <Card>

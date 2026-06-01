@@ -58,7 +58,13 @@ const statusLabels: Record<TransferStatus | "all", string> = {
   all: "Todas",
 };
 
-export function AdminFundTransfersTable() {
+type AdminFundTransfersTableProps = {
+  hideWhenEmpty?: boolean;
+};
+
+export function AdminFundTransfersTable({
+  hideWhenEmpty = false,
+}: AdminFundTransfersTableProps) {
   const { toast } = useToast();
   const [status, setStatus] = useState<TransferStatus | "all">("processing");
   const [transfers, setTransfers] = useState<AdminFundTransfer[]>([]);
@@ -181,6 +187,15 @@ export function AdminFundTransfersTable() {
     }
     return null;
   };
+
+  if (
+    hideWhenEmpty &&
+    status === "processing" &&
+    !loading &&
+    transfers.length === 0
+  ) {
+    return null;
+  }
 
   return (
     <Card>

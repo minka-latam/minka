@@ -56,6 +56,7 @@ export async function GET() {
         campaign_status,
         description,
         created_at,
+        submitted_for_review_at,
         verification_status,
         organizer_id,
         media:campaign_media(
@@ -94,6 +95,7 @@ export async function GET() {
         status: campaign.campaign_status,
         description: campaign.description,
         created_at: campaign.created_at,
+        submitted_for_review_at: campaign.submitted_for_review_at,
         verification_status: campaign.verification_status,
         organizer_id: campaign.organizer_id,
       };
@@ -117,4 +119,3 @@ export async function GET() {
     );
   }
 }
-
