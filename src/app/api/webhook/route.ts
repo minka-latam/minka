@@ -113,7 +113,9 @@ export async function POST(req: Request) {
       }
 
       if (!isFreshTimestamp(t)) {
-        console.error('[TRIPTO][WEBHOOK] stale signature timestamp')
+        console.error(
+          '[TRIPTO][WEBHOOK] stale signature timestamp',
+        )
 
         return NextResponse.json(
           { error: 'Stale signature timestamp' },
@@ -178,7 +180,9 @@ export async function POST(req: Request) {
     const currency = normalizeCurrency(data.currency)
 
     // Tripto amount comes in cents
-    const providerAmountMinor = parseProviderAmount(data.amount)
+    const providerAmountMinor = parseProviderAmount(
+      data.amount,
+    )
     const providerTotalAmount =
       providerAmountMinor == null
         ? null
@@ -316,7 +320,8 @@ export async function POST(req: Request) {
       }
 
       if (isCompletedEvent) {
-        const expectedAmount = expectedDonationTotal(donation)
+        const expectedAmount =
+          expectedDonationTotal(donation)
         const expectedCurrency =
           normalizeCurrency(metadata.expectedCurrency) ||
           normalizeCurrency(donation.currency)
@@ -341,7 +346,8 @@ export async function POST(req: Request) {
           })
 
           if (
-            donation.paymentStatus !== PaymentStatus.completed
+            donation.paymentStatus !==
+            PaymentStatus.completed
           ) {
             await tx.donation.update({
               where: { id: donation.id },
@@ -369,10 +375,12 @@ export async function POST(req: Request) {
           return
         }
 
-        const completion = await completeDonationAccounting(tx, {
-          donationId: donation.id,
-          tipAmount,
-          donationUpdate: {
+        const completion = await completeDonationAccounting(
+          tx,
+          {
+            donationId: donation.id,
+            tipAmount,
+            donationUpdate: {
               paymentProvider: 'tripto',
               paymentMethod: PaymentMethod.credit_card,
               currency: expectedCurrencyForWrite,
@@ -384,10 +392,10 @@ export async function POST(req: Request) {
               tip_amount:
                 donation.tip_amount ?? (tipAmount || null),
               total_amount:
-                donation.total_amount ??
-                expectedAmount,
+                donation.total_amount ?? expectedAmount,
+            },
           },
-        })
+        )
 
         completionNotification = completion.notification
 
@@ -414,8 +422,7 @@ export async function POST(req: Request) {
             tip_amount:
               donation.tip_amount ?? (tipAmount || null),
             total_amount:
-              donation.total_amount ??
-              loggedProviderAmount,
+              donation.total_amount ?? loggedProviderAmount,
           },
         })
       }

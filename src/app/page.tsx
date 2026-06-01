@@ -48,7 +48,6 @@ export default function Home() {
     <div className="min-h-screen bg-gradient-to-r from-white to-[#ECF1DC]">
       <Header />
       <main className="flex-grow pt-20 md:pt-24">
-      <h2>TEST</h2>
         <HeroSection />
         <CausesSection />
         <TrustSection />

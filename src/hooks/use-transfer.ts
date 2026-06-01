@@ -248,6 +248,9 @@ export function useTransfer() {
     totalCount: number;
     hasMore: boolean;
     availableAmount: number;
+    confirmedBaseAmount: number;
+    confirmedTipAmount: number;
+    reservedTransferAmount: number;
     hasProcessingTransfer: boolean;
   } | null> => {
     setIsLoadingTransfers(true);
@@ -267,6 +270,9 @@ export function useTransfer() {
           totalCount: 0,
           hasMore: false,
           availableAmount: 0,
+          confirmedBaseAmount: 0,
+          confirmedTipAmount: 0,
+          reservedTransferAmount: 0,
           hasProcessingTransfer: false,
         };
       }
@@ -284,6 +290,9 @@ export function useTransfer() {
         totalCount: result.totalCount,
         hasMore: result.hasMore,
         availableAmount: Number(result.availableAmount || 0),
+        confirmedBaseAmount: Number(result.confirmedBaseAmount || 0),
+        confirmedTipAmount: Number(result.confirmedTipAmount || 0),
+        reservedTransferAmount: Number(result.reservedTransferAmount || 0),
         hasProcessingTransfer: Boolean(result.hasProcessingTransfer),
       };
     } catch (error) {
@@ -304,6 +313,9 @@ export function useTransfer() {
         totalCount: 0,
         hasMore: false,
         availableAmount: 0,
+        confirmedBaseAmount: 0,
+        confirmedTipAmount: 0,
+        reservedTransferAmount: 0,
         hasProcessingTransfer: false,
       };
     } finally {

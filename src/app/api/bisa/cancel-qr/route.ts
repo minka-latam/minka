@@ -1,49 +1,18 @@
 ﻿import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { bisaClient } from "@/lib/bisa/client";
-import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
+import {
+  canAccessBisaDonation,
+  isPendingBisaDonation,
+} from "@/lib/bisa/qr-authorization";
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { donationId, reason } = body;
+    const { donationId, reason, qrAccessToken } = body;
 
     if (!donationId) {
       return NextResponse.json({ error: "Donation ID is required" }, { status: 400 });
-    }
-
-    // Verify user is authenticated
-    const cookieStore = await cookies();
-
-    const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() { return cookieStore.getAll(); },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) =>
-            cookieStore.set(name, value, options)
-          );
-        },
-      },
-    }
-  );
-    const { data: { session } } = await supabase.auth.getSession();
-    const user = session?.user;
-
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    // Get user profile - the profile.id is the same as the supabase user.id
-    const profile = await prisma.profile.findUnique({
-      where: { id: user.id },
-    });
-
-    if (!profile) {
-      return NextResponse.json({ error: "Profile not found" }, { status: 404 });
     }
 
     // Find donation
@@ -60,12 +29,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Donation not found" }, { status: 404 });
     }
 
-    // Check if user is the donor or campaign organizer or admin
-    const isOwner = donation.donorId === profile.id;
-    const isOrganizer = donation.campaign.organizerId === profile.id;
-    const isAdmin = profile.role === "admin";
+    const hasAccess = await canAccessBisaDonation({
+      donation,
+      accessToken: qrAccessToken,
+    });
 
-    if (!isOwner && !isOrganizer && !isAdmin) {
+    if (!hasAccess) {
       return NextResponse.json({
         error: "You don't have permission to cancel this payment"
       }, { status: 403 });
@@ -78,18 +47,11 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // Check payment status
-    if (donation.paymentStatus === "completed") {
-      return NextResponse.json({
-        error: "Cannot cancel a completed payment"
-      }, { status: 400 });
-    }
-
-    if (donation.paymentStatus === "cancelled") {
-      return NextResponse.json({
-        success: true,
-        message: "Payment already cancelled"
-      });
+    if (!isPendingBisaDonation(donation)) {
+      return NextResponse.json(
+        { error: "Only pending BISA QR donations can be cancelled" },
+        { status: 400 }
+      );
     }
 
     // Call BISA API to disable QR
@@ -116,23 +78,36 @@ export async function POST(request: NextRequest) {
             alias: donation.bisaAlias,
             donationId: donation.id,
             reason: cancelReason,
-            cancelledBy: profile.id,
+            cancelledBy: "authorized_request",
             error: "BISA API failed to disable QR",
           }),
           campaignid: donation.campaignId,
           donorid: donation.donorId,
         },
       });
+      return NextResponse.json(
+        { error: "Failed to disable QR with BISA" },
+        { status: 502 }
+      );
     }
 
     // Update donation status and create payment log
     await prisma.$transaction(async (tx) => {
-      await tx.donation.update({
-        where: { id: donation.id },
+      const updateResult = await tx.donation.updateMany({
+        where: {
+          id: donation.id,
+          paymentStatus: "pending",
+          paymentProvider: "bisa",
+          paymentMethod: "qr",
+        },
         data: {
           paymentStatus: "cancelled",
         },
       });
+
+      if (updateResult.count === 0) {
+        throw new Error("Donation is no longer pending");
+      }
 
       await tx.paymentLog.create({
         data: {
@@ -147,7 +122,7 @@ export async function POST(request: NextRequest) {
             alias: donation.bisaAlias,
             donationId: donation.id,
             reason: cancelReason,
-            cancelledBy: profile.id,
+            cancelledBy: "authorized_request",
             bisaDisabled: bisaSuccess,
           }),
           campaignid: donation.campaignId,

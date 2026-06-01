@@ -105,6 +105,9 @@ export function DonatePageContent({
   const [donationId, setDonationId] = useState<
     string | null
   >(null)
+  const [qrAccessToken, setQrAccessToken] = useState<
+    string | null
+  >(null)
   const activeDonationIdRef = useRef<string | null>(null)
   const [activeDonationId, setActiveDonationId] = useState<
     string | null
@@ -188,6 +191,9 @@ export function DonatePageContent({
             now - createdAt < MAX_AGE
           ) {
             setDonationId(pendingDonation.donationId)
+            setQrAccessToken(
+              pendingDonation.qrAccessToken ?? null,
+            )
             setSelectedAmount(pendingDonation.amount)
             setPaymentMethod(pendingDonation.paymentMethod)
             if (pendingDonation.paymentMethod === 'qr') {
@@ -608,8 +614,10 @@ export function DonatePageContent({
             campaignId,
             amount: donationAmount,
             paymentMethod: selectedMethod,
+            qrAccessToken: data.qrAccessToken ?? null,
             createdAt: new Date().toISOString(),
           }
+          setQrAccessToken(data.qrAccessToken ?? null)
           localStorage.setItem(
             PENDING_DONATION_KEY,
             JSON.stringify(pendingDonation),
@@ -1301,6 +1309,7 @@ export function DonatePageContent({
                   <QRPaymentStep
                     key={donationId}
                     donationId={donationId}
+                    qrAccessToken={qrAccessToken}
                     tipAmount={platformFee}
                     amount={totalAmount}
                     campaignId={campaignId}
@@ -1310,6 +1319,7 @@ export function DonatePageContent({
                         PENDING_DONATION_KEY,
                       )
                       setShowQRStep(false)
+                      setQrAccessToken(null)
                       setShowSuccessModal(true)
                     }}
                     onCancel={() => {
@@ -1318,6 +1328,7 @@ export function DonatePageContent({
                         PENDING_DONATION_KEY,
                       )
                       setDonationId(null)
+                      setQrAccessToken(null)
                       setShowQRStep(false)
                       setIsDonationConfirmed(false)
                     }}
@@ -1672,19 +1683,13 @@ export function DonatePageContent({
                     <Button
                       className='bg-[#2c6e49] hover:bg-[#1e4d33] text-white px-8 py-3 rounded-full'
                       onClick={async () => {
-                        await fetch(
-                          '/api/donation/status',
-                          {
-                            method: 'POST',
-                            headers: {
-                              'Content-Type':
-                                'application/json',
-                            },
-                            body: JSON.stringify({
-                              donationId:
-                                activeDonationIdRef.current,
-                            }),
-                          },
+                        activeDonationIdRef.current = null
+                        setActiveDonationId(null)
+                        setDonationId(null)
+                        window.history.replaceState(
+                          {},
+                          '',
+                          window.location.pathname,
                         )
                         handleConfirmDonation()
                       }}

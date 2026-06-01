@@ -3,7 +3,9 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { prisma as db } from '@/lib/prisma'
 import { getAuthSession } from '@/lib/auth'
+import { refreshOrganizerActiveCampaignsCount } from '@/lib/campaigns/active-count'
 import { isPublicCampaign } from '@/lib/campaigns/visibility'
+import { CampaignStatus } from '@prisma/client'
 
 // Define interfaces to help with typing
 interface OrganizerProfile {
@@ -280,6 +282,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    const campaignId = (await params).id
     const cookieStore = await cookies()
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -311,6 +314,19 @@ export async function PATCH(
 
     const body = await req.json()
 
+    if (
+      Object.hasOwn(body, 'verificationStatus') ||
+      Object.hasOwn(body, 'verification_status')
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            'Campaign verification status can only be changed by the admin verification workflow',
+        },
+        { status: 403 },
+      )
+    }
+
     // Find the organizer profile by email
     const organizer = await db.profile.findUnique({
       where: { email: session.user.email },
@@ -326,7 +342,7 @@ export async function PATCH(
     // Get the current campaign to check ownership
     const existingCampaign = await db.campaign.findUnique({
       where: {
-        id: (await params).id,
+        id: campaignId,
       },
     })
 
@@ -369,7 +385,6 @@ export async function PATCH(
       youtubeUrl,
       youtubeUrls,
       campaignStatus,
-      verificationStatus,
       recipient,
       recipientType,
       beneficiaryName,
@@ -388,6 +403,16 @@ export async function PATCH(
         {
           error: 'Goal amount cannot exceed 150000',
         },
+        { status: 400 },
+      )
+    }
+
+    if (
+      campaignStatus !== undefined &&
+      !Object.values(CampaignStatus).includes(campaignStatus)
+    ) {
+      return NextResponse.json(
+        { error: 'Invalid campaign status' },
         { status: 400 },
       )
     }
@@ -418,8 +443,6 @@ export async function PATCH(
       updateData.youtubeUrls = youtubeUrls
     if (campaignStatus !== undefined)
       updateData.campaignStatus = campaignStatus
-    if (verificationStatus !== undefined)
-      updateData.verificationStatus = verificationStatus
     if (presentation !== undefined)
       updateData.presentation = presentation
 
@@ -436,24 +459,35 @@ export async function PATCH(
     if (legalEntityId !== undefined)
       updateData.legalEntityId = legalEntityId
 
-    // Only set verification date if explicitly verifying the campaign
-    if (verificationStatus === true) {
-      updateData.verificationDate = new Date()
-    }
+    const statusAffectsActiveCount =
+      campaignStatus !== undefined &&
+      existingCampaign.campaignStatus !== campaignStatus &&
+      (existingCampaign.campaignStatus === CampaignStatus.active ||
+        campaignStatus === CampaignStatus.active)
 
-    // Update campaign with all provided fields
-    const campaign = await db.campaign.update({
-      where: {
-        id: (await params).id,
-      },
-      data: updateData,
+    const campaign = await db.$transaction(async (tx) => {
+      const updatedCampaign = await tx.campaign.update({
+        where: {
+          id: campaignId,
+        },
+        data: updateData,
+      })
+
+      if (statusAffectsActiveCount) {
+        await refreshOrganizerActiveCampaignsCount(
+          tx,
+          existingCampaign.organizerId,
+        )
+      }
+
+      return updatedCampaign
     })
 
     // If media was provided, update the media records
     if (media && Array.isArray(media) && media.length > 0) {
       // Delete existing media
       await db.campaignMedia.deleteMany({
-        where: { campaignId: (await params).id },
+        where: { campaignId },
       })
 
       // Create new media
@@ -461,7 +495,7 @@ export async function PATCH(
         media.map(async (item: any) =>
           db.campaignMedia.create({
             data: {
-              campaignId: (await params).id,
+              campaignId,
               mediaUrl: item.mediaUrl,
               type: item.type,
               isPrimary: item.isPrimary,
@@ -590,11 +624,20 @@ export async function DELETE(
       )
     }
 
-    await db.campaign.update({
-      where: { id: campaignId },
-      data: {
-        campaignStatus: 'cancelled',
-      },
+    await db.$transaction(async (tx) => {
+      await tx.campaign.update({
+        where: { id: campaignId },
+        data: {
+          campaignStatus: 'cancelled',
+        },
+      })
+
+      if (existingCampaign.campaignStatus === CampaignStatus.active) {
+        await refreshOrganizerActiveCampaignsCount(
+          tx,
+          existingCampaign.organizerId,
+        )
+      }
     })
 
     return NextResponse.json(

@@ -137,14 +137,6 @@ export async function POST(req: NextRequest) {
 
     await Promise.all(mediaPromises);
 
-    // Update organizer's active campaigns count
-    await db.profile.update({
-      where: { id: organizer.id },
-      data: {
-        activeCampaignsCount: organizer.activeCampaignsCount + 1,
-      },
-    });
-
     return NextResponse.json(
       { message: "Campaign created successfully", campaignId: campaign.id },
       { status: 201 }
@@ -164,4 +156,3 @@ export async function POST(req: NextRequest) {
     );
   }
 }
-

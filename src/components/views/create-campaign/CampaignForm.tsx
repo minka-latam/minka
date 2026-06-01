@@ -6,15 +6,12 @@ import { useRouter } from "next/navigation";
 import {
   X,
   Check,
-  Plus,
   Clock,
   MapPin,
   Share2,
   Bookmark,
   Calendar,
-  ChevronDown,
   Play,
-  Eye,
   Search,
   Building2,
 } from "lucide-react";
@@ -24,7 +21,6 @@ import { useToast } from "@/components/ui/use-toast";
 import { useCampaign, CampaignFormData } from "@/hooks/use-campaign";
 import { useUpload } from "@/hooks/use-upload";
 import { useLegalEntities, LegalEntity } from "@/hooks/use-legal-entities";
-import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { UploadProgress } from "./UploadProgress";
 import { ImageEditor } from "./ImageEditor";
 import { YouTubeLinks } from "./YouTubeLinks";
@@ -44,24 +40,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { z } from "zod";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
 import { InlineSpinner } from "@/components/ui/inline-spinner";
-import Link from "next/link";
-import { DocumentCountrySelector } from "@/components/ui/document-country-selector";
-import { CountryCodeSelector } from "@/components/ui/country-code-selector";
 import {
   getProvincesForDepartment,
-  DEPARTMENT_LABELS,
 } from "@/constants/bolivia-provinces";
 import { StoryInput } from "./StoryInput";
 import { Input } from "@/components/ui/input";
@@ -350,9 +331,7 @@ export function CampaignForm() {
   const router = useRouter();
   const { toast } = useToast();
   const {
-    isCreating,
     campaignId,
-    createCampaign,
     saveCampaignDraft,
     updateCampaign,
   } = useCampaign();
@@ -369,13 +348,6 @@ export function CampaignForm() {
 
   // Use the context to sync step changes with the parent page
   const { setCurrentStep: setContextStep } = useCurrentStep();
-
-  // Format currency helper
-  const formatCurrency = (amount: string | number) => {
-    if (!amount) return "Bs. 0.00";
-    const num = typeof amount === "string" ? parseFloat(amount) : amount;
-    return `Bs. ${num.toLocaleString("es-BO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-  };
 
   const [currentStep, setCurrentStep] = useState(1);
   // Add new state for sub-steps within step 1
@@ -411,15 +383,13 @@ export function CampaignForm() {
     beneficiariesDescription: "",
     legalEntityId: undefined, // Add legal entity ID field
   });
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showOtraPersonaModal, setShowOtraPersonaModal] = useState(false);
-  const [showONGsModal, setShowONGsModal] = useState(false);
   const [showPersonaJuridicaModal, setShowPersonaJuridicaModal] =
     useState(false);
 
   // Add state to track form validity for each step
-  const [isStep1Valid, setIsStep1Valid] = useState(false);
-  const [isStep2Valid, setIsStep2Valid] = useState(false);
+  const [, setIsStep1Valid] = useState(false);
+  const [, setIsStep2Valid] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // State for "Otra persona" modal form
@@ -451,13 +421,9 @@ export function CampaignForm() {
   );
 
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
-  const [showDatePicker, setShowDatePicker] = useState(false);
 
   // Add this new state for preview
   const [showPreview, setShowPreview] = useState(false);
-
-  // Add state for verification redirect
-  const [redirectToVerification, setRedirectToVerification] = useState(false);
 
   // Add state to track available provinces based on selected department
   const [availableProvinces, setAvailableProvinces] = useState(
@@ -580,11 +546,10 @@ export function CampaignForm() {
         return;
       }
 
-      // Update campaign status to active but keep verificationStatus as false
+      // Publishing does not control verification; badge approval is admin-only.
       const success = await updateCampaign(
         {
           campaignStatus: "active",
-          verificationStatus: false,
         },
         campaignId
       );
@@ -593,7 +558,6 @@ export function CampaignForm() {
         throw new Error("Failed to update campaign status");
       }
 
-      setShowSuccessModal(true);
       router.push("/dashboard/campaigns");
     } catch (error) {
       console.error("Error publishing campaign:", error);
@@ -634,9 +598,6 @@ export function CampaignForm() {
       // Store the campaign ID in local storage so CampaignVerificationView can use it
       localStorage.setItem("verificationCampaignId", campaignId);
 
-      // Set redirect flag to true
-      setRedirectToVerification(true);
-
       // Redirect to verification page with campaign ID in the URL query parameter
       router.push(`/campaign-verification?id=${campaignId}`);
     } catch (error) {
@@ -649,14 +610,6 @@ export function CampaignForm() {
     }
   };
 
-  const closeSuccessModal = () => {
-    setShowSuccessModal(false);
-    // Redirect to the campaign page if we have a campaign ID
-    if (campaignId) {
-      router.push(`/campaign/${campaignId}`);
-    }
-  };
-
   const closeOtraPersonaModal = () => {
     setShowOtraPersonaModal(false);
     // Reset form when closing modal
@@ -665,10 +618,6 @@ export function CampaignForm() {
       relationship: "",
       reason: "",
     });
-  };
-
-  const closeONGsModal = () => {
-    setShowONGsModal(false);
   };
 
   const closePersonaJuridicaModal = () => {
@@ -1063,10 +1012,6 @@ setCurrentStep(currentStep + 1);
     setShowOtraPersonaModal(true);
   };
 
-  const handleSelectONG = () => {
-    setShowONGsModal(true);
-  };
-
   const handleSelectPersonaJuridica = async () => {
     setShowPersonaJuridicaModal(true);
     // Load legal entities when modal opens
@@ -1122,11 +1067,6 @@ setCurrentStep(currentStep + 1);
         variant: "destructive",
       });
     }
-  };
-
-  const handleONGSubmit = async () => {
-    closeONGsModal();
-    await handleSelectRecipient("organizacion");
   };
 
   const handlePersonaJuridicaSubmit = async () => {

@@ -7,6 +7,7 @@ import { CheckCircle, AlertCircle, RefreshCw, Clock, Download } from "lucide-rea
 
 interface QRPaymentStepProps {
   donationId: string;
+  qrAccessToken?: string | null;
   amount: number;
   tipAmount: number;
   campaignId: string;
@@ -27,6 +28,7 @@ const QR_STORAGE_KEY = "minka_pending_qr";
 
 export function QRPaymentStep({
   donationId,
+  qrAccessToken,
   amount,
   tipAmount,
   campaignId,
@@ -42,6 +44,7 @@ export function QRPaymentStep({
   } | null>(null);
   const [status, setStatus] = useState<"PENDING" | "PAID" | "EXPIRED" | "ERROR">("PENDING");
   const [checkingPayment, setCheckingPayment] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
 
   // Ref to prevent double initialization in React Strict Mode
   const initializationRef = useRef(false);
@@ -168,7 +171,13 @@ export function QRPaymentStep({
       const response = await fetch("/api/bisa/generate-qr", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ donationId, amount, tipAmount, campaignId }),
+        body: JSON.stringify({
+          donationId,
+          amount,
+          tipAmount,
+          campaignId,
+          qrAccessToken,
+        }),
       });
 
       const data = await response.json();
@@ -288,9 +297,46 @@ export function QRPaymentStep({
     document.body.removeChild(link);
   };
 
-  const handleCancel = () => {
-    clearStoredQR(); // Clear stored QR when user cancels
-    onCancel();
+  const handleCancel = async () => {
+    if (!donationId || !qrData?.alias) {
+      clearStoredQR();
+      onCancel();
+      return;
+    }
+
+    setCancelling(true);
+    setError(null);
+
+    try {
+      const response = await fetch("/api/bisa/cancel-qr", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          donationId,
+          reason: "user_cancelled",
+          qrAccessToken,
+        }),
+      });
+      const data = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        throw new Error(
+          data?.error ||
+            "No pudimos cancelar el QR. Intenta nuevamente.",
+        );
+      }
+
+      clearStoredQR();
+      onCancel();
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "No pudimos cancelar el QR. Intenta nuevamente.",
+      );
+    } finally {
+      setCancelling(false);
+    }
   };
 
   const handleRegenerateQR = () => {
@@ -335,8 +381,10 @@ export function QRPaymentStep({
         <h3 className="text-xl font-bold text-gray-900 mb-2">QR Expirado</h3>
         <p className="text-gray-600 mb-6 text-center max-w-md">El código QR ha expirado. Genera uno nuevo para continuar con tu donación.</p>
         <div className="flex gap-4">
-          <Button variant="outline" onClick={handleCancel}>Cancelar</Button>
-          <Button onClick={handleRegenerateQR} className="bg-[#2c6e49] hover:bg-[#1e4d33] text-white">
+          <Button variant="outline" onClick={handleCancel} disabled={cancelling}>
+            {cancelling ? "Cancelando..." : "Cancelar"}
+          </Button>
+          <Button onClick={handleRegenerateQR} disabled={cancelling} className="bg-[#2c6e49] hover:bg-[#1e4d33] text-white">
             <RefreshCw className="mr-2 h-4 w-4" /> Generar nuevo QR
           </Button>
         </div>
@@ -354,8 +402,10 @@ export function QRPaymentStep({
         <h3 className="text-xl font-bold text-gray-900 mb-2">Error</h3>
         <p className="text-gray-600 mb-6 text-center max-w-md">{error || "Ocurrió un error al procesar el pago."}</p>
         <div className="flex gap-4">
-          <Button variant="outline" onClick={handleCancel}>Cancelar</Button>
-          <Button onClick={handleRegenerateQR} className="bg-[#2c6e49] hover:bg-[#1e4d33] text-white">
+          <Button variant="outline" onClick={handleCancel} disabled={cancelling}>
+            {cancelling ? "Cancelando..." : "Cancelar"}
+          </Button>
+          <Button onClick={handleRegenerateQR} disabled={cancelling} className="bg-[#2c6e49] hover:bg-[#1e4d33] text-white">
             <RefreshCw className="mr-2 h-4 w-4" /> Reintentar
           </Button>
         </div>
@@ -438,9 +488,9 @@ export function QRPaymentStep({
           variant="ghost"
           onClick={handleCancel}
           className="w-full text-gray-500 hover:text-gray-700"
-          disabled={checkingPayment}
+          disabled={checkingPayment || cancelling}
         >
-          Cancelar y volver
+          {cancelling ? "Cancelando..." : "Cancelar y volver"}
         </Button>
       </div>
     </div>

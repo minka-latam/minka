@@ -1,6 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import { getSafeAuthRedirectPath } from '@/lib/auth-redirect'
 
 export async function middleware(req: NextRequest) {
   const pathname =
@@ -70,12 +71,8 @@ export async function middleware(req: NextRequest) {
   if (isAuthenticated && isAuthRoute) {
     const returnUrl =
       req.nextUrl.searchParams.get('returnUrl')
-    const safeReturnUrl =
-      returnUrl && returnUrl.startsWith('/')
-        ? returnUrl
-        : null
     return NextResponse.redirect(
-      new URL(safeReturnUrl || '/dashboard', req.url),
+      new URL(getSafeAuthRedirectPath(returnUrl), req.url),
     )
   }
 
