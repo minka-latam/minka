@@ -282,14 +282,19 @@ export function useCampaign() {
         body: JSON.stringify(campaignData),
       });
 
+      const responseData = await response.json().catch(() => ({}));
+
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to update campaign");
+        throw new Error(responseData.error || "Failed to update campaign");
       }
 
       toast({
-        title: "Actualizado",
-        description: "Campaña actualizada correctamente",
+        title: responseData.submittedForReview
+          ? "Campaña enviada a revisión"
+          : "Actualizado",
+        description: responseData.submittedForReview
+          ? "El equipo de Minka la aprobará en un máximo de 24 horas o menos."
+          : "Campaña actualizada correctamente",
       });
       return true;
     } catch (error) {

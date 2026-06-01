@@ -563,7 +563,7 @@ export function CampaignForm() {
       console.error("Error publishing campaign:", error);
       toast({
         title: "Error",
-        description: "Error al publicar la campaña",
+        description: "Error al enviar la campaña a revisión",
         variant: "destructive",
       });
     } finally {
@@ -583,7 +583,7 @@ export function CampaignForm() {
         return;
       }
 
-      // First, publish the campaign if not already published
+      // Submit the campaign for admin review before optional badge verification.
       const publishSuccess = await updateCampaign(
         {
           campaignStatus: "active",
@@ -592,7 +592,7 @@ export function CampaignForm() {
       );
 
       if (!publishSuccess) {
-        throw new Error("Failed to publish campaign");
+        throw new Error("Failed to submit campaign for review");
       }
 
       // Store the campaign ID in local storage so CampaignVerificationView can use it
@@ -604,7 +604,7 @@ export function CampaignForm() {
       console.error("Error preparing for verification:", error);
       toast({
         title: "Error",
-        description: "Error al preparar la campaña para verificación",
+        description: "Error al enviar la campaña para revisión",
         variant: "destructive",
       });
     }
@@ -2241,8 +2241,8 @@ setFormData({
                     Revisa cómo quedó
                   </h2>
                   <p className="text-lg text-white/90 mb-6">
-                    Antes de publicar tu campaña, verifica que todo esté
-                    correcto. Puedes ver cómo lucirá en Minka.
+                    Antes de enviar tu campaña a revisión, verifica que todo
+                    esté correcto. Puedes ver cómo lucirá en Minka.
                   </p>
                   <Button
                     variant="outline"
@@ -2318,9 +2318,13 @@ setFormData({
                     </h3>
                     <p className="text-gray-600 mb-6 text-center">
                       Puedes verificar tu campaña para destacarla y generar
-                      confianza, o publicarla directamente para empezar a
-                      recibir apoyo.
+                      confianza, o enviarla directamente para revisión del
+                      equipo de Minka.
                     </p>
+                    <div className="mb-6 rounded-lg border border-yellow-200 bg-yellow-50 p-4 text-sm text-yellow-900">
+                      Tu campaña será revisada por los administradores de Minka
+                      y aprobada en un máximo de 24 horas o menos.
+                    </div>
                     <div className="w-full h-px bg-gray-200 my-6"></div>
                     <div className="space-y-3">
                       <Button
@@ -2351,7 +2355,7 @@ setFormData({
                         variant="outline"
                         disabled={isSubmitting}
                       >
-                        Publicar sin verificar
+                        Enviar a revisión sin verificar
                       </Button>
                     </div>
                   </div>

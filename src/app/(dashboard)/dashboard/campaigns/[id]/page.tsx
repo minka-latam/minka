@@ -496,6 +496,12 @@ export default function CampaignDetailPage() {
   const isCancelledCampaign =
     campaign?.campaign_status === "cancelled" ||
     campaign?.campaignStatus === "cancelled";
+  const isPendingReview =
+    isDraftCampaign &&
+    Boolean(
+      campaign?.submitted_for_review_at ||
+        campaign?.submittedForReviewAt
+    );
   const canDeleteCampaign =
     campaign?.campaign_status === "draft" ||
     campaign?.campaignStatus === "draft" ||
@@ -520,20 +526,27 @@ export default function CampaignDetailPage() {
         throw new Error(errorData.error || "No se pudo publicar la campaña.");
       }
 
+      const data = await response.json();
+
       setCampaign((prev: Record<string, any>) => ({
         ...prev,
-        campaign_status: "active",
+        campaign_status: "draft",
+        submitted_for_review_at:
+          data.campaign?.submittedForReviewAt ||
+          data.campaign?.submitted_for_review_at ||
+          new Date().toISOString(),
       }));
 
       toast({
-        title: "Campaña publicada",
-        description: "Tu campaña ahora está activa.",
+        title: "Campaña enviada a revisión",
+        description:
+          "El equipo de Minka la aprobará en un máximo de 24 horas o menos.",
       });
     } catch (error) {
       console.error("Error publishing campaign:", error);
       toast({
         title: "Error",
-        description: "No se pudo publicar la campaña.",
+        description: "No se pudo enviar la campaña a revisión.",
         variant: "destructive",
       });
     } finally {
@@ -852,14 +865,14 @@ export default function CampaignDetailPage() {
                     height={18}
                   />
                 </button>
-                {isDraftCampaign && (
+                {isDraftCampaign && !isPendingReview && (
                   <Button
                     type="button"
                     onClick={handlePublishCampaign}
                     disabled={isPublishing || isDeleting}
                     className="h-8 px-4 rounded-full bg-[#2c6e49] hover:bg-[#1e4d33] text-white"
                   >
-                    {isPublishing ? "Publicando..." : "Publicar"}
+                    {isPublishing ? "Enviando..." : "Enviar a revisión"}
                   </Button>
                 )}
                 {canDeleteCampaign && (
@@ -875,6 +888,12 @@ export default function CampaignDetailPage() {
                   </Button>
                 )}
               </div>
+              {isPendingReview && (
+                <div className="mb-5 rounded-lg border border-yellow-200 bg-yellow-50 p-4 text-sm text-yellow-900">
+                  Tu campaña fue enviada para revisión. El equipo de Minka la
+                  aprobará en un máximo de 24 horas o menos.
+                </div>
+              )}
 
               {/* Campaign Title */}
               <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mb-6">

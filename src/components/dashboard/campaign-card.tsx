@@ -24,6 +24,7 @@ interface CampaignCardProps {
   progress: number;
   status: CampaignStatus;
   isVerified?: boolean;
+  submittedForReviewAt?: string | null;
 }
 
 export function CampaignCard({
@@ -37,9 +38,11 @@ export function CampaignCard({
   progress,
   status,
   isVerified = false,
+  submittedForReviewAt = null,
 }: CampaignCardProps) {
   const router = useRouter();
   const isCancelled = status === "cancelled";
+  const isPendingReview = status === "draft" && Boolean(submittedForReviewAt);
 
   // Handle verify button click
   const handleVerifyClick = (e: React.MouseEvent) => {
@@ -64,6 +67,7 @@ export function CampaignCard({
       case "cancelled":
         return "Cancelada";
       case "draft":
+        if (isPendingReview) return "En revisión";
         return "Borrador";
       default:
         return "Desconocido";
@@ -113,7 +117,9 @@ export function CampaignCard({
                   ? "text-red-700 bg-red-50"
                   : status === "completed"
                     ? "text-red-600 bg-red-100"
-                    : "text-gray-600 bg-gray-100"
+                    : isPendingReview
+                      ? "text-yellow-800 bg-yellow-100"
+                      : "text-gray-600 bg-gray-100"
             } flex items-center gap-1`}
           >
             <span className="text-lg inline-block leading-none">•</span>{" "}
