@@ -140,7 +140,8 @@ export async function GET(req: NextRequest) {
         notes: campaign.verificationRequests?.notes,
         idDocumentUrl: campaign.verificationRequests?.idDocumentUrl,
         supportingDocsUrls: campaign.verificationRequests?.supportingDocsUrls,
-        campaignStory: campaign.story,
+        campaignStory:
+          campaign.verificationRequests?.campaignStory || campaign.story,
         referenceContactName:
           campaign.verificationRequests?.referenceContactName,
         referenceContactEmail:
@@ -174,4 +175,3 @@ export async function GET(req: NextRequest) {
     );
   }
 }
-

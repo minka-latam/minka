@@ -28,15 +28,13 @@ import {
   XCircle,
   ExternalLink,
   FileText,
-  Image as ImageIcon,
-  UserCheck,
-  Phone,
-  Mail,
   AlertCircle,
   Clock,
   ChevronLeft,
   ChevronRight,
   Eye,
+  Download,
+  Archive,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
@@ -323,6 +321,33 @@ export default function CampaignVerificationPage() {
     );
   };
 
+  const getVerificationDocumentUrls = (request: VerificationRequest) => {
+    const urls: { url: string; title: string }[] = [];
+
+    if (request.idDocumentUrl) {
+      urls.push({
+        url: request.idDocumentUrl,
+        title: "Anverso del documento de identidad",
+      });
+    }
+
+    request.supportingDocsUrls?.forEach((url, index) => {
+      urls.push({
+        url,
+        title:
+          index === 0
+            ? "Reverso del documento de identidad"
+            : `Documento de apoyo ${index}`,
+      });
+    });
+
+    return urls;
+  };
+
+  const downloadUrl = (url: string) => {
+    window.open(url, "_blank", "noopener,noreferrer");
+  };
+
   // Filter requests by status
   const filteredRequests = verificationRequests.filter((req) => {
     // Filter by tab/status
@@ -590,7 +615,27 @@ export default function CampaignVerificationPage() {
           <div className="bg-white w-full max-w-2xl overflow-y-auto h-full">
             <div className="p-6 space-y-6">
               <div className="flex justify-between items-start">
-                <h2 className="text-2xl font-bold">Detalles de verificación</h2>
+                <div>
+                  <h2 className="text-2xl font-bold">
+                    Detalles de verificación
+                  </h2>
+                  {getVerificationDocumentUrls(selectedRequest).length > 0 && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="mt-3"
+                      asChild
+                    >
+                      <a
+                        href={`/api/admin/verification-requests/${selectedRequest.campaignId}/documents`}
+                        download
+                      >
+                        <Archive className="mr-2 h-4 w-4" />
+                        Descargar todo
+                      </a>
+                    </Button>
+                  )}
+                </div>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -706,6 +751,17 @@ export default function CampaignVerificationPage() {
                               <span className="text-gray-700 font-medium">
                                 Documento principal
                               </span>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() =>
+                                  selectedRequest.idDocumentUrl &&
+                                  downloadUrl(selectedRequest.idDocumentUrl)
+                                }
+                              >
+                                <Download className="mr-1 h-4 w-4" />
+                                Descargar
+                              </Button>
                             </div>
                             <div className="border rounded-lg overflow-hidden">
                               {selectedRequest.idDocumentUrl
@@ -788,6 +844,19 @@ export default function CampaignVerificationPage() {
                                   <span className="text-gray-700 font-medium">
                                     Reverso del documento
                                   </span>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() =>
+                                      selectedRequest.supportingDocsUrls?.[0] &&
+                                      downloadUrl(
+                                        selectedRequest.supportingDocsUrls[0],
+                                      )
+                                    }
+                                  >
+                                    <Download className="mr-1 h-4 w-4" />
+                                    Descargar
+                                  </Button>
                                 </div>
                                 <div className="border rounded-lg overflow-hidden">
                                   {selectedRequest.supportingDocsUrls?.[0]
@@ -873,7 +942,13 @@ export default function CampaignVerificationPage() {
 
                 {/* Supporting Documents - Matching verification form style */}
                 {selectedRequest.supportingDocsUrls &&
-                  selectedRequest.supportingDocsUrls.length > 1 && (
+                  selectedRequest.supportingDocsUrls.length > 0 && (() => {
+                    const supportDocumentUrls =
+                      selectedRequest.supportingDocsUrls.length > 1
+                        ? selectedRequest.supportingDocsUrls.slice(1)
+                        : selectedRequest.supportingDocsUrls;
+
+                    return supportDocumentUrls.length > 0 ? (
                     <Card>
                       <CardHeader className="pb-3">
                         <CardTitle className="text-2xl font-medium">
@@ -888,22 +963,21 @@ export default function CampaignVerificationPage() {
                         <div className="bg-white rounded-xl border border-black p-8">
                           <h3 className="text-lg font-medium mb-3">
                             Documentos cargados (
-                            {selectedRequest.supportingDocsUrls.length - 1})
+                            {supportDocumentUrls.length})
                           </h3>
                           <div className="grid grid-cols-2 gap-4">
-                            {selectedRequest.supportingDocsUrls
-                              .slice(1)
-                              .map((url, index) => (
+                            {supportDocumentUrls.map((url, index) => (
                                 <div
                                   key={index}
                                   className="relative rounded-lg overflow-hidden border border-gray-200 cursor-pointer"
                                   onClick={() => {
-                                    const allSupportingDocs = selectedRequest
-                                      .supportingDocsUrls!.slice(1)
-                                      .map((docUrl, docIndex) => ({
+                                    const allSupportingDocs =
+                                      supportDocumentUrls.map(
+                                        (docUrl, docIndex) => ({
                                         url: docUrl,
                                         title: `Documento de apoyo ${docIndex + 1}`,
-                                      }));
+                                        }),
+                                      );
                                     openDocumentModal(
                                       url,
                                       `Documento de apoyo ${index + 1}`,
@@ -912,6 +986,18 @@ export default function CampaignVerificationPage() {
                                     );
                                   }}
                                 >
+                                  <Button
+                                    variant="secondary"
+                                    size="sm"
+                                    className="absolute right-2 top-2 z-10 bg-white/95"
+                                    onClick={(event) => {
+                                      event.stopPropagation();
+                                      downloadUrl(url);
+                                    }}
+                                  >
+                                    <Download className="mr-1 h-4 w-4" />
+                                    Descargar
+                                  </Button>
                                   {url.toLowerCase().includes(".jpg") ||
                                   url.toLowerCase().includes(".jpeg") ||
                                   url.toLowerCase().includes(".png") ? (
@@ -964,7 +1050,8 @@ export default function CampaignVerificationPage() {
                         </div>
                       </CardContent>
                     </Card>
-                  )}
+                    ) : null;
+                  })()}
 
                 {/* Campaign History - Matching verification form style */}
                 {selectedRequest.campaignStory && (
@@ -1139,6 +1226,14 @@ export default function CampaignVerificationPage() {
                 )}
               </div>
               <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => downloadUrl(currentDocumentUrl)}
+                >
+                  <Download className="mr-1 h-4 w-4" />
+                  Descargar
+                </Button>
                 {documentList.length > 1 && (
                   <>
                     <Button
@@ -1208,6 +1303,10 @@ export default function CampaignVerificationPage() {
                       <p className="mb-4">
                         No se puede mostrar este documento en el navegador
                       </p>
+                      <Button onClick={() => downloadUrl(currentDocumentUrl)}>
+                        <Download className="mr-2 h-4 w-4" />
+                        Descargar archivo
+                      </Button>
                     </div>
                   </div>
                 </div>
@@ -1332,4 +1431,3 @@ export default function CampaignVerificationPage() {
     </div>
   );
 }
-

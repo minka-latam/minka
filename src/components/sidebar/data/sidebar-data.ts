@@ -1,29 +1,10 @@
 import {
-  AlertCircle,
-  AppWindow,
-  AudioWaveform,
-  Ban,
-  BellRing,
-  Monitor,
-  Bug,
-  CheckSquare,
-  Command,
-  GalleryVerticalEnd,
-  HelpCircle,
   LayoutDashboard,
-  Lock,
-  LockKeyhole,
-  MessageSquare,
-  Palette,
-  Settings,
-  ServerCrash,
-  Wrench,
-  UserCog,
-  UserX,
   Users,
   AreaChart,
   HeartHandshake,
   Building2,
+  ShieldCheck,
 } from "lucide-react";
 import type { SidebarData } from "../types";
 
@@ -53,6 +34,11 @@ export const sidebarData: SidebarData = {
           title: "Campañas",
           url: "/dashboard/campaigns",
           icon: LayoutDashboard,
+        },
+        {
+          title: "Verificaciones",
+          url: "/dashboard/verification",
+          icon: ShieldCheck,
         },
         {
           title: "Usuarios",
