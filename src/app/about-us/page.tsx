@@ -14,11 +14,11 @@ export default function AboutPage() {
       <div className="h-20 md:h-28"></div>
       <main className="container mx-auto px-4 py-16 flex-grow">
         {/* Hero Section */}
-        <div className="max-w-[95vw] lg:max-w-5xl mx-auto text-center mb-32">
-          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-[#333333] mb-8 leading-tight">
+        <div className="max-w-7xl mx-auto text-center mb-32">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-[#333333] mb-8 leading-tight lg:whitespace-nowrap">
             Impulsamos causas, transformamos vidas
           </h1>
-          <p className="text-xl md:text-2xl text-gray-600 leading-relaxed">
+          <p className="text-xl md:text-2xl text-gray-600 leading-relaxed max-w-5xl mx-auto">
             En Minka, creemos en el poder de la solidaridad para transformar
             vidas. Somos una plataforma de crowdfunding que conecta a quienes
             necesitan apoyo social con personas dispuestas a ayudar,

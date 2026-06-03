@@ -34,7 +34,7 @@ export function CampaignCard({
   href,
 }: CampaignCardProps) {
   // Generate the campaign URL - if href is provided use it, otherwise use /campaign/id
-  const campaignUrl = href || (id ? `/campaign/${id}` : "/campaign");
+  const campaignUrl = href || (id ? `/campaign/${id}` : "/all-campaigns");
 
   return (
     <Link

@@ -26,7 +26,7 @@ export function HeroSection() {
               Crear
             </Button>
           </Link>
-          <Link href="/campaign" rel="noopener noreferrer">
+          <Link href="/all-campaigns" rel="noopener noreferrer">
             <Button
               variant="outline"
               className="border-[#2c6e49] text-[#2c6e49] hover:bg-[#2c6e49] hover:text-white text-xl w-full sm:w-auto rounded-full"

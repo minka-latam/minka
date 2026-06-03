@@ -28,7 +28,7 @@ export function Footer() {
                 Centro de ayuda
               </Link>
               <Link
-                href="/campaign"                
+                href="/all-campaigns"
                 rel="noopener noreferrer"
                 className="text-white hover:text-gray-200 transition-colors underline underline-offset-4 text-lg font-bold"
               >

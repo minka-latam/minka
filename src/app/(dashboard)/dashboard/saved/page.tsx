@@ -1,7 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -11,8 +9,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 export default function SavedCampaignsPage() {
-  const router = useRouter();
-  const { session, loading: authLoading } = useAuth();
+  const { loading: authLoading } = useAuth();
   const { savedCampaigns, isLoading, error, unsaveCampaign } =
     useSavedCampaigns();
 
@@ -89,7 +86,7 @@ export default function SavedCampaignsPage() {
             className="bg-[#2c6e49] hover:bg-[#1e4d33] text-white rounded-full px-8 py-3 text-base"
             asChild
           >
-            <Link href="/campaign">Explorar campañas</Link>
+            <Link href="/all-campaigns">Explorar campañas</Link>
           </Button>
         </div>
       )}
