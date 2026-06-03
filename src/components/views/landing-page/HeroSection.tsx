@@ -23,7 +23,7 @@ export function HeroSection() {
               className="bg-[#2c6e49] hover:bg-[#1e4d33] text-white text-xl w-full sm:w-auto rounded-full"
               size="lg"
             >
-              Crear una campaña
+              Crear
             </Button>
           </Link>
           <Link href="/campaign" rel="noopener noreferrer">
@@ -32,7 +32,7 @@ export function HeroSection() {
               className="border-[#2c6e49] text-[#2c6e49] hover:bg-[#2c6e49] hover:text-white text-xl w-full sm:w-auto rounded-full"
               size="lg"
             >
-              Donar <ArrowRight className="ml-2 h-5 w-5" />
+              Ver campañas <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
           </Link>
         </div>

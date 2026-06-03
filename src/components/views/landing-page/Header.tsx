@@ -13,7 +13,7 @@ export function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
   const router = useRouter();
-  const { user, signOut, isLoading } = useAuth();
+  const { user, signOut } = useAuth();
   const [profileName, setProfileName] = useState<string>("");
   const { getProfile } = useDb();
 
@@ -106,8 +106,8 @@ export function Header() {
   };
 
   const menuItems = [
-    { href: "/campaign", label: "Donar" },
-    { href: "/create-campaign", label: "Crear campaña" },
+    { href: "/campaign", label: "Ver campañas" },
+    { href: "/create-campaign", label: "Crear" },
     { href: "/about-us", label: "Nosotros" },
     { href: "/help", label: "Ayuda" },
   ];

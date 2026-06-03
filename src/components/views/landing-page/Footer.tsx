@@ -32,7 +32,7 @@ export function Footer() {
                 rel="noopener noreferrer"
                 className="text-white hover:text-gray-200 transition-colors underline underline-offset-4 text-lg font-bold"
               >
-                Donar
+                Ver campañas
               </Link>
               <Link
                 href="/about-us"                
