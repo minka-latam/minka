@@ -89,7 +89,7 @@ export function DonatePageContent({
   const [receiveNotifications, setReceiveNotifications] =
     useState(false)
   const [minkaContribution, setMinkaContribution] =
-    useState<number>(5)
+    useState<number>(0)
   const [showSuccessModal, setShowSuccessModal] =
     useState(false)
   const [
@@ -241,7 +241,7 @@ export function DonatePageContent({
       : Number.parseFloat(customTipAmount) || 0 // User-selected percentage or custom amount for platform fee
   const totalAmount = donationAmount + platformFee
   const currencyPrefix =
-    paymentMethod === 'card' ? '$/€' : 'Bs.'
+    paymentMethod === 'card' ? '$' : 'Bs.'
   const selectedTipText =
     tipMode === 'percentage'
       ? `${minkaContribution}%`
@@ -1118,8 +1118,8 @@ export function DonatePageContent({
                         <div className='mb-6'>
                           <p className='text-sm text-black mb-3'>
                             ¿Quieres apoyar a Minka? Una
-                            contribución voluntaria
-                            adicional te permite ser parte
+                            contribución voluntaria a Minka
+                            te permite ser parte
                             de la comunidad solidaria por
                             excelencia.
                           </p>
@@ -1216,7 +1216,7 @@ export function DonatePageContent({
 
                           <div className='flex justify-between items-center mt-3'>
                             <span className='text-sm text-black'>
-                              Tu contribución a Minka:
+                              Tu contribución voluntaria a Minka:
                             </span>
                             <span className='text-sm font-medium text-black'>
                               {currencyPrefix}{' '}
@@ -1383,7 +1383,7 @@ export function DonatePageContent({
                           </div>
                           <div className='flex justify-between'>
                             <span className='text-gray-600'>
-                              Aporte adicional a Minka
+                              Aporte voluntario a Minka
                             </span>
                             <span className='font-medium'>
                               {currencyPrefix}{' '}
@@ -1422,13 +1422,13 @@ export function DonatePageContent({
                             </div>
                             <div>
                               <p className='text-sm text-[#2c6e49] font-medium mb-1'>
-                                Acerca del aporte adicional
+                                Acerca del aporte voluntario
                                 a Minka
                               </p>
                               <p className='text-sm text-gray-700 leading-relaxed'>
-                                Tu aporte adicional
-                                seleccionado para Minka es {' '}                             
-                                  {selectedTipText}.
+                                Tu aporte voluntario
+                                seleccionado para Minka es{' '}
+                                {selectedTipText}.
                                 Este monto ayuda a
                                 mantener la plataforma
                                 funcionando, procesar pagos

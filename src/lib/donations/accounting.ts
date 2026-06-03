@@ -1,5 +1,6 @@
 import { PaymentStatus, Prisma } from "@prisma/client";
 
+import { sendDonorThankYouEmail } from "@/lib/donor-thank-you-email";
 import { createDonationNotification } from "@/lib/notifications";
 
 type CompletedDonationNotification = {
@@ -7,9 +8,14 @@ type CompletedDonationNotification = {
   campaignId: string;
   organizerId: string;
   donorName: string;
+  donorEmail?: string;
   amount: number;
+  tipAmount: number;
+  totalAmount: number;
+  currency: string;
   campaignTitle: string;
   isAnonymous: boolean;
+  completedAt: Date;
 };
 
 export async function completeDonationAccounting(
@@ -39,7 +45,7 @@ export async function completeDonationAccounting(
         },
       },
       donor: {
-        select: { name: true },
+        select: { name: true, email: true },
       },
     },
   });
@@ -65,6 +71,10 @@ export async function completeDonationAccounting(
 
   const donationTipAmount = new Prisma.Decimal(
     donation.tip_amount ?? tipAmount ?? 0,
+  );
+  const donationTotalAmount = new Prisma.Decimal(
+    donation.total_amount ??
+      new Prisma.Decimal(donation.amount).plus(donationTipAmount),
   );
 
   const updatedCampaign = await tx.campaign.update({
@@ -102,9 +112,14 @@ export async function completeDonationAccounting(
       campaignId: donation.campaign.id,
       organizerId: donation.campaign.organizerId,
       donorName: donation.donor?.name || "Donante",
+      donorEmail: donation.donor?.email || undefined,
       amount: Number(donation.amount),
+      tipAmount: Number(donationTipAmount),
+      totalAmount: Number(donationTotalAmount),
+      currency: donation.currency,
       campaignTitle: donation.campaign.title,
       isAnonymous: donation.isAnonymous,
+      completedAt: new Date(),
     },
   };
 }
@@ -130,4 +145,21 @@ export async function sendCompletedDonationNotification(
       notificationError,
     );
   }
+
+  if (notification.isAnonymous || !notification.donorEmail) {
+    return;
+  }
+
+  await sendDonorThankYouEmail({
+    donationId: notification.donationId,
+    campaignId: notification.campaignId,
+    campaignTitle: notification.campaignTitle,
+    donorName: notification.donorName,
+    donorEmail: notification.donorEmail,
+    amount: notification.amount,
+    tipAmount: notification.tipAmount,
+    totalAmount: notification.totalAmount,
+    currency: notification.currency,
+    completedAt: notification.completedAt,
+  });
 }

@@ -1,5 +1,5 @@
 export const BISA_PAYMENT_CURRENCY = "BOB";
-export const TRIPTO_CARD_CURRENCIES = ["USD", "EUR"] as const;
+export const TRIPTO_CARD_CURRENCIES = ["USD"] as const;
 export const DEFAULT_TRIPTO_CARD_CURRENCY = "USD";
 export const TRIPTO_OPEN_AMOUNT_TOLERANCE = 0.01;
 

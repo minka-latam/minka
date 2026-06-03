@@ -74,11 +74,11 @@ Deno.serve(async (request) => {
     timeZone: "America/La_Paz",
   });
 
-  const subject = `Nueva campaña pendiente de revisión`;
+  const subject = `Nueva campaña PENDIENTE DE REVISION`;
   const preheader = `La campaña "${payload.campaignTitle}" fue enviada para aprobación.`;
 
   const text = [
-    "Nueva campaña pendiente de revisión",
+    "Nueva campaña PENDIENTE DE REVISION",
     "",
     "Una campaña fue enviada para aprobación en Minka Comunidad.",
     "",
@@ -111,13 +111,13 @@ Deno.serve(async (request) => {
             <tr>
               <td style="background:#2f7d3f;padding:24px 28px;">
                 <p style="margin:0;color:#dcefd9;font-size:13px;letter-spacing:.02em;text-transform:uppercase;">Minka Comunidad</p>
-                <h1 style="margin:8px 0 0;color:#ffffff;font-size:24px;line-height:1.25;font-weight:700;">Nueva campaña pendiente de revisión</h1>
+                <h1 style="margin:8px 0 0;color:#ffffff;font-size:24px;line-height:1.25;font-weight:700;">Nueva campaña en REVISION</h1>
               </td>
             </tr>
             <tr>
               <td style="padding:28px;">
                 <p style="margin:0 0 22px;color:#415041;font-size:16px;line-height:1.5;">
-                  Una campaña fue enviada para aprobación. Revisa el contenido y define si debe publicarse.
+                  Una campaña fue enviada para aprobación y está <strong style="color:#172017;">PENDIENTE DE REVISION</strong>. Revisa el contenido y define si debe publicarse.
                 </p>
 
                 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;margin:0 0 24px;">

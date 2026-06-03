@@ -76,11 +76,11 @@ Deno.serve(async (request) => {
     timeZone: "America/La_Paz",
   });
 
-  const subject = "Nueva solicitud de verificación";
+  const subject = "Nueva solicitud de VERIFICATION";
   const preheader = `La campaña "${payload.campaignTitle}" solicitó verificación.`;
 
   const text = [
-    "Nueva solicitud de verificación",
+    "Nueva solicitud de VERIFICATION",
     "",
     "Una campaña envió documentos para revisión de verificación.",
     "",
@@ -107,20 +107,20 @@ Deno.serve(async (request) => {
     <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">
       ${escapeHtml(preheader)}
     </div>
-    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f6f7f2;margin:0;padding:32px 16px;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#fbf8e8;margin:0;padding:32px 16px;">
       <tr>
         <td align="center">
-          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:560px;background:#ffffff;border:1px solid #e2e6da;border-radius:12px;overflow:hidden;">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:560px;background:#ffffff;border:2px solid #e4bd43;border-radius:12px;overflow:hidden;">
             <tr>
-              <td style="background:#2f7d3f;padding:24px 28px;">
-                <p style="margin:0;color:#dcefd9;font-size:13px;letter-spacing:.02em;text-transform:uppercase;">Minka Comunidad</p>
-                <h1 style="margin:8px 0 0;color:#ffffff;font-size:24px;line-height:1.25;font-weight:700;">Nueva solicitud de verificación</h1>
+              <td style="background:#6f7f2f;border-bottom:4px solid #e4bd43;padding:24px 28px;">
+                <p style="margin:0;color:#fff3c4;font-size:13px;letter-spacing:.02em;text-transform:uppercase;">Minka Comunidad</p>
+                <h1 style="margin:8px 0 0;color:#ffffff;font-size:24px;line-height:1.25;font-weight:700;">Nueva solicitud de VERIFICATION</h1>
               </td>
             </tr>
             <tr>
               <td style="padding:28px;">
                 <p style="margin:0 0 22px;color:#415041;font-size:16px;line-height:1.5;">
-                  Una campaña envió documentación para solicitar el sello de verificación.
+                  Una campaña envió documentación para solicitar el sello de <strong style="color:#6f7f2f;">VERIFICATION</strong>.
                 </p>
 
                 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;margin:0 0 24px;">
@@ -135,7 +135,7 @@ Deno.serve(async (request) => {
                   <tr>
                     <td style="padding:12px 0;border-bottom:1px solid #eef0ea;color:#6a7468;font-size:13px;">Email</td>
                     <td style="padding:12px 0;border-bottom:1px solid #eef0ea;color:#172017;font-size:14px;">
-                      <a href="mailto:${organizerEmail}" style="color:#2f7d3f;text-decoration:none;">${organizerEmail}</a>
+                      <a href="mailto:${organizerEmail}" style="color:#6f7f2f;text-decoration:none;">${organizerEmail}</a>
                     </td>
                   </tr>
                   <tr>
@@ -150,12 +150,12 @@ Deno.serve(async (request) => {
 
                 <table role="presentation" cellspacing="0" cellpadding="0" style="margin:0 0 18px;">
                   <tr>
-                    <td style="border-radius:8px;background:#2f7d3f;">
+                    <td style="border-radius:8px;background:#6f7f2f;">
                       <a href="${dashboardUrl}" style="display:inline-block;padding:12px 18px;color:#ffffff;text-decoration:none;font-size:14px;font-weight:700;">Revisar solicitud</a>
                     </td>
                     <td style="width:12px;"></td>
-                    <td style="border-radius:8px;border:1px solid #2f7d3f;">
-                      <a href="${campaignUrl}" style="display:inline-block;padding:11px 18px;color:#2f7d3f;text-decoration:none;font-size:14px;font-weight:700;">Ver campaña</a>
+                    <td style="border-radius:8px;border:1px solid #6f7f2f;">
+                      <a href="${campaignUrl}" style="display:inline-block;padding:11px 18px;color:#6f7f2f;text-decoration:none;font-size:14px;font-weight:700;">Ver campaña</a>
                     </td>
                   </tr>
                 </table>
