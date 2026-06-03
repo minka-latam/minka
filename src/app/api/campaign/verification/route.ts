@@ -3,6 +3,7 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { prisma as db } from "@/lib/prisma";
 import { z } from "zod";
+import { notifyVerificationRequestSubmitted } from "@/lib/verification-request-email";
 
 // Schema for campaign verification request
 const verificationRequestSchema = z.object({
@@ -14,6 +15,11 @@ const verificationRequestSchema = z.object({
   referenceContactName: z.string().min(3).max(100).optional(),
   referenceContactEmail: z.string().email().optional(),
   referenceContactPhone: z.string().min(5).max(20).optional(),
+});
+
+const appendDocumentsSchema = z.object({
+  campaignId: z.string().uuid(),
+  supportingDocsUrls: z.array(z.string().url()).min(1),
 });
 
 // Route handler for POST request to submit verification
@@ -140,6 +146,15 @@ export async function POST(req: NextRequest) {
           },
         });
 
+        await notifyVerificationRequestSubmitted({
+          campaignId: campaign.id,
+          campaignTitle: campaign.title,
+          organizerName: organizer.name,
+          organizerEmail: organizer.email,
+          submittedAt: updatedVerification.requestDate,
+          supportingDocsCount: updatedVerification.supportingDocsUrls.length,
+        });
+
         return NextResponse.json({
           message: "Campaign verification request updated successfully",
           verificationId: updatedVerification.id,
@@ -174,6 +189,15 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    await notifyVerificationRequestSubmitted({
+      campaignId: campaign.id,
+      campaignTitle: campaign.title,
+      organizerName: organizer.name,
+      organizerEmail: organizer.email,
+      submittedAt: verification.requestDate,
+      supportingDocsCount: verification.supportingDocsUrls.length,
+    });
+
     return NextResponse.json({
       message: "Campaign verification request submitted successfully",
       verificationId: verification.id,
@@ -190,6 +214,133 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(
       { error: "Failed to submit verification request" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PATCH(req: NextRequest) {
+  try {
+    const cookieStore = await cookies();
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return cookieStore.getAll();
+          },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
+            );
+          },
+        },
+      }
+    );
+
+    const {
+      data: { session },
+      error: sessionError,
+    } = await supabase.auth.getSession();
+
+    if (sessionError || !session?.user) {
+      return NextResponse.json(
+        { error: "Unauthorized - You must be logged in" },
+        { status: 401 }
+      );
+    }
+
+    const { campaignId, supportingDocsUrls } = appendDocumentsSchema.parse(
+      await req.json()
+    );
+
+    const organizer = await db.profile.findUnique({
+      where: { email: session.user.email },
+      select: { id: true },
+    });
+
+    if (!organizer) {
+      return NextResponse.json(
+        { error: "Organizer profile not found" },
+        { status: 404 }
+      );
+    }
+
+    const campaign = await db.campaign.findUnique({
+      where: { id: campaignId },
+      select: {
+        id: true,
+        organizerId: true,
+        verificationRequests: {
+          select: {
+            id: true,
+            verificationStatus: true,
+            supportingDocsUrls: true,
+          },
+        },
+      },
+    });
+
+    if (!campaign) {
+      return NextResponse.json(
+        { error: "Campaign not found" },
+        { status: 404 }
+      );
+    }
+
+    if (campaign.organizerId !== organizer.id) {
+      return NextResponse.json(
+        { error: "You don't have permission to update this verification" },
+        { status: 403 }
+      );
+    }
+
+    if (!campaign.verificationRequests) {
+      return NextResponse.json(
+        { error: "No verification request found for this campaign" },
+        { status: 404 }
+      );
+    }
+
+    if (campaign.verificationRequests.verificationStatus === "approved") {
+      return NextResponse.json(
+        { error: "Approved verification requests cannot be changed" },
+        { status: 400 }
+      );
+    }
+
+    const mergedDocs = Array.from(
+      new Set([
+        ...campaign.verificationRequests.supportingDocsUrls,
+        ...supportingDocsUrls,
+      ])
+    );
+
+    const verification = await db.campaignVerification.update({
+      where: { id: campaign.verificationRequests.id },
+      data: {
+        supportingDocsUrls: mergedDocs,
+      },
+    });
+
+    return NextResponse.json({
+      message: "Documents added successfully",
+      verificationId: verification.id,
+      supportingDocsUrls: verification.supportingDocsUrls,
+    });
+  } catch (error) {
+    console.error("Error adding verification documents:", error);
+
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: "Invalid request data", details: error.errors },
+        { status: 400 }
+      );
+    }
+
+    return NextResponse.json(
+      { error: "Failed to add verification documents" },
       { status: 500 }
     );
   }
@@ -231,4 +382,3 @@ export async function GET(req: NextRequest) {
     );
   }
 }
-

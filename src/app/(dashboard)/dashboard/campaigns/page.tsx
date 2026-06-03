@@ -51,6 +51,7 @@ interface Campaign {
   daysRemaining: number;
   status: "draft" | "active" | "completed" | "cancelled";
   verificationStatus: boolean;
+  verificationRequestStatus?: "pending" | "approved" | "rejected" | null;
   verificationDate?: string;
   submittedForReviewAt?: string | null;
   createdAt: string;
@@ -172,6 +173,8 @@ export default function SuperAdminCampaignsPage() {
             daysRemaining: 0, // Calculate if needed
             status: campaign.status,
             verificationStatus: campaign.verification_status,
+            verificationRequestStatus:
+              campaign.verification_request_status || null,
             verificationDate: null,
             submittedForReviewAt: campaign.submitted_for_review_at,
             createdAt: campaign.created_at,

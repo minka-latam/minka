@@ -1,18 +1,16 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Upload,
   Clock,
   FileText,
   User,
-  ChevronDown,
   Plus,
   X,
   CheckCircle2,
   Eye,
-  EyeOff,
 } from "lucide-react";
 import Image from "next/image";
 import {
@@ -26,7 +24,6 @@ import { useToast } from "@/components/ui/use-toast";
 import { ImageEditor } from "@/components/views/create-campaign/ImageEditor";
 import { InlineSpinner } from "@/components/ui/inline-spinner";
 import { useUpload } from "@/hooks/use-upload";
-import { UploadProgress } from "@/components/views/create-campaign/UploadProgress";
 import {
   Select,
   SelectContent,
@@ -38,7 +35,6 @@ import { CountryCodeSelector } from "@/components/ui/country-code-selector";
 import { findCountryByCode } from "@/data/country-codes";
 import {
   formatPhoneNumber,
-  validatePhoneNumber,
   getPhonePlaceholder,
 } from "@/utils/phone-formatter";
 
@@ -62,12 +58,7 @@ export function CampaignVerificationView({
   const router = useRouter();
   const { toast } = useToast();
   const {
-    isUploading,
-    progress: uploadProgress,
-    uploadedUrls,
-    setUploadedUrls,
     uploadFile: hookUploadFile,
-    uploadFiles,
   } = useUpload();
 
   // State for campaigns that can be verified
@@ -131,32 +122,21 @@ export function CampaignVerificationView({
 
   // UI states
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isAddingDocuments, setIsAddingDocuments] = useState(false);
   const [showReferenceModal, setShowReferenceModal] = useState(false);
   const [showSubmitModal, setShowSubmitModal] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
-  const [verificationSubmitted, setVerificationSubmitted] = useState(false);
 
   // Image editor states
-  const [editingImageIndex, setEditingImageIndex] = useState<number | null>(
-    null
-  );
   const [isIdDocumentEditing, setIsIdDocumentEditing] = useState(false);
   const [isSupportingDocEditing, setIsSupportingDocEditing] = useState(false);
   const [editingIdDocumentSide, setEditingIdDocumentSide] = useState<
     "front" | "back" | null
   >(null);
   const [editingImageUrl, setEditingImageUrl] = useState<string | null>(null);
-  const [isImageEditorLoading, setIsImageEditorLoading] = useState(false);
   const [editingImageType, setEditingImageType] = useState<
     "id" | "support" | null
   >(null);
-  const [isImageEditorOpen, setIsImageEditorOpen] = useState(false);
-
-  // Add a state to track the current uploading file
-  const [currentUploadingFile, setCurrentUploadingFile] = useState<File | null>(
-    null
-  );
-  const [progress, setProgress] = useState(0);
 
   // Add a new state for verification status right after all the other state declarations
   const [verificationStatusInfo, setVerificationStatusInfo] = useState<{
@@ -191,7 +171,7 @@ export function CampaignVerificationView({
       id: 3,
       title: "Historia de tu campaña",
       description:
-        "Cuenta la historia completa de tu campaña para que nuestro equipo pueda entender mejor tu propósito.",
+        "Ahora cuéntanos aquí personalmente tu historia para que podamos entenderte mejor.",
     },
     {
       id: 4,
@@ -279,49 +259,69 @@ export function CampaignVerificationView({
     return emailRegex.test(email);
   };
 
-  // Get campaign ID from props or fetch unverified campaigns on mount
-  useEffect(() => {
-    const fetchCampaignData = async () => {
+  const checkVerificationStatus = useCallback(
+    async (campaignId: string) => {
+      if (!campaignId) return;
+
+      setIsLoadingVerificationStatus(true);
       try {
-        // First try to get campaign ID from props
-        if (initialCampaignId) {
-          await loadCampaignById(initialCampaignId);
-        } else {
-          // If not in props, check localStorage as fallback
-          const storedCampaignId = localStorage.getItem(
-            "verificationCampaignId"
-          );
-          if (storedCampaignId) {
-            await loadCampaignById(storedCampaignId);
-            // Clear from localStorage after using it to prevent stale data in future visits
-            localStorage.removeItem("verificationCampaignId");
-          } else {
-            await fetchUnverifiedCampaigns();
+        const response = await fetch(
+          `/api/campaign/verification/status?campaignId=${campaignId}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            credentials: "include",
           }
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to check verification status");
+        }
+
+        const data = await response.json();
+
+        setVerificationStatusInfo({
+          status: data.status,
+          requestDate: data.requestDate,
+          approvalDate: data.approvalDate,
+          notes: data.notes,
+        });
+
+        if (data.status === "pending") {
+          toast({
+            title: "Verificación en progreso",
+            description:
+              "Esta campaña ya tiene una solicitud de verificación pendiente.",
+            variant: "default",
+          });
+        } else if (data.status === "approved") {
+          toast({
+            title: "Campaña verificada",
+            description: "Esta campaña ya ha sido verificada exitosamente.",
+            variant: "default",
+          });
+        } else if (data.status === "rejected") {
+          toast({
+            title: "Verificación rechazada",
+            description: `La verificación de esta campaña fue rechazada. ${
+              data.notes ? `Motivo: ${data.notes}` : ""
+            }`,
+            variant: "destructive",
+          });
         }
       } catch (error) {
-        console.error("Error initializing campaign verification:", error);
-        toast({
-          title: "Error",
-          description: "No se pudo cargar la información de las campañas.",
-          variant: "destructive",
-        });
+        console.error("Error checking verification status:", error);
+      } finally {
+        setIsLoadingVerificationStatus(false);
       }
-    };
-
-    fetchCampaignData();
-  }, [initialCampaignId]);
-
-  // Redirect to campaign-specific URL if a campaign is selected from dropdown
-  useEffect(() => {
-    if (shouldRedirect && selectedCampaignId) {
-      router.push(`/campaign-verification/${selectedCampaignId}`);
-      setShouldRedirect(false);
-    }
-  }, [shouldRedirect, selectedCampaignId, router]);
+    },
+    [toast]
+  );
 
   // Function to fetch all unverified campaigns for the user
-  const fetchUnverifiedCampaigns = async () => {
+  const fetchUnverifiedCampaigns = useCallback(async () => {
     setIsLoadingCampaigns(true);
     try {
       const response = await fetch("/api/campaign/unverified", {
@@ -364,10 +364,10 @@ export function CampaignVerificationView({
     } finally {
       setIsLoadingCampaigns(false);
     }
-  };
+  }, [initialCampaignId, toast]);
 
   // Function to load a specific campaign by ID
-  const loadCampaignById = async (id: string) => {
+  const loadCampaignById = useCallback(async (id: string) => {
     try {
       // First check if the ID is valid
       if (!id || id.trim() === "") {
@@ -414,7 +414,50 @@ export function CampaignVerificationView({
       // If loading specific campaign fails, redirect to campaign listing
       router.push("/dashboard/campaigns");
     }
-  };
+  }, [checkVerificationStatus, router, toast]);
+
+  // Get campaign ID from props or fetch unverified campaigns on mount
+  useEffect(() => {
+    const fetchCampaignData = async () => {
+      try {
+        if (initialCampaignId) {
+          await loadCampaignById(initialCampaignId);
+        } else {
+          const storedCampaignId = localStorage.getItem(
+            "verificationCampaignId"
+          );
+          if (storedCampaignId) {
+            await loadCampaignById(storedCampaignId);
+            localStorage.removeItem("verificationCampaignId");
+          } else {
+            await fetchUnverifiedCampaigns();
+          }
+        }
+      } catch (error) {
+        console.error("Error initializing campaign verification:", error);
+        toast({
+          title: "Error",
+          description: "No se pudo cargar la información de las campañas.",
+          variant: "destructive",
+        });
+      }
+    };
+
+    fetchCampaignData();
+  }, [
+    fetchUnverifiedCampaigns,
+    initialCampaignId,
+    loadCampaignById,
+    toast,
+  ]);
+
+  // Redirect to campaign-specific URL if a campaign is selected from dropdown
+  useEffect(() => {
+    if (shouldRedirect && selectedCampaignId) {
+      router.push(`/campaign-verification/${selectedCampaignId}`);
+      setShouldRedirect(false);
+    }
+  }, [shouldRedirect, selectedCampaignId, router]);
 
   // Function to handle campaign selection from dropdown
   const handleCampaignChange = (campaignId: string) => {
@@ -511,7 +554,7 @@ export function CampaignVerificationView({
         }
 
         // Upload ID document using the hook
-        const result = await hookUploadFile(file, (p) => setProgress(p));
+        const result = await hookUploadFile(file);
         if (result.success) {
           if (side === "front") {
             setIdDocumentFrontUrl(result.url);
@@ -563,10 +606,7 @@ export function CampaignVerificationView({
         setIdDocumentBackFile(file);
       }
 
-      setCurrentUploadingFile(file);
-      setProgress(0);
-
-      const result = await hookUploadFile(file, (p) => setProgress(p));
+      const result = await hookUploadFile(file);
 
       if (result.success) {
         if (side === "front") {
@@ -597,7 +637,6 @@ export function CampaignVerificationView({
         variant: "destructive",
       });
     } finally {
-      setCurrentUploadingFile(null);
     }
   };
 
@@ -639,10 +678,7 @@ export function CampaignVerificationView({
 
         // Upload all non-image files one by one to show progress
         for (const file of nonImageFiles) {
-          setCurrentUploadingFile(file);
-          setProgress(0);
-
-          const result = await hookUploadFile(file, (p) => setProgress(p));
+          const result = await hookUploadFile(file);
 
           if (!result.success) {
             throw new Error(`Failed to upload ${file.name}`);
@@ -657,7 +693,6 @@ export function CampaignVerificationView({
           });
         }
 
-        setCurrentUploadingFile(null);
       } catch (error) {
         console.error("Error uploading files:", error);
         toast({
@@ -679,7 +714,7 @@ export function CampaignVerificationView({
       setPendingImageQueue((prev) => [...prev, ...imageFiles]);
 
       // If we're not already editing an image, start processing the first one
-      if (!isImageEditorOpen && !isIdDocumentEditing) {
+      if (!isIdDocumentEditing && !isSupportingDocEditing) {
         processNextImageInQueue();
       }
     }
@@ -728,11 +763,9 @@ export function CampaignVerificationView({
       setSupportingDocs((prev) => [...prev, file]);
 
       // Start upload process
-      setCurrentUploadingFile(file);
-      setProgress(0);
       setIsSubmitting(true);
 
-      const result = await hookUploadFile(file, (p) => setProgress(p));
+      const result = await hookUploadFile(file);
 
       if (result.success) {
         setSupportingDocsUrls((prev) => [...prev, result.url]);
@@ -746,7 +779,6 @@ export function CampaignVerificationView({
       }
 
       // Close the editor
-      setEditingImageIndex(null);
       setEditingImageUrl(null);
       setIsSupportingDocEditing(false);
       setEditingImageType(null);
@@ -765,14 +797,12 @@ export function CampaignVerificationView({
         variant: "destructive",
       });
     } finally {
-      setCurrentUploadingFile(null);
       setIsSubmitting(false);
     }
   };
 
   // Update cancel handlers for supporting doc edits
   const handleCancelSupportingDocEdit = () => {
-    setEditingImageIndex(null);
     setEditingImageUrl(null);
     setIsSupportingDocEditing(false);
     setEditingImageType(null);
@@ -787,6 +817,70 @@ export function CampaignVerificationView({
   const removeSupportingDoc = (index: number) => {
     setSupportingDocs((prev) => prev.filter((_, i) => i !== index));
     setSupportingDocsUrls((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleAppendSupportingDocuments = async () => {
+    if (!selectedCampaignId) {
+      toast({
+        title: "Error",
+        description: "No se encontró la campaña para actualizar.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (supportingDocsUrls.length === 0) {
+      toast({
+        title: "Sin documentos",
+        description: "Primero sube al menos un documento de respaldo.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setIsAddingDocuments(true);
+
+      const response = await fetch("/api/campaign/verification", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          campaignId: selectedCampaignId,
+          supportingDocsUrls,
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => null);
+        throw new Error(
+          data?.error || "No se pudieron agregar los documentos."
+        );
+      }
+
+      setSupportingDocs([]);
+      setSupportingDocsUrls([]);
+
+      toast({
+        title: "Documentos agregados",
+        description:
+          "Los documentos fueron agregados a tu solicitud de verificación.",
+      });
+    } catch (error) {
+      console.error("Error adding verification documents:", error);
+      toast({
+        title: "Error",
+        description:
+          error instanceof Error
+            ? error.message
+            : "No se pudieron agregar los documentos. Inténtalo nuevamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsAddingDocuments(false);
+    }
   };
 
   // Update submit verification request to include both front and back URLs
@@ -903,9 +997,15 @@ export function CampaignVerificationView({
   const handleReferenceSubmit = () => {
     // Validate email if provided
     if (referenceContact.email && !isValidEmail(referenceContact.email)) {
+      setFormErrors((prev) => ({
+        ...prev,
+        referenceEmail:
+          "Ingresa un email válido, por ejemplo nombre@correo.com.",
+      }));
       toast({
         title: "Email inválido",
-        description: "Por favor ingresa un email válido.",
+        description:
+          "El correo de referencia debe incluir @ y un dominio válido.",
         variant: "destructive",
       });
       return;
@@ -937,6 +1037,7 @@ export function CampaignVerificationView({
       return;
     }
 
+    setFormErrors((prev) => ({ ...prev, referenceEmail: "" }));
     setShowReferenceModal(false);
     if (referenceContact.name && referenceContact.email) {
       toast({
@@ -955,11 +1056,6 @@ export function CampaignVerificationView({
     } else {
       router.push("/dashboard/campaigns");
     }
-  };
-
-  const handleCancelVerification = () => {
-    setShowCancelModal(false);
-    router.push("/dashboard/campaigns");
   };
 
   const faqs = [
@@ -982,110 +1078,6 @@ export function CampaignVerificationView({
         "Tu campaña recibirá una insignia de verificación y será destacada en la plataforma, lo que puede aumentar la visibilidad y credibilidad.",
     },
   ];
-
-  // Fix dataURLtoBlob function if it's used
-  const dataURLtoBlob = (dataURL: string): Blob => {
-    const arr = dataURL.split(",");
-    const mime = arr[0].match(/:(.*?);/)?.[1] || "image/jpeg";
-    const bstr = atob(arr[1]);
-    let n = bstr.length;
-    const u8arr = new Uint8Array(n);
-    while (n--) {
-      u8arr[n] = bstr.charCodeAt(n);
-    }
-    return new Blob([u8arr], { type: mime });
-  };
-
-  // Modify the uploadFile function to track the current file being uploaded
-  const uploadFile = async (file: File): Promise<string | null> => {
-    try {
-      setIsSubmitting(true);
-      setCurrentUploadingFile(file);
-      setProgress(0);
-
-      // Use the same uploadFile method from the useUpload hook
-      const result = await hookUploadFile(file, (p) => setProgress(p));
-
-      if (!result.success) {
-        throw new Error("Failed to upload file");
-      }
-
-      return result.url;
-    } catch (error) {
-      console.error("Error uploading file:", error);
-      toast({
-        title: "Error al subir archivo",
-        description:
-          error instanceof Error
-            ? error.message
-            : "No se pudo subir el archivo. Inténtalo de nuevo.",
-        variant: "destructive",
-      });
-      return null;
-    } finally {
-      setIsSubmitting(false);
-      setCurrentUploadingFile(null);
-    }
-  };
-
-  // Add a function to check the verification status of a campaign
-  const checkVerificationStatus = async (campaignId: string) => {
-    if (!campaignId) return;
-
-    setIsLoadingVerificationStatus(true);
-    try {
-      const response = await fetch(
-        `/api/campaign/verification/status?campaignId=${campaignId}`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials: "include",
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("Failed to check verification status");
-      }
-
-      const data = await response.json();
-
-      setVerificationStatusInfo({
-        status: data.status,
-        requestDate: data.requestDate,
-        approvalDate: data.approvalDate,
-        notes: data.notes,
-      });
-
-      // If there's already a pending verification, show a message
-      if (data.status === "pending") {
-        toast({
-          title: "Verificación en progreso",
-          description:
-            "Esta campaña ya tiene una solicitud de verificación pendiente.",
-          variant: "default",
-        });
-      } else if (data.status === "approved") {
-        toast({
-          title: "Campaña verificada",
-          description: "Esta campaña ya ha sido verificada exitosamente.",
-          variant: "default",
-        });
-      } else if (data.status === "rejected") {
-        toast({
-          title: "Verificación rechazada",
-          description: `La verificación de esta campaña fue rechazada. ${data.notes ? `Motivo: ${data.notes}` : ""}`,
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      console.error("Error checking verification status:", error);
-      // Don't show error toast, just log it - no verification is a valid state
-    } finally {
-      setIsLoadingVerificationStatus(false);
-    }
-  };
 
   return (
     <div className="w-full pb-20">
@@ -1325,6 +1317,97 @@ export function CampaignVerificationView({
           </div>
         </div>
       </div>
+
+      {selectedCampaignId &&
+        verificationStatusInfo.status === "pending" &&
+        verificationStep === 1 && (
+          <div className="max-w-6xl mx-auto">
+            <div className="mb-8 rounded-xl border border-[#478C5C]/20 bg-white p-6 shadow-sm">
+              <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+                <div className="max-w-2xl">
+                  <h3 className="text-xl font-semibold text-[#2c6e49]">
+                    Agregar documentos de respaldo
+                  </h3>
+                  <p className="mt-2 text-sm text-gray-600">
+                    Si ya tienes nuevos documentos, agrégalos aquí para que el
+                    equipo pueda considerarlos en la validación final.
+                  </p>
+                  <p className="mt-2 text-sm text-gray-500">
+                    Ejemplos: diagnóstico de la clínica, invitación al evento
+                    internacional, factura de gastos, cotizaciones o permisos.
+                  </p>
+                </div>
+
+                <div className="w-full lg:max-w-sm">
+                  <div
+                    className="cursor-pointer rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 p-4 text-center transition hover:border-[#478C5C] hover:bg-[#478C5C]/5"
+                    onClick={() =>
+                      document
+                        .getElementById("pending-supporting-docs-upload")
+                        ?.click()
+                    }
+                  >
+                    <Upload className="mx-auto mb-2 h-8 w-8 text-gray-400" />
+                    <p className="text-sm font-medium text-gray-800">
+                      Seleccionar documentos
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      JPG, PNG o PDF. Máximo 5MB por archivo.
+                    </p>
+                    <input
+                      id="pending-supporting-docs-upload"
+                      type="file"
+                      accept="image/*,.pdf"
+                      multiple
+                      onChange={handleSupportingDocsUpload}
+                      className="hidden"
+                    />
+                  </div>
+
+                  {supportingDocs.length > 0 && (
+                    <div className="mt-3 space-y-2">
+                      {supportingDocs.map((file, index) => (
+                        <div
+                          key={`${file.name}-${index}`}
+                          className="flex items-center justify-between rounded-md border border-gray-200 bg-white px-3 py-2"
+                        >
+                          <span className="truncate text-sm text-gray-700">
+                            {file.name}
+                          </span>
+                          <button
+                            className="text-red-500 hover:text-red-700"
+                            onClick={() => removeSupportingDoc(index)}
+                            title="Eliminar documento"
+                          >
+                            <X size={16} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <Button
+                    className="mt-3 w-full bg-[#478C5C] hover:bg-[#3a7049]"
+                    disabled={
+                      isAddingDocuments ||
+                      isSubmitting ||
+                      supportingDocsUrls.length === 0
+                    }
+                    onClick={handleAppendSupportingDocuments}
+                  >
+                    {isAddingDocuments ? (
+                      <>
+                        <InlineSpinner className="mr-2" /> Agregando...
+                      </>
+                    ) : (
+                      "Agregar documentos"
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
       {/* Verification Introduction - Step 1 */}
       {verificationStep === 1 && (
@@ -1970,7 +2053,14 @@ export function CampaignVerificationView({
                     <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
                       <p className="text-sm text-blue-800">
                         <strong>Opcional:</strong> Puedes continuar sin subir
-                        documentos adicionales si no los tienes disponibles.
+                        documentos adicionales si no los tienes disponibles,{" "}
+                        <strong>
+                          pero vuelve luego para agregarlos porque son parte de
+                          la validación final.
+                        </strong>{" "}
+                        Puedes subir, por ejemplo, diagnóstico de la clínica,
+                        invitación al evento internacional, factura de gastos,
+                        cotizaciones o permisos.
                       </p>
                     </div>
                   </div>
@@ -2053,11 +2143,11 @@ export function CampaignVerificationView({
                   <div className="bg-white rounded-xl border border-black p-6 md:p-8">
                     <div className="space-y-4">
                       <label className="block text-lg font-medium mb-2">
-                        Historia completa de tu campaña
+                        Historia personal de tu campaña
                       </label>
                       <textarea
                         rows={8}
-                        placeholder="Cuenta la historia detrás de tu campaña, sus objetivos, el impacto esperado y cualquier información relevante que ayude a nuestro equipo a entender mejor tu propósito..."
+                        placeholder="Cuéntanos personalmente tu historia: qué está pasando, por qué necesitas apoyo, quién recibirá la ayuda y cómo se usarán los fondos..."
                         className={`w-full rounded-lg border ${formErrors.campaignStory ? "error-input" : "border-black"} bg-white shadow-sm focus:border-[#478C5C] focus:ring-[#478C5C] focus:ring-0 p-4`}
                         value={campaignStory}
                         onChange={(e) => {
@@ -2451,14 +2541,27 @@ export function CampaignVerificationView({
                     <input
                       type="email"
                       placeholder="nombre@correo.com"
-                      className="w-full rounded-lg border border-black bg-white shadow-sm focus:border-[#478C5C] focus:ring-[#478C5C] focus:ring-0 h-12 px-4"
+                      className={`w-full rounded-lg border bg-white shadow-sm focus:border-[#478C5C] focus:ring-[#478C5C] focus:ring-0 h-12 px-4 ${
+                        formErrors.referenceEmail
+                          ? "border-red-500"
+                          : "border-black"
+                      }`}
                       value={referenceContact.email}
-                      onChange={(e) =>
+                      onChange={(e) => {
                         setReferenceContact({
                           ...referenceContact,
                           email: e.target.value,
-                        })
-                      }
+                        });
+                        if (
+                          !e.target.value ||
+                          isValidEmail(e.target.value)
+                        ) {
+                          setFormErrors((prev) => ({
+                            ...prev,
+                            referenceEmail: "",
+                          }));
+                        }
+                      }}
                     />
                     <div className="absolute inset-y-0 right-0 flex items-center pr-3">
                       <Eye className="h-5 w-5 text-gray-400" />
@@ -2470,6 +2573,11 @@ export function CampaignVerificationView({
                     </div>
                     Asegúrate de que el email sea válido.
                   </div>
+                  {formErrors.referenceEmail && (
+                    <p className="mt-2 text-sm text-red-600">
+                      {formErrors.referenceEmail}
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -2658,7 +2766,7 @@ export function CampaignVerificationView({
               ? handleCancelIdDocumentEdit
               : handleCancelSupportingDocEdit
           }
-          isLoading={isImageEditorLoading}
+          isLoading={false}
         />
       )}
     </div>

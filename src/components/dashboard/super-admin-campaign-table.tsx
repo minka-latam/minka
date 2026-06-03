@@ -43,6 +43,7 @@ import {
   Users,
   TrendingUp,
   Trash2,
+  Clock,
 } from "lucide-react";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { formatDistanceToNow } from "date-fns";
@@ -63,6 +64,7 @@ interface Campaign {
   daysRemaining: number;
   status: "draft" | "active" | "completed" | "cancelled";
   verificationStatus: boolean;
+  verificationRequestStatus?: "pending" | "approved" | "rejected" | null;
   verificationDate?: string;
   createdAt: string;
   endDate: string;
@@ -246,6 +248,42 @@ export function SuperAdminCampaignTable({
     );
   };
 
+  const renderVerificationBadge = (campaign: Campaign) => {
+    if (campaign.verificationStatus) {
+      return (
+        <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
+          <CheckCircle className="mr-1 h-3 w-3" />
+          Verified
+        </Badge>
+      );
+    }
+
+    if (campaign.verificationRequestStatus === "pending") {
+      return (
+        <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">
+          <Clock className="mr-1 h-3 w-3" />
+          Pending
+        </Badge>
+      );
+    }
+
+    if (campaign.verificationRequestStatus === "rejected") {
+      return (
+        <Badge className="bg-red-100 text-red-800 hover:bg-red-100">
+          <XCircle className="mr-1 h-3 w-3" />
+          Rejected
+        </Badge>
+      );
+    }
+
+    return (
+      <Badge variant="outline">
+        <XCircle className="mr-1 h-3 w-3" />
+        Not Verified
+      </Badge>
+    );
+  };
+
   const renderCampaignActions = (campaign: Campaign) => (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -285,14 +323,11 @@ export function SuperAdminCampaignTable({
                 Revoke Verification
               </DropdownMenuItem>
             ) : (
-              <DropdownMenuItem
-                onClick={() =>
-                  openConfirmDialog("verify", campaign.id, campaign.title)
-                }
-                className="text-green-600"
-              >
-                <CheckCircle className="mr-2 h-4 w-4" />
-                Verify Campaign
+              <DropdownMenuItem asChild>
+                <Link href="/dashboard/verification">
+                  <CheckCircle className="mr-2 h-4 w-4" />
+                  Verify Campaign
+                </Link>
               </DropdownMenuItem>
             )}
 
@@ -430,17 +465,7 @@ export function SuperAdminCampaignTable({
                         {campaign.category.replace("_", " ")}
                       </Badge>
                       {getStatusBadge(campaign.status)}
-                      {campaign.verificationStatus ? (
-                        <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
-                          <CheckCircle className="mr-1 h-3 w-3" />
-                          Verified
-                        </Badge>
-                      ) : (
-                        <Badge variant="outline">
-                          <XCircle className="mr-1 h-3 w-3" />
-                          Not Verified
-                        </Badge>
-                      )}
+                      {renderVerificationBadge(campaign)}
                     </div>
                   </div>
 
@@ -568,17 +593,7 @@ export function SuperAdminCampaignTable({
 
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      {campaign.verificationStatus ? (
-                        <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
-                          <CheckCircle className="mr-1 h-3 w-3" />
-                          Verified
-                        </Badge>
-                      ) : (
-                        <Badge variant="outline">
-                          <XCircle className="mr-1 h-3 w-3" />
-                          Not Verified
-                        </Badge>
-                      )}
+                      {renderVerificationBadge(campaign)}
                     </div>
                   </TableCell>
 

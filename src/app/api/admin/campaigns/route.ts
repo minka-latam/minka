@@ -73,6 +73,11 @@ export async function GET(req: NextRequest) {
           },
           take: 1,
         },
+        verificationRequests: {
+          select: {
+            verificationStatus: true,
+          },
+        },
       },
       orderBy: {
         createdAt: "desc",
@@ -108,6 +113,8 @@ export async function GET(req: NextRequest) {
         daysRemaining: daysRemaining,
         status: campaign.campaignStatus,
         verificationStatus: campaign.verificationStatus,
+        verificationRequestStatus:
+          campaign.verificationRequests?.verificationStatus || null,
         verificationDate: campaign.verificationDate?.toISOString() || null,
         createdAt: campaign.createdAt.toISOString(),
         endDate: campaign.endDate.toISOString(),
