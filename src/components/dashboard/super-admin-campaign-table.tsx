@@ -42,6 +42,7 @@ import {
   Calendar,
   Users,
   TrendingUp,
+  Trash2,
 } from "lucide-react";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { formatDistanceToNow } from "date-fns";
@@ -89,7 +90,7 @@ export function SuperAdminCampaignTable({
   const [loading, setLoading] = useState<string | null>(null);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [confirmAction, setConfirmAction] = useState<{
-    type: "verify" | "unverify" | "delete";
+    type: "verify" | "unverify" | "delete" | "bulk-delete";
     campaignId: string;
     campaignTitle: string;
   } | null>(null);
@@ -111,7 +112,7 @@ export function SuperAdminCampaignTable({
   };
 
   const openConfirmDialog = (
-    type: "verify" | "unverify" | "delete",
+    type: "verify" | "unverify" | "delete" | "bulk-delete",
     campaignId: string,
     campaignTitle: string
   ) => {
@@ -154,6 +155,48 @@ export function SuperAdminCampaignTable({
               ? "Campaign Verified"
               : "Verification Revoked",
           description: `Campaign has been ${confirmAction.type === "verify" ? "verified" : "unverified"} successfully.`,
+        });
+      } else if (confirmAction.type === "delete") {
+        const response = await fetch(
+          `/api/admin/campaigns/${confirmAction.campaignId}`,
+          {
+            method: "DELETE",
+          }
+        );
+
+        if (!response.ok) {
+          const data = await response.json().catch(() => null);
+          throw new Error(data?.error || "Failed to delete campaign");
+        }
+
+        setSelectedCampaigns((prev) =>
+          prev.filter((campaignId) => campaignId !== confirmAction.campaignId)
+        );
+
+        toast({
+          title: "Campaign Deleted",
+          description: "Campaign has been permanently deleted.",
+        });
+      } else if (confirmAction.type === "bulk-delete") {
+        const campaignIds = [...selectedCampaigns];
+        const responses = await Promise.all(
+          campaignIds.map(async (campaignId) => {
+            const response = await fetch(`/api/admin/campaigns/${campaignId}`, {
+              method: "DELETE",
+            });
+
+            if (!response.ok) {
+              const data = await response.json().catch(() => null);
+              throw new Error(data?.error || "Failed to delete campaigns");
+            }
+          })
+        );
+
+        setSelectedCampaigns([]);
+
+        toast({
+          title: "Campaigns Deleted",
+          description: `${responses.length} campaigns have been permanently deleted.`,
         });
       }
 
@@ -252,6 +295,18 @@ export function SuperAdminCampaignTable({
                 Verify Campaign
               </DropdownMenuItem>
             )}
+
+            <DropdownMenuSeparator />
+
+            <DropdownMenuItem
+              onClick={() =>
+                openConfirmDialog("delete", campaign.id, campaign.title)
+              }
+              className="text-red-600 focus:text-red-600"
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Delete Campaign
+            </DropdownMenuItem>
           </>
         )}
       </DropdownMenuContent>
@@ -556,9 +611,24 @@ export function SuperAdminCampaignTable({
             Bulk Export
           </Button>
           {isAdmin && (
-            <Button variant="outline" size="sm">
-              Bulk Verify
-            </Button>
+            <>
+              <Button variant="outline" size="sm">
+                Bulk Verify
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() =>
+                  openConfirmDialog(
+                    "bulk-delete",
+                    "bulk-delete",
+                    `${selectedCampaigns.length} selected campaigns`
+                  )
+                }
+              >
+                Delete Selected
+              </Button>
+            </>
           )}
           <Button
             variant="ghost"
@@ -579,6 +649,8 @@ export function SuperAdminCampaignTable({
               {confirmAction?.type === "unverify" &&
                 "Revoke Campaign Verification"}
               {confirmAction?.type === "delete" && "Delete Campaign"}
+              {confirmAction?.type === "bulk-delete" &&
+                "Delete Selected Campaigns"}
             </DialogTitle>
             <DialogDescription>
               {confirmAction?.type === "verify" &&
@@ -586,7 +658,9 @@ export function SuperAdminCampaignTable({
               {confirmAction?.type === "unverify" &&
                 "This will remove the verification status from the campaign."}
               {confirmAction?.type === "delete" &&
-                "This action cannot be undone. This will permanently delete the campaign."}
+                "This action cannot be undone. This will permanently delete the campaign. The database cascade rules will remove only the configured related records."}
+              {confirmAction?.type === "bulk-delete" &&
+                "This action cannot be undone. This will permanently delete the selected campaigns. The database cascade rules will remove only the configured related records."}
             </DialogDescription>
           </DialogHeader>
 
@@ -605,6 +679,20 @@ export function SuperAdminCampaignTable({
                   <p className="text-sm text-amber-700 mt-1">
                     Revoking verification should be done carefully as donors may
                     have trusted the verification badge when making donations.
+                  </p>
+                </div>
+              )}
+
+              {(confirmAction.type === "delete" ||
+                confirmAction.type === "bulk-delete") && (
+                <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-md">
+                  <h4 className="text-sm font-bold text-red-600 flex items-center">
+                    <AlertCircle className="h-4 w-4 mr-2" />
+                    Permanent delete
+                  </h4>
+                  <p className="text-sm text-red-700 mt-1">
+                    This deletes the campaign row directly. Related rows are
+                    handled only by the database cascade rules.
                   </p>
                 </div>
               )}
@@ -636,6 +724,8 @@ export function SuperAdminCampaignTable({
                   {confirmAction?.type === "verify" && "Verify Campaign"}
                   {confirmAction?.type === "unverify" && "Revoke Verification"}
                   {confirmAction?.type === "delete" && "Delete Campaign"}
+                  {confirmAction?.type === "bulk-delete" &&
+                    "Delete Selected Campaigns"}
                 </>
               )}
             </Button>

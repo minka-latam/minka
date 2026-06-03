@@ -2515,6 +2515,12 @@ setFormData({
           </DialogHeader>
 
           <div className="space-y-6 py-4">
+            <p className="rounded-md border border-[#478C5C]/20 bg-[#478C5C]/5 px-4 py-3 text-sm text-gray-700">
+              Si quieres sugerir tu empresa, asociación o agrupación, ponte en
+              contacto con nosotros para solicitarlo enviando los documentos
+              respectivos.
+            </p>
+
             {/* Search Input */}
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700">

@@ -7,12 +7,18 @@ type CampaignReviewEmailParams = {
 };
 
 function getAppUrl() {
-  return (
+  const appUrl = (
     process.env.MINKA_APP_URL ||
     process.env.NEXT_PUBLIC_APP_URL ||
     process.env.NEXT_PUBLIC_BASE_URL ||
     "https://minka-comunidad.org"
   ).replace(/\/$/, "");
+
+  if (appUrl.includes("localhost") || appUrl.includes("127.0.0.1")) {
+    return "https://minka-comunidad.org";
+  }
+
+  return appUrl;
 }
 
 export async function notifyCampaignSubmittedForReview({
