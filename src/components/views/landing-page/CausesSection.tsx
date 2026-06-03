@@ -8,8 +8,22 @@ import { Region } from "@/lib/region-utils";
 import { useState, useEffect } from "react";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
+type FeaturedCampaign = {
+  id: string;
+  title: string;
+  primaryImage?: string | null;
+  category: string;
+  location: string;
+  percentageFunded?: number | null;
+  verified?: boolean | null;
+  description?: string | null;
+  donorCount?: number | null;
+  collectedAmount: number;
+  daysRemaining?: number | null;
+};
+
 export function CausesSection() {
-  const [campaigns, setCampaigns] = useState<any[]>([]);
+  const [campaigns, setCampaigns] = useState<FeaturedCampaign[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -72,9 +86,9 @@ export function CausesSection() {
             No se pudieron cargar las campañas. Por favor, intenta de nuevo más
             tarde.
           </p>
-          <Link href="/campaign" rel="noopener noreferrer">
+          <Link href="/all-campaigns" rel="noopener noreferrer">
             <Button className="bg-[#2c6e49] text-white hover:bg-[#1e4d33] hover:text-white rounded-full">
-              Ver todas las campañas
+              Ver campañas
             </Button>
           </Link>
         </div>
@@ -85,7 +99,7 @@ export function CausesSection() {
           </p>
           <Link href="/create-campaign" rel="noopener noreferrer">
             <Button className="bg-[#2c6e49] text-white hover:bg-[#1e4d33] hover:text-white rounded-full">
-              Crear una campaña
+              Crear
             </Button>
           </Link>
         </div>
@@ -103,7 +117,7 @@ export function CausesSection() {
               location={campaign.location as Region}
               progress={campaign.percentageFunded || 0}
               verified={campaign.verified || false}
-              description={campaign.description}
+              description={campaign.description || undefined}
               donorCount={campaign.donorCount || 0}
               amountRaised={`Bs. ${campaign.collectedAmount?.toLocaleString("es-BO") || "0,00"}`}
             />
@@ -113,7 +127,7 @@ export function CausesSection() {
 
       {!isLoading && !error && campaigns.length > 0 && (
         <div className="flex justify-center mt-12">
-          <Link href="/campaign" rel="noopener noreferrer">
+          <Link href="/all-campaigns" rel="noopener noreferrer">
             <Button
               className="bg-[#2c6e49] text-white hover:bg-[#1e4d33] hover:text-white text-xl shadow-none border-0 rounded-full"
               size="lg"

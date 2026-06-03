@@ -4,11 +4,11 @@ import { useState, useEffect, useRef } from 'react'
 import Image from 'next/image'
 import { useSearchParams } from 'next/navigation'
 import { useRouter } from 'next/navigation'
+import type { User } from '@supabase/supabase-js'
 import { Button } from '@/components/ui/button'
 import {
   ArrowRight,
   QrCode,
-  Bell,
   CreditCard,
   ArrowUp,
 } from 'lucide-react'
@@ -16,11 +16,9 @@ import { Header } from '@/components/views/landing-page/Header'
 import { Footer } from '@/components/views/landing-page/Footer'
 import { createBrowserClient } from '@supabase/ssr'
 import { useCampaign } from '@/hooks/useCampaign'
-import { Switch } from '@/components/ui/switch'
-import { CheckIcon } from '@/components/icons/CheckIcon'
 import { LoadingSpinner } from '@/components/ui/loading-spinner'
 import { QRPaymentStep } from '@/components/donate/QRPaymentStep'
-import { toast } from "@/components/ui/use-toast"
+import { toast } from '@/components/ui/use-toast'
 
 // Key for storing pending donation in localStorage
 const PENDING_DONATION_KEY = 'minka_pending_donation'
@@ -42,18 +40,18 @@ const DONATION_AMOUNTS_CARD = [
 // Define payment methods
 const PAYMENT_METHODS = [
   {
-    id: 'card',
-    title: 'Tarjeta de crédito/débito Internacional*',
-    description:
-      'Ingresa los datos de tu tarjeta para procesar tu donación.',
-    icon: <CreditCard className='h-6 w-6' />,
-  },
-  {
     id: 'qr',
     title: 'Código QR',
     description:
       'Abre la app de tu banco, escanea el código QR y sigue las instrucciones.',
     icon: <QrCode className='h-6 w-6' />,
+  },
+  {
+    id: 'card',
+    title: 'Tarjeta de crédito/débito Internacional*',
+    description:
+      'Opción para pagos desde el exterior de Bolivia solamente.',
+    icon: <CreditCard className='h-6 w-6' />,
   },
 ]
 
@@ -64,7 +62,10 @@ export function DonatePageContent({
   campaignId: string
 }) {
   const router = useRouter()
-  const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  )
 
   // Use our custom hook to fetch campaign data
   const {
@@ -74,10 +75,9 @@ export function DonatePageContent({
   } = useCampaign(campaignId)
 
   // Add user state
-  const [user, setUser] = useState<any>(null)
+  const [user, setUser] = useState<User | null>(null)
 
   // State variables
-  const [step, setStep] = useState(1)
   const [selectedAmount, setSelectedAmount] = useState<
     number | null
   >(null)
@@ -86,22 +86,10 @@ export function DonatePageContent({
   const [paymentMethod, setPaymentMethod] = useState<
     string | null
   >(null)
-  const [receiveNotifications, setReceiveNotifications] =
-    useState(false)
   const [minkaContribution, setMinkaContribution] =
     useState<number>(0)
   const [showSuccessModal, setShowSuccessModal] =
     useState(false)
-  const [
-    showNotificationSection,
-    setShowNotificationSection,
-  ] = useState(false)
-  const [selectedAmountIndex, setSelectedAmountIndex] =
-    useState(0)
-  const [
-    selectedPaymentMethodIndex,
-    setSelectedPaymentMethodIndex,
-  ] = useState<number | null>(null)
   const [donationId, setDonationId] = useState<
     string | null
   >(null)
@@ -128,21 +116,12 @@ export function DonatePageContent({
   const donationIdFromRedirect =
     searchParams.get('donationId')
 
-  // Animation state for step transitions
-  const [isAnimating, setIsAnimating] = useState(false)
-  const [animationDirection, setAnimationDirection] =
-    useState<'forward' | 'backward'>('forward')
-
   // Custom tip state
   const [tipMode, setTipMode] = useState<
     'percentage' | 'custom'
   >('percentage')
   const [customTipAmount, setCustomTipAmount] =
     useState<string>('')
-
-  // Donation confirmation state
-  const [isDonationConfirmed, setIsDonationConfirmed] =
-    useState(false)
 
   // Share functionality state
   const [showShareOptions, setShowShareOptions] =
@@ -196,11 +175,15 @@ export function DonatePageContent({
             )
             setSelectedAmount(pendingDonation.amount)
             setPaymentMethod(pendingDonation.paymentMethod)
+            const pendingTipAmount = Number(
+              pendingDonation.tipAmount ?? 0,
+            )
+            if (pendingTipAmount > 0) {
+              setTipMode('custom')
+              setCustomTipAmount(String(pendingTipAmount))
+            }
             if (pendingDonation.paymentMethod === 'qr') {
-              setSelectedPaymentMethodIndex(0)
               setShowQRStep(true)
-              setIsDonationConfirmed(true)
-              setStep(3)
             }
           } else {
             // Clear old or mismatched pending donation
@@ -242,14 +225,16 @@ export function DonatePageContent({
   const totalAmount = donationAmount + platformFee
   const currencyPrefix =
     paymentMethod === 'card' ? '$' : 'Bs.'
-  const selectedTipText =
-    tipMode === 'percentage'
-      ? `${minkaContribution}%`
-      : `${currencyPrefix} ${customTipAmount || '0'}`
   const donationAmounts =
     paymentMethod === 'card'
       ? DONATION_AMOUNTS_CARD
       : DONATION_AMOUNTS_BS
+  const isDonationAmountValid =
+    Number.isFinite(donationAmount) &&
+    donationAmount >= 1 &&
+    donationAmount <= 50000
+  const isPaymentFormReady =
+    Boolean(paymentMethod) && isDonationAmountValid
 
   //Poll by donationId
   const pollAbortRef = useRef<AbortController | null>(null)
@@ -264,7 +249,6 @@ export function DonatePageContent({
 
     try {
       setReviewState(false)
-      setStep(3)
       setInfoMessage(
         'Estamos confirmando tu pago... Puede tardar unos segundos.',
       )
@@ -317,11 +301,6 @@ export function DonatePageContent({
 
           // 3) ensure payment method in UI (optional but consistent)
           setPaymentMethod('card')
-          setSelectedPaymentMethodIndex(
-            PAYMENT_METHODS.findIndex(
-              (p) => p.id === 'card',
-            ),
-          )
 
           if (paymentStatus === 'completed') {
             setInfoMessage(null)
@@ -361,7 +340,8 @@ export function DonatePageContent({
       setIsSubmitting(false)
       setReviewState(true)
     } catch (e) {
-      if ((e as any)?.name === 'AbortError') return
+      if (e instanceof Error && e.name === 'AbortError')
+        return
       setInfoMessage(null)
       setErrorMessage(
         'No pudimos confirmar el estado del pago todavía. Por favor intenta nuevamente en unos segundos.',
@@ -394,85 +374,30 @@ export function DonatePageContent({
 
   // Handle custom amount input
   const handleCustomAmountChange = (
-  e: React.ChangeEvent<HTMLInputElement>,
-) => {
-  const value = e.target.value
-  if (/^\d*(\.\d{0,2})?$/.test(value)) {
-    const numValue = Number.parseFloat(value)
-    if (!value || numValue <= 50000) {
-      setCustomAmount(value)
-      setSelectedAmount(null)
-    } else {
-      toast({
-        title: "Monto inválido",
-        description: "El monto máximo de donación es Bs. 50,000.",
-        variant: "destructive",
-      })
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const value = e.target.value
+    if (/^\d*(\.\d{0,2})?$/.test(value)) {
+      const numValue = Number.parseFloat(value)
+      if (!value || numValue <= 50000) {
+        setCustomAmount(value)
+        setSelectedAmount(null)
+      } else {
+        toast({
+          title: 'Monto inválido',
+          description:
+            'El monto máximo de donación es Bs. 50,000.',
+          variant: 'destructive',
+        })
+      }
     }
   }
-}
 
   // Handle payment method selection
   const handlePaymentMethodSelect = (method: string) => {
     setPaymentMethod(method)
-    // Set the selectedPaymentMethodIndex based on the method ID
-    const index = PAYMENT_METHODS.findIndex(
-      (pm) => pm.id === method,
-    )
-    if (index !== -1) {
-      setSelectedPaymentMethodIndex(index)
-    }
-  }
-
-  // Handle continue to next step
-  const handleContinue = () => {
-    if (
-      step === 1 &&
-      paymentMethod
-    ) {
-      setIsAnimating(true)
-      setAnimationDirection('forward')
-      setTimeout(() => {
-        setStep(2)
-        setIsAnimating(false)
-      }, 300)
-    } else if (
-      step === 2 &&
-    (selectedAmount ||
-    (customAmount &&
-    Number.parseFloat(customAmount) >= 1 &&
-    Number.parseFloat(customAmount) <= 50000))
-    ) {
-      setIsAnimating(true)
-      setAnimationDirection('forward')
-      setTimeout(() => {
-        setStep(3)
-        setIsAnimating(false)
-      }, 300)
-    }
-  }
-
-  // Handle going back to previous step
-  const handleBack = () => {
-    setInfoMessage(null)
     setErrorMessage(null)
-    if (step > 1) {
-      setIsAnimating(true)
-      setAnimationDirection('backward')
-      setTimeout(() => {
-        setStep(step - 1)
-        setIsAnimating(false)
-      }, 300)
-    }
-    if (step === 3) {
-      activeDonationIdRef.current = null
-      setActiveDonationId(null)
-      window.history.replaceState(
-        {},
-        '',
-        window.location.pathname,
-      )
-    }
+    setInfoMessage(null)
   }
 
   // Handle donation confirmation
@@ -487,10 +412,7 @@ export function DonatePageContent({
     setInfoMessage(null)
     setIsSubmitting(true)
 
-    const selectedMethod =
-      selectedPaymentMethodIndex !== null
-        ? PAYMENT_METHODS[selectedPaymentMethodIndex].id
-        : paymentMethod || 'qr'
+    const selectedMethod = paymentMethod || 'qr'
 
     try {
       // 🔹 Branch 1: Tripto (card)
@@ -512,7 +434,7 @@ export function DonatePageContent({
               tipAmount: platformFee,
               message: '',
               isAnonymous: !user,
-              notificationEnabled: receiveNotifications,
+              notificationEnabled: false,
               paymentMethod: selectedMethod,
             }),
           },
@@ -552,7 +474,6 @@ export function DonatePageContent({
       // Check if we already have a pending donation for QR payment
       if (donationId && selectedMethod === 'qr') {
         setShowQRStep(true)
-        setIsDonationConfirmed(true)
         setIsSubmitting(false)
         return
       }
@@ -565,7 +486,7 @@ export function DonatePageContent({
         paymentMethod: selectedMethod,
         message: '',
         isAnonymous: !user, // Explicitly set isAnonymous flag
-        notificationEnabled: receiveNotifications,
+        notificationEnabled: false,
         customAmount:
           !selectedAmount && customAmount ? true : false,
       }
@@ -613,6 +534,7 @@ export function DonatePageContent({
             donationId: data.donationId,
             campaignId,
             amount: donationAmount,
+            tipAmount: platformFee,
             paymentMethod: selectedMethod,
             qrAccessToken: data.qrAccessToken ?? null,
             createdAt: new Date().toISOString(),
@@ -627,7 +549,6 @@ export function DonatePageContent({
 
       if (selectedMethod === 'qr') {
         setShowQRStep(true)
-        setIsDonationConfirmed(true)
         setIsSubmitting(false)
         return
       }
@@ -653,82 +574,10 @@ export function DonatePageContent({
     )
   }
 
-  // Handle sign-up redirect for unauthenticated users
-  const handleSignUpRedirect = () => {
-    // Store the current URL to redirect back after sign-up
-    const currentPath = window.location.pathname
-    router.push(
-      `/sign-up?redirect=${encodeURIComponent(currentPath)}`,
-    )
-  }
-
   // Handle closing success modal
- const handleCloseSuccessModal = () => {
-  setShowSuccessModal(false);
-  router.push('/');
-};
-
-  // Handle notification toggle
-  const handleNotificationToggle = async (
-    checked: boolean,
-  ) => {
-    // If user is trying to enable notifications but is not authenticated, redirect to sign-in
-    if (checked && !user) {
-      handleLoginRedirect()
-      return
-    }
-
-    setReceiveNotifications(checked)
-    // If we have a donation ID, update the notification preference in the database
-    if (donationId) {
-      try {
-
-        // Clear any previous errors
-        setErrorMessage(null)
-
-        // Update notification preference in the database
-        const response = await fetch(
-          `/api/donation/${donationId}`,
-          {
-            method: 'PATCH',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              notificationEnabled: checked,
-            }),
-          },
-        )
-
-        const responseData = await response
-          .json()
-          .catch(() => ({
-            error: 'Failed to parse response',
-          }))
-
-        if (!response.ok) {
-          console.error(
-            'Failed to update notification preference:',
-            responseData,
-          )
-
-          // Set an error message
-          setErrorMessage(
-            `No se pudo actualizar la preferencia de notificación: ${responseData.error || 'Error desconocido'}`,
-          )
-          return
-        }
-      } catch (error) {
-        console.error(
-          'Error updating notification preference:',
-          error,
-        )
-        setErrorMessage(
-          'Error al actualizar la preferencia de notificación. Inténtalo de nuevo.',
-        )
-      }
-    } else {
-    }
+  const handleCloseSuccessModal = () => {
+    setShowSuccessModal(false)
+    router.push('/')
   }
 
   // Handle slider change for Minka contribution
@@ -777,7 +626,7 @@ export function DonatePageContent({
           text: shareText,
           url: shareUrl,
         })
-        .catch((error) => {
+        .catch(() => {
           // Fallback to custom share options
           setShowShareOptions(true)
         })
@@ -855,7 +704,7 @@ export function DonatePageContent({
           </p>
           <Button
             className='mt-6 bg-[#2c6e49] hover:bg-[#1e4d33] text-white'
-            onClick={() => router.push('/campaigns')}
+            onClick={() => router.push('/all-campaigns')}
           >
             Ver otras campañas
           </Button>
@@ -966,136 +815,216 @@ export function DonatePageContent({
         <div className='w-[90%] border-t border-gray-200'></div>
       </div>
 
-      {/* Main content */}
       <main className='overflow-x-hidden'>
         <div className='container mx-auto py-12'>
-          {showNotificationSection ? (
-            <div className='max-w-2xl mx-auto rounded-lg bg-green-50 p-6 mt-8'>
-              <div className='flex items-start gap-4'>
-                <div className='bg-green-100 p-2 rounded-full'>
-                  <Bell className='h-6 w-6 text-green-700' />
-                </div>
-                <div className='flex-1'>
-                  <h3 className='text-xl font-semibold mb-2'>
-                    Recibe actualizaciones sobre tu donación
-                    (opcional)
-                  </h3>
-                  <p className='text-gray-600 mb-4'>
-                    Puedes recibir notificaciones sobre el
-                    progreso de la campaña y cómo se está
-                    utilizando tu donación para ayudar.
-                  </p>
-                  <div className='flex items-center justify-between'>
-                    <div className='flex items-center space-x-2'>
-                      <Switch
-                        id='notification-toggle'
-                        checked={receiveNotifications}
-                        onCheckedChange={
-                          handleNotificationToggle
-                        }
-                      />
-                      <label
-                        htmlFor='notification-toggle'
-                        className='cursor-pointer'
-                      >
-                        {receiveNotifications
-                          ? 'Recibirás notificaciones'
-                          : 'No recibirás notificaciones'}
-                      </label>
-                    </div>
-                  </div>
-                  <div className='mt-6'>
-                    <Button
-                      onClick={() =>
-                        router.push('/campaign')
-                      }
-                      className='px-6 py-2 bg-[#2c6e49] hover:bg-[#1e4d33] text-white rounded-md'
-                    >
-                      Volver a la campaña
-                      <ArrowRight className='ml-2 h-4 w-4' />
-                    </Button>
-                  </div>
-                </div>
+          <div className='w-full max-w-3xl mx-auto px-4'>
+            {showQRStep && donationId ? (
+              <div className='min-h-[600px] flex items-center justify-center py-6'>
+                <QRPaymentStep
+                  key={donationId}
+                  donationId={donationId}
+                  qrAccessToken={qrAccessToken}
+                  tipAmount={platformFee}
+                  amount={totalAmount}
+                  campaignId={campaignId}
+                  onPaymentConfirmed={() => {
+                    localStorage.removeItem(PENDING_DONATION_KEY)
+                    setShowQRStep(false)
+                    setQrAccessToken(null)
+                    setShowSuccessModal(true)
+                  }}
+                  onCancel={() => {
+                    localStorage.removeItem(PENDING_DONATION_KEY)
+                    setDonationId(null)
+                    setQrAccessToken(null)
+                    setShowQRStep(false)
+                  }}
+                />
               </div>
-            </div>
-          ) : (
-            <>
-              {/* Step 2: Choose donation amount */}
-              {step === 2 && (
-                <div
-                  className={`transition-opacity duration-500 ${isAnimating ? 'opacity-0' : 'opacity-100'}`}
+            ) : (
+              <div className='mb-8'>
+                <section>
+                  <h3 className='text-lg font-semibold text-black mb-4'>
+                    Método de pago
+                  </h3>
+                  <div className='grid gap-4 md:grid-cols-2'>
+                    {PAYMENT_METHODS.map((method) => (
+                      <button
+                        key={method.id}
+                        type='button'
+                        className={`text-left rounded-lg p-5 border transition-colors ${
+                          paymentMethod === method.id
+                            ? 'border-[#2c6e49] bg-[#f5f7e9]'
+                            : 'border-black hover:border-[#2c6e49] hover:bg-gray-50'
+                        }`}
+                        onClick={() =>
+                          handlePaymentMethodSelect(method.id)
+                        }
+                      >
+                        <div className='flex items-start gap-4'>
+                          <div className='mt-1 h-6 w-6 rounded-full border border-gray-300 flex items-center justify-center flex-shrink-0'>
+                            {paymentMethod === method.id ? (
+                              <div className='h-3 w-3 rounded-full bg-[#2c6e49]' />
+                            ) : null}
+                          </div>
+                          <div className='flex-shrink-0 text-[#2c6e49]'>
+                            {method.id === 'card' ? (
+                              <CreditCard className='h-8 w-8' />
+                            ) : (
+                              <Image
+                                src='/icons/qr_code.svg'
+                                alt='QR Code'
+                                width={32}
+                                height={32}
+                              />
+                            )}
+                          </div>
+                          <div>
+                            <p className='font-medium text-gray-900'>
+                              {method.id === 'card' ? (
+                                <>
+                                  Tarjeta de crédito/débito{' '}
+                                  <strong>Internacional*</strong>
+                                </>
+                              ) : (
+                                method.title
+                              )}
+                            </p>
+                            <p className='text-sm text-gray-600 mt-1'>
+                              {method.description}
+                            </p>
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </section>
+
+                <section
+                  className={`transition-all duration-700 ease-out ${
+                    paymentMethod
+                      ? 'opacity-100 translate-y-0 max-h-[1800px] mt-8'
+                      : 'opacity-0 translate-y-3 max-h-0 overflow-hidden pointer-events-none'
+                  }`}
                 >
-                  <div className='min-h-[600px] flex items-center justify-center'>
-                    <div className='w-full max-w-3xl mx-auto px-4'>
-                      {/* Title and description moved to top and centered */}
-                      <div className='text-center mb-8'>
-                        <h2 className='text-3xl md:text-4xl font-bold text-[#333333] mb-6 leading-tight'>
-                          Elige el monto de tu donación
-                        </h2>
-                        <p className='text-gray-600 max-w-2xl mx-auto'>
-                          Selecciona un monto o ingresa la
-                          cantidad que prefieras y
-                          contribuye a generar impacto.
-                          Minka retiene un porcentaje de
-                          donación para cubrir costos
-                          operativos y garantizar el
-                          funcionamiento seguro de la
-                          plataforma.
-                        </p>
+                  <div className='border-t border-gray-200 pt-8'>
+                    <h3 className='text-lg font-semibold text-black mb-4'>
+                      Monto de donación
+                    </h3>
+                    <div className='grid grid-cols-2 md:grid-cols-4 gap-4 mb-6'>
+                      {donationAmounts.map((option) => (
+                        <button
+                          key={option.value}
+                          type='button'
+                          className={`py-3 px-4 rounded-lg border ${
+                            selectedAmount === option.value
+                              ? 'border-[#2c6e49] bg-[#2c6e49] text-white'
+                              : 'border-black hover:bg-gray-100 text-black'
+                          } transition-colors`}
+                          onClick={() =>
+                            handleAmountSelect(option.value)
+                          }
+                        >
+                          {currencyPrefix} {option.value}
+                        </button>
+                      ))}
+                    </div>
+
+                    <div className='relative mb-6'>
+                      <div className='absolute inset-0 flex items-center'>
+                        <div className='w-full border-t border-gray-300'></div>
+                      </div>
+                      <div className='relative flex justify-center'>
+                        <span className='bg-white px-3 text-sm text-gray-500 font-medium'>
+                          o
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className='mb-8'>
+                      <label
+                        htmlFor='custom-amount'
+                        className='block text-sm font-medium text-black mb-2'
+                      >
+                        Si prefieres, indica otra cantidad
+                      </label>
+                      <div className='relative'>
+                        <span className='absolute inset-y-0 left-0 flex items-center pl-3 text-black'>
+                          {currencyPrefix}
+                        </span>
+                        <input
+                          type='text'
+                          id='custom-amount'
+                          className='block w-full pl-10 pr-3 py-3 border border-black rounded-lg focus:outline-none focus:ring-1 focus:ring-black focus:border-black text-black'
+                          placeholder='0.00'
+                          value={customAmount}
+                          onChange={handleCustomAmountChange}
+                        />
+                      </div>
+                    </div>
+
+                    <div className='mb-8'>
+                      <p className='text-sm text-black mb-3'>
+                        ¿Quieres apoyar a Minka? La contribución voluntaria es
+                        opcional y ayuda a sostener la plataforma.
+                      </p>
+
+                      <div className='flex flex-wrap gap-2 mb-4'>
+                        <button
+                          type='button'
+                          className={`px-3 py-2 text-sm rounded-md border ${
+                            tipMode === 'percentage'
+                              ? 'bg-[#2c6e49] text-white border-[#2c6e49]'
+                              : 'bg-white text-black border-black hover:bg-gray-100'
+                          } transition-colors`}
+                          onClick={() =>
+                            handleTipModeChange('percentage')
+                          }
+                        >
+                          Porcentaje
+                        </button>
+                        <button
+                          type='button'
+                          className={`px-3 py-2 text-sm rounded-md border ${
+                            tipMode === 'custom'
+                              ? 'bg-[#2c6e49] text-white border-[#2c6e49]'
+                              : 'bg-white text-black border-black hover:bg-gray-100'
+                          } transition-colors`}
+                          onClick={() => handleTipModeChange('custom')}
+                        >
+                          Cantidad personalizada
+                        </button>
                       </div>
 
-                      {/* Donation form centered */}
-                      <div className='bg-white rounded-lg shadow-sm p-6 mb-8 border border-black'>
-                        <h3 className='text-lg font-semibold text-black mb-4'>
-                          Selecciona un monto
-                        </h3>
-
-                        {/* Predefined amounts */}
-                        <div className='grid grid-cols-2 md:grid-cols-4 gap-4 mb-6'>
-                          {donationAmounts.map(
-                            (option) => (
-                              <button
-                                key={option.value}
-                                type='button'
-                                className={`py-3 px-4 rounded-lg border ${
-                                  selectedAmount ===
-                                  option.value
-                                    ? 'border-[#2c6e49] bg-[#2c6e49] text-white'
-                                    : 'border-black hover:bg-gray-100 text-black'
-                                } transition-colors`}
-                                onClick={() =>
-                                  handleAmountSelect(
-                                    option.value,
-                                  )
-                                }
-                              >
-                                {currencyPrefix}{' '}
-                                {option.value}
-                              </button>
-                            ),
-                          )}
-                        </div>
-
-                        {/* Separator with "o" */}
-                        <div className='relative mb-6'>
-                          <div className='absolute inset-0 flex items-center'>
-                            <div className='w-full border-t border-gray-300'></div>
+                      {tipMode === 'percentage' && (
+                        <div className='space-y-2'>
+                          <div className='relative h-8'>
+                            <div
+                              className='absolute -top-2 transform -translate-x-1/2 text-[#2c6e49] text-lg font-semibold'
+                              style={{ left: `${minkaContribution}%` }}
+                            >
+                              {minkaContribution}%
+                            </div>
                           </div>
-                          <div className='relative flex justify-center'>
-                            <span className='bg-white px-3 text-sm text-gray-500 font-medium'>
-                              o
-                            </span>
-                          </div>
+                          <input
+                            type='range'
+                            min='0'
+                            max='100'
+                            step='1'
+                            value={minkaContribution}
+                            onChange={handleMinkaContributionChange}
+                            className='w-full h-2 rounded-full appearance-none bg-gray-300 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[#2c6e49]'
+                          />
                         </div>
+                      )}
 
-                        {/* Custom amount */}
-                        <div className='mb-6'>
+                      {tipMode === 'custom' && (
+                        <div className='space-y-2'>
                           <label
-                            htmlFor='custom-amount'
-                            className='block text-sm font-medium text-black mb-2'
+                            htmlFor='custom-tip'
+                            className='block text-sm font-medium text-black'
                           >
-                            Si prefieres, indica otra
-                            cantidad
+                            Ingresa el monto de tu contribución
                           </label>
                           <div className='relative'>
                             <span className='absolute inset-y-0 left-0 flex items-center pl-3 text-black'>
@@ -1103,635 +1032,142 @@ export function DonatePageContent({
                             </span>
                             <input
                               type='text'
-                              id='custom-amount'
-                              className='block w-full pl-10 pr-3 py-3 border border-black rounded-lg focus:outline-none focus:ring-1 focus:ring-black focus:border-black text-black'
-                              placeholder='1.300,00'
-                              value={customAmount}
-                              onChange={
-                                handleCustomAmountChange
-                              }
+                              id='custom-tip'
+                              className='block w-full pl-10 pr-3 py-2 border border-black rounded-lg focus:outline-none focus:ring-1 focus:ring-black focus:border-black text-black'
+                              placeholder='0.00'
+                              value={customTipAmount}
+                              onChange={handleCustomTipChange}
                             />
                           </div>
                         </div>
-
-                        {/* Donation info - updated with slider - border and bg removed */}
-                        <div className='mb-6'>
-                          <p className='text-sm text-black mb-3'>
-                            ¿Quieres apoyar a Minka? Una
-                            contribución voluntaria a Minka
-                            te permite ser parte
-                            de la comunidad solidaria por
-                            excelencia.
-                          </p>
-
-                          {/* Tip mode toggle */}
-                          <div className='flex gap-2 mb-4'>
-                            <button
-                              type='button'
-                              className={`px-3 py-2 text-sm rounded-md border ${
-                                tipMode === 'percentage'
-                                  ? 'bg-[#2c6e49] text-white border-[#2c6e49]'
-                                  : 'bg-white text-black border-black hover:bg-gray-100'
-                              } transition-colors`}
-                              onClick={() =>
-                                handleTipModeChange(
-                                  'percentage',
-                                )
-                              }
-                            >
-                              Porcentaje
-                            </button>
-                            <button
-                              type='button'
-                              className={`px-3 py-2 text-sm rounded-md border ${
-                                tipMode === 'custom'
-                                  ? 'bg-[#2c6e49] text-white border-[#2c6e49]'
-                                  : 'bg-white text-black border-black hover:bg-gray-100'
-                              } transition-colors`}
-                              onClick={() =>
-                                handleTipModeChange(
-                                  'custom',
-                                )
-                              }
-                            >
-                              Cantidad personalizada
-                            </button>
-                          </div>
-
-                          {/* Percentage mode */}
-                          {tipMode === 'percentage' && (
-                            <div className='space-y-2'>
-                              {/* Percentage indicator above the slider */}
-                              <div className='relative h-8'>
-                                <div
-                                  className='absolute -top-2 transform -translate-x-1/2 text-[#2c6e49] text-lg font-semibold'
-                                  style={{
-                                    left: `${minkaContribution}%`,
-                                  }}
-                                >
-                                  {minkaContribution}%
-                                </div>
-                              </div>
-                              <input
-                                type='range'
-                                min='0'
-                                max='100'
-                                step='1'
-                                value={minkaContribution}
-                                onChange={
-                                  handleMinkaContributionChange
-                                }
-                                className='w-full h-2 rounded-full appearance-none bg-gray-300 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[#2c6e49]'
-                              />
-                            </div>
-                          )}
-
-                          {/* Custom amount mode */}
-                          {tipMode === 'custom' && (
-                            <div className='space-y-2'>
-                              <label
-                                htmlFor='custom-tip'
-                                className='block text-sm font-medium text-black'
-                              >
-                                Ingresa el monto de tu
-                                contribución
-                              </label>
-                              <div className='relative'>
-                                <span className='absolute inset-y-0 left-0 flex items-center pl-3 text-black'>
-                                  {currencyPrefix}
-                                </span>
-                                <input
-                                  type='text'
-                                  id='custom-tip'
-                                  className='block w-full pl-10 pr-3 py-2 border border-black rounded-lg focus:outline-none focus:ring-1 focus:ring-black focus:border-black text-black'
-                                  placeholder='0,00'
-                                  value={customTipAmount}
-                                  onChange={
-                                    handleCustomTipChange
-                                  }
-                                />
-                              </div>
-                            </div>
-                          )}
-
-                          <div className='flex justify-between items-center mt-3'>
-                            <span className='text-sm text-black'>
-                              Tu contribución voluntaria a Minka:
-                            </span>
-                            <span className='text-sm font-medium text-black'>
-                              {currencyPrefix}{' '}
-                              {platformFee.toFixed(2)}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Step 1: Choose payment method */}
-              {step === 1 && (
-                <div
-                  className={`transition-opacity duration-500 ${isAnimating ? 'opacity-0' : 'opacity-100'}`}
-                >
-                  <div className='min-h-[600px] flex items-center justify-center'>
-                    <div className='w-full max-w-3xl mx-auto px-4'>
-                      {/* Title and description moved to top and centered */}
-                      <div className='text-center mb-8'>
-                        <h2 className='text-3xl md:text-4xl font-bold text-[#333333] mb-6 leading-tight'>
-                          Elige el método de pago
-                        </h2>
-                        <p className='text-gray-600 max-w-2xl mx-auto'>
-                          Marca el método de pago con el que
-                          deseas realizar tu aporte. Tu
-                          donación está protegida.
-                        </p>
-                      </div>
-
-                      {/* Payment method cards centered */}
-                      <div className='space-y-4'>
-                        {PAYMENT_METHODS.map((method) => (
-                          <div
-                            key={method.id}
-                            className={`bg-white rounded-lg p-8 border ${
-                              paymentMethod === method.id
-                                ? 'border-[#2c6e49]'
-                                : 'border-black'
-                            } cursor-pointer hover:border-[#2c6e49] transition-colors`}
-                            onClick={() =>
-                              handlePaymentMethodSelect(
-                                method.id,
-                              )
-                            }
-                          >
-                            <div className='flex items-start gap-6'>
-                              <div className='flex-shrink-0 mt-1'>
-                                <div className='h-6 w-6 rounded-full border border-gray-300 flex items-center justify-center'>
-                                  {paymentMethod ===
-                                  method.id ? (
-                                    <div className='h-3 w-3 rounded-full bg-[#2c6e49]' />
-                                  ) : null}
-                                </div>
-                              </div>
-                              <div className='flex-shrink-0 flex items-center justify-center w-16 h-16'>
-                                {method.id === 'card' ? (
-                                  <CreditCard className='h-8 w-8 text-[#2c6e49]' />
-                                ) : (
-                                  <Image
-                                    src='/icons/qr_code.svg'
-                                    alt='QR Code'
-                                    width={32}
-                                    height={32}
-                                  />
-                                )}
-                              </div>
-                              <div className='flex-1'>
-                                <h3 className='font-medium text-gray-800 text-lg mb-2'>
-                                  {method.title}
-                                </h3>
-                                <p className='text-base text-gray-600'>
-                                  {method.description}
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* QR Payment Step */}
-              {showQRStep && donationId && (
-                <div className='min-h-[600px] flex items-center justify-center py-12'>
-                  <QRPaymentStep
-                    key={donationId}
-                    donationId={donationId}
-                    qrAccessToken={qrAccessToken}
-                    tipAmount={platformFee}
-                    amount={totalAmount}
-                    campaignId={campaignId}
-                    onPaymentConfirmed={() => {
-                      // Clear pending donation from localStorage on success
-                      localStorage.removeItem(
-                        PENDING_DONATION_KEY,
-                      )
-                      setShowQRStep(false)
-                      setQrAccessToken(null)
-                      setShowSuccessModal(true)
-                    }}
-                    onCancel={() => {
-                      // Clear pending donation from localStorage on cancel
-                      localStorage.removeItem(
-                        PENDING_DONATION_KEY,
-                      )
-                      setDonationId(null)
-                      setQrAccessToken(null)
-                      setShowQRStep(false)
-                      setIsDonationConfirmed(false)
-                    }}
-                  />
-                </div>
-              )}
-
-              {/* Step 3: Confirm donation */}
-              {step === 3 && !showQRStep && (
-                <div
-                  className={`transition-opacity duration-500 ${isAnimating ? 'opacity-0' : 'opacity-100'}`}
-                >
-                  <div className='min-h-[600px] flex items-center justify-center'>
-                    <div className='w-full max-w-3xl mx-auto px-4'>
-                      {/* Title and description moved to top and centered */}
-                      <div className='text-center mb-8'>
-                        <h2 className='text-3xl md:text-4xl font-bold text-[#333333] mb-6 leading-tight'>
-                          Confirma tu donación
-                        </h2>
-                        <p className='text-gray-600 max-w-2xl mx-auto'>
-                          Tu ayuda está a un paso de
-                          impulsar sueños. Confirma tu
-                          aporte y haz crecer esta causa.
-                        </p>
-                      </div>
-
-                      {/* Confirmation form centered */}
-                      <div className='bg-white rounded-lg shadow-sm p-6 mb-8 border border-black'>
-                        <div className='flex flex-col items-center mb-6'>
-                          <Image
-                            src='/landing-page/step-4.svg'
-                            alt='Donation'
-                            width={60}
-                            height={60}
-                            className='mb-2'
-                          />
-                          <h3 className='text-lg font-medium text-center text-[#2c6e49]'>
-                            Tu donación
-                          </h3>
-                        </div>
-
-                        {/* Donation summary */}
-                        <div className='space-y-3 mb-6'>
-                          <div className='flex justify-between'>
-                            <span className='text-gray-600'>
-                              Tu donación
-                            </span>
-                            <span className='font-medium'>
-                              {currencyPrefix}{' '}
-                              {donationAmount.toFixed(2)}
-                            </span>
-                          </div>
-                          <div className='flex justify-between'>
-                            <span className='text-gray-600'>
-                              Aporte voluntario a Minka
-                            </span>
-                            <span className='font-medium'>
-                              {currencyPrefix}{' '}
-                              {platformFee.toFixed(2)}
-                            </span>
-                          </div>
-                          <div className='border-t border-gray-200 pt-3 flex justify-between'>
-                            <span className='font-medium'>
-                              Total
-                            </span>
-                            <span className='font-medium'>
-                              {currencyPrefix}{' '}
-                              {totalAmount.toFixed(2)}
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Disclaimer about Minka fee */}
-                        <div className='bg-[#f5f7e9] border border-[#2c6e49]/20 rounded-lg p-4 mb-6'>
-                          <div className='flex items-start gap-3'>
-                            <div className='flex-shrink-0 mt-0.5'>
-                              <svg
-                                className='h-5 w-5 text-[#2c6e49]'
-                                fill='none'
-                                viewBox='0 0 24 24'
-                                stroke='currentColor'
-                                aria-hidden='true'
-                              >
-                                <path
-                                  strokeLinecap='round'
-                                  strokeLinejoin='round'
-                                  strokeWidth={2}
-                                  d='M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z'
-                                />
-                              </svg>
-                            </div>
-                            <div>
-                              <p className='text-sm text-[#2c6e49] font-medium mb-1'>
-                                Acerca del aporte voluntario
-                                a Minka
-                              </p>
-                              <p className='text-sm text-gray-700 leading-relaxed'>
-                                Tu aporte voluntario
-                                seleccionado para Minka es{' '}
-                                {selectedTipText}.
-                                Este monto ayuda a
-                                mantener la plataforma
-                                funcionando, procesar pagos
-                                de forma segura y brindar
-                                soporte a las campañas.
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Error notification */}
-                        {errorMessage && (
-                          <div className='bg-red-50 border border-red-300 text-red-800 rounded-lg p-4 mb-6'>
-                            <div className='flex items-start'>
-                              <div className='flex-shrink-0'>
-                                <svg
-                                  className='h-5 w-5 text-red-400'
-                                  xmlns='http://www.w3.org/2000/svg'
-                                  viewBox='0 0 20 20'
-                                  fill='currentColor'
-                                  aria-hidden='true'
-                                >
-                                  <path
-                                    fillRule='evenodd'
-                                    d='M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z'
-                                    clipRule='evenodd'
-                                  />
-                                </svg>
-                              </div>
-                              <div className='ml-3'>
-                                <p className='text-sm'>
-                                  {errorMessage}
-                                </p>
-                                {errorMessage.includes(
-                                  'iniciar sesión',
-                                ) && (
-                                  <Button
-                                    className='mt-2 bg-white border border-red-300 text-red-700 hover:bg-red-50'
-                                    onClick={
-                                      handleLoginRedirect
-                                    }
-                                  >
-                                    Iniciar sesión
-                                  </Button>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Info notification */}
-                        {infoMessage && (
-                          <div className='bg-blue-50 border border-blue-300 text-blue-800 rounded-lg p-4 mb-6'>
-                            <div className='flex items-start'>
-                              <div className='flex-shrink-0'>
-                                <svg
-                                  className='h-5 w-5 text-blue-400'
-                                  xmlns='http://www.w3.org/2000/svg'
-                                  viewBox='0 0 20 20'
-                                  fill='currentColor'
-                                  aria-hidden='true'
-                                >
-                                  <path
-                                    fillRule='evenodd'
-                                    d='M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2h1a1 1 0 001-1V7a1 1 0 10-2 0v2z'
-                                    clipRule='evenodd'
-                                  />
-                                </svg>
-                              </div>
-                              <div className='ml-3'>
-                                <p className='text-sm'>
-                                  {infoMessage}
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Step 4: Notification preferences */}
-              {step === 4 && (
-                <div
-                  className={`transition-opacity duration-500 ${isAnimating ? 'opacity-0' : 'opacity-100'}`}
-                >
-                  <div className='min-h-[600px] flex items-center justify-center'>
-                    <div className='w-full max-w-3xl mx-auto px-4'>
-                      {/* Title and description moved to top and centered */}
-                      <div className='text-center mb-8'>
-                        <h2 className='text-3xl md:text-4xl font-bold text-[#333333] mb-6 leading-tight'>
-                          Recibe actualizaciones sobre tu
-                          donación (opcional)
-                        </h2>
-                        <p className='text-gray-600 max-w-2xl mx-auto'>
-                          Sigue el avance de la campaña y
-                          descubre el impacto de tu aporte.
-                        </p>
-                        {/* Clarification for unregistered users */}
-                        {!user && (
-                          <div className='mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg max-w-2xl mx-auto'>
-                            <p className='text-sm text-blue-800'>
-                              <strong>Nota:</strong> Para
-                              activar las notificaciones,
-                              serás dirigido a crear una
-                              cuenta. Una vez registrado,
-                              podrás recibir actualizaciones
-                              sobre el progreso de esta
-                              campaña y el impacto de tu
-                              donación.
-                            </p>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Notification preferences form centered */}
-                      <div
-                        className={`bg-white rounded-lg shadow-sm p-6 mb-8 border ${receiveNotifications ? 'border-[#2c6e49]' : 'border-black'} hover:border-[#2c6e49] transition-colors`}
-                      >
-                        <div
-                          className='flex items-start space-x-4 cursor-pointer'
-                          onClick={() =>
-                            handleNotificationToggle(
-                              !receiveNotifications,
-                            )
-                          }
-                        >
-                          <div className='flex-shrink-0 mt-1'>
-                            <div className='h-6 w-6 rounded-full border border-gray-300 flex items-center justify-center'>
-                              {receiveNotifications ? (
-                                <div className='h-3 w-3 rounded-full bg-[#2c6e49]'></div>
-                              ) : null}
-                            </div>
-                          </div>
-                          <div className='flex-1'>
-                            <div className='flex items-start gap-2'>
-                              <Image
-                                src='/icons/notifications.svg'
-                                alt='Notifications'
-                                width={28}
-                                height={28}
-                                className='mt-1'
-                              />
-                              <div>
-                                <h3 className='text-lg font-medium text-gray-900'>
-                                  Recibir notificaciones
-                                </h3>
-                                <p className='text-sm text-gray-600 mt-1'>
-                                  Recibe actualizaciones por
-                                  correo electrónico y/o SMS
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Show error message if there is one */}
-                      {errorMessage && (
-                        <div className='bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded relative mb-4'>
-                          <span className='block sm:inline'>
-                            {errorMessage}
-                          </span>
-                          <button
-                            className='absolute top-0 bottom-0 right-0 px-4 py-3'
-                            onClick={() =>
-                              setErrorMessage(null)
-                            }
-                          >
-                            <span className='sr-only'>
-                              Cerrar
-                            </span>
-                            <svg
-                              className='h-6 w-6 text-red-500'
-                              xmlns='http://www.w3.org/2000/svg'
-                              fill='none'
-                              viewBox='0 0 24 24'
-                              stroke='currentColor'
-                              aria-hidden='true'
-                            >
-                              <path
-                                strokeLinecap='round'
-                                strokeLinejoin='round'
-                                strokeWidth='2'
-                                d='M6 18L18 6M6 6l12 12'
-                              />
-                            </svg>
-                          </button>
-                        </div>
                       )}
                     </div>
+
+                    <div className='border-t border-gray-200 pt-5 mb-6'>
+                      <h3 className='text-lg font-semibold text-[#2c6e49] mb-3'>
+                        Resumen
+                      </h3>
+                      <div className='space-y-2 text-sm'>
+                        <div className='flex justify-between gap-4'>
+                          <span className='text-gray-600'>Método</span>
+                          <span className='font-medium text-right'>
+                            {paymentMethod === 'qr'
+                              ? 'Código QR'
+                              : 'Tarjeta internacional'}
+                          </span>
+                        </div>
+                        <div className='flex justify-between gap-4'>
+                          <span className='text-gray-600'>Donación</span>
+                          <span className='font-medium'>
+                            {currencyPrefix} {donationAmount.toFixed(2)}
+                          </span>
+                        </div>
+                        <div className='flex justify-between gap-4'>
+                          <span className='text-gray-600'>
+                            Aporte voluntario
+                          </span>
+                          <span className='font-medium'>
+                            {currencyPrefix} {platformFee.toFixed(2)}
+                          </span>
+                        </div>
+                        <div className='flex justify-between gap-4 border-t border-gray-200 pt-2 text-base'>
+                          <span className='font-semibold'>Total</span>
+                          <span className='font-semibold'>
+                            {currencyPrefix} {totalAmount.toFixed(2)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {errorMessage && (
+                      <div className='bg-red-50 border border-red-300 text-red-800 rounded-lg p-4 mb-4'>
+                        <p className='text-sm'>{errorMessage}</p>
+                        {errorMessage.includes('iniciar sesión') && (
+                          <Button
+                            className='mt-2 bg-white border border-red-300 text-red-700 hover:bg-red-50'
+                            onClick={handleLoginRedirect}
+                          >
+                            Iniciar sesión
+                          </Button>
+                        )}
+                      </div>
+                    )}
+
+                    {infoMessage && (
+                      <div className='bg-blue-50 border border-blue-300 text-blue-800 rounded-lg p-4 mb-4'>
+                        <p className='text-sm'>{infoMessage}</p>
+                      </div>
+                    )}
                   </div>
-                </div>
-              )}
+                </section>
 
-              {/* Navigation buttons */}
-              <div className='max-w-3xl mx-auto mt-8 mb-4 px-4 flex justify-between'>
-                {/* Volver button - always present but invisible in step 1 */}
-                <Button
-                  className={`bg-white border border-[#2c6e49] text-[#2c6e49] hover:bg-[#e8f0e9] rounded-full px-6 py-2 disabled:opacity-50 disabled:cursor-not-allowed ${
-                    step === 1 || isDonationConfirmed
-                      ? 'invisible'
-                      : 'visible'
-                  }`}
-                  onClick={handleBack}
-                  disabled={
-                    step === 1 ||
-                    isDonationConfirmed ||
-                    isSubmitting
-                  }
-                >
-                  Volver
-                </Button>
-
-                {/* Continuar button - always positioned on the right */}
-                {step < 3 && !isDonationConfirmed && (
+                <div className='mt-8 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between'>
                   <Button
-                    className='bg-[#2c6e49] hover:bg-[#1e4d33] text-white px-8 py-3 rounded-full'
-                    onClick={handleContinue}
-                    disabled={
-                      (step === 1 && !paymentMethod) ||
-                      (step === 2 &&
-                        !selectedAmount &&
-                        (!customAmount ||
-                          Number.parseFloat(customAmount) <=
-                            0))
-                    }
-                  >
-                    Continuar{' '}
-                    <ArrowRight className='ml-2 h-4 w-4' />
-                  </Button>
-                )}
-
-                {/* Review state, triggering re-polling */}
-                {step === 3 && reviewState && (
-                  <>
-                    <Button
-                      className='bg-[#2c6e49] hover:bg-[#1e4d33] text-white px-8 py-3 rounded-full m-auto'
-                      onClick={() => {
-                        const id =
-                          activeDonationIdRef.current ||
-                          activeDonationId
-                        if (id) pollDonationStatus(id)
-                      }}
-                      disabled={isSubmitting}
-                    >
-                      Revisar Estado{' '}
-                      <ArrowUp className='ml-2 h-4 w-4' />
-                    </Button>
-                    <Button
-                      className='bg-[#2c6e49] hover:bg-[#1e4d33] text-white px-8 py-3 rounded-full'
-                      onClick={async () => {
-                        activeDonationIdRef.current = null
-                        setActiveDonationId(null)
-                        setDonationId(null)
-                        window.history.replaceState(
-                          {},
-                          '',
-                          window.location.pathname,
-                        )
-                        handleConfirmDonation()
-                      }}
-                      disabled={isSubmitting}
-                    >
-                      Nuevo intento{' '}
-                      <ArrowRight className='ml-2 h-4 w-4' />
-                    </Button>
-                  </>
-                )}
-
-                {/* Confirmar donación button for step 3 */}
-                {step === 3 &&
-                  !isDonationConfirmed &&
-                  !reviewState && (
-                    <Button
-                      className='bg-[#2c6e49] hover:bg-[#1e4d33] text-white px-8 py-3 rounded-full'
-                      onClick={handleConfirmDonation}
-                      disabled={isSubmitting}
-                    >
-                      {infoMessage
-                        ? 'Redirigiendo...'
-                        : 'Confirmar donación'}
-                      <ArrowRight className='ml-2 h-4 w-4' />
-                    </Button>
-                  )}
-
-                {/* Completar button for step 4 */}
-                {step === 4 && (
-                  <Button
-                    className='bg-[#2c6e49] hover:bg-[#1e4d33] text-white px-8 py-3 rounded-full'
+                    type='button'
+                    variant='outline'
+                    className='rounded-full border-[#2c6e49] text-[#2c6e49] hover:bg-[#e8f0e9]'
                     onClick={() =>
                       router.push(`/campaign/${campaignId}`)
                     }
+                    disabled={isSubmitting}
                   >
-                    Completar{' '}
-                    <ArrowRight className='ml-2 h-4 w-4' />
+                    Volver
                   </Button>
-                )}
+
+                  {paymentMethod && reviewState ? (
+                    <div className='flex flex-col sm:flex-row gap-3'>
+                      <Button
+                        className='bg-[#2c6e49] hover:bg-[#1e4d33] text-white px-8 py-3 rounded-full'
+                        onClick={() => {
+                          const id =
+                            activeDonationIdRef.current ||
+                            activeDonationId
+                          if (id) pollDonationStatus(id)
+                        }}
+                        disabled={isSubmitting}
+                      >
+                        Revisar Estado{' '}
+                        <ArrowUp className='ml-2 h-4 w-4' />
+                      </Button>
+                      <Button
+                        className='bg-[#2c6e49] hover:bg-[#1e4d33] text-white px-8 py-3 rounded-full'
+                        onClick={() => {
+                          activeDonationIdRef.current = null
+                          setActiveDonationId(null)
+                          setDonationId(null)
+                          window.history.replaceState(
+                            {},
+                            '',
+                            window.location.pathname,
+                          )
+                          handleConfirmDonation()
+                        }}
+                        disabled={isSubmitting}
+                      >
+                        Nuevo intento{' '}
+                        <ArrowRight className='ml-2 h-4 w-4' />
+                      </Button>
+                    </div>
+                  ) : paymentMethod ? (
+                    <Button
+                      className='bg-[#2c6e49] hover:bg-[#1e4d33] text-white px-8 py-3 rounded-full'
+                      onClick={handleConfirmDonation}
+                      disabled={!isPaymentFormReady || isSubmitting}
+                    >
+                      {isSubmitting
+                        ? paymentMethod === 'card'
+                          ? 'Redirigiendo...'
+                          : 'Generando QR...'
+                        : paymentMethod === 'card'
+                          ? 'Pagar con tarjeta'
+                          : 'Generar QR'}
+                      <ArrowRight className='ml-2 h-4 w-4' />
+                    </Button>
+                  ) : null}
+                </div>
               </div>
-            </>
-          )}
+            )}
+          </div>
         </div>
       </main>
 
@@ -1940,41 +1376,49 @@ export function DonatePageContent({
                 </div>
               </div>
 
-              {/* Notification opt-in */}
-<div className='mt-4 flex items-center justify-between bg-[#f5f7e9] rounded-lg p-3'>
-  <div className='flex items-center gap-2'>
-    <Bell className='h-4 w-4 text-[#2c6e49]' />
-    <span className='text-sm text-gray-700'>Recibir actualizaciones</span>
-  </div>
-  <Switch
-    checked={receiveNotifications}
-    onCheckedChange={handleNotificationToggle}
-  />
-</div>
+              {!user && (
+                <div className='mt-5 rounded-lg bg-[#f5f7e9] p-4 text-left'>
+                  <p className='text-sm font-semibold text-[#2c6e49]'>
+                    Haz que tu ayuda tenga más historia.
+                  </p>
+                  <p className='mt-1 text-sm text-gray-700'>
+                    Crear una cuenta te permite guardar tus
+                    campañas favoritas, revisar tu historial
+                    de donaciones, dejar mensajes y volver
+                    fácilmente para ver actualizaciones
+                    cuando quieras.
+                  </p>
+                </div>
+              )}
 
-{/* Black separator */}
-<div className='border-t border-black my-4'></div>
+              <div className='border-t border-black my-4'></div>
 
-{/* Buttons */}
-<div className='space-y-2'>
-  <button
-    type='button'
-    className='inline-flex justify-center border-0 bg-[#2c6e49] px-16 py-2 text-sm font-medium text-white hover:bg-[#1e4d33] focus:outline-none rounded-full'
-    onClick={handleCloseSuccessModal}
-  >
-    Inicio
-  </button>
-
-                {/* Account creation button for unauthenticated users */}
+              <div className='space-y-2'>
                 {!user && (
                   <button
                     type='button'
-                    className='block mx-auto text-sm text-[#2c6e49] hover:text-[#1e4d33] underline focus:outline-none transition-colors'
-                    onClick={handleLoginRedirect}
+                    className='w-full inline-flex justify-center border-0 bg-[#2c6e49] px-6 py-2 text-sm font-medium text-white hover:bg-[#1e4d33] focus:outline-none rounded-full'
+                    onClick={() => router.push('/sign-up')}
                   >
-                    Iniciar sesión
+                    Crear mi cuenta
                   </button>
                 )}
+
+                <button
+                  type='button'
+                  className='w-full inline-flex justify-center border border-[#2c6e49] bg-white px-6 py-2 text-sm font-medium text-[#2c6e49] hover:bg-[#f5f7e9] focus:outline-none rounded-full'
+                  onClick={() => router.push('/all-campaigns')}
+                >
+                  Ver campañas
+                </button>
+
+                <button
+                  type='button'
+                  className='block mx-auto text-sm text-gray-500 hover:text-gray-700 underline focus:outline-none transition-colors'
+                  onClick={handleCloseSuccessModal}
+                >
+                  Ir al inicio
+                </button>
               </div>
             </div>
           </div>

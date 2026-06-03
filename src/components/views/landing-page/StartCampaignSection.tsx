@@ -1,7 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import { Button } from "@/components/ui/button";
 import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { useState, useCallback, useEffect } from "react";
@@ -171,7 +170,7 @@ export function StartCampaignSection() {
                       href="/create-campaign"
                       className="inline-flex items-center justify-center bg-[#2c6e49] hover:bg-[#1e4d33] text-white text-base md:text-lg px-6 md:px-8 py-3 md:py-4 rounded-full transition-colors"
                     >
-                      Crear campaña
+                      Crear
                       <ArrowRight className="ml-2 h-4 w-4 md:h-5 md:w-5" />
                     </Link>
                   </div>

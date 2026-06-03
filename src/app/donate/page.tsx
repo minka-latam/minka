@@ -70,7 +70,7 @@ function DonatePageContent() {
         />
         <div className="absolute inset-0 flex items-center justify-center p-4">
           <h1 className="text-4xl sm:text-6xl md:text-7xl lg:text-[90px] font-bold text-white text-center">
-            Elige una campaña para donar
+            Ver campañas
           </h1>
         </div>
       </div>
@@ -79,7 +79,7 @@ function DonatePageContent() {
       <main className="container mx-auto py-16 px-4 flex-grow">
         <div className="max-w-3xl mx-auto text-center">
           <h2 className="text-2xl md:text-3xl font-bold text-[#2c6e49] mb-6">
-            Para realizar una donación, elige una campaña
+            Explora campañas para apoyar
           </h2>
           <p className="text-gray-700 mb-8">
             Puedes explorar nuestras campañas actuales o visitar directamente
@@ -91,7 +91,7 @@ function DonatePageContent() {
               className="bg-[#2c6e49] hover:bg-[#1e4d33] text-white py-6 px-8 rounded-full"
               asChild
             >
-              <Link href="/campaign">Ver todas las campañas</Link>
+              <Link href="/all-campaigns">Ver campañas</Link>
             </Button>
           </div>
         </div>

@@ -9,7 +9,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { id } = await params;
   return {
-    title: `Donar a campaña | ${id}`,
+    title: `Apoyar campaña | ${id}`,
     description: "Realiza una donación a esta campaña",
   };
 }
