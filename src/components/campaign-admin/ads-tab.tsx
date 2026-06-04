@@ -118,21 +118,8 @@ export function AdsTab({ campaign }: AdsTabProps) {
       return;
     }
 
-    // Validate that at least one of: uploaded image, image URL, or YouTube URL is provided
-    const hasImage = !!uploadedImage;
-    const hasImageUrl = !!formData.imageUrl && formData.imageUrl.trim() !== "";
     const hasYoutubeUrl =
       !!formData.youtubeUrl && formData.youtubeUrl.trim() !== "";
-
-    if (!hasImage && !hasImageUrl && !hasYoutubeUrl) {
-      toast({
-        title: "Contenido multimedia requerido",
-        description:
-          "Debes proporcionar una imagen o un enlace de YouTube para el anuncio.",
-        variant: "destructive",
-      });
-      return;
-    }
 
     // Validate YouTube URL format if provided
     if (hasYoutubeUrl && !isValidYoutubeUrl(formData.youtubeUrl)) {
@@ -351,17 +338,6 @@ export function AdsTab({ campaign }: AdsTabProps) {
 
   return (
     <div className="space-y-12 max-w-6xl mx-auto">
-      <div className="py-8">
-        <h2 className="text-2xl md:text-3xl font-bold text-gray-800 mb-6">
-          Publicar anuncios
-        </h2>
-        <p className="text-xl text-gray-600 leading-relaxed mb-10">
-          Comparte actualizaciones sobre el progreso de tu campaña, agradece a
-          los donadores o motiva publicando anuncios en tiempo real.
-        </p>
-        <div className="border-b border-[#478C5C]/20 my-8"></div>
-      </div>
-
       {/* Título del anuncio */}
       <div className="py-12">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
@@ -445,18 +421,17 @@ export function AdsTab({ campaign }: AdsTabProps) {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
           <div className="pt-4">
             <h2 className="text-2xl md:text-3xl font-bold text-gray-800 mb-6">
-              Agrega fotos o videos que ilustren tu anuncio
+              Agrega fotos o videos si quieres ilustrar tu anuncio
             </h2>
             <p className="text-xl text-gray-600 leading-relaxed">
-              Imágenes poderosas que cuenten tu historia harán que tu anuncio
-              sea más personal y emotivo. Esto ayudará a inspirar y conectar con
-              más personas que apoyen tu causa.
+              Este paso es opcional. Puedes publicar solo texto, o sumar
+              imágenes y videos para hacer el anuncio más personal y emotivo.
             </p>
           </div>
           <div className="bg-white rounded-xl border border-black p-8">
             <div className="space-y-4">
               <label className="block text-lg font-medium text-gray-900 mb-1">
-                Añade una foto a tu anuncio
+                Añade una foto a tu anuncio (opcional)
               </label>
               {!uploadedImage ? (
                 <div
@@ -537,7 +512,7 @@ export function AdsTab({ campaign }: AdsTabProps) {
 
               <div className="flex items-center justify-center my-6">
                 <div className="flex-1 h-px bg-gray-300"></div>
-                <div className="px-4 text-gray-500">O</div>
+                <div className="px-4 text-gray-500">O también</div>
                 <div className="flex-1 h-px bg-gray-300"></div>
               </div>
 
@@ -547,7 +522,7 @@ export function AdsTab({ campaign }: AdsTabProps) {
                   htmlFor="youtubeUrl"
                   className="block text-lg font-medium text-gray-900 mb-1"
                 >
-                  Agregar enlace de YouTube
+                  Agregar enlace de YouTube (opcional)
                 </label>
                 <div className="relative">
                   <svg

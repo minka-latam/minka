@@ -34,7 +34,6 @@ export function CampaignComments({
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [newComment, setNewComment] = useState("");
-  const [hasMore, setHasMore] = useState(false);
   const [total, setTotal] = useState(0);
 
   // Fetch comments on mount
@@ -51,7 +50,6 @@ export function CampaignComments({
       }
       const data = await response.json();
       setComments(data.comments || []);
-      setHasMore(data.hasMore || false);
       setTotal(data.total || 0);
     } catch (error) {
       console.error("Error fetching comments:", error);
@@ -155,8 +153,12 @@ export function CampaignComments({
 
   const canDeleteComment = (comment: Comment) => {
     if (!profile) return false;
-    // User can delete if they are the comment author or the campaign organizer
-    return comment.profile.id === profile.id || profile.id === organizerId;
+    // User can delete if they are the comment author, campaign organizer, or admin.
+    return (
+      profile.role === "admin" ||
+      comment.profile.id === profile.id ||
+      profile.id === organizerId
+    );
   };
 
   const formatDate = (dateString: string) => {
@@ -202,7 +204,7 @@ export function CampaignComments({
           Comentarios
         </h2>
         {total > 0 && (
-          <span className="text-gray-500 text-sm">
+          <span className="text-base text-gray-500">
             {total} {total === 1 ? "comentario" : "comentarios"}
           </span>
         )}
@@ -254,7 +256,7 @@ export function CampaignComments({
       ) : (
         <div className="bg-[#f5f7e9] rounded-lg p-6 text-center">
           <MessageCircle className="h-10 w-10 text-[#2c6e49] mx-auto mb-3" />
-          <p className="text-gray-700 mb-4">
+          <p className="text-base text-gray-700 mb-4">
             Inicia sesión para dejar un comentario de apoyo
           </p>
           <Link href={`/sign-in?returnUrl=/campaign/${campaignId}`}>
@@ -293,7 +295,7 @@ export function CampaignComments({
                       <span className="font-medium text-gray-900 break-words">
                         {comment.profile.name}
                       </span>
-                      <span className="text-sm text-gray-500">
+                      <span className="text-base text-gray-500">
                         {formatDate(comment.createdAt)}
                       </span>
                     </div>
@@ -307,7 +309,7 @@ export function CampaignComments({
                       </button>
                     )}
                   </div>
-                  <p className="text-gray-700 mt-1 break-words whitespace-pre-wrap leading-relaxed">
+                  <p className="text-base text-gray-700 mt-1 break-words whitespace-pre-wrap leading-relaxed">
                     {comment.message}
                   </p>
                 </div>
@@ -317,10 +319,10 @@ export function CampaignComments({
         ) : (
           <div className="text-center py-8">
             <MessageCircle className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-            <p className="text-gray-500">
+            <p className="text-base text-gray-500">
               Aún no hay comentarios en esta campaña.
             </p>
-            <p className="text-gray-400 text-sm mt-1">
+            <p className="text-base text-gray-400 mt-1">
               ¡Sé el primero en dejar un mensaje de apoyo!
             </p>
           </div>

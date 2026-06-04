@@ -17,6 +17,7 @@ export async function GET(
     const { searchParams } = new URL(req.url);
     const limit = parseInt(searchParams.get("limit") || "20");
     const offset = parseInt(searchParams.get("offset") || "0");
+    const sort = searchParams.get("sort") === "oldest" ? "oldest" : "recent";
 
     const campaign = await findPublicOrOwnedCampaignById(campaignId);
 
@@ -43,7 +44,7 @@ export async function GET(
         },
       },
       orderBy: {
-        createdAt: "desc",
+        createdAt: sort === "oldest" ? "asc" : "desc",
       },
       take: limit,
       skip: offset,
@@ -257,9 +258,10 @@ export async function DELETE(
     }
 
     // Get the comment to check ownership
-    const comment = await db.comment.findUnique({
+    const comment = await db.comment.findFirst({
       where: {
         id: commentId,
+        campaignId,
       },
     });
 
@@ -281,8 +283,11 @@ export async function DELETE(
       );
     }
 
-    // User can delete the comment if they are the comment author or the campaign owner
+    const isAdmin = profile.role === "admin" && profile.status === "active";
+
+    // User can delete if they are the comment author, campaign owner, or an active admin.
     if (
+      !isAdmin &&
       comment.profileId !== profile.id &&
       campaign.organizerId !== profile.id
     ) {
@@ -293,7 +298,7 @@ export async function DELETE(
     }
 
     // Instead of hard delete, set status to inactive
-    const updatedComment = await db.comment.update({
+    await db.comment.update({
       where: {
         id: commentId,
       },

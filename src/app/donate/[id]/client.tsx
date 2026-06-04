@@ -19,6 +19,7 @@ import { useCampaign } from '@/hooks/useCampaign'
 import { LoadingSpinner } from '@/components/ui/loading-spinner'
 import { QRPaymentStep } from '@/components/donate/QRPaymentStep'
 import { toast } from '@/components/ui/use-toast'
+import { formatRegionDisplayName } from '@/lib/region-utils'
 
 // Key for storing pending donation in localStorage
 const PENDING_DONATION_KEY = 'minka_pending_donation'
@@ -798,8 +799,8 @@ export function DonatePageContent({
       campaign?.organizer?.name || 'Nombre sin especificar',
     role: 'Organizador de campaña',
     location:
-      campaign?.location ||
-      campaign?.organizer?.location ||
+      formatRegionDisplayName(campaign?.location) ||
+      formatRegionDisplayName(campaign?.organizer?.location) ||
       'Ubicación no especificada',
     profilePicture:
       campaign?.organizer?.profilePicture || null,

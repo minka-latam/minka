@@ -486,7 +486,8 @@ export function useCampaign() {
   const getCampaignComments = async (
     targetCampaignId: string,
     limit: number = 20,
-    offset: number = 0
+    offset: number = 0,
+    sort: "recent" | "oldest" = "recent"
   ): Promise<{
     comments: CampaignComment[];
     total: number;
@@ -496,7 +497,7 @@ export function useCampaign() {
 
     try {
       const response = await fetch(
-        `/api/campaign/${targetCampaignId}/comments?limit=${limit}&offset=${offset}`
+        `/api/campaign/${targetCampaignId}/comments?limit=${limit}&offset=${offset}&sort=${sort}`
       );
 
       if (!response.ok) {

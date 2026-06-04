@@ -8,7 +8,7 @@ import Link from "next/link";
 export function HeroSection() {
   return (
     <section className="container mx-auto px-4 py-20 md:py-28">
-      <div className="max-w-[95vw] lg:max-w-5xl mx-auto text-center mb-16">
+      <div className="max-w-7xl mx-auto text-center mb-16">
         <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-[#333333] mb-8 leading-tight">
           Impulsa sueños, transforma vidas
         </h1>

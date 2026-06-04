@@ -21,6 +21,7 @@ import {
   SAVE_CAMPAIGN_INTENT_KEY,
   SAVE_CAMPAIGN_INTENT_UPDATED_EVENT,
 } from "@/constants/saved-campaign";
+import { formatRegionDisplayName } from "@/lib/region-utils";
 
 // Helper function to format campaign data for components
 function formatCampaignData(campaign: any) {
@@ -70,7 +71,10 @@ function formatCampaignData(campaign: any) {
   const organizerData = {
     name: campaign.organizer?.name || "Organizador",
     role: "Organizador de campaña",
-    location: campaign.organizer?.location || campaign.location || "Bolivia",
+    location:
+      formatRegionDisplayName(campaign.organizer?.location) ||
+      formatRegionDisplayName(campaign.location) ||
+      "Bolivia",
     memberSince: campaign.organizer?.join_date
       ? new Date(campaign.organizer.join_date).getFullYear().toString()
       : new Date().getFullYear().toString(),
@@ -85,6 +89,8 @@ function formatCampaignData(campaign: any) {
     beneficiaries:
       campaign.beneficiaries_description ||
       "Información de beneficiarios no disponible",
+    location: formatRegionDisplayName(campaign.location) || "Bolivia",
+    category: formatCategory(campaign.category),
     images: galleryItems,
     progress: progressData,
     organizer: organizerData,
@@ -111,6 +117,8 @@ function CustomCampaignDetails({
   organizer,
   description,
   isVerified,
+  campaignLocation,
+  campaignCategory,
 }: {
   organizer: {
     name: string;
@@ -122,22 +130,24 @@ function CustomCampaignDetails({
   };
   description: string;
   isVerified: boolean;
+  campaignLocation: string;
+  campaignCategory: string;
 }) {
   return (
     <div className="space-y-8">
-      {/* Organizer Header */}
+      {/* Campaign meta */}
       <div className="flex items-center gap-4 pb-4 border-b border-gray-200">
         <div className="h-10 w-10 rounded-full bg-[#e8f0e9] flex items-center justify-center flex-shrink-0">
           <span className="text-sm font-medium text-[#2c6e49]">
-            {organizer.name[0]}
+            {campaignLocation[0] || "B"}
           </span>
         </div>
         <div className="min-w-0 flex-1">
-          <h3 className="font-medium text-[#2c6e49] break-words">
-            {organizer.name}
+          <h3 className="text-base font-medium text-[#2c6e49] break-words">
+            {campaignLocation} | {campaignCategory}
           </h3>
-          <p className="text-sm text-gray-600 break-words">
-            {organizer.role} | {organizer.location}
+          <p className="text-base text-gray-600 break-words">
+            Ubicación y tipo de campaña
           </p>
         </div>
       </div>
@@ -171,7 +181,7 @@ function CustomCampaignDetails({
         <h2 className="text-3xl md:text-4xl font-semibold text-[#2c6e49] break-words">
           Descripción de la campaña
         </h2>
-        <p className="text-gray-700 leading-relaxed break-words whitespace-pre-wrap">
+        <p className="text-base text-gray-700 leading-relaxed break-words whitespace-pre-wrap">
           {description}
         </p>
       </div>
@@ -188,10 +198,10 @@ function CustomCampaignDetails({
             </span>
           </div>
           <div className="min-w-0 flex-1">
-            <h3 className="font-medium text-[#2c6e49] break-words">
+            <h3 className="text-base font-medium text-[#2c6e49] break-words">
               {organizer.name}
             </h3>
-            <p className="text-sm text-gray-600 break-words">
+            <p className="text-base text-gray-600 break-words">
               Gestor de campaña | {organizer.location}
             </p>
           </div>
@@ -227,7 +237,7 @@ function CustomCampaignDetails({
           <h4 className="font-medium mb-2 text-xl text-[#2c6e49] break-words">
             Biografía
           </h4>
-          <p className="text-black break-words whitespace-pre-wrap leading-relaxed">
+          <p className="text-base text-black break-words whitespace-pre-wrap leading-relaxed">
             {organizer.bio}
           </p>
         </div>
@@ -390,10 +400,10 @@ export default function CampaignClientPage({ id }: { id: string }) {
 
             {/* Tab Navigation */}
             <div className="mt-10 border-b border-gray-200 overflow-x-auto">
-              <div className="flex gap-6 min-w-max sm:min-w-0">
+              <div className="flex items-center min-w-max sm:min-w-0">
                 <button
                   onClick={() => setActiveTab("descripcion")}
-                  className={`pb-4 px-2 font-medium whitespace-nowrap ${
+                  className={`pb-4 px-2 text-lg font-bold whitespace-nowrap ${
                     activeTab === "descripcion"
                       ? "text-[#2c6e49] border-b-2 border-[#2c6e49]"
                       : "text-gray-500"
@@ -401,9 +411,12 @@ export default function CampaignClientPage({ id }: { id: string }) {
                 >
                   Descripción
                 </button>
+                <span className="px-3 pb-4 text-lg font-bold text-gray-300">
+                  |
+                </span>
                 <button
                   onClick={() => setActiveTab("actualizaciones")}
-                  className={`pb-4 px-2 font-medium whitespace-nowrap ${
+                  className={`pb-4 px-2 text-lg font-bold whitespace-nowrap ${
                     activeTab === "actualizaciones"
                       ? "text-[#2c6e49] border-b-2 border-[#2c6e49]"
                       : "text-gray-500"
@@ -411,9 +424,12 @@ export default function CampaignClientPage({ id }: { id: string }) {
                 >
                   Actualizaciones
                 </button>
+                <span className="px-3 pb-4 text-lg font-bold text-gray-300">
+                  |
+                </span>
                 <button
                   onClick={() => setActiveTab("comentarios")}
-                  className={`pb-4 px-2 font-medium whitespace-nowrap ${
+                  className={`pb-4 px-2 text-lg font-bold whitespace-nowrap ${
                     activeTab === "comentarios"
                       ? "text-[#2c6e49] border-b-2 border-[#2c6e49]"
                       : "text-gray-500"
@@ -431,6 +447,8 @@ export default function CampaignClientPage({ id }: { id: string }) {
                   organizer={formattedData.organizer}
                   description={formattedData.story}
                   isVerified={formattedData.progress.isVerified}
+                  campaignLocation={formattedData.location}
+                  campaignCategory={formattedData.category}
                 />
               )}
 

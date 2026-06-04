@@ -402,7 +402,7 @@ function CampaignsContent() {
       <Header />
       <div className="pt-24">
         <main className="container mx-auto px-4 py-8">
-          <div className="text-center mb-16 max-w-6xl mx-auto">
+          <div className="text-center mb-16 max-w-7xl mx-auto">
             <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-[#333333] mb-6 leading-tight">
               Apoya una causa, cambia una vida
             </h1>

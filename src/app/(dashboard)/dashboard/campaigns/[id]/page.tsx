@@ -6,7 +6,14 @@ import { createBrowserClient } from "@supabase/ssr";
 import Image from "next/image";
 import Link from "next/link";
 import { toast } from "@/components/ui/use-toast";
-import { Calendar as CalendarIcon, X, Check, Trash2, Edit } from "lucide-react";
+import {
+  Calendar as CalendarIcon,
+  X,
+  Check,
+  CheckCircle,
+  Trash2,
+  Edit,
+} from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
@@ -502,6 +509,18 @@ export default function CampaignDetailPage() {
       campaign?.submitted_for_review_at ||
         campaign?.submittedForReviewAt
     );
+  const verificationRequest = Array.isArray(campaign?.verification_request)
+    ? campaign.verification_request[0]
+    : campaign?.verification_request;
+  const isVerifiedCampaign = Boolean(
+    campaign?.verification_status ?? campaign?.verificationStatus
+  );
+  const isPendingCampaignVerification =
+    !isVerifiedCampaign &&
+    (campaign?.verification_request_status === "pending" ||
+      campaign?.verificationRequestStatus === "pending" ||
+      verificationRequest?.verification_status === "pending" ||
+      verificationRequest?.verificationStatus === "pending");
   const canDeleteCampaign =
     campaign?.campaign_status === "draft" ||
     campaign?.campaignStatus === "draft" ||
@@ -619,6 +638,7 @@ export default function CampaignDetailPage() {
             `
             *,
             organizer:profiles(*),
+            verification_request:campaign_verifications(verification_status),
             media:campaign_media(*)
           `
           )
@@ -865,6 +885,17 @@ export default function CampaignDetailPage() {
                     height={18}
                   />
                 </button>
+                {isVerifiedCampaign && (
+                  <span className="flex items-center text-[#1a5535] gap-2 text-sm font-medium">
+                    <span>Verificada</span>
+                    <CheckCircle className="h-4 w-4" />
+                  </span>
+                )}
+                {isPendingCampaignVerification && (
+                  <span className="flex items-center rounded-full border border-yellow-200 bg-yellow-50 px-3 py-1 text-sm font-medium text-yellow-800">
+                    Verificación: pendiente
+                  </span>
+                )}
                 {isDraftCampaign && !isPendingReview && (
                   <Button
                     type="button"
@@ -1858,8 +1889,9 @@ export default function CampaignDetailPage() {
                   Publicar anuncios
                 </h2>
                 <p className="text-xl text-gray-600 leading-relaxed mb-10">
-                  Mantén a tus donadores informados sobre los avances y logros
-                  de tu campaña.
+                  Comparte actualizaciones sobre el progreso de tu campaña,
+                  agradece a los donadores o motiva publicando anuncios en
+                  tiempo real.
                 </p>
                 <div className="border-b border-[#478C5C]/20 my-8"></div>
               </div>
