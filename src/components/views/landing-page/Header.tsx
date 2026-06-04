@@ -107,7 +107,7 @@ export function Header() {
 
   const menuItems = [
     { href: "/all-campaigns", label: "Ver campañas" },
-    { href: "/create-campaign", label: "Crear" },
+    { href: "/create-campaign", label: "Crear una" },
     { href: "/about-us", label: "Nosotros" },
     { href: "/help", label: "Ayuda" },
   ];

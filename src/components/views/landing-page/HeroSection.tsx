@@ -18,21 +18,21 @@ export function HeroSection() {
           las donaciones.
         </p>
         <div className="flex flex-col sm:flex-row justify-center gap-6">
-          <Link href="/create-campaign" rel="noopener noreferrer">
+          <Link href="/all-campaigns" rel="noopener noreferrer">
             <Button
               className="bg-[#2c6e49] hover:bg-[#1e4d33] text-white text-xl w-full sm:w-auto rounded-full"
               size="lg"
             >
-              Crear
+              Ver campañas <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
           </Link>
-          <Link href="/all-campaigns" rel="noopener noreferrer">
+          <Link href="/create-campaign" rel="noopener noreferrer">
             <Button
               variant="outline"
-              className="border-[#2c6e49] text-[#2c6e49] hover:bg-[#2c6e49] hover:text-white text-xl w-full sm:w-auto rounded-full"
+              className="bg-white border-[#2c6e49] text-[#2c6e49] hover:bg-[#f5f7e9] text-xl w-full sm:w-auto rounded-full"
               size="lg"
             >
-              Ver campañas <ArrowRight className="ml-2 h-5 w-5" />
+              Crear una
             </Button>
           </Link>
         </div>

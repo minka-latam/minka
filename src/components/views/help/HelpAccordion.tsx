@@ -242,7 +242,7 @@ export function HelpAccordion({ searchTerm = "" }: HelpAccordionProps) {
     return (
       <div className="text-center py-8">
         <p className="text-lg text-gray-600">
-          No se encontraron resultados para "{searchTerm}"
+          No se encontraron resultados para &quot;{searchTerm}&quot;
         </p>
         <p className="text-sm text-gray-500 mt-2">
           Intenta con otra búsqueda o revisa todas nuestras preguntas frecuentes
