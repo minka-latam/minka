@@ -142,17 +142,6 @@ export async function POST(
       );
     }
 
-    // Validate that at least one of imageUrl or youtubeUrl is provided
-    if (!imageUrl && !youtubeUrl) {
-      return NextResponse.json(
-        {
-          error:
-            "Either an image or a YouTube URL is required for announcements",
-        },
-        { status: 400 }
-      );
-    }
-
     try {
 
       const newUpdate = await db.campaignUpdate.create({

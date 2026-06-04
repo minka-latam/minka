@@ -76,12 +76,40 @@ export async function GET() {
       );
     }
 
+    const campaignIds = campaigns?.map((campaign) => campaign.id) || [];
+    const { data: verificationRequests, error: verificationError } =
+      campaignIds.length > 0
+        ? await supabase
+            .from("campaign_verifications")
+            .select("campaign_id, verification_status")
+            .in("campaign_id", campaignIds)
+        : { data: [], error: null };
+
+    if (verificationError) {
+      console.error(
+        "Database error fetching campaign verification requests:",
+        verificationError
+      );
+    }
+
+    const verificationStatusByCampaignId = new Map(
+      (verificationRequests || []).map((request) => [
+        request.campaign_id,
+        request.verification_status,
+      ])
+    );
+
     // Transform the campaigns data to match the expected format
     const transformedCampaigns = campaigns?.map((campaign) => {
+      const media =
+        campaign.media as
+          | { is_primary?: boolean; media_url?: string | null }[]
+          | null
+          | undefined;
       // Find the primary image or the first image in the media array
       const primaryImage =
-        campaign.media?.find((m: any) => m.is_primary)?.media_url ||
-        campaign.media?.[0]?.media_url ||
+        media?.find((item) => item.is_primary)?.media_url ||
+        media?.[0]?.media_url ||
         "/amboro-main.jpg"; // Default fallback image
 
       return {
@@ -97,6 +125,8 @@ export async function GET() {
         created_at: campaign.created_at,
         submitted_for_review_at: campaign.submitted_for_review_at,
         verification_status: campaign.verification_status,
+        verification_request_status:
+          verificationStatusByCampaignId.get(campaign.id) || null,
         organizer_id: campaign.organizer_id,
       };
     });

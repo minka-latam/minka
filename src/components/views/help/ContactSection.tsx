@@ -1,6 +1,6 @@
 "use client";
 
-import { MessageCircle, Mail, Phone } from "lucide-react";
+import { Facebook, Instagram, Linkedin, Mail, MessageCircle } from "lucide-react";
 
 export function ContactSection() {
   return (
@@ -9,10 +9,11 @@ export function ContactSection() {
         Atención al cliente
       </h2>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <a
-          href="https://www.facebook.com/minka.mx"
+          href="https://m.me/minkacomunidadbolivia"
           rel="noopener noreferrer"
+          target="_blank"
           className="flex items-center gap-3 p-4 rounded-lg border-2 border-[#478C5C]/20 hover:border-[#2c6e49] transition-colors bg-white"
         >
           <MessageCircle
@@ -23,7 +24,7 @@ export function ContactSection() {
         </a>
 
         <a
-          href="mailto:contacto@minka.mx"
+          href="mailto:info@minkacomunidad.org"
           rel="noopener noreferrer"
           className="flex items-center gap-3 p-4 rounded-lg border-2 border-[#478C5C]/20 hover:border-[#2c6e49] transition-colors bg-white"
         >
@@ -34,12 +35,33 @@ export function ContactSection() {
         </a>
 
         <a
-          href="https://wa.me/5215555555555"
+          href="https://www.facebook.com/minkacomunidadbolivia"
           rel="noopener noreferrer"
+          target="_blank"
           className="flex items-center gap-3 p-4 rounded-lg border-2 border-[#478C5C]/20 hover:border-[#2c6e49] transition-colors bg-white"
         >
-          <Phone className="h-5 w-5 text-[#2c6e49]" aria-hidden="true" />
-          <span className="text-gray-600">Contáctanos por WhatsApp</span>
+          <Facebook className="h-5 w-5 text-[#2c6e49]" aria-hidden="true" />
+          <span className="text-gray-600">Síguenos en Facebook</span>
+        </a>
+
+        <a
+          href="https://www.instagram.com/minka_comunidad"
+          rel="noopener noreferrer"
+          target="_blank"
+          className="flex items-center gap-3 p-4 rounded-lg border-2 border-[#478C5C]/20 hover:border-[#2c6e49] transition-colors bg-white"
+        >
+          <Instagram className="h-5 w-5 text-[#2c6e49]" aria-hidden="true" />
+          <span className="text-gray-600">Síguenos en Instagram</span>
+        </a>
+
+        <a
+          href="https://www.linkedin.com/company/minka-comunidad/"
+          rel="noopener noreferrer"
+          target="_blank"
+          className="flex items-center gap-3 p-4 rounded-lg border-2 border-[#478C5C]/20 hover:border-[#2c6e49] transition-colors bg-white"
+        >
+          <Linkedin className="h-5 w-5 text-[#2c6e49]" aria-hidden="true" />
+          <span className="text-gray-600">Conecta en LinkedIn</span>
         </a>
       </div>
     </div>

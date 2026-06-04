@@ -34,14 +34,10 @@ import {
   CheckCircle,
   XCircle,
   MoreHorizontal,
-  ExternalLink,
   Pencil,
   AlertCircle,
   Eye,
-  DollarSign,
-  Calendar,
   Users,
-  TrendingUp,
   Trash2,
   Clock,
 } from "lucide-react";
@@ -313,14 +309,11 @@ export function SuperAdminCampaignTable({
             <DropdownMenuSeparator />
 
             {campaign.verificationStatus ? (
-              <DropdownMenuItem
-                onClick={() =>
-                  openConfirmDialog("unverify", campaign.id, campaign.title)
-                }
-                className="text-amber-600"
-              >
-                <XCircle className="mr-2 h-4 w-4" />
-                Revoke Verification
+              <DropdownMenuItem asChild>
+                <Link href="/dashboard/verification">
+                  <XCircle className="mr-2 h-4 w-4" />
+                  Revoke Verification
+                </Link>
               </DropdownMenuItem>
             ) : (
               <DropdownMenuItem asChild>

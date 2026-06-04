@@ -1,7 +1,6 @@
 "use client";
 
-import { Clock } from "lucide-react";
-import { useEffect } from "react";
+import { Clock, Megaphone } from "lucide-react";
 
 export interface CampaignUpdateType {
   id: string;
@@ -17,11 +16,23 @@ interface CampaignUpdatesProps {
 }
 
 export function CampaignUpdates({ updates }: CampaignUpdatesProps) {
-  useEffect(() => {
-  }, [updates]);
-
   if (!updates || updates.length === 0) {
-    return null;
+    return (
+      <div className="space-y-6">
+        <h2 className="text-3xl md:text-4xl font-semibold text-[#2c6e49] break-words">
+          Actualizaciones de la campaña
+        </h2>
+        <div className="text-center py-8">
+          <Megaphone className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+          <h3 className="text-xl font-medium text-gray-900 mb-2">
+            No hay actualizaciones aún
+          </h3>
+          <p className="text-base text-gray-500">
+            El organizador todavía no publicó novedades para esta campaña.
+          </p>
+        </div>
+      </div>
+    );
   }
 
   // Function to extract YouTube video ID from URL
@@ -55,7 +66,7 @@ export function CampaignUpdates({ updates }: CampaignUpdatesProps) {
             >
               <div className="flex flex-wrap items-center gap-2 mb-4">
                 <Clock className="h-5 w-5 text-[#2c6e49] flex-shrink-0" />
-                <span className="text-gray-600 break-words">
+                <span className="text-base text-gray-600 break-words">
                   {typeof update.createdAt === "string"
                     ? new Date(update.createdAt).toLocaleDateString("es-ES", {
                         year: "numeric",
@@ -69,7 +80,7 @@ export function CampaignUpdates({ updates }: CampaignUpdatesProps) {
               <h3 className="text-xl font-semibold mb-2 break-words">
                 {update.title}
               </h3>
-              <p className="text-gray-700 mb-4 break-words whitespace-pre-wrap leading-relaxed">
+              <p className="text-base text-gray-700 mb-4 break-words whitespace-pre-wrap leading-relaxed">
                 {update.message}
               </p>
 

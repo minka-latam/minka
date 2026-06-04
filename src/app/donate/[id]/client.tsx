@@ -19,9 +19,12 @@ import { useCampaign } from '@/hooks/useCampaign'
 import { LoadingSpinner } from '@/components/ui/loading-spinner'
 import { QRPaymentStep } from '@/components/donate/QRPaymentStep'
 import { toast } from '@/components/ui/use-toast'
+import { formatRegionDisplayName } from '@/lib/region-utils'
 
 // Key for storing pending donation in localStorage
 const PENDING_DONATION_KEY = 'minka_pending_donation'
+const PENDING_CARD_CHECKOUT_KEY = 'minka_pending_card_checkout'
+const CARD_CHECKOUT_MAX_AGE = 30 * 60 * 1000
 
 const DONATION_AMOUNTS_BS = [
   { value: 50 },
@@ -132,6 +135,26 @@ export function DonatePageContent({
 
   // Ref to prevent double initialization
   const initRef = useRef(false)
+
+  useEffect(() => {
+    const resetCardRedirectState = () => {
+      setIsSubmitting(false)
+      setInfoMessage((message) =>
+        message?.includes('redirigiendo') ? null : message,
+      )
+    }
+
+    window.addEventListener('pageshow', resetCardRedirectState)
+    window.addEventListener('focus', resetCardRedirectState)
+
+    return () => {
+      window.removeEventListener(
+        'pageshow',
+        resetCardRedirectState,
+      )
+      window.removeEventListener('focus', resetCardRedirectState)
+    }
+  }, [])
 
   // Load user data and check for pending donation on component mount
   useEffect(() => {
@@ -417,6 +440,47 @@ export function DonatePageContent({
     try {
       // 🔹 Branch 1: Tripto (card)
       if (selectedMethod === 'card') {
+        const checkoutSignature = {
+          campaignId,
+          donorId: user?.id ?? null,
+          amount: donationAmount,
+          tipAmount: platformFee,
+        }
+        const storedCheckout = sessionStorage.getItem(
+          PENDING_CARD_CHECKOUT_KEY,
+        )
+
+        if (storedCheckout) {
+          try {
+            const pendingCheckout = JSON.parse(storedCheckout)
+            const createdAt = new Date(
+              pendingCheckout.createdAt,
+            ).getTime()
+            const isFresh =
+              Number.isFinite(createdAt) &&
+              Date.now() - createdAt < CARD_CHECKOUT_MAX_AGE
+            const isSameCheckout =
+              pendingCheckout.campaignId ===
+                checkoutSignature.campaignId &&
+              pendingCheckout.donorId ===
+                checkoutSignature.donorId &&
+              Number(pendingCheckout.amount) ===
+                checkoutSignature.amount &&
+              Number(pendingCheckout.tipAmount) ===
+                checkoutSignature.tipAmount &&
+              pendingCheckout.url
+
+            if (isFresh && isSameCheckout) {
+              window.location.href = pendingCheckout.url
+              return
+            }
+          } catch {
+            sessionStorage.removeItem(
+              PENDING_CARD_CHECKOUT_KEY,
+            )
+          }
+        }
+
         setInfoMessage(
           'Estamos redirigiendo a la plataforma segura de pago por tarjeta, espera por favor.',
         )
@@ -466,6 +530,15 @@ export function DonatePageContent({
         }
 
         // Redirect user to Tripto checkout
+        sessionStorage.setItem(
+          PENDING_CARD_CHECKOUT_KEY,
+          JSON.stringify({
+            ...checkoutSignature,
+            url: data.url,
+            donationId: data.donationId ?? null,
+            createdAt: new Date().toISOString(),
+          }),
+        )
         window.location.href = data.url
         return
       }
@@ -726,8 +799,8 @@ export function DonatePageContent({
       campaign?.organizer?.name || 'Nombre sin especificar',
     role: 'Organizador de campaña',
     location:
-      campaign?.location ||
-      campaign?.organizer?.location ||
+      formatRegionDisplayName(campaign?.location) ||
+      formatRegionDisplayName(campaign?.organizer?.location) ||
       'Ubicación no especificada',
     profilePicture:
       campaign?.organizer?.profilePicture || null,
@@ -871,12 +944,7 @@ export function DonatePageContent({
                             {method.id === 'card' ? (
                               <CreditCard className='h-8 w-8' />
                             ) : (
-                              <Image
-                                src='/icons/qr_code.svg'
-                                alt='QR Code'
-                                width={32}
-                                height={32}
-                              />
+                              <QrCode className='h-8 w-8 text-[#2c6e49]' />
                             )}
                           </div>
                           <div>
@@ -901,15 +969,15 @@ export function DonatePageContent({
                 </section>
 
                 <section
-                  className={`transition-all duration-700 ease-out ${
+                  className={`transition-[opacity,transform] duration-500 ease-out ${
                     paymentMethod
-                      ? 'opacity-100 translate-y-0 max-h-[1800px] mt-8'
-                      : 'opacity-0 translate-y-3 max-h-0 overflow-hidden pointer-events-none'
+                      ? 'opacity-100 translate-y-0 mt-8'
+                      : 'h-0 overflow-hidden opacity-0 translate-y-3 pointer-events-none'
                   }`}
                 >
                   <div className='border-t border-gray-200 pt-8'>
                     <h3 className='text-lg font-semibold text-black mb-4'>
-                      Monto de donación
+                      Monto de aporte
                     </h3>
                     <div className='grid grid-cols-2 md:grid-cols-4 gap-4 mb-6'>
                       {donationAmounts.map((option) => (
@@ -963,9 +1031,9 @@ export function DonatePageContent({
                       </div>
                     </div>
 
-                    <div className='mb-8'>
+                    <div className='mt-24 mb-8'>
                       <p className='text-sm text-black mb-3'>
-                        ¿Quieres apoyar a Minka? La contribución voluntaria es
+                        ¿Quieres también apoyar a Minka? La contribución voluntaria es
                         opcional y ayuda a sostener la plataforma.
                       </p>
 
@@ -1013,7 +1081,7 @@ export function DonatePageContent({
                             step='1'
                             value={minkaContribution}
                             onChange={handleMinkaContributionChange}
-                            className='w-full h-2 rounded-full appearance-none bg-gray-300 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[#2c6e49]'
+                            className='w-full h-2 cursor-pointer rounded-full appearance-none bg-gray-300 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[#2c6e49]'
                           />
                         </div>
                       )}
@@ -1064,7 +1132,7 @@ export function DonatePageContent({
                         </div>
                         <div className='flex justify-between gap-4'>
                           <span className='text-gray-600'>
-                            Aporte voluntario
+                            Tip a Minka
                           </span>
                           <span className='font-medium'>
                             {currencyPrefix} {platformFee.toFixed(2)}

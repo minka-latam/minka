@@ -24,6 +24,7 @@ interface CampaignCardProps {
   progress: number;
   status: CampaignStatus;
   isVerified?: boolean;
+  verificationRequestStatus?: "pending" | "approved" | "rejected" | null;
   submittedForReviewAt?: string | null;
 }
 
@@ -38,11 +39,14 @@ export function CampaignCard({
   progress,
   status,
   isVerified = false,
+  verificationRequestStatus = null,
   submittedForReviewAt = null,
 }: CampaignCardProps) {
   const router = useRouter();
   const isCancelled = status === "cancelled";
   const isPendingReview = status === "draft" && Boolean(submittedForReviewAt);
+  const isPendingVerification =
+    !isVerified && verificationRequestStatus === "pending";
 
   // Handle verify button click
   const handleVerifyClick = (e: React.MouseEvent) => {
@@ -172,7 +176,11 @@ export function CampaignCard({
               className="text-[#2c6e49] hover:bg-[#f0f7f1] flex items-center justify-start w-full text-xs sm:text-sm px-1 py-1 h-auto font-medium gap-0"
               onClick={handleVerifyClick}
             >
-              <span className="truncate">Solicitar verificación</span>
+              <span className="truncate">
+                {isPendingVerification
+                  ? "Estado de verificación"
+                  : "Solicitar verificación"}
+              </span>
               <CheckCircle className="ml-1 flex-shrink-0 h-3 w-3 sm:h-4 sm:w-4" />
             </Button>
             <Button

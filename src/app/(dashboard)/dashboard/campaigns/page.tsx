@@ -414,6 +414,9 @@ export default function SuperAdminCampaignsPage() {
                 progress={campaign.percentageFunded}
                 status={campaign.status as CampaignStatus}
                 isVerified={campaign.verificationStatus}
+                verificationRequestStatus={
+                  campaign.verificationRequestStatus
+                }
                 submittedForReviewAt={campaign.submittedForReviewAt}
               />
             ))}

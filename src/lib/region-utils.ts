@@ -27,10 +27,22 @@ export function getRegionDisplayName(region: Region): string {
   return regionNames[region] || region;
 }
 
+export function formatRegionDisplayName(region?: string | null): string {
+  if (!region) return "";
+
+  if (region in regionNames) {
+    return regionNames[region as Region];
+  }
+
+  return region
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
 // Convert display name to region enum value
 export function getRegionEnumValue(displayName: string): Region | null {
   const entry = Object.entries(regionNames).find(
-    ([_, name]) => name === displayName
+    (regionEntry) => regionEntry[1] === displayName
   );
   return entry ? (entry[0] as Region) : null;
 }
