@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { SignInClient } from "./sign-in-client";
 import { LoadingScreen } from "@/components/ui/loading-screen";
+import { RegistrationConfirmationModal } from "./registration-confirmation-modal";
 
 // This function is used to safely get the registered status from searchParams
 function getRegistrationStatus(registered?: string): boolean {
@@ -30,12 +31,13 @@ export default async function SignInPage({ searchParams }: PageProps) {
       </div>
 
       {isRegistered && (
-        <div className="mb-6 p-4 bg-green-50 text-green-800 rounded-md">
-          <p>
+        <>
+          <RegistrationConfirmationModal open={true} />
+          <div className="mb-6 p-4 bg-green-50 text-green-800 rounded-md">
             ¡Tu cuenta ha sido creada exitosamente! Por favor revisa tu correo
             electrónico para confirmarla antes de iniciar sesión.
-          </p>
-        </div>
+          </div>
+        </>
       )}
 
       <Suspense

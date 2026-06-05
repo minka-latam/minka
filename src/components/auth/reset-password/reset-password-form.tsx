@@ -4,7 +4,6 @@ import { useState, useCallback, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/use-toast";
@@ -30,15 +29,39 @@ const resetPasswordSchema = z
 
 type ResetPasswordFormData = z.infer<typeof resetPasswordSchema>;
 
-interface ResetPasswordFormProps {
-  onSuccess?: () => void;
+function getResetPasswordErrorMessage(error: unknown) {
+  const message =
+    error instanceof Error
+      ? error.message
+      : "No se pudo actualizar la contraseña.";
+
+  if (
+    message
+      .toLowerCase()
+      .includes("new password should be different from the old password")
+  ) {
+    return "La nueva contraseña debe ser diferente a la contraseña anterior.";
+  }
+
+  return message;
 }
 
-export function ResetPasswordForm({ onSuccess }: ResetPasswordFormProps) {
+interface ResetPasswordFormProps {
+  onSuccess?: () => void;
+  signOutOnSuccess?: boolean;
+  showBackToSignIn?: boolean;
+}
+
+export function ResetPasswordForm({
+  onSuccess,
+  signOutOnSuccess = true,
+  showBackToSignIn = true,
+}: ResetPasswordFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
+  const [loadingText, setLoadingText] = useState("Actualizando contraseña...");
   const router = useRouter();
 
   const {
@@ -46,7 +69,6 @@ export function ResetPasswordForm({ onSuccess }: ResetPasswordFormProps) {
     handleSubmit,
     formState: { errors },
     setError,
-    setValue,
   } = useForm<ResetPasswordFormData>({
     resolver: zodResolver(resetPasswordSchema),
     defaultValues: {
@@ -86,6 +108,7 @@ export function ResetPasswordForm({ onSuccess }: ResetPasswordFormProps) {
   const onSubmit = useCallback(
     async (data: ResetPasswordFormData) => {
       try {
+        setLoadingText("Actualizando contraseña...");
         setIsLoading(true);
         const supabase = createClient();
 
@@ -96,7 +119,12 @@ export function ResetPasswordForm({ onSuccess }: ResetPasswordFormProps) {
 
         if (error) throw error;
 
-        await supabase.auth.signOut();
+        if (signOutOnSuccess) {
+          await supabase.auth.signOut();
+          await fetch("/api/auth/logout", { method: "POST" }).catch(
+            () => null
+          );
+        }
 
         // Show success message
         toast({
@@ -114,10 +142,7 @@ export function ResetPasswordForm({ onSuccess }: ResetPasswordFormProps) {
       } catch (error) {
         console.error("Error resetting password:", error);
 
-        const errorMessage =
-          error instanceof Error
-            ? error.message
-            : "No se pudo actualizar la contraseña.";
+        const errorMessage = getResetPasswordErrorMessage(error);
 
         if (
           errorMessage.toLowerCase().includes("password") ||
@@ -138,14 +163,27 @@ export function ResetPasswordForm({ onSuccess }: ResetPasswordFormProps) {
         setIsLoading(false);
       }
     },
-    [router, setError]
+    [onSuccess, router, setError, signOutOnSuccess]
   );
+
+  const handleBackToSignIn = useCallback(async () => {
+    try {
+      setLoadingText("Cerrando sesión temporal...");
+      setIsLoading(true);
+      const supabase = createClient();
+      await supabase.auth.signOut();
+      await fetch("/api/auth/logout", { method: "POST" }).catch(() => null);
+    } finally {
+      router.replace("/sign-in");
+      router.refresh();
+    }
+  }, [router]);
 
   // Show a loading screen when loading
   if (isLoading || isInitializing) {
     return (
       <LoadingScreen
-        text={isInitializing ? "Verificando..." : "Actualizando contraseña..."}
+        text={isInitializing ? "Verificando..." : loadingText}
         showText={true}
       />
     );
@@ -237,14 +275,17 @@ export function ResetPasswordForm({ onSuccess }: ResetPasswordFormProps) {
         Actualizar contraseña
       </Button>
 
-      <div className="text-center">
-        <Link
-          href="/sign-in"
-          className="text-[#2c6e49] hover:underline text-sm font-medium"
-        >
-          Volver a inicio de sesión
-        </Link>
-      </div>
+      {showBackToSignIn && (
+        <div className="text-center">
+          <button
+            type="button"
+            onClick={handleBackToSignIn}
+            className="text-[#2c6e49] hover:underline text-sm font-medium"
+          >
+            Volver a inicio de sesión
+          </button>
+        </div>
+      )}
     </form>
   );
 }

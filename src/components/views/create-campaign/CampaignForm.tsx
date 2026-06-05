@@ -1133,7 +1133,7 @@ setCurrentStep(currentStep + 1);
     return value.replace(/\./g, "");
   };
 
-  const MAX_GOAL_AMOUNT = 150000;
+  const MAX_GOAL_AMOUNT = 1000000;
 
   const validateGoalAmount = (value: string | number): string => {
     const rawValue = removeNumberSeparators(String(value || ""));
@@ -1144,7 +1144,7 @@ setCurrentStep(currentStep + 1);
 
     const parsedValue = Number(rawValue);
     if (Number.isNaN(parsedValue) || parsedValue > MAX_GOAL_AMOUNT) {
-      return "La meta no debe superar Bs. 150.000";
+      return "La meta no debe superar Bs. 1.000.000";
     }
 
     return "";
@@ -1245,7 +1245,7 @@ setCurrentStep(currentStep + 1);
       id: 3,
       title: "Establece una meta de recaudación",
       description:
-        "Define una meta realista que te ayude a alcanzar el objetivo de tu campaña.",
+        "Define una meta realista en bolivianos que te ayude a alcanzar el objetivo de tu campaña.",
     },
     {
       id: 4,
@@ -1567,7 +1567,7 @@ setCurrentStep(currentStep + 1);
                         className="block text-lg font-medium mb-2"
                         id="goalAmount"
                       >
-                        Meta de recaudación
+                        Meta de recaudación en bolivianos
                       </label>
                       <div className="relative">
                         <span className="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-400 pointer-events-none">
@@ -1575,13 +1575,16 @@ setCurrentStep(currentStep + 1);
                         </span>
                         <input
                           type="text"
-                          placeholder="Ingresa el monto a recaudar"
+                          placeholder="Ingresa el monto a recaudar en bolivianos"
                           className={`w-full rounded-lg border ${formErrors.goalAmount ? "error-input" : "border-black"} bg-white shadow-sm focus:border-[#478C5C] focus:ring-[#478C5C] focus:ring-0 h-14 pl-16 pr-4`}
                           inputMode="numeric"
                           value={formatNumberWithSeparators(formData.goalAmount)}
                           onChange={handleGoalAmountChange}
                         />
                       </div>
+                      <p className="text-sm text-gray-500">
+                        Ingresa el monto en bolivianos. Máximo Bs. 1.000.000.
+                      </p>
                       {formErrors.goalAmount && (
                         <div className="error-text">
                           {formErrors.goalAmount}

@@ -501,7 +501,7 @@ export function EditCampaignTab({ campaign }: EditCampaignTabProps) {
                 htmlFor="goalAmount"
                 className="block text-sm font-medium text-gray-700 mb-1"
               >
-                Meta de recaudación
+                Meta de recaudación en bolivianos
               </label>
               <div className="relative">
                 <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">
@@ -517,6 +517,9 @@ export function EditCampaignTab({ campaign }: EditCampaignTabProps) {
                   required
                 />
               </div>
+              <p className="mt-1 text-xs text-gray-500">
+                Monto en bolivianos. Máximo Bs. 1.000.000.
+              </p>
             </div>
 
             <div>

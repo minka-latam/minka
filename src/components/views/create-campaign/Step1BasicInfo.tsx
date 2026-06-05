@@ -20,7 +20,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -36,7 +35,6 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { Toast } from "@/components/ui/toast";
 import { useToast } from "@/components/ui/use-toast";
 import axios from "axios";
 import { ImproveTextButton } from "@/components/ui/improve-text-button";
@@ -63,6 +61,8 @@ const formSchema = z.object({
   }),
   goalAmount: z.coerce.number().min(1, {
     message: "Por favor ingresa un monto mayor a cero",
+  }).max(1000000, {
+    message: "La meta no debe superar Bs. 1.000.000",
   }),
   location: z.enum([
     "la_paz",
@@ -389,8 +389,8 @@ dispatch({ type: "SET_END_DATE", payload: endDate.toISOString() });
                 Establece una meta de recaudación
               </h2>
               <p className="text-xl text-gray-600 leading-relaxed">
-                Define una meta realista que te ayude a alcanzar el objetivo de
-                tu campaña.
+                Define una meta realista en bolivianos que te ayude a alcanzar
+                el objetivo de tu campaña.
               </p>
             </div>
             <div className="bg-white rounded-xl border border-black p-8">
@@ -401,12 +401,12 @@ dispatch({ type: "SET_END_DATE", payload: endDate.toISOString() });
                   render={({ field: { onChange, value, ...rest } }) => (
                     <FormItem>
                       <FormLabel className="text-lg font-medium">
-                        Meta de recaudación
+                        Meta de recaudación en bolivianos
                       </FormLabel>
                       <FormControl>
                         <Input
                           type="text"
-                          placeholder="Ingresa el monto a recaudar"
+                          placeholder="Ingresa el monto a recaudar en bolivianos"
                           className="w-full rounded-lg border border-black bg-white shadow-sm focus:border-[#478C5C] focus:ring-[#478C5C] focus:ring-0 h-14 px-4"
                           value={formatNumberWithSeparators(value || "")}
                           onChange={handleGoalAmountChange(onChange)}
@@ -425,7 +425,8 @@ dispatch({ type: "SET_END_DATE", payload: endDate.toISOString() });
                     height={20}
                   />
                   <span className="text-base text-gray-600">
-                    Este será el monto objetivo de tu campaña
+                    Este será el monto objetivo de tu campaña en bolivianos.
+                    Máximo Bs. 1.000.000.
                   </span>
                 </div>
               </div>

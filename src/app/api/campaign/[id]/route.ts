@@ -405,11 +405,11 @@ export async function PATCH(
 
     if (
       goalAmount !== undefined &&
-      Number(goalAmount) > 150000
+      Number(goalAmount) > 1000000
     ) {
       return NextResponse.json(
         {
-          error: 'Goal amount cannot exceed 150000',
+          error: 'La meta no debe superar Bs. 1.000.000',
         },
         { status: 400 },
       )

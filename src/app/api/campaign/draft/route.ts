@@ -15,7 +15,11 @@ const campaignDraftSchema = z.object({
     "cultura_arte", "educacion", "emergencia", "igualdad",
     "medioambiente", "salud", "otros",
   ]).optional(),
-  goalAmount: z.coerce.number().min(1).optional(),
+  goalAmount: z.coerce
+    .number()
+    .min(1)
+    .max(1000000, "La meta no debe superar Bs. 1.000.000")
+    .optional(),
   location: z.nativeEnum(Region).optional(),
   endDate: z.string().transform((str) => new Date(str)).optional(),
   youtubeUrl: z.string().url().optional().or(z.literal("")),

@@ -6,7 +6,7 @@ import { Quicksand, Geist_Mono } from "next/font/google";
 import "../globals.css";
 import { Card } from "@/components/ui/card";
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/providers/auth-provider";
 import { LoadingScreen } from "@/components/ui/loading-screen";
 import { Header } from "@/components/views/landing-page/Header";
@@ -31,20 +31,27 @@ export default function AuthLayout({
 }) {
   const { user, isLoading } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
+  const isResetPasswordPage = pathname === "/reset-password";
+
+  const handleLogoClick = (event: React.MouseEvent<HTMLAnchorElement>) => {
+    if (isResetPasswordPage) {
+      event.preventDefault();
+    }
+  };
 
   // Redirect logged-in users away from auth pages
   useEffect(() => {
   if (user && !isLoading) {
     // Don't redirect if we're on the reset-password page
     // The user needs to be logged in to update their password
-    const isResetPasswordPage = window.location.pathname === "/reset-password";
     if (isResetPasswordPage) return;
 
     const params = new URLSearchParams(window.location.search);
     const redirectPath = getSafeAuthRedirectPath(params.get("returnUrl"));
     router.replace(redirectPath);
   }
-}, [user, isLoading, router]);
+}, [user, isLoading, router, isResetPasswordPage]);
 
 if (isLoading) {
   return <LoadingScreen />;
@@ -54,8 +61,7 @@ if (isLoading) {
     <div
       className={`${quicksand.variable} ${geistMono.variable} font-quicksand min-h-screen bg-gradient-to-r from-white to-[#f5f7e9]`}
     >
-      {/* Add Header component */}
-      <Header />
+      {!isResetPasswordPage && <Header />}
 
       {/* Background SVG covering the screen width */}
       <div className="fixed bottom-0 left-0 right-0 z-0">
@@ -70,11 +76,15 @@ if (isLoading) {
       </div>
 
       {/* Content container - adjusted to account for header */}
-      <div className="relative z-10 flex min-h-screen items-center justify-center pt-28">
+      <div
+        className={`relative z-10 flex min-h-screen items-center justify-center ${
+          isResetPasswordPage ? "py-8" : "pt-28"
+        }`}
+      >
         <div className="flex w-full max-w-6xl items-center justify-between px-4">
           {/* Logo on the left - much larger and with link */}
           <div className="hidden lg:block">
-            <Link href="/">
+            <Link href="/" onClick={handleLogoClick}>
               <Image
                 src="/brand/logo.svg"
                 alt="Minka Logo"
@@ -90,7 +100,7 @@ if (isLoading) {
           <div className="w-full max-w-md lg:w-2/5">
             {/* Mobile logo (only visible on small screens) */}
             <div className="mb-6 flex justify-center lg:hidden">
-              <Link href="/">
+              <Link href="/" onClick={handleLogoClick}>
                 <Image
                   src="/brand/logo.svg"
                   alt="Minka Logo"

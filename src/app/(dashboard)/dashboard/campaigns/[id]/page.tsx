@@ -35,7 +35,7 @@ import { uploadMedia } from "@/lib/supabase/upload-media";
 import { ImproveTextButton } from "@/components/ui/improve-text-button";
 
 export default function CampaignDetailPage() {
-  const MAX_GOAL_AMOUNT = 150000;
+  const MAX_GOAL_AMOUNT = 1000000;
   const params = useParams();
   const router = useRouter();
   const [campaign, setCampaign] = useState<Record<string, any>>({});
@@ -1193,7 +1193,7 @@ export default function CampaignDetailPage() {
                     {/* Meta de recaudación */}
                     <div className="space-y-2">
                       <label className="text-lg font-bold text-gray-800">
-                        Meta de recaudación
+                        Meta de recaudación en bolivianos
                       </label>
                       <div className="relative">
                         <input
@@ -1244,7 +1244,8 @@ export default function CampaignDetailPage() {
                           </svg>
                         </div>
                         <p className="text-blue-800 text-sm">
-                          Este es el monto objetivo de tu campaña.
+                          Este es el monto objetivo de tu campaña en bolivianos.
+                          Máximo Bs. 1.000.000.
                         </p>
                       </div>
                     </div>

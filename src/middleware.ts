@@ -3,6 +3,30 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { getSafeAuthRedirectPath } from '@/lib/auth-redirect'
 
+function isRecoverySession(session: unknown) {
+  if (!session || typeof session !== 'object') {
+    return false
+  }
+
+  const user = (session as {
+    user?: { app_metadata?: Record<string, unknown> }
+  }).user
+  const amr = user?.app_metadata?.amr
+
+  return Array.isArray(amr)
+    ? amr.some((entry) => {
+        if (!entry || typeof entry !== 'object') {
+          return false
+        }
+
+        return (
+          (entry as { method?: unknown }).method ===
+          'recovery'
+        )
+      })
+    : false
+}
+
 export async function middleware(req: NextRequest) {
   const pathname =
     req.nextUrl.pathname.replace(/\/$/, '') || '/'
@@ -57,16 +81,29 @@ export async function middleware(req: NextRequest) {
   }
 
   const isAuthenticated = !!session
+  const isPasswordRecoverySession =
+    isRecoverySession(session)
 
   const isProtectedRoute =
     req.nextUrl.pathname.startsWith('/dashboard') ||
     req.nextUrl.pathname.startsWith('/profile') ||
+    req.nextUrl.pathname.startsWith('/settings') ||
+    req.nextUrl.pathname.startsWith('/campaign-verification') ||
     req.nextUrl.pathname.startsWith('/campaign/create') ||
     req.nextUrl.pathname.startsWith('/create-campaign')
 
   const isAuthRoute =
     req.nextUrl.pathname.startsWith('/sign-in') ||
     req.nextUrl.pathname.startsWith('/sign-up')
+
+  if (
+    isPasswordRecoverySession &&
+    (isProtectedRoute || isAuthRoute || pathname === '/')
+  ) {
+    return NextResponse.redirect(
+      new URL('/reset-password', req.url),
+    )
+  }
 
   if (isAuthenticated && isAuthRoute) {
     const returnUrl =
@@ -92,6 +129,10 @@ export const config = {
     '/',
     '/dashboard/:path*',
     '/profile/:path*',
+    '/settings',
+    '/settings/:path*',
+    '/campaign-verification',
+    '/campaign-verification/:path*',
     '/campaign/create/:path*',
     '/create-campaign/:path*',
     '/create-campaign',

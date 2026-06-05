@@ -49,9 +49,12 @@ export function ResetPasswordDialog({
           <p className="text-gray-500 mb-6 text-center">
              Ingresa y confirma tu nueva contraseña.
           </p>
-          <div className="[&_form]:space-y-4 [&_button[type=submit]]:w-full [&_button[type=submit]]:rounded-full [&_button[type=submit]]:py-2 [&_a]:hidden">
-             {/* We hide the "Back to login" link via CSS since we are already authenticated/in-app */}
-             <ResetPasswordForm onSuccess={onSuccess} />
+          <div className="[&_form]:space-y-4 [&_button[type=submit]]:w-full [&_button[type=submit]]:rounded-full [&_button[type=submit]]:py-2">
+             <ResetPasswordForm
+               onSuccess={onSuccess}
+               signOutOnSuccess={false}
+               showBackToSignIn={false}
+             />
           </div>
         </div>
       </DialogContent>

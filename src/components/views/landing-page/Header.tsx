@@ -8,12 +8,28 @@ import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/providers/auth-provider";
 import { useDb } from "@/hooks/use-db";
 
+function isRecoveryUser(user: ReturnType<typeof useAuth>["user"]) {
+  const amr = user?.app_metadata?.amr;
+
+  return Array.isArray(amr)
+    ? amr.some((entry) => {
+        if (!entry || typeof entry !== "object") {
+          return false;
+        }
+
+        return (entry as { method?: unknown }).method === "recovery";
+      })
+    : false;
+}
+
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
   const router = useRouter();
   const { user, signOut } = useAuth();
+  const isRecoverySession = isRecoveryUser(user);
+  const canShowAccountAccess = Boolean(user && !isRecoverySession);
   const [profileName, setProfileName] = useState<string>("");
   const { getProfile } = useDb();
 
@@ -35,7 +51,7 @@ export function Header() {
 
   // Memoize the fetchUserProfile function to prevent recreating it on each render
   const fetchUserProfile = useCallback(async () => {
-    if (!user) {
+    if (!user || isRecoverySession) {
       setProfileName("");
       return;
     }
@@ -49,7 +65,7 @@ export function Header() {
     } catch (error) {
       console.error("Error fetching user profile", error);
     }
-  }, [user, getProfile]);
+  }, [user, getProfile, isRecoverySession]);
 
   // Fetch user profile data from Prisma
   useEffect(() => {
@@ -150,7 +166,7 @@ export function Header() {
             ))}
           </nav>
           <div className="flex items-center gap-4 ml-auto">
-            {user ? (
+            {canShowAccountAccess ? (
               <>
                 <Link href="/dashboard" className="flex items-center gap-2">
                   <User
@@ -270,7 +286,7 @@ export function Header() {
 
           {/* Mobile Menu Footer */}
           <div className="p-4 flex flex-col gap-3">
-            {user ? (
+            {canShowAccountAccess ? (
               <>
                 <Link href="/dashboard" className="w-full">
                   <Button

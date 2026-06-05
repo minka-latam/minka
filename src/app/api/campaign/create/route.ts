@@ -19,7 +19,10 @@ const campaignCreateSchema = z.object({
     "salud",
     "otros",
   ]),
-  goalAmount: z.coerce.number().min(1),
+  goalAmount: z.coerce
+    .number()
+    .min(1)
+    .max(1000000, "La meta no debe superar Bs. 1.000.000"),
   location: z.enum([
     "la_paz",
     "santa_cruz",
