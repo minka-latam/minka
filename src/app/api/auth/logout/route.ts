@@ -1,10 +1,11 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import { PASSWORD_RECOVERY_COOKIE } from "@/lib/password-recovery-session";
 
 export const dynamic = "force-dynamic";
 
-export async function POST(request: Request) {
+export async function POST() {
   const cookieStore = await cookies();
 
   const supabase = createServerClient(
@@ -32,5 +33,8 @@ export async function POST(request: Request) {
     );
   }
 
-  return NextResponse.json({ message: "Signed out successfully" });
+  const response = NextResponse.json({ message: "Signed out successfully" });
+  response.cookies.delete(PASSWORD_RECOVERY_COOKIE);
+
+  return response;
 }

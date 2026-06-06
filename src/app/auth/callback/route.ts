@@ -8,6 +8,14 @@ import {
   profileNeedsCompletion,
 } from "@/lib/profile-utils";
 import { getSafeAuthRedirectPath } from "@/lib/auth-redirect";
+import {
+  PASSWORD_RECOVERY_COOKIE,
+  PASSWORD_RECOVERY_COOKIE_OPTIONS,
+} from "@/lib/password-recovery-session";
+
+type AuthMethodReference = {
+  method?: unknown;
+};
 
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
@@ -70,15 +78,36 @@ export async function GET(request: NextRequest) {
     // Password recovery creates a temporary session that can update the password.
     // Send the user directly to the reset form instead of the dashboard.
     if (type === "recovery") {
-      return NextResponse.redirect(new URL("/reset-password", request.url));
+      const response = NextResponse.redirect(
+        new URL("/reset-password", request.url),
+      );
+      response.cookies.set(
+        PASSWORD_RECOVERY_COOKIE,
+        "1",
+        PASSWORD_RECOVERY_COOKIE_OPTIONS,
+      );
+
+      return response;
     }
 
     const amr = data.session?.user?.app_metadata?.amr;
     const isRecovery = Array.isArray(amr)
-      ? amr.some((a: any) => a.method === "recovery")
+      ? amr.some(
+          (authMethod: AuthMethodReference) =>
+            authMethod.method === "recovery",
+        )
       : false;
     if (isRecovery) {
-      return NextResponse.redirect(new URL("/reset-password", request.url));
+      const response = NextResponse.redirect(
+        new URL("/reset-password", request.url),
+      );
+      response.cookies.set(
+        PASSWORD_RECOVERY_COOKIE,
+        "1",
+        PASSWORD_RECOVERY_COOKIE_OPTIONS,
+      );
+
+      return response;
     }
 
     if (!data.user) {

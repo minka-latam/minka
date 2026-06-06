@@ -2,6 +2,7 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { getSafeAuthRedirectPath } from '@/lib/auth-redirect'
+import { PASSWORD_RECOVERY_COOKIE } from '@/lib/password-recovery-session'
 
 function isRecoverySession(session: unknown) {
   if (!session || typeof session !== 'object') {
@@ -81,8 +82,11 @@ export async function middleware(req: NextRequest) {
   }
 
   const isAuthenticated = !!session
+  const hasPasswordRecoveryCookie =
+    req.cookies.get(PASSWORD_RECOVERY_COOKIE)?.value === '1'
   const isPasswordRecoverySession =
-    isRecoverySession(session)
+    isAuthenticated &&
+    (hasPasswordRecoveryCookie || isRecoverySession(session))
 
   const isProtectedRoute =
     req.nextUrl.pathname.startsWith('/dashboard') ||
@@ -103,6 +107,10 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(
       new URL('/reset-password', req.url),
     )
+  }
+
+  if (hasPasswordRecoveryCookie && !isAuthenticated) {
+    res.cookies.delete(PASSWORD_RECOVERY_COOKIE)
   }
 
   if (isAuthenticated && isAuthRoute) {

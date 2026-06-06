@@ -52,7 +52,7 @@ export function ForgotPasswordForm() {
           await supabase.auth.resetPasswordForEmail(
             data.email,
             {
-              redirectTo: `${appOrigin}/auth/confirm`,
+              redirectTo: `${appOrigin}/auth/callback?type=recovery`,
             },
           )
 
