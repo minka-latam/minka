@@ -6,33 +6,17 @@ import { ChevronLeft, Eye, X } from "lucide-react";
 import { useCampaignForm } from "@/components/providers/campaign-form-provider";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { InlineSpinner } from "@/components/ui/inline-spinner";
-import Image from "next/image";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { useRouter } from "next/navigation";
+import { formatCampaignCategory } from "@/lib/campaign-categories";
 
 export function Step3Preview() {
-  const router = useRouter();
   const { state, prevStep, submitCampaign } = useCampaignForm();
   const [previewOpen, setPreviewOpen] = useState(false);
 
   // Find primary media
   const primaryMedia =
     state.media.find((item) => item.isPrimary) || state.media[0];
-
-  // Format category for display
-  const formatCategory = (category: string) => {
-    const categories: Record<string, string> = {
-      cultura_arte: "Cultura y Arte",
-      educacion: "Educación",
-      emergencia: "Emergencia",
-      igualdad: "Igualdad",
-      medioambiente: "Medio ambiente",
-      salud: "Salud",
-      otros: "Otros",
-    };
-    return categories[category] || category;
-  };
 
   // Format goal amount for display
   const formatAmount = (amount: number) => {
@@ -83,7 +67,7 @@ export function Step3Preview() {
                 <li>
                   Categoría:{" "}
                   <span className="font-medium">
-                    {formatCategory(state.category)}
+                    {formatCampaignCategory(state.category)}
                   </span>
                 </li>
                 <li>
@@ -181,7 +165,7 @@ export function Step3Preview() {
                 <div className="border rounded-lg p-4">
                   <p className="text-sm text-gray-500">Categoría</p>
                   <p className="font-medium">
-                    {formatCategory(state.category)}
+                    {formatCampaignCategory(state.category)}
                   </p>
                 </div>
                 <div className="border rounded-lg p-4">
@@ -226,7 +210,7 @@ export function Step3Preview() {
               {/* Campaign Description */}
               <div className="space-y-4">
                 <h2 className="text-xl font-semibold text-[#2c6e49]">
-                  Descripción de la campaña
+                  Subtítulo
                 </h2>
                 <p className="text-gray-700 whitespace-pre-line">
                   {state.description}

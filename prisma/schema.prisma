@@ -11,7 +11,6 @@ datasource db {
 model Profile {
   role                   UserRole                @default(user)
   activeCampaignsCount   Int                     @default(0) @map("active_campaigns_count")
-  address                String?
   bio                    String?
   birthDate              DateTime?               @map("birth_date") @db.Date
   createdAt              DateTime                @default(now()) @map("created_at") @db.Timestamp(6)
@@ -69,7 +68,6 @@ model Campaign {
   province                 Province?
   legalEntityId            String?               @map("legal_entity_id") @db.Uuid
   beneficiaryName          String?               @map("beneficiary_name")
-  beneficiaryReason        String?               @map("beneficiary_reason")
   beneficiaryRelationship  String?               @map("beneficiary_relationship")
   recipientType            RecipientType?        @map("recipient_type")
   media                    CampaignMedia[]       @relation("CampaignMedia")
@@ -355,7 +353,6 @@ model LegalEntity {
   website            String?
   description        String?
   documentUrls       String[]   @default([]) @map("document_urls")
-  isActive           Boolean    @default(true) @map("is_active")
   status             Status     @default(active)
   createdAt          DateTime   @default(now()) @map("created_at") @db.Timestamp(6)
   updatedAt          DateTime   @updatedAt @map("updated_at") @db.Timestamp(6)

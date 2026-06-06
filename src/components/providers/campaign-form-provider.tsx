@@ -229,16 +229,7 @@ export const CampaignFormProvider = ({
 
     const timer = setTimeout(autoSave, 3000);
     return () => clearTimeout(timer);
-  }, [
-    state.title,
-    state.description,
-    state.category,
-    state.goalAmount,
-    state.location,
-    state.endDate,
-    state.beneficiariesDescription,
-    state.media,
-  ]);
+  }, [state.title, state.description, state.category, state.goalAmount, state.location, state.endDate, state.beneficiariesDescription, state.media, state.currentStep, state.autoSaveStatus, state.campaignId, state.youtubeUrl]);
 
   const nextStep = () => {
     if (state.currentStep < 3) {

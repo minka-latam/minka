@@ -6,7 +6,6 @@ export type ProfileRow = {
   name: string;
   email: string;
   phone: string | null;
-  address: string | null;
   role: string;
   profilePicture: string | null;
   identityNumber: string | null;
@@ -24,13 +23,13 @@ export function profileNeedsCompletion(profile: {
   phone: string | null;
   identityNumber: string | null;
   birthDate: Date | string | null;
-  address: string | null;
+  location: string | null;
 }) {
   return (
     !profile.phone ||
     !profile.identityNumber ||
     !profile.birthDate ||
-    !profile.address
+    !profile.location
   );
 }
 
@@ -40,7 +39,6 @@ export function formatProfileForApi(profile: ProfileRow) {
     name: profile.name,
     email: profile.email,
     phone: profile.phone,
-    address: profile.address,
     role: profile.role,
     profile_picture: profile.profilePicture,
     identity_number: profile.identityNumber,
@@ -101,7 +99,6 @@ export async function getProfileById(userId: string) {
       name,
       email,
       phone,
-      address,
       role::text,
       profile_picture as "profilePicture",
       identity_number as "identityNumber",
@@ -137,7 +134,6 @@ export async function ensureProfileForUser(user: User) {
       identity_number,
       phone,
       birth_date,
-      address,
       bio,
       location,
       join_date,
@@ -151,7 +147,6 @@ export async function ensureProfileForUser(user: User) {
       ${email},
       '',
       ${profilePicture},
-      null,
       null,
       null,
       null,
@@ -191,7 +186,6 @@ export async function ensureProfileForUser(user: User) {
       name,
       email,
       phone,
-      address,
       role::text,
       profile_picture as "profilePicture",
       identity_number as "identityNumber",

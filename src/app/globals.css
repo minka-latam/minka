@@ -185,6 +185,10 @@ html {
   scrollbar-gutter: stable; /* Reserve space for scrollbar */
 }
 
+body[data-scroll-locked] {
+  margin-right: 0 !important;
+}
+
 /* Add hover effect for interactive elements */
 .hover-lift {
   transition: transform 0.2s ease;

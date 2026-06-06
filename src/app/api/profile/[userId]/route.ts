@@ -14,7 +14,6 @@ import {
 const personalFields = new Set([
   "name",
   "phone",
-  "address",
   "bio",
   "location",
   "profilePicture",
@@ -290,7 +289,6 @@ export async function PATCH(
           name,
           email,
           phone,
-          address,
           role::text,
           profile_picture as "profilePicture",
           identity_number as "identityNumber",
@@ -347,10 +345,6 @@ export async function PATCH(
             then nullif(${identityNumber ?? ""}, '')
           else identity_number
         end,
-        address = case
-          when ${Object.hasOwn(json, "address")} then nullif(${json.address ?? ""}, '')
-          else address
-        end,
         bio = case
           when ${Object.hasOwn(json, "bio")} then nullif(${json.bio ?? ""}, '')
           else bio
@@ -371,7 +365,6 @@ export async function PATCH(
         name,
         email,
         phone,
-        address,
         role::text,
         profile_picture as "profilePicture",
         identity_number as "identityNumber",

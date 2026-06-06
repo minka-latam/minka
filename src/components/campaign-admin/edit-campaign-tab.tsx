@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/popover";
 import { ImproveTextButton } from "@/components/ui/improve-text-button";
 import { STORAGE_BUCKET, STORAGE_PREFIXES } from "@/lib/storage/config";
+import { CAMPAIGN_CATEGORIES } from "@/lib/campaign-categories";
 
 interface CampaignMedia {
   id: string;
@@ -63,6 +64,7 @@ export function EditCampaignTab({ campaign }: EditCampaignTabProps) {
     () => ({
       title: campaign.title || "",
       description: campaign.description || "",
+      story: campaign.story || "",
       goalAmount: campaign.goal_amount || 0,
       location: campaign.location || "",
       category: campaign.category || "",
@@ -352,13 +354,14 @@ export function EditCampaignTab({ campaign }: EditCampaignTabProps) {
         body: JSON.stringify({
           title: formData.title,
           description: formData.description,
-          goal_amount: Number(formData.goalAmount),
+          story: formData.story,
+          goalAmount: Number(formData.goalAmount),
           location: formData.location,
           category: formData.category,
-          youtube_url: formData.youtubeUrl,
-          youtube_urls: formData.youtubeUrls,
-          beneficiaries_description: formData.beneficiariesDescription,
-          end_date: formData.endDate,
+          youtubeUrl: formData.youtubeUrl,
+          youtubeUrls: formData.youtubeUrls,
+          beneficiariesDescription: formData.beneficiariesDescription,
+          endDate: formData.endDate,
         }),
       });
 
@@ -454,13 +457,11 @@ export function EditCampaignTab({ campaign }: EditCampaignTabProps) {
                 required
               >
                 <option value="">Selecciona una categoría</option>
-                <option value="cultura_arte">Cultura y Arte</option>
-                <option value="educacion">Educación</option>
-                <option value="emergencia">Emergencia</option>
-                <option value="igualdad">Igualdad</option>
-                <option value="medioambiente">Medio ambiente</option>
-                <option value="salud">Salud</option>
-                <option value="otros">Otros</option>
+                {CAMPAIGN_CATEGORIES.map((category) => (
+                  <option key={category.value} value={category.value}>
+                    {category.label}
+                  </option>
+                ))}
               </select>
             </div>
 
@@ -469,14 +470,14 @@ export function EditCampaignTab({ campaign }: EditCampaignTabProps) {
                 htmlFor="description"
                 className="block text-sm font-medium text-gray-700 mb-1"
               >
-                Detalle
+                Subtítulo
               </label>
               <textarea
                 id="description"
                 name="description"
                 value={formData.description}
                 onChange={handleInputChange}
-                placeholder="Ejemplo: Su conservación depende de nosotros"
+                placeholder="Resume tu campaña en una frase breve"
                 className="w-full rounded-md border border-gray-300 p-3 min-h-[100px]"
                 maxLength={130}
                 required
@@ -720,32 +721,32 @@ export function EditCampaignTab({ campaign }: EditCampaignTabProps) {
 
             <div className="md:col-span-2">
               <label
-                htmlFor="beneficiariesDescription"
+                htmlFor="story"
                 className="block text-sm font-medium text-gray-700 mb-1"
               >
-                Historia de la campaña
+                Descripción de la campaña
               </label>
               <textarea
-                id="beneficiariesDescription"
-                name="beneficiariesDescription"
-                value={formData.beneficiariesDescription}
+                id="story"
+                name="story"
+                value={formData.story}
                 onChange={handleInputChange}
-                placeholder="Describe quiénes se beneficiarán de esta campaña..."
+                placeholder="Cuenta la historia completa de tu campaña"
                 className="w-full rounded-md border border-gray-300 p-3 min-h-[100px]"
                 maxLength={600}
                 required
               />
               <div className="flex justify-between items-center mt-1">
   <ImproveTextButton
-    text={formData.beneficiariesDescription}
+    text={formData.story}
     fieldType="story"
     maxLength={600}
     onAccept={(improved) => {
-      setFormData({ ...formData, beneficiariesDescription: improved.slice(0, 600) });
+      setFormData({ ...formData, story: improved.slice(0, 600) });
     }}
   />
   <span className="text-xs text-gray-500">
-    {formData.beneficiariesDescription.length}/600
+    {formData.story.length}/600
   </span>
 </div>
             </div>
@@ -848,9 +849,9 @@ function YouTubeLinks({ links, onChange }: YouTubeLinksProps) {
         <Button
           type="button"
           onClick={handleAddLink}
-          className="bg-[#478C5C] text-white hover:bg-[#3a7049] rounded-full h-10"
+          className="bg-[#478C5C] text-white hover:bg-[#3a7049] rounded-full h-10 px-5"
         >
-          <Plus className="h-5 w-5" />
+          Subir
         </Button>
       </div>
 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
+import { Status } from "@prisma/client";
 import {
   adminAuthErrorResponse,
   createAdminAuditLog,
@@ -23,7 +24,7 @@ const legalEntitySchema = z.object({
   website: z.string().url().optional().or(z.literal("")),
   description: z.string().optional(),
   documentUrls: z.array(z.string().url()).optional(),
-  isActive: z.boolean().default(true),
+  status: z.nativeEnum(Status).optional(),
 });
 
 // GET - Fetch all legal entities
@@ -35,7 +36,7 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get("page") || "1");
     const limit = parseInt(searchParams.get("limit") || "10");
     const search = searchParams.get("search") || "";
-    const isActive = searchParams.get("isActive");
+    const status = searchParams.get("status");
 
     const skip = (page - 1) * limit;
 
@@ -51,11 +52,11 @@ export async function GET(request: NextRequest) {
       ];
     }
 
-    if (isActive !== null && isActive !== undefined) {
-      where.isActive = isActive === "true";
+    if (status === "active" || status === "inactive") {
+      where.status = status;
+    } else {
+      where.status = "active";
     }
-
-    where.status = "active";
 
     const [legalEntities, total] = await Promise.all([
       prisma.legalEntity.findMany({
@@ -117,7 +118,7 @@ export async function POST(request: NextRequest) {
       website: validatedData.website,
       description: validatedData.description,
       documentUrls: validatedData.documentUrls || [],
-      isActive: validatedData.isActive ?? true,
+      status: validatedData.status ?? "active",
     };
 
     // Only add enum fields if they are provided and valid
@@ -140,7 +141,7 @@ export async function POST(request: NextRequest) {
       entityId: legalEntity.id,
       metadata: {
         name: legalEntity.name,
-        isActive: legalEntity.isActive,
+        status: legalEntity.status,
       },
     });
 
@@ -300,7 +301,6 @@ export async function DELETE(request: NextRequest) {
       await prisma.legalEntity.update({
         where: { id },
         data: {
-          isActive: false,
           status: "inactive",
         },
       });

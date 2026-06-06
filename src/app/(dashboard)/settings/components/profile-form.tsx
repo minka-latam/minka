@@ -39,7 +39,6 @@ export function ProfileForm() {
       phone: typeof profile?.phone === "string" ? profile.phone : "",
       bio: typeof profile?.bio === "string" ? profile.bio : "",
       location: typeof profile?.location === "string" ? profile.location : "",
-      address: typeof profile?.address === "string" ? profile.address : "",
     },
   });
 
@@ -224,43 +223,23 @@ export function ProfileForm() {
               )}
             />
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              <FormField
-                control={form.control}
-                name="location"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Ciudad</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="Ej: La Paz, Bolivia"
-                        {...field}
-                        value={field.value ?? ""}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="address"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Dirección</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="Tu dirección"
-                        {...field}
-                        value={field.value ?? ""}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+            <FormField
+              control={form.control}
+              name="location"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Ubicación</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Ej: La Paz, Bolivia"
+                      {...field}
+                      value={field.value ?? ""}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
           </div>
 
           <div className="flex items-center gap-4">

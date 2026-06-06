@@ -22,6 +22,7 @@ import {
   SAVE_CAMPAIGN_INTENT_UPDATED_EVENT,
 } from "@/constants/saved-campaign";
 import { formatRegionDisplayName } from "@/lib/region-utils";
+import { formatCampaignCategory } from "@/lib/campaign-categories";
 
 // Helper function to format campaign data for components
 function formatCampaignData(campaign: any) {
@@ -73,24 +74,27 @@ function formatCampaignData(campaign: any) {
     role: "Organizador de campaña",
     location:
       formatRegionDisplayName(campaign.organizer?.location) ||
-      formatRegionDisplayName(campaign.location) ||
-      "Bolivia",
+      "Ubicación no indicada",
     memberSince: campaign.organizer?.join_date
       ? new Date(campaign.organizer.join_date).getFullYear().toString()
       : new Date().getFullYear().toString(),
     successfulCampaigns: campaign.organizer?.active_campaigns_count || 0,
-    bio: campaign.organizer?.bio || "Sin biografía",
+    bio: campaign.organizer?.bio?.trim() || "",
   };
 
   return {
     title: campaign.title,
-    description: campaign.description,
-    story: campaign.story || campaign.description,
+    subtitle: campaign.subtitle || campaign.description,
+    description: campaign.story || campaign.description,
     beneficiaries:
       campaign.beneficiaries_description ||
-      "Información de beneficiarios no disponible",
+      "",
+    recipientType: campaign.recipient_type,
+    beneficiaryName: campaign.beneficiary_name,
+    beneficiaryRelationship: campaign.beneficiary_relationship,
+    legalEntity: campaign.legal_entity,
     location: formatRegionDisplayName(campaign.location) || "Bolivia",
-    category: formatCategory(campaign.category),
+    category: formatCampaignCategory(campaign.category),
     images: galleryItems,
     progress: progressData,
     organizer: organizerData,
@@ -98,24 +102,15 @@ function formatCampaignData(campaign: any) {
   };
 }
 
-// Helper to format category for display
-function formatCategory(category: string) {
-  const categories: Record<string, string> = {
-    educacion: "Educación",
-    salud: "Salud",
-    medioambiente: "Medio ambiente",
-    cultura_arte: "Cultura y arte",
-    emergencia: "Emergencia",
-    igualdad: "Igualdad",
-  };
-
-  return categories[category] || category;
-}
-
 // Custom CampaignDetails component
 function CustomCampaignDetails({
   organizer,
   description,
+  beneficiaries,
+  recipientType,
+  beneficiaryName,
+  beneficiaryRelationship,
+  legalEntity,
   isVerified,
   campaignLocation,
   campaignCategory,
@@ -129,10 +124,34 @@ function CustomCampaignDetails({
     bio: string;
   };
   description: string;
+  beneficiaries: string;
+  recipientType?: "tu_mismo" | "otra_persona" | "persona_juridica" | null;
+  beneficiaryName?: string | null;
+  beneficiaryRelationship?: string | null;
+  legalEntity?: {
+    id: string;
+    name: string;
+    description?: string | null;
+    website?: string | null;
+  } | null;
   isVerified: boolean;
   campaignLocation: string;
   campaignCategory: string;
 }) {
+  const campaignMeta = [campaignLocation, campaignCategory]
+    .filter(Boolean)
+    .join(" | ");
+  const relationship = beneficiaryRelationship
+    ? beneficiaryRelationship.charAt(0).toUpperCase() +
+      beneficiaryRelationship.slice(1)
+    : "";
+  const hasBeneficiaryInfo =
+    (recipientType === "otra_persona" &&
+      (Boolean(beneficiaryName) ||
+        Boolean(relationship) ||
+        beneficiaries.trim().length > 0)) ||
+    (recipientType === "persona_juridica" && Boolean(legalEntity));
+
   return (
     <div className="space-y-8">
       {/* Campaign meta */}
@@ -144,11 +163,8 @@ function CustomCampaignDetails({
         </div>
         <div className="min-w-0 flex-1">
           <h3 className="text-base font-medium text-[#2c6e49] break-words">
-            {campaignLocation} | {campaignCategory}
+            {campaignMeta}
           </h3>
-          <p className="text-base text-gray-600 break-words">
-            Ubicación y tipo de campaña
-          </p>
         </div>
       </div>
 
@@ -185,6 +201,73 @@ function CustomCampaignDetails({
           {description}
         </p>
       </div>
+
+      {hasBeneficiaryInfo && (
+        <div className="space-y-4 pb-8 border-b border-gray-200">
+          <h2 className="text-3xl md:text-4xl font-semibold text-[#2c6e49] break-words">
+            Quién recibirá el apoyo
+          </h2>
+
+          {recipientType === "otra_persona" && (
+            <div className="space-y-2 text-base text-gray-700 leading-relaxed break-words">
+              {beneficiaryName && (
+                <p>
+                  <span className="font-medium text-[#2c6e49]">
+                    Beneficiario:
+                  </span>{" "}
+                  {beneficiaryName}
+                </p>
+              )}
+              {relationship && (
+                <p>
+                  <span className="font-medium text-[#2c6e49]">
+                    Relación:
+                  </span>{" "}
+                  {relationship}
+                </p>
+              )}
+            </div>
+          )}
+
+          {recipientType === "persona_juridica" && legalEntity && (
+            <div className="space-y-2 text-base text-gray-700 leading-relaxed break-words">
+              <p>
+                <span className="font-medium text-[#2c6e49]">
+                  Organización:
+                </span>{" "}
+                {legalEntity.name}
+              </p>
+              {legalEntity.description && (
+                <p className="whitespace-pre-wrap">
+                  {legalEntity.description}
+                </p>
+              )}
+              {legalEntity.website && (
+                <a
+                  href={legalEntity.website}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex text-[#2c6e49] underline"
+                >
+                  Sitio web
+                </a>
+              )}
+            </div>
+          )}
+
+          {recipientType === "otra_persona" &&
+            beneficiaries.trim().length > 0 && (
+            <div className="space-y-2">
+              <h3 className="text-xl font-medium text-[#2c6e49]">
+                Destino de los fondos
+              </h3>
+              <p className="text-base text-gray-700 leading-relaxed break-words whitespace-pre-wrap">
+                {beneficiaries}
+              </p>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* About Organizer */}
       <div className="space-y-6 pb-8 border-b border-gray-200">
@@ -233,6 +316,7 @@ function CustomCampaignDetails({
           </p>
         </div>
 
+        {organizer.bio && (
         <div>
           <h4 className="font-medium mb-2 text-xl text-[#2c6e49] break-words">
             Biografía
@@ -241,6 +325,7 @@ function CustomCampaignDetails({
             {organizer.bio}
           </p>
         </div>
+        )}
       </div>
     </div>
   );
@@ -375,7 +460,7 @@ export default function CampaignClientPage({ id }: { id: string }) {
             {campaign.title}
           </h1>
           <p className="text-lg md:text-xl text-black leading-relaxed break-words whitespace-pre-wrap max-w-4xl mx-auto">
-            {formattedData.description}
+            {formattedData.subtitle}
           </p>
         </div>
 
@@ -445,7 +530,14 @@ export default function CampaignClientPage({ id }: { id: string }) {
               {activeTab === "descripcion" && (
                 <CustomCampaignDetails
                   organizer={formattedData.organizer}
-                  description={formattedData.story}
+                  description={formattedData.description}
+                  beneficiaries={formattedData.beneficiaries}
+                  recipientType={formattedData.recipientType}
+                  beneficiaryName={formattedData.beneficiaryName}
+                  beneficiaryRelationship={
+                    formattedData.beneficiaryRelationship
+                  }
+                  legalEntity={formattedData.legalEntity}
                   isVerified={formattedData.progress.isVerified}
                   campaignLocation={formattedData.location}
                   campaignCategory={formattedData.category}

@@ -14,7 +14,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Form,
   FormControl,
@@ -44,7 +43,7 @@ const legalEntitySchema = z.object({
   email: z.string().email("Email inválido").optional().or(z.literal("")),
   website: z.string().url("URL inválida").optional().or(z.literal("")),
   description: z.string().optional(),
-  isActive: z.boolean().default(true),
+  status: z.enum(["active", "inactive"]).default("active"),
 });
 
 type FormValues = z.infer<typeof legalEntitySchema>;
@@ -81,7 +80,7 @@ export function LegalEntityForm({
       email: initialData?.email || "",
       website: initialData?.website || "",
       description: initialData?.description || "",
-      isActive: initialData?.isActive ?? true,
+      status: initialData?.status || "active",
     },
   });
 
@@ -387,22 +386,25 @@ export function LegalEntityForm({
 
           <FormField
             control={form.control}
-            name="isActive"
+            name="status"
             render={({ field }) => (
-              <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+              <FormItem>
+                <FormLabel>Estado</FormLabel>
                 <FormControl>
-                  <Checkbox
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
-                  />
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecciona el estado" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="active">Activo</SelectItem>
+                      <SelectItem value="inactive">Inactivo</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </FormControl>
-                <div className="space-y-1 leading-none">
-                  <FormLabel>Organización Activa</FormLabel>
-                  <p className="text-sm text-gray-600">
-                    Las organizaciones activas aparecen en el formulario de
-                    campañas
-                  </p>
-                </div>
+                <p className="text-sm text-gray-600">
+                  Las organizaciones activas aparecen en el formulario de campañas.
+                </p>
+                <FormMessage />
               </FormItem>
             )}
           />

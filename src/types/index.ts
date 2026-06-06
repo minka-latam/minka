@@ -5,7 +5,6 @@ export interface ProfileData {
   name: string;
   email: string;
   phone: string | null;
-  address: string | null;
   role: string;
   created_at: string;
   identity_number?: string | null;

@@ -16,8 +16,7 @@ export interface LegalEntity {
   website?: string;
   description?: string;
   documentUrls: string[];
-  isActive: boolean;
-  status: string;
+  status: "active" | "inactive";
   createdAt: string;
   updatedAt: string;
   _count?: {
@@ -39,7 +38,7 @@ export interface LegalEntityFormData {
   website?: string;
   description?: string;
   documentUrls?: string[];
-  isActive?: boolean;
+  status?: "active" | "inactive";
 }
 
 export interface LegalEntitiesResponse {
@@ -54,7 +53,7 @@ export interface LegalEntitiesResponse {
 
 export interface LegalEntityFilters {
   search?: string;
-  isActive?: boolean;
+  status?: "active" | "inactive";
   page?: number;
   limit?: number;
 }
@@ -76,8 +75,7 @@ export function useLegalEntities() {
       const searchParams = new URLSearchParams();
 
       if (filters.search) searchParams.set("search", filters.search);
-      if (filters.isActive !== undefined)
-        searchParams.set("isActive", filters.isActive.toString());
+      if (filters.status) searchParams.set("status", filters.status);
       if (filters.page) searchParams.set("page", filters.page.toString());
       if (filters.limit) searchParams.set("limit", filters.limit.toString());
 

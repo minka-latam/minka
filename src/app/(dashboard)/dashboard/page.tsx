@@ -27,7 +27,8 @@ type DashboardProfile = ProfileData;
 const MAX_NAME_LENGTH = 120;
 const MAX_DOCUMENT_LENGTH = 32;
 const MAX_PHONE_LENGTH = 32;
-const MAX_ADDRESS_LENGTH = 180;
+const MAX_LOCATION_LENGTH = 180;
+const MAX_BIO_LENGTH = 500;
 
 const getDateInputValue = (dateVal: string | Date | null | undefined) => {
   if (!dateVal) return "";
@@ -52,7 +53,8 @@ export default function DashboardPage() {
     documentCountryCode: "BO",
     documentId: "",
     birthDate: "",
-    address: "",
+    location: "",
+    bio: "",
   });
   const [isResetPasswordOpen, setIsResetPasswordOpen] = useState(false);
   // Auto-open reset password dialog for older recovery links.
@@ -96,7 +98,6 @@ export default function DashboardPage() {
         name: data.name || "",
         email: data.email || "",
         phone: data.phone || null,
-        address: data.address || null,
         role: data.role || "user",
         created_at:
           data.created_at || data.createdAt || getISOString(new Date()),
@@ -129,7 +130,8 @@ export default function DashboardPage() {
         : "BO",
       documentId: parsedDocument.isValid ? parsedDocument.documentNumber : "",
       birthDate: getDateInputValue(profile.birth_date),
-      address: profile.address || "",
+      location: typeof profile.location === "string" ? profile.location : "",
+      bio: typeof profile.bio === "string" ? profile.bio : "",
     };
   }, []);
 
@@ -263,7 +265,8 @@ export default function DashboardPage() {
           ? `${profileForm.documentCountryCode}-${profileForm.documentId.trim()}`
           : "",
         birthDate: profileForm.birthDate || undefined,
-        address: profileForm.address.trim(),
+        location: profileForm.location.trim(),
+        bio: profileForm.bio.trim(),
       });
 
       if (error) throw error;
@@ -475,24 +478,44 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* Address Field */}
+            {/* Location Field */}
             <div className="space-y-2">
               <label
-                htmlFor="address"
+                htmlFor="location"
                 className="block text-gray-700 font-medium"
               >
-                Dirección
+                Ubicación
               </label>
               <Input
-                id="address"
-                value={profileForm.address}
+                id="location"
+                value={profileForm.location}
                 onChange={(e) =>
-                  setProfileForm({ ...profileForm, address: e.target.value })
+                  setProfileForm({ ...profileForm, location: e.target.value })
                 }
-                maxLength={MAX_ADDRESS_LENGTH}
-                placeholder="Ingresa tu dirección"
+                maxLength={MAX_LOCATION_LENGTH}
+                placeholder="Ej: La Paz, Bolivia"
                 className="w-full border border-black bg-transparent"
               />
+            </div>
+
+            {/* Bio Field */}
+            <div className="space-y-2">
+              <label htmlFor="bio" className="block text-gray-700 font-medium">
+                Biografía
+              </label>
+              <textarea
+                id="bio"
+                value={profileForm.bio}
+                onChange={(e) =>
+                  setProfileForm({ ...profileForm, bio: e.target.value })
+                }
+                maxLength={MAX_BIO_LENGTH}
+                placeholder="Cuéntanos brevemente sobre ti. Este texto puede mostrarse en tus campañas."
+                className="min-h-28 w-full rounded-md border border-black bg-transparent px-3 py-2 text-sm"
+              />
+              <p className="text-right text-xs text-gray-500">
+                {profileForm.bio.length}/{MAX_BIO_LENGTH}
+              </p>
             </div>
 
             {/* Save Button */}

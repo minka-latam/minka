@@ -454,11 +454,20 @@ export function UserDashboardContent({
             </p>
           </div>
           <div>
-            <h3 className="text-gray-500 mb-2">Dirección</h3>
+            <h3 className="text-gray-500 mb-2">Ubicación</h3>
             <p className="text-gray-800 font-medium">
-              {profile?.address || "Ingresa tu Dirección"}
+              {profile?.location || "Ingresa tu ubicación"}
             </p>
           </div>
+        </div>
+
+        <div className="pt-8">
+          <h3 className="text-gray-500 mb-2">Biografía</h3>
+          <p className="text-gray-800 font-medium whitespace-pre-wrap">
+            {typeof profile?.bio === "string" && profile.bio.trim()
+              ? profile.bio
+              : "Agrega una biografía para contar brevemente quién eres."}
+          </p>
         </div>
       </div>
 

@@ -87,7 +87,7 @@ export default function LegalEntitiesPage() {
 
   const [filters, setFilters] = useState<LegalEntityFilters>({
     search: "",
-    isActive: undefined,
+    status: undefined,
     page: 1,
     limit: 10,
   });
@@ -133,8 +133,9 @@ export default function LegalEntitiesPage() {
   };
 
   const handleActiveFilterChange = (value: string) => {
-    const isActive = value === "all" ? undefined : value === "active";
-    setFilters((prev) => ({ ...prev, isActive, page: 1 }));
+    const status =
+      value === "all" ? undefined : (value as "active" | "inactive");
+    setFilters((prev) => ({ ...prev, status, page: 1 }));
   };
 
   const handlePageChange = (page: number) => {
@@ -230,7 +231,7 @@ export default function LegalEntitiesPage() {
           <CardContent>
             <div className="text-2xl font-bold">{pagination.total}</div>
             <p className="text-sm text-gray-600">
-              {legalEntities.filter((e) => e.isActive).length} activas
+              {legalEntities.filter((e) => e.status === "active").length} activas
             </p>
           </CardContent>
         </Card>
@@ -264,7 +265,7 @@ export default function LegalEntitiesPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">
-              {legalEntities.filter((e) => e.isActive).length}
+              {legalEntities.filter((e) => e.status === "active").length}
             </div>
             <p className="text-sm text-gray-600">
               Activas de {pagination.total} totales
@@ -291,11 +292,7 @@ export default function LegalEntitiesPage() {
 
             <Select
               value={
-                filters.isActive === undefined
-                  ? "all"
-                  : filters.isActive
-                    ? "active"
-                    : "inactive"
+                filters.status === undefined ? "all" : filters.status
               }
               onValueChange={handleActiveFilterChange}
             >
@@ -315,14 +312,14 @@ export default function LegalEntitiesPage() {
               Mostrando {legalEntities.length} de {pagination.total}{" "}
               organizaciones
             </p>
-            {(filters.search || filters.isActive !== undefined) && (
+            {(filters.search || filters.status !== undefined) && (
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => {
                   setFilters({
                     search: "",
-                    isActive: undefined,
+                    status: undefined,
                     page: 1,
                     limit: 10,
                   });
@@ -442,9 +439,15 @@ export default function LegalEntitiesPage() {
 
                         <TableCell>
                           <Badge
-                            variant={entity.isActive ? "default" : "secondary"}
+                            variant={
+                              entity.status === "active"
+                                ? "default"
+                                : "secondary"
+                            }
                           >
-                            {entity.isActive ? "Activo" : "Inactivo"}
+                            {entity.status === "active"
+                              ? "Activo"
+                              : "Inactivo"}
                           </Badge>
                         </TableCell>
 

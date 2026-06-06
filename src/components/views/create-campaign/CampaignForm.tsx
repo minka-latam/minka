@@ -56,6 +56,7 @@ import {
 } from "@/components/ui/dialog";
 import { useCurrentStep } from "@/contexts/current-step-context";
 import { useAuth } from "@/providers/auth-provider";
+import { CAMPAIGN_CATEGORIES } from "@/lib/campaign-categories";
 
 // Campaign Preview component
 const CampaignPreview = ({
@@ -181,7 +182,7 @@ const CampaignPreview = ({
                       {profile?.name || "Usuario de Minka"}
                     </h3>
                     <p className="text-sm text-gray-600">
-                      Organizador | {profile?.address || "Bolivia"}
+                      Organizador | {profile?.location || "Bolivia"}
                     </p>
                   </div>
                 </div>
@@ -396,7 +397,7 @@ export function CampaignForm() {
   const [otraPersonaForm, setOtraPersonaForm] = useState({
     beneficiaryName: "",
     relationship: "",
-    reason: "",
+    beneficiariesDescription: "",
   });
 
   // State for "Persona Jurídica" modal form
@@ -483,14 +484,26 @@ export function CampaignForm() {
       if (recipient === "otra_persona") {
         updateData.beneficiaryName = otraPersonaForm.beneficiaryName;
         updateData.beneficiaryRelationship = otraPersonaForm.relationship;
-        updateData.beneficiaryReason = otraPersonaForm.reason;
+        updateData.beneficiariesDescription =
+          otraPersonaForm.beneficiariesDescription;
       }
 
       // Update form data with the selected recipient and related fields
       setFormData((prev) => ({
         ...prev,
         recipient,
-        legalEntityId: updateData.legalEntityId,
+        legalEntityId:
+          recipient === "persona_juridica" ? updateData.legalEntityId : undefined,
+        beneficiaryName:
+          recipient === "otra_persona" ? updateData.beneficiaryName : undefined,
+        beneficiaryRelationship:
+          recipient === "otra_persona"
+            ? updateData.beneficiaryRelationship
+            : undefined,
+        beneficiariesDescription:
+          recipient === "otra_persona"
+            ? updateData.beneficiariesDescription
+            : prev.beneficiariesDescription,
       }));
 
       // If we already have a campaignId, update it instead of creating a new one
@@ -613,11 +626,11 @@ export function CampaignForm() {
   const closeOtraPersonaModal = () => {
     setShowOtraPersonaModal(false);
     // Reset form when closing modal
-    setOtraPersonaForm({
-      beneficiaryName: "",
-      relationship: "",
-      reason: "",
-    });
+      setOtraPersonaForm({
+        beneficiaryName: "",
+        relationship: "",
+        beneficiariesDescription: "",
+      });
   };
 
   const closePersonaJuridicaModal = () => {
@@ -1020,12 +1033,13 @@ setCurrentStep(currentStep + 1);
 
   const handleOtraPersonaSubmit = async () => {
     // Validate form data
-    const { beneficiaryName, relationship, reason } = otraPersonaForm;
+    const { beneficiaryName, relationship, beneficiariesDescription } =
+      otraPersonaForm;
 
-    if (!beneficiaryName || !relationship || !reason) {
+    if (!beneficiaryName || !relationship) {
       toast({
         title: "Error",
-        description: "Por favor completa todos los campos requeridos.",
+        description: "Por favor completa nombre y relación del beneficiario.",
         variant: "destructive",
       });
       return;
@@ -1040,10 +1054,11 @@ setCurrentStep(currentStep + 1);
       return;
     }
 
-    if (reason.length < 10) {
+    if (beneficiariesDescription.trim().length < 10) {
       toast({
         title: "Error",
-        description: "Por favor explica con más detalle el motivo.",
+        description:
+          "Por favor describe con un poco más de detalle al beneficiario.",
         variant: "destructive",
       });
       return;
@@ -1233,7 +1248,7 @@ setCurrentStep(currentStep + 1);
       id: 1,
       title: "Nombre de la campaña",
       description:
-        "Dale un nombre claro a tu campaña y agrega una breve explicación o detalle para transmitir rápidamente su esencia y objetivo.",
+                    "Dale un nombre claro a tu campaña y agrega un subtítulo breve para transmitir rápidamente su esencia y objetivo.",
     },
     {
       id: 2,
@@ -1384,7 +1399,7 @@ setCurrentStep(currentStep + 1);
         <div className="max-w-6xl mx-auto px-4 sm:px-6 md:px-0">
           {/* Sub-step Content */}
           <div
-            className={`sub-step min-h-[70vh] flex items-center ${
+            className={`sub-step flex items-center ${
               isSubStepAnimating
                 ? subStepAnimationDirection === "next"
                   ? "fade-out-next"
@@ -1445,11 +1460,11 @@ setCurrentStep(currentStep + 1);
 
                       <div id="description">
                         <label className="block text-lg font-medium mb-2">
-                          Detalle
+                          Subtítulo
                         </label>
                         <div className="relative">
                           <textarea
-                            placeholder="Ejemplo: Su conservación depende de nosotros"
+                            placeholder="Resume tu campaña en una frase breve"
                             rows={4}
                             className={`w-full rounded-lg border ${formErrors.description ? "error-input" : "border-black"} bg-white shadow-sm focus:border-[#478C5C] focus:ring-[#478C5C] focus:ring-0 p-4`}
                             value={formData.description}
@@ -1492,7 +1507,7 @@ setCurrentStep(currentStep + 1);
 
             {/* Sub-step 2: Category */}
             {currentSubStep === 2 && (
-              <div className="w-full py-6 md:py-12">
+              <div className="w-full py-6">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16">
                   <div className="pt-0 md:pt-4">
                     <h2 className="text-3xl md:text-5xl font-bold mb-4 md:mb-6">
@@ -1525,19 +1540,14 @@ setCurrentStep(currentStep + 1);
                       </SelectTrigger>
                       <SelectContent className="bg-white">
                         <SelectGroup>
-                          <SelectItem value="cultura_arte">
-                            Cultura y arte
-                          </SelectItem>
-                          <SelectItem value="educacion">Educación</SelectItem>
-                          <SelectItem value="emergencia">
-                            Emergencias
-                          </SelectItem>
-                          <SelectItem value="igualdad">Igualdad</SelectItem>
-                          <SelectItem value="medioambiente">
-                            Medio ambiente
-                          </SelectItem>
-                          <SelectItem value="salud">Salud</SelectItem>
-                          <SelectItem value="otros">Otros</SelectItem>
+                          {CAMPAIGN_CATEGORIES.map((category) => (
+                            <SelectItem
+                              key={category.value}
+                              value={category.value}
+                            >
+                              {category.label}
+                            </SelectItem>
+                          ))}
                         </SelectGroup>
                       </SelectContent>
                     </Select>
@@ -2138,8 +2148,8 @@ setFormData({
                 {/* Display loading state here if submitting */}
                 {isSubmitting && (
                   <div className="mt-6 p-4 bg-green-50 rounded-lg flex items-center gap-2">
-                    <InlineSpinner className="text-green-800" />
-                    <span className="text-base text-green-800">
+                    <InlineSpinner className="!h-8 !w-8 text-green-800" />
+                    <span className="text-2xl font-semibold text-green-800">
                       Creando tu campaña...
                     </span>
                   </div>
@@ -2416,7 +2426,7 @@ setFormData({
             {/* Beneficiary Name */}
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700">
-                ¿Quién es esta persona? *
+                Nombre de la persona *
               </label>
               <Input
                 type="text"
@@ -2457,25 +2467,25 @@ setFormData({
               </select>
             </div>
 
-            {/* Reason */}
+            {/* Beneficiary description */}
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700">
-                ¿Por qué esta persona necesita que crees la campaña por ella? *
+                Cuéntanos brevemente sobre el beneficiario *
               </label>
               <Textarea
                 className="w-full min-h-[100px] border-gray-300 focus:border-[#478C5C] focus:ring-[#478C5C]"
-                placeholder="Explica brevemente por qué estás creando esta campaña en nombre de otra persona (ej: no tiene acceso a internet, está hospitalizada, etc.)"
-                value={otraPersonaForm.reason}
+                placeholder="Describe brevemente quién es la persona beneficiaria, su situación y por qué estás organizando la campaña por ella."
+                value={otraPersonaForm.beneficiariesDescription}
                 onChange={(e) =>
                   setOtraPersonaForm({
                     ...otraPersonaForm,
-                    reason: e.target.value,
+                    beneficiariesDescription: e.target.value,
                   })
                 }
                 maxLength={500}
               />
               <div className="text-xs text-gray-500 text-right">
-                {otraPersonaForm.reason.length}/500
+                {otraPersonaForm.beneficiariesDescription.length}/500
               </div>
             </div>
           </div>
@@ -2493,8 +2503,7 @@ setFormData({
               className="flex-1 bg-[#2c6e49] hover:bg-[#1e4d33] text-white rounded-full"
               disabled={
                 !otraPersonaForm.beneficiaryName ||
-                !otraPersonaForm.relationship ||
-                !otraPersonaForm.reason
+                !otraPersonaForm.relationship
               }
             >
               Continuar

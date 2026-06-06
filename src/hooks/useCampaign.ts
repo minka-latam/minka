@@ -42,8 +42,18 @@ export interface Campaign {
   id: string;
   title: string;
   description: string;
+  subtitle?: string;
   story: string;
   beneficiaries_description?: string;
+  recipient_type?: "tu_mismo" | "otra_persona" | "persona_juridica" | null;
+  beneficiary_name?: string | null;
+  beneficiary_relationship?: string | null;
+  legal_entity?: {
+    id: string;
+    name: string;
+    description?: string | null;
+    website?: string | null;
+  } | null;
   location: string;
   goal_amount: number;
   collected_amount: number;

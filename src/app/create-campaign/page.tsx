@@ -56,7 +56,7 @@ function CreateCampaignPageContent() {
 
       <main className="overflow-x-hidden">
         {currentStep === 1 && <CreateCampaignHeader />}
-        <div className="container mx-auto py-8 md:py-16">
+        <div className="container mx-auto py-8">
           <CampaignFormProvider>
             <CampaignForm />
           </CampaignFormProvider>

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { X, Plus, Link as LinkIcon, Play } from "lucide-react";
+import { X, Link as LinkIcon, Play } from "lucide-react";
 import NextImage from "next/image";
 import { useToast } from "@/components/ui/use-toast";
 
@@ -80,9 +80,9 @@ export function YouTubeLinks({ links, onChange }: YouTubeLinksProps) {
         <Button
           type="button"
           onClick={handleAddLink}
-          className="bg-[#478C5C] text-white hover:bg-[#3a7049] rounded-full h-10"
+          className="bg-[#478C5C] text-white hover:bg-[#3a7049] rounded-full h-10 px-5"
         >
-          <Plus className="h-5 w-5" />
+          Subir
         </Button>
       </div>
 

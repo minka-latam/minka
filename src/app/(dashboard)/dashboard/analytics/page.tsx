@@ -122,7 +122,6 @@ export default function AnalyticsPage() {
         name: prismaProfile.name,
         email: prismaProfile.email,
         phone: prismaProfile.phone,
-        address: prismaProfile.address || "",
         role: prismaProfile.role,
         created_at: getISOString(prismaProfile.createdAt),
       };

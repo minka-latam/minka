@@ -50,8 +50,19 @@ interface Campaign {
   id: string
   title: string
   description: string
+  subtitle?: string
   story: string
   beneficiaries_description?: string
+  recipient_type?: string | null
+  beneficiary_name?: string | null
+  beneficiary_relationship?: string | null
+  legal_entity?: {
+    id: string
+    name: string
+    description: string | null
+    website: string | null
+  } | null
+  category?: string
   location: string
   goal_amount: number
   collected_amount: number
@@ -123,8 +134,12 @@ export async function GET(
         id,
         title,
         description,
+        category,
         story,
         beneficiaries_description,
+        recipient_type,
+        beneficiary_name,
+        beneficiary_relationship,
         location,
         goal_amount,
         collected_amount,
@@ -138,6 +153,7 @@ export async function GET(
         reviewed_at,
         organizer_id,
         organizer:profiles!organizer_id(id, name, location, profile_picture, join_date, active_campaigns_count, bio),
+        legal_entity:legal_entities(id, name, description, website),
         media:campaign_media(id, media_url, is_primary, type, order_index),
         updates:campaign_updates(id, title, content, image_url, youtube_url, created_at),
         comments:comments(
@@ -211,9 +227,23 @@ export async function GET(
       id: campaign.id,
       title: campaign.title,
       description: campaign.description,
+      subtitle: campaign.description,
       story: campaign.story,
       beneficiaries_description:
         campaign.beneficiaries_description,
+      recipient_type: campaign.recipient_type,
+      beneficiary_name: campaign.beneficiary_name,
+      beneficiary_relationship:
+        campaign.beneficiary_relationship,
+      legal_entity: campaign.legal_entity
+        ? {
+            id: campaign.legal_entity.id,
+            name: campaign.legal_entity.name,
+            description: campaign.legal_entity.description,
+            website: campaign.legal_entity.website,
+          }
+        : null,
+      category: campaign.category,
       location: campaign.location,
       goal_amount: campaign.goal_amount,
       collected_amount: campaign.collected_amount,
@@ -397,7 +427,6 @@ export async function PATCH(
       recipientType,
       beneficiaryName,
       beneficiaryRelationship,
-      beneficiaryReason,
       legalEntityId,
       media,
       presentation,
@@ -498,8 +527,6 @@ export async function PATCH(
     if (beneficiaryRelationship !== undefined)
       updateData.beneficiaryRelationship =
         beneficiaryRelationship
-    if (beneficiaryReason !== undefined)
-      updateData.beneficiaryReason = beneficiaryReason
     if (legalEntityId !== undefined)
       updateData.legalEntityId = legalEntityId
 

@@ -11,7 +11,6 @@ export async function GET(request: NextRequest) {
 
     // Build where clause for active entities only
     const where: any = {
-      isActive: true,
       status: "active",
     };
 

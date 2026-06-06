@@ -33,6 +33,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { uploadMedia } from "@/lib/supabase/upload-media";
 import { ImproveTextButton } from "@/components/ui/improve-text-button";
+import { CAMPAIGN_CATEGORIES } from "@/lib/campaign-categories";
 
 export default function CampaignDetailPage() {
   const MAX_GOAL_AMOUNT = 1000000;
@@ -1114,15 +1115,15 @@ export default function CampaignDetailPage() {
 </div>
                     </div>
 
-                    {/* Detalle */}
+                    {/* Subtítulo */}
                     <div className="space-y-2">
                       <label className="text-lg font-bold text-gray-800">
-                        Detalle
+                        Subtítulo
                       </label>
                       <div className="relative">
                         <textarea
                           className="w-full p-4 border border-black rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 min-h-[120px] resize-none"
-                          placeholder="Ejemplo: Su conservación depende de nosotros"
+                          placeholder="Resume tu campaña en una frase breve"
                           defaultValue={campaign.description || ""}
                           onChange={(e) => {
                             setCampaign({
@@ -1164,12 +1165,14 @@ export default function CampaignDetailPage() {
                             handleFormChange();
                           }}
                         >
-                          <option value="salud">Salud</option>
-                          <option value="educacion">Educación</option>
-                          <option value="medioambiente">Medio ambiente</option>
-                          <option value="cultura_arte">Cultura y Arte</option>
-                          <option value="emergencia">Emergencia</option>
-                          <option value="igualdad">Igualdad</option>
+                          {CAMPAIGN_CATEGORIES.map((category) => (
+                            <option
+                              key={category.value}
+                              value={category.value}
+                            >
+                              {category.label}
+                            </option>
+                          ))}
                         </select>
                         <div className="absolute top-1/2 right-4 transform -translate-y-1/2">
                           <svg
@@ -1793,7 +1796,7 @@ export default function CampaignDetailPage() {
                       </div>
                     </div>
 
-                    {/* Presentación de la campaña */}
+                    {/* Descripción de la campaña */}
                     <div className="space-y-2">
                       <label className="text-lg font-bold text-gray-800">
                         Descripción de la campaña
@@ -1801,15 +1804,13 @@ export default function CampaignDetailPage() {
                       <div className="relative">
                         <textarea
                           className="w-full p-4 border border-black rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 min-h-[120px] resize-none"
-                          placeholder="Ejemplo: Su conservación depende de nosotros"
-                          defaultValue={
-                            campaign.beneficiaries_description || ""
-                          }
+                          placeholder="Cuenta la historia completa de tu campaña"
+                          defaultValue={campaign.story || ""}
                           maxLength={600}
                           onChange={(e) => {
                             setCampaign({
                               ...campaign,
-                              beneficiaries_description: e.target.value,
+                              story: e.target.value,
                             });
                             handleFormChange();
                           }}
@@ -1817,15 +1818,15 @@ export default function CampaignDetailPage() {
                       </div>
                       <div className="flex justify-between items-center mt-1">
   <ImproveTextButton
-    text={campaign.beneficiaries_description || ""}
+    text={campaign.story || ""}
     fieldType="story"
     maxLength={600}
     onAccept={(improved) => {
-      setCampaign({ ...campaign, beneficiaries_description: improved.slice(0, 600) });
+      setCampaign({ ...campaign, story: improved.slice(0, 600) });
       handleFormChange();
     }}
   />
-  <span className="text-sm text-black">{(campaign.beneficiaries_description || "").length}/600</span>
+  <span className="text-sm text-black">{(campaign.story || "").length}/600</span>
 </div>
                     </div>
 
@@ -1857,12 +1858,6 @@ export default function CampaignDetailPage() {
                                 <div className="flex items-center gap-2">
                                   <span className="text-sm font-medium text-gray-600">Relación:</span>
                                   <span className="text-sm text-gray-800 capitalize">{campaign.beneficiary_relationship}</span>
-                                </div>
-                              )}
-                              {campaign.beneficiary_reason && (
-                                <div className="flex flex-col gap-1">
-                                  <span className="text-sm font-medium text-gray-600">Motivo:</span>
-                                  <span className="text-sm text-gray-800 bg-white p-2 rounded border border-gray-200">{campaign.beneficiary_reason}</span>
                                 </div>
                               )}
                             </>

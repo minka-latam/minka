@@ -45,7 +45,7 @@ export default async function ManageUsersPage() {
   // Fetch all user profiles if the user is an admin
   const { data: users, error } = await supabase
     .from("profiles")
-    .select("id, name, email, role, created_at, phone, address")
+    .select("id, name, email, role, created_at, phone")
     .not("email", "like", `${CAMPAIGN_ANONYMOUS_EMAIL_PREFIX}%@minka.org`)
     .eq("status", "active")
     .order("created_at", { ascending: false });

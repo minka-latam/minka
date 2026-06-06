@@ -21,11 +21,6 @@ export const profileFormSchema = z.object({
     .max(100, "La ubicación no puede exceder 100 caracteres")
     .optional()
     .nullable(),
-  address: z
-    .string()
-    .max(200, "La dirección no puede exceder 200 caracteres")
-    .optional()
-    .nullable(),
 });
 
-export type ProfileFormValues = z.infer<typeof profileFormSchema>; 
+export type ProfileFormValues = z.infer<typeof profileFormSchema>;

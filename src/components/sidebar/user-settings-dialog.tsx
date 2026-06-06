@@ -29,7 +29,6 @@ import { useAuth } from "@/providers/auth-provider";
 const userSettingsSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   phone: z.string().min(8, "Phone must be at least 8 characters"),
-  address: z.string().optional(),
   location: z.string().optional(),
   bio: z.string().max(500, "Bio must be less than 500 characters").optional(),
 });
@@ -53,7 +52,6 @@ export function UserSettingsDialog({
     defaultValues: {
       name: profile?.name || "",
       phone: profile?.phone || "",
-      address: typeof profile?.address === "string" ? profile.address : "",
       location: typeof profile?.location === "string" ? profile.location : "",
       bio: typeof profile?.bio === "string" ? profile.bio : "",
     },
@@ -65,7 +63,6 @@ export function UserSettingsDialog({
       form.reset({
         name: profile.name || "",
         phone: profile.phone || "",
-        address: (profile.address as string) || "",
         location: (profile.location as string) || "",
         bio: (profile.bio as string) || "",
       });
@@ -187,25 +184,12 @@ export function UserSettingsDialog({
             />
             <FormField
               control={form.control}
-              name="address"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Address</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Your address (optional)" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
               name="location"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>City/Location</FormLabel>
+                  <FormLabel>Ubicación</FormLabel>
                   <FormControl>
-                    <Input placeholder="Your city (optional)" {...field} />
+                    <Input placeholder="Ej: La Paz, Bolivia" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

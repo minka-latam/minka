@@ -38,6 +38,7 @@ import { cn } from "@/lib/utils";
 import { useToast } from "@/components/ui/use-toast";
 import axios from "axios";
 import { ImproveTextButton } from "@/components/ui/improve-text-button";
+import { CAMPAIGN_CATEGORIES } from "@/lib/campaign-categories";
 
 const formSchema = z.object({
   title: z
@@ -249,8 +250,8 @@ dispatch({ type: "SET_END_DATE", payload: endDate.toISOString() });
                 Nombre de la campaña
               </h2>
               <p className="text-xl text-gray-600 leading-relaxed">
-                Dale un nombre claro a tu campaña y agrega una breve explicación
-                o detalle para transmitir rápidamente su esencia y objetivo.
+                Dale un nombre claro a tu campaña y agrega un subtítulo breve
+                para transmitir rápidamente su esencia y objetivo.
               </p>
             </div>
             <div className="bg-white rounded-xl border border-black p-8">
@@ -295,11 +296,11 @@ dispatch({ type: "SET_END_DATE", payload: endDate.toISOString() });
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-lg font-medium">
-                        Detalle
+                        Subtítulo
                       </FormLabel>
                       <FormControl>
                         <Textarea
-                          placeholder="Ejemplo: Su conservación depende de nosotros"
+                          placeholder="Resume tu campaña en una frase breve"
                           rows={4}
                           className="w-full rounded-lg border border-black bg-white shadow-sm focus:border-[#478C5C] focus:ring-[#478C5C] focus:ring-0 p-4"
                           {...field}
@@ -360,16 +361,14 @@ dispatch({ type: "SET_END_DATE", payload: endDate.toISOString() });
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="cultura_arte">
-                          Cultura y Arte
-                        </SelectItem>
-                        <SelectItem value="educacion">Educación</SelectItem>
-                        <SelectItem value="emergencia">Emergencia</SelectItem>
-                        <SelectItem value="igualdad">Igualdad</SelectItem>
-                        <SelectItem value="medioambiente">
-                          Medio ambiente
-                        </SelectItem>
-                        <SelectItem value="salud">Salud</SelectItem>
+                        {CAMPAIGN_CATEGORIES.map((category) => (
+                          <SelectItem
+                            key={category.value}
+                            value={category.value}
+                          >
+                            {category.label}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                     <FormMessage />
