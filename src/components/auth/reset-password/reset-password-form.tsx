@@ -81,6 +81,46 @@ export function ResetPasswordForm({
   useEffect(() => {
     const checkSession = async () => {
       const supabase = createClient();
+      const params = new URLSearchParams(window.location.search);
+      const code = params.get("code");
+      const type = params.get("type");
+
+      if (code) {
+        if (type !== "recovery") {
+          toast({
+            title: "Error",
+            description: "Enlace de recuperación inválido o expirado.",
+            variant: "destructive",
+          });
+          router.replace("/sign-in");
+          return;
+        }
+
+        const { error } = await supabase.auth.exchangeCodeForSession(code);
+
+        if (error) {
+          toast({
+            title: "Error",
+            description: "Enlace de recuperación inválido o expirado.",
+            variant: "destructive",
+          });
+          router.replace("/sign-in");
+          return;
+        }
+
+        await fetch("/api/auth/recovery-session", {
+          method: "POST",
+        }).catch(() => null);
+
+        window.history.replaceState(
+          null,
+          "",
+          window.location.pathname,
+        );
+        setIsInitializing(false);
+        return;
+      }
+
       const { data, error } = await supabase.auth.getSession();
 
       // If we have an active session, but no recovery token,
