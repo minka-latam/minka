@@ -24,17 +24,17 @@ export async function POST() {
   );
 
   const { error } = await supabase.auth.signOut();
+  const response = NextResponse.json({
+    message: error
+      ? "Signed out locally"
+      : "Signed out successfully",
+  });
+  response.cookies.delete(PASSWORD_RECOVERY_COOKIE);
 
   if (error) {
     console.error("Server sign out error:", error);
-    return NextResponse.json(
-      { error: "Failed to sign out", details: error.message },
-      { status: 500 }
-    );
+    return response;
   }
-
-  const response = NextResponse.json({ message: "Signed out successfully" });
-  response.cookies.delete(PASSWORD_RECOVERY_COOKIE);
 
   return response;
 }

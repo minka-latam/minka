@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { DashboardLayoutClient } from "@/components/dashboard/dashboard-layout-client";
 import { UserDashboardLayout } from "@/components/dashboard/user-dashboard-layout";
 import type { Metadata } from "next";
+import { PASSWORD_RECOVERY_COOKIE } from "@/lib/password-recovery-session";
 
 export const metadata: Metadata = {
   title: "Dashboard",
@@ -24,6 +25,8 @@ export default async function DashboardLayout({
   children: React.ReactNode;
 }) {
 const cookieStore = await cookies();
+const isPasswordRecoveryOnly =
+  cookieStore.get(PASSWORD_RECOVERY_COOKIE)?.value === "1";
 const supabase = createServerClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -46,6 +49,10 @@ const supabase = createServerClient(
     redirect("/sign-in");
   }
 
+  if (isPasswordRecoveryOnly) {
+    redirect("/reset-password");
+  }
+
   // Get user profile and role
   const { data: profile } = await supabase
     .from("profiles")
@@ -63,4 +70,3 @@ const supabase = createServerClient(
     return <UserDashboardLayout>{children}</UserDashboardLayout>;
   }
 }
-

@@ -2,7 +2,10 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { getSafeAuthRedirectPath } from '@/lib/auth-redirect'
-import { PASSWORD_RECOVERY_COOKIE } from '@/lib/password-recovery-session'
+import {
+  PASSWORD_RECOVERY_COOKIE,
+  PASSWORD_RECOVERY_COOKIE_OPTIONS,
+} from '@/lib/password-recovery-session'
 
 function isRecoverySession(session: unknown) {
   if (!session || typeof session !== 'object') {
@@ -41,6 +44,24 @@ export async function middleware(req: NextRequest) {
     const callbackUrl = new URL('/auth/callback', req.url)
     callbackUrl.search = req.nextUrl.search
     return NextResponse.redirect(callbackUrl)
+  }
+
+  const isPasswordRecoveryLanding =
+    pathname === '/reset-password' &&
+    req.nextUrl.searchParams.get('type') === 'recovery' &&
+    req.nextUrl.searchParams.has('code')
+
+  if (isPasswordRecoveryLanding) {
+    const recoveryResponse = NextResponse.next({
+      request: { headers: req.headers },
+    })
+    recoveryResponse.cookies.set(
+      PASSWORD_RECOVERY_COOKIE,
+      '1',
+      PASSWORD_RECOVERY_COOKIE_OPTIONS,
+    )
+
+    return recoveryResponse
   }
 
   let res = NextResponse.next({
@@ -146,5 +167,6 @@ export const config = {
     '/create-campaign',
     '/sign-in/:path*',
     '/sign-up/:path*',
+    '/reset-password',
   ],
 }
