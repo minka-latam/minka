@@ -41,7 +41,11 @@ export function CampaignOrganizer({
         </div>
         <div className="flex items-center gap-2 text-sm text-gray-600">
           <Award className="h-4 w-4" />
-          <span>{successfulCampaigns} campañas exitosas</span>
+          <span>
+            {successfulCampaigns === 1
+              ? "1 campaña"
+              : `${successfulCampaigns} campañas`}
+          </span>
         </div>
       </div>
 

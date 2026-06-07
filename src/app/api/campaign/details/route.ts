@@ -59,13 +59,13 @@ export async function GET(request: Request) {
         `
         id,
         title,
+        subtitle,
         description,
         category,
         location,
         collected_amount,
         goal_amount,
         campaign_status,
-        description,
         created_at,
         verification_status,
         organizer_id,
@@ -116,7 +116,7 @@ export async function GET(request: Request) {
       current_amount: parseFloat(campaign.collected_amount) || 0,
       goal_amount: parseFloat(campaign.goal_amount) || 0,
       status: campaign.campaign_status,
-      description: campaign.description,
+      description: campaign.subtitle || campaign.description,
       created_at: campaign.created_at,
       verification_status: campaign.verification_status,
       organizer_id: campaign.organizer_id,
@@ -136,4 +136,3 @@ export async function GET(request: Request) {
     );
   }
 }
-

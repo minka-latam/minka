@@ -141,7 +141,7 @@ export async function GET(req: NextRequest) {
         idDocumentUrl: campaign.verificationRequests?.idDocumentUrl,
         supportingDocsUrls: campaign.verificationRequests?.supportingDocsUrls,
         campaignStory:
-          campaign.verificationRequests?.campaignStory || campaign.story,
+          campaign.verificationRequests?.campaignStory || campaign.description,
         referenceContactName:
           campaign.verificationRequests?.referenceContactName,
         referenceContactEmail:

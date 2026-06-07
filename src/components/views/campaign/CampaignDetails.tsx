@@ -78,10 +78,12 @@ export function CampaignDetails({ organizer, description }: CampaignDetailsProps
 
           <div className="flex items-center gap-2">
             <Award className="h-4 w-4" />
-            <span>Otras campañas</span>
+            <span>Campañas creadas</span>
           </div>
           <p className="pl-6">
-            {organizer.successfulCampaigns} campañas exitosas
+            {organizer.successfulCampaigns === 1
+              ? "1 campaña"
+              : `${organizer.successfulCampaigns} campañas`}
           </p>
         </div>
 
@@ -93,4 +95,3 @@ export function CampaignDetails({ organizer, description }: CampaignDetailsProps
     </div>
   );
 }
-

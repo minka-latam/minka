@@ -8,7 +8,10 @@ import {
   createAdminAuditLog,
   requireAdminProfile,
 } from "@/lib/admin-auth";
-import { refreshOrganizerActiveCampaignsCount } from "@/lib/campaigns/active-count";
+import {
+  isCountedCampaignStatus,
+  refreshOrganizerActiveCampaignsCount,
+} from "@/lib/campaigns/active-count";
 import { prisma } from "@/lib/prisma";
 
 const updateCampaignApprovalSchema = z.object({
@@ -146,7 +149,10 @@ export async function PATCH(request: NextRequest) {
         },
       });
 
-      if (nextStatus === CampaignStatus.active) {
+      if (
+        isCountedCampaignStatus(existingCampaign.campaignStatus) ||
+        isCountedCampaignStatus(nextStatus)
+      ) {
         await refreshOrganizerActiveCampaignsCount(
           tx,
           existingCampaign.organizerId,

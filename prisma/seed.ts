@@ -115,9 +115,9 @@ const campaignImages = {
 const campaignData = [
   {
     title: "Protección del Parque Nacional Amboró",
-    description:
+    subtitle:
       "Campaña para proteger la biodiversidad del Parque Nacional Amboró en Santa Cruz",
-    story:
+    description:
       "El Parque Nacional Amboró es hogar de más de 800 especies de aves y está en peligro debido a la deforestación y caza ilegal. Esta campaña busca financiar guardaparques y equipos de monitoreo para proteger esta área natural vital. Con tu apoyo, podremos establecer puntos de vigilancia, capacitar a guardaparques locales y crear programas de educación ambiental para las comunidades cercanas.",
     beneficiariesDescription:
       "Las comunidades locales, la biodiversidad del parque y las futuras generaciones se beneficiarán de la conservación de este ecosistema único.",
@@ -129,9 +129,9 @@ const campaignData = [
   },
   {
     title: "Escuela para niños de la comunidad Aymara",
-    description:
+    subtitle:
       "Construcción de una escuela para niños de comunidades rurales aymaras",
-    story:
+    description:
       "Los niños de las comunidades rurales aymaras carecen de infraestructura educativa adecuada. Esta campaña busca construir una escuela que beneficiará a más de 200 niños, brindándoles acceso a educación de calidad. La escuela incluirá aulas modernas, biblioteca, sala de computación y áreas recreativas. Además, se incorporarán elementos de la cultura aymara en el diseño y currículo.",
     beneficiariesDescription:
       "Más de 200 niños y niñas de comunidades aymaras tendrán acceso a educación de calidad en su propia lengua y cultura.",
@@ -143,9 +143,9 @@ const campaignData = [
   },
   {
     title: "Festival de Arte y Cultura Boliviana",
-    description:
+    subtitle:
       "Organización de un festival que celebra la diversidad cultural de Bolivia",
-    story:
+    description:
       "Este festival busca reunir artistas de todo el país para mostrar la riqueza cultural boliviana. Se realizarán exposiciones, performances y talleres abiertos al público para fomentar el aprecio por nuestras tradiciones. El evento incluirá música tradicional, danzas folklóricas, artesanías, gastronomía y artes visuales de todas las regiones de Bolivia.",
     beneficiariesDescription:
       "Artistas bolivianos, artesanos y la comunidad en general se beneficiarán de este espacio de intercambio cultural.",
@@ -157,9 +157,9 @@ const campaignData = [
   },
   {
     title: "Apoyo a damnificados por inundaciones",
-    description:
+    subtitle:
       "Ayuda para familias afectadas por las recientes inundaciones en Beni",
-    story:
+    description:
       "Las recientes inundaciones en el departamento de Beni han dejado a cientos de familias sin hogar. Esta campaña busca proporcionar alimentos, agua potable y refugio temporal a los afectados mientras reconstruyen sus vidas. Los fondos se destinarán a kits de emergencia, carpas, alimentos no perecederos, agua embotellada, y materiales de construcción para ayudar a las familias a reconstruir sus hogares.",
     beneficiariesDescription:
       "Más de 500 familias afectadas por las inundaciones recibirán ayuda inmediata y apoyo para la reconstrucción.",
@@ -171,9 +171,9 @@ const campaignData = [
   },
   {
     title: "Equipamiento para hospital comunitario",
-    description:
+    subtitle:
       "Compra de equipos médicos para mejorar la atención en hospital rural",
-    story:
+    description:
       "El hospital comunitario de Oruro carece de equipos médicos esenciales para atender adecuadamente a la población rural. Con esta campaña buscamos adquirir monitores cardíacos, equipos de ultrasonido y material quirúrgico básico. Estos equipos permitirán realizar diagnósticos más precisos y tratamientos más efectivos, salvando vidas en comunidades que antes debían viajar horas para recibir atención médica especializada.",
     beneficiariesDescription:
       "Más de 15,000 personas de comunidades rurales tendrán acceso a atención médica de calidad sin necesidad de desplazarse a la ciudad.",
@@ -185,9 +185,9 @@ const campaignData = [
   },
   {
     title: "Huertos comunitarios para seguridad alimentaria",
-    description:
+    subtitle:
       "Implementación de huertos urbanos en barrios vulnerables de La Paz",
-    story:
+    description:
       "La inseguridad alimentaria afecta a muchas familias en zonas periurbanas de La Paz. Este proyecto busca crear huertos comunitarios que provean alimentos frescos y saludables, mientras se enseñan técnicas de agricultura urbana sostenible. Los huertos también servirán como espacios de encuentro comunitario y educación ambiental para niños y jóvenes.",
     beneficiariesDescription:
       "100 familias tendrán acceso a alimentos frescos y aprenderán técnicas de agricultura sostenible.",
@@ -199,8 +199,8 @@ const campaignData = [
   },
   {
     title: "Biblioteca móvil para comunidades rurales",
-    description: "Llevar libros y educación a comunidades alejadas de Potosí",
-    story:
+    subtitle: "Llevar libros y educación a comunidades alejadas de Potosí",
+    description:
       "Muchas comunidades rurales en Potosí no tienen acceso a bibliotecas o material de lectura. Esta campaña busca equipar una biblioteca móvil que visitará diferentes comunidades, ofreciendo préstamo de libros, actividades de lectura y talleres educativos. El vehículo estará equipado con libros en español, quechua y aymara, materiales didácticos y tecnología para proyecciones educativas.",
     beneficiariesDescription:
       "Más de 30 comunidades rurales tendrán acceso regular a libros y actividades educativas.",
@@ -325,8 +325,8 @@ async function main() {
       const createdCampaign = await prisma.campaign.create({
         data: {
           title: campaign.title,
+          subtitle: campaign.subtitle,
           description: campaign.description,
-          story: campaign.story,
           beneficiariesDescription: campaign.beneficiariesDescription,
           category: campaign.category as any,
           goalAmount: campaign.goalAmount,

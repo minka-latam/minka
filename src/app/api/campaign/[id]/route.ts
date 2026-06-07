@@ -3,7 +3,10 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { prisma as db } from '@/lib/prisma'
 import { getAuthSession } from '@/lib/auth'
-import { refreshOrganizerActiveCampaignsCount } from '@/lib/campaigns/active-count'
+import {
+  isCountedCampaignStatus,
+  refreshOrganizerActiveCampaignsCount,
+} from '@/lib/campaigns/active-count'
 import { isPublicCampaign } from '@/lib/campaigns/visibility'
 import { notifyCampaignSubmittedForReview } from '@/lib/campaign-review-email'
 import { CampaignStatus } from '@prisma/client'
@@ -49,11 +52,11 @@ interface CampaignComment {
 interface Campaign {
   id: string
   title: string
+  subtitle: string
   description: string
-  subtitle?: string
-  story: string
   beneficiaries_description?: string
   recipient_type?: string | null
+  legal_entity_id?: string | null
   beneficiary_name?: string | null
   beneficiary_relationship?: string | null
   legal_entity?: {
@@ -133,13 +136,14 @@ export async function GET(
         `
         id,
         title,
+        subtitle,
         description,
         category,
-        story,
         beneficiaries_description,
         recipient_type,
         beneficiary_name,
         beneficiary_relationship,
+        legal_entity_id,
         location,
         goal_amount,
         collected_amount,
@@ -222,25 +226,40 @@ export async function GET(
       )
     }
 
+    const fallbackLegalEntity =
+      !campaign.legal_entity && campaign.legal_entity_id
+        ? await db.legalEntity.findUnique({
+            where: { id: campaign.legal_entity_id },
+            select: {
+              id: true,
+              name: true,
+              description: true,
+              website: true,
+            },
+          })
+        : null
+
+    const legalEntity = campaign.legal_entity || fallbackLegalEntity
+
     // Format the response with proper type handling
     const formattedCampaign: Campaign = {
       id: campaign.id,
       title: campaign.title,
+      subtitle: campaign.subtitle,
       description: campaign.description,
-      subtitle: campaign.description,
-      story: campaign.story,
       beneficiaries_description:
         campaign.beneficiaries_description,
       recipient_type: campaign.recipient_type,
+      legal_entity_id: campaign.legal_entity_id,
       beneficiary_name: campaign.beneficiary_name,
       beneficiary_relationship:
         campaign.beneficiary_relationship,
-      legal_entity: campaign.legal_entity
+      legal_entity: legalEntity
         ? {
-            id: campaign.legal_entity.id,
-            name: campaign.legal_entity.name,
-            description: campaign.legal_entity.description,
-            website: campaign.legal_entity.website,
+            id: legalEntity.id,
+            name: legalEntity.name,
+            description: legalEntity.description,
+            website: legalEntity.website,
           }
         : null,
       category: campaign.category,
@@ -412,8 +431,8 @@ export async function PATCH(
     // Prepare the update data, extracting all valid fields from the body
     const {
       title,
+      subtitle,
       description,
-      story,
       beneficiariesDescription,
       category,
       categoryId,
@@ -458,9 +477,9 @@ export async function PATCH(
     const updateData: any = {}
 
     if (title !== undefined) updateData.title = title
+    if (subtitle !== undefined) updateData.subtitle = subtitle
     if (description !== undefined)
       updateData.description = description
-    if (story !== undefined) updateData.story = story // Story field = "Presentación de la campaña"
     if (beneficiariesDescription !== undefined)
       updateData.beneficiariesDescription =
         beneficiariesDescription
@@ -520,8 +539,9 @@ export async function PATCH(
       updateData.presentation = presentation
 
     // Handle recipient/beneficiary fields
-    if (recipientType !== undefined)
-      updateData.recipientType = recipientType
+    const nextRecipientType = recipientType ?? recipient
+    if (nextRecipientType !== undefined)
+      updateData.recipientType = nextRecipientType
     if (beneficiaryName !== undefined)
       updateData.beneficiaryName = beneficiaryName
     if (beneficiaryRelationship !== undefined)
@@ -534,8 +554,8 @@ export async function PATCH(
       updateData.campaignStatus !== undefined &&
       existingCampaign.campaignStatus !==
         updateData.campaignStatus &&
-      (existingCampaign.campaignStatus === CampaignStatus.active ||
-        updateData.campaignStatus === CampaignStatus.active)
+      (isCountedCampaignStatus(existingCampaign.campaignStatus) ||
+        isCountedCampaignStatus(updateData.campaignStatus))
 
     const campaign = await db.$transaction(async (tx) => {
       const updatedCampaign = await tx.campaign.update({
@@ -717,7 +737,7 @@ export async function DELETE(
         },
       })
 
-      if (existingCampaign.campaignStatus === CampaignStatus.active) {
+      if (isCountedCampaignStatus(existingCampaign.campaignStatus)) {
         await refreshOrganizerActiveCampaignsCount(
           tx,
           existingCampaign.organizerId,

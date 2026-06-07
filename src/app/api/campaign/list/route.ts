@@ -183,10 +183,12 @@ export async function GET(request: Request) {
       // Build the search OR clause to include title, description, and location
       const searchConditions: Array<
         | { title: { contains: string; mode: string } }
+        | { subtitle: { contains: string; mode: string } }
         | { description: { contains: string; mode: string } }
         | { location: string }
       > = [
         { title: { contains: search, mode: "insensitive" } },
+        { subtitle: { contains: search, mode: "insensitive" } },
         { description: { contains: search, mode: "insensitive" } },
       ];
 
@@ -312,7 +314,7 @@ export async function GET(request: Request) {
       return {
         id: campaign.id,
         title: campaign.title,
-        description: campaign.description,
+        description: campaign.subtitle || campaign.description,
         category: formatCategory(campaign.category.toString()), // Format the category for display
         location: formatLocation(campaign.location.toString()), // Format the location for display
         goalAmount: Number(campaign.goalAmount),

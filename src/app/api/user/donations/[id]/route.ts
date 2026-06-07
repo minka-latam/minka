@@ -42,8 +42,8 @@ export async function GET(
         campaign:campaigns(
           id, 
           title, 
+          subtitle,
           description,
-          story,
           category,
           goal_amount,
           collected_amount,

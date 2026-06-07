@@ -36,6 +36,51 @@ const getDateInputValue = (dateVal: string | Date | null | undefined) => {
   return dateVal.slice(0, 10);
 };
 
+const getDateDisplayValue = (dateVal: string | Date | null | undefined) => {
+  const isoDate = getDateInputValue(dateVal);
+  if (!isoDate) return "";
+
+  const [year, month, day] = isoDate.split("-");
+  if (!year || !month || !day) return "";
+
+  return `${day}/${month}/${year}`;
+};
+
+const formatBirthDateInput = (value: string) => {
+  const digits = value.replace(/\D/g, "").slice(0, 8);
+  const day = digits.slice(0, 2);
+  const month = digits.slice(2, 4);
+  const year = digits.slice(4, 8);
+
+  return [day, month, year].filter(Boolean).join("/");
+};
+
+const parseBirthDateDisplayValue = (value: string) => {
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+
+  const match = trimmed.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (!match) return null;
+
+  const [, day, month, year] = match;
+  const dayNumber = Number(day);
+  const monthNumber = Number(month);
+  const yearNumber = Number(year);
+  const daysInMonth = new Date(yearNumber, monthNumber, 0).getDate();
+
+  if (
+    yearNumber < 1900 ||
+    monthNumber < 1 ||
+    monthNumber > 12 ||
+    dayNumber < 1 ||
+    dayNumber > daysInMonth
+  ) {
+    return null;
+  }
+
+  return `${year}-${month}-${day}`;
+};
+
 const getDocumentPlaceholder = (countryCode: string) =>
   `Ingresa tu ${getDocumentTypeName(countryCode).toLowerCase()}`;
 
@@ -129,7 +174,7 @@ export default function DashboardPage() {
         ? parsedDocument.countryCode
         : "BO",
       documentId: parsedDocument.isValid ? parsedDocument.documentNumber : "",
-      birthDate: getDateInputValue(profile.birth_date),
+      birthDate: getDateDisplayValue(profile.birth_date),
       location: typeof profile.location === "string" ? profile.location : "",
       bio: typeof profile.bio === "string" ? profile.bio : "",
     };
@@ -258,13 +303,23 @@ export default function DashboardPage() {
     try {
       if (!profile) return;
 
+      const parsedBirthDate = parseBirthDateDisplayValue(profileForm.birthDate);
+      if (parsedBirthDate === null) {
+        toast({
+          title: "Fecha inválida",
+          description: "Usa el formato dd/mm/aaaa.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const { error } = await updateProfile(profile.id, {
         name: profileForm.name.trim(),
         phone: profileForm.phone.trim(),
         identityNumber: profileForm.documentId.trim()
           ? `${profileForm.documentCountryCode}-${profileForm.documentId.trim()}`
           : "",
-        birthDate: profileForm.birthDate || undefined,
+        birthDate: parsedBirthDate || undefined,
         location: profileForm.location.trim(),
         bio: profileForm.bio.trim(),
       });
@@ -442,15 +497,17 @@ export default function DashboardPage() {
               </label>
               <Input
                 id="birthDate"
-                type="date"
+                type="text"
+                inputMode="numeric"
                 value={profileForm.birthDate}
                 onChange={(e) =>
                   setProfileForm({
                     ...profileForm,
-                    birthDate: e.target.value,
+                    birthDate: formatBirthDateInput(e.target.value),
                   })
                 }
-                placeholder="Ingresa tu fecha"
+                placeholder="dd/mm/aaaa"
+                maxLength={10}
                 className="w-full border border-black bg-transparent"
               />
             </div>

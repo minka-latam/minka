@@ -1,18 +1,22 @@
 import { useState, useEffect } from "react";
 import { ImproveTextButton } from "@/components/ui/improve-text-button";
 
-interface StoryInputProps {
+interface CampaignDescriptionInputProps {
   initialValue: string;
   onUpdate: (value: string) => void;
   error?: string;
 }
 
-export function StoryInput({ initialValue, onUpdate, error }: StoryInputProps) {
+export function CampaignDescriptionInput({
+  initialValue,
+  onUpdate,
+  error,
+}: CampaignDescriptionInputProps) {
   const [value, setValue] = useState(initialValue);
 
   // Sync from parent if initialValue changes externally
   // We compare with current value to avoid overwriting user input during race conditions,
-  // but generally initialValue (formData.story) will lag behind value.
+  // but generally initialValue (formData.description) will lag behind value.
   // Actually, we should only sync if the parent resets the form.
   // For now, let's assume one-way sync from child to parent is the primary flow,
   // but if parent changes (e.g. strict reset), we might need to reflect it.
@@ -35,7 +39,7 @@ export function StoryInput({ initialValue, onUpdate, error }: StoryInputProps) {
   }, [value, onUpdate, initialValue]);
 
   return (
-    <div className="relative" id="story">
+    <div className="relative" id="description">
       <label className="block text-lg font-medium mb-2">
         Descripción de la campaña
       </label>
@@ -53,7 +57,7 @@ export function StoryInput({ initialValue, onUpdate, error }: StoryInputProps) {
       <div className="flex justify-between items-center mt-1">
   <ImproveTextButton
   text={value}
-  fieldType="story"
+  fieldType="description"
   maxLength={600}
   onAccept={(improved) => {
     setValue(improved);

@@ -69,6 +69,7 @@ export async function GET() {
       select: {
         id: true,
         title: true,
+        subtitle: true,
         description: true,
         category: true,
         location: true,
@@ -108,7 +109,7 @@ export async function GET() {
         current_amount: Number(campaign.collectedAmount),
         goal_amount: Number(campaign.goalAmount),
         status: campaign.campaignStatus,
-        description: campaign.description,
+        description: campaign.subtitle || campaign.description,
         created_at: campaign.createdAt.toISOString(),
         verification_status: campaign.verificationStatus,
         organizer_id: campaign.organizerId,

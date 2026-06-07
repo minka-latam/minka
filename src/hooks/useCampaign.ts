@@ -41,9 +41,8 @@ export interface CampaignComment {
 export interface Campaign {
   id: string;
   title: string;
+  subtitle: string;
   description: string;
-  subtitle?: string;
-  story: string;
   beneficiaries_description?: string;
   recipient_type?: "tu_mismo" | "otra_persona" | "persona_juridica" | null;
   beneficiary_name?: string | null;

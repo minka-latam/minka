@@ -43,6 +43,7 @@ model Profile {
 model Campaign {
   id                       String                @id @default(uuid()) @db.Uuid
   title                    String
+  subtitle                 String                @default("")
   description              String
   beneficiariesDescription String                @map("beneficiaries_description")
   category                 CampaignCategory
@@ -63,7 +64,6 @@ model Campaign {
   createdAt                DateTime              @default(now()) @map("created_at") @db.Timestamp(6)
   updatedAt                DateTime              @updatedAt @map("updated_at") @db.Timestamp(6)
   youtubeUrls              String[]              @default([]) @map("youtube_urls")
-  story                    String                @db.VarChar(600)
   location                 Region
   province                 Province?
   legalEntityId            String?               @map("legal_entity_id") @db.Uuid

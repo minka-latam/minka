@@ -6,7 +6,10 @@ import {
   createAdminAuditLog,
   requireAdminProfile,
 } from "@/lib/admin-auth";
-import { refreshOrganizerActiveCampaignsCount } from "@/lib/campaigns/active-count";
+import {
+  isCountedCampaignStatus,
+  refreshOrganizerActiveCampaignsCount,
+} from "@/lib/campaigns/active-count";
 import { prisma } from "@/lib/prisma";
 
 export async function DELETE(
@@ -39,7 +42,7 @@ export async function DELETE(
         where: { id: campaignId },
       });
 
-      if (campaign.campaignStatus === CampaignStatus.active) {
+      if (isCountedCampaignStatus(campaign.campaignStatus)) {
         await refreshOrganizerActiveCampaignsCount(tx, campaign.organizerId);
       }
     });

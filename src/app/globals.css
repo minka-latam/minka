@@ -182,11 +182,22 @@
 html {
   scroll-behavior: smooth;
   overflow-y: scroll; /* Always show scrollbar to prevent layout shift */
+  overflow-x: hidden;
   scrollbar-gutter: stable; /* Reserve space for scrollbar */
 }
 
+body {
+  margin-right: 0 !important;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+html body[data-scroll-locked],
+html body[data-scroll-locked][style],
 body[data-scroll-locked] {
   margin-right: 0 !important;
+  padding-right: 0 !important;
+  --removed-body-scroll-bar-size: 0px !important;
 }
 
 /* Add hover effect for interactive elements */

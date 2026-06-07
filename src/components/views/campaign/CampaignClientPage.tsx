@@ -82,14 +82,24 @@ function formatCampaignData(campaign: any) {
     bio: campaign.organizer?.bio?.trim() || "",
   };
 
+  const beneficiaries = campaign.beneficiaries_description?.trim() || "";
+  const description = campaign.description?.trim() || "";
+  const recipientType =
+    campaign.recipient_type ||
+    (campaign.legal_entity
+      ? "persona_juridica"
+      : campaign.beneficiary_name ||
+          campaign.beneficiary_relationship ||
+          beneficiaries
+        ? "otra_persona"
+        : null);
+
   return {
     title: campaign.title,
-    subtitle: campaign.subtitle || campaign.description,
-    description: campaign.story || campaign.description,
-    beneficiaries:
-      campaign.beneficiaries_description ||
-      "",
-    recipientType: campaign.recipient_type,
+    subtitle: campaign.subtitle || "",
+    description,
+    beneficiaries,
+    recipientType,
     beneficiaryName: campaign.beneficiary_name,
     beneficiaryRelationship: campaign.beneficiary_relationship,
     legalEntity: campaign.legal_entity,
@@ -150,7 +160,9 @@ function CustomCampaignDetails({
       (Boolean(beneficiaryName) ||
         Boolean(relationship) ||
         beneficiaries.trim().length > 0)) ||
-    (recipientType === "persona_juridica" && Boolean(legalEntity));
+    recipientType === "persona_juridica";
+  const createdCampaignsLabel =
+    organizer.successfulCampaigns === 1 ? "1 campaña" : `${organizer.successfulCampaigns} campañas`;
 
   return (
     <div className="space-y-8">
@@ -193,14 +205,16 @@ function CustomCampaignDetails({
       )}
 
       {/* Campaign Description */}
-      <div className="space-y-4 pb-8 border-b border-gray-200">
-        <h2 className="text-3xl md:text-4xl font-semibold text-[#2c6e49] break-words">
-          Descripción de la campaña
-        </h2>
-        <p className="text-base text-gray-700 leading-relaxed break-words whitespace-pre-wrap">
-          {description}
-        </p>
-      </div>
+      {description.trim().length > 0 && (
+        <div className="space-y-4 pb-8 border-b border-gray-200">
+          <h2 className="text-3xl md:text-4xl font-semibold text-[#2c6e49] break-words">
+            Descripción de la campaña
+          </h2>
+          <p className="text-base text-gray-700 leading-relaxed break-words whitespace-pre-wrap">
+            {description}
+          </p>
+        </div>
+      )}
 
       {hasBeneficiaryInfo && (
         <div className="space-y-4 pb-8 border-b border-gray-200">
@@ -209,7 +223,7 @@ function CustomCampaignDetails({
           </h2>
 
           {recipientType === "otra_persona" && (
-            <div className="space-y-2 text-base text-gray-700 leading-relaxed break-words">
+            <div className="space-y-2 text-sm text-gray-700 leading-relaxed break-words">
               {beneficiaryName && (
                 <p>
                   <span className="font-medium text-[#2c6e49]">
@@ -229,20 +243,20 @@ function CustomCampaignDetails({
             </div>
           )}
 
-          {recipientType === "persona_juridica" && legalEntity && (
-            <div className="space-y-2 text-base text-gray-700 leading-relaxed break-words">
+          {recipientType === "persona_juridica" && (
+            <div className="space-y-2 text-sm text-gray-700 leading-relaxed break-words">
               <p>
                 <span className="font-medium text-[#2c6e49]">
-                  Organización:
+                  Institución beneficiaria:
                 </span>{" "}
-                {legalEntity.name}
+                {legalEntity?.name || "Institución seleccionada"}
               </p>
-              {legalEntity.description && (
+              {legalEntity?.description && (
                 <p className="whitespace-pre-wrap">
                   {legalEntity.description}
                 </p>
               )}
-              {legalEntity.website && (
+              {legalEntity?.website && (
                 <a
                   href={legalEntity.website}
                   target="_blank"
@@ -261,7 +275,7 @@ function CustomCampaignDetails({
               <h3 className="text-xl font-medium text-[#2c6e49]">
                 Destino de los fondos
               </h3>
-              <p className="text-base text-gray-700 leading-relaxed break-words whitespace-pre-wrap">
+              <p className="text-sm text-gray-700 leading-relaxed break-words whitespace-pre-wrap">
                 {beneficiaries}
               </p>
             </div>
@@ -307,12 +321,12 @@ function CustomCampaignDetails({
             <Award className="h-5 w-5 text-[#2c6e49] flex-shrink-0 mt-0.5" />
             <div className="min-w-0 flex-1">
               <span className="text-lg font-medium text-[#2c6e49] break-words">
-                Otras campañas
+                Campañas creadas
               </span>
             </div>
           </div>
           <p className="pl-6 text-lg break-words">
-            {organizer.successfulCampaigns} campañas exitosas
+            {createdCampaignsLabel}
           </p>
         </div>
 

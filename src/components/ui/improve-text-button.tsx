@@ -6,7 +6,7 @@ import { Sparkles, Loader2 } from "lucide-react";
 
 interface ImproveTextButtonProps {
   text: string;
-  fieldType: "title" | "description" | "story" | "beneficiaries";
+  fieldType: "title" | "subtitle" | "description" | "beneficiaries";
   onAccept: (improvedText: string) => void;
   maxLength?: number;
 }

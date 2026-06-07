@@ -44,7 +44,7 @@ import { InlineSpinner } from "@/components/ui/inline-spinner";
 import {
   getProvincesForDepartment,
 } from "@/constants/bolivia-provinces";
-import { StoryInput } from "./StoryInput";
+import { CampaignDescriptionInput } from "./CampaignDescriptionInput";
 import { Input } from "@/components/ui/input";
 import {
   Dialog,
@@ -217,17 +217,6 @@ const CampaignPreview = ({
                   </p>
                 </div>
 
-                {/* Campaign Story */}
-                <div className="space-y-3 py-4 border-b border-gray-200">
-                  <h2 className="text-xl font-semibold text-[#2c6e49]">
-                    Descripción de la campaña
-                  </h2>
-                  <p className="text-gray-700 text-sm leading-relaxed">
-                    {campaign.story ||
-                      "El Parque Nacional Amboró es un tesoro natural incomparable, reconocido como uno de los lugares más biodiversos del planeta. En sus exuberantes paisajes, alberga especies únicas de flora y fauna que dependen de este ecosistema para sobrevivir..."}
-                  </p>
-                </div>
-
               </div>
             </div>
 
@@ -371,13 +360,13 @@ export function CampaignForm() {
 
   const [formData, setFormData] = useState<CampaignFormData>({
     title: "",
+    subtitle: "",
     description: "",
     category: "",
     goalAmount: "",
     location: "la_paz", // Set default value to La Paz
     province: undefined, // Add province field
     endDate: "",
-    story: "",
     recipient: "",
     youtubeUrl: "",
     youtubeUrls: [],
@@ -451,9 +440,9 @@ export function CampaignForm() {
     // Basic validation for required fields in step 1
     const isValid =
       formData.title.length >= 3 &&
-      formData.description.length >= 10 &&
+      formData.subtitle.length >= 10 &&
       formData.category !== "" &&
-      formData.story.length >= 10;
+      formData.description.length >= 10;
 
     setIsStep1Valid(isValid);
   }, [formData]);
@@ -1175,8 +1164,8 @@ setCurrentStep(currentStep + 1);
     }
 
     // Validate description
-    if (!formData.description || formData.description.length < 10) {
-      errors.description = "La descripción debe tener al menos 10 caracteres";
+    if (!formData.subtitle || formData.subtitle.length < 10) {
+      errors.subtitle = "La descripción debe tener al menos 10 caracteres";
     }
 
     // Validate category
@@ -1189,12 +1178,12 @@ setCurrentStep(currentStep + 1);
       errors.goalAmount = goalAmountError;
     }
 
-    // Validate story
-    if (!formData.story || formData.story.length < 10) {
-      errors.story =
+    // Validate campaign description
+    if (!formData.description || formData.description.length < 10) {
+      errors.description =
         "La presentación de la campaña debe tener al menos 10 caracteres";
-    } else if (formData.story.length > 600) {
-      errors.story =
+    } else if (formData.description.length > 600) {
+      errors.description =
         "La presentación de la campaña no puede tener más de 600 caracteres";
     }
 
@@ -1331,8 +1320,8 @@ setCurrentStep(currentStep + 1);
         if (!formData.title || formData.title.length < 3) {
           errors.title = "El título debe tener al menos 3 caracteres";
         }
-        if (!formData.description || formData.description.length < 10) {
-          errors.description =
+        if (!formData.subtitle || formData.subtitle.length < 10) {
+          errors.subtitle =
             "La descripción debe tener al menos 10 caracteres";
         }
         break;
@@ -1364,12 +1353,12 @@ setCurrentStep(currentStep + 1);
           errors.endDate = "Debes seleccionar una fecha de finalización";
         }
         break;
-      case 7: // Story
-        if (!formData.story || formData.story.length < 10) {
-          errors.story =
+      case 7: // Campaign description
+        if (!formData.description || formData.description.length < 10) {
+          errors.description =
             "La presentación de la campaña debe tener al menos 10 caracteres";
-        } else if (formData.story.length > 600) {
-          errors.story =
+        } else if (formData.description.length > 600) {
+          errors.description =
             "La presentación de la campaña no puede tener más de 600 caracteres";
         }
         break;
@@ -1466,35 +1455,35 @@ setCurrentStep(currentStep + 1);
                           <textarea
                             placeholder="Resume tu campaña en una frase breve"
                             rows={4}
-                            className={`w-full rounded-lg border ${formErrors.description ? "error-input" : "border-black"} bg-white shadow-sm focus:border-[#478C5C] focus:ring-[#478C5C] focus:ring-0 p-4`}
-                            value={formData.description}
+                            className={`w-full rounded-lg border ${formErrors.subtitle ? "error-input" : "border-black"} bg-white shadow-sm focus:border-[#478C5C] focus:ring-[#478C5C] focus:ring-0 p-4`}
+                            value={formData.subtitle}
                             onChange={(e) => {
                               setFormData({
                                 ...formData,
-                                description: e.target.value,
+                                subtitle: e.target.value,
                               });
                               if (e.target.value.length >= 10) {
                                 setFormErrors({
                                   ...formErrors,
-                                  description: "",
+                                  subtitle: "",
                                 });
                               }
                             }}
-                            maxLength={120}
+                            maxLength={150}
                           />
                           <div className="flex justify-between items-center mt-1">
   <ImproveTextButton
-    text={formData.description}
-    fieldType="description"
+    text={formData.subtitle}
+    fieldType="subtitle"
     onAccept={(improved) => {
-      setFormData({ ...formData, description: improved.slice(0, 120) });
+      setFormData({ ...formData, subtitle: improved.slice(0, 150) });
     }}
   />
-  <span className="text-sm text-gray-500">{formData.description.length}/120</span>
+  <span className="text-sm text-gray-500">{formData.subtitle.length}/150</span>
 </div>
-                          {formErrors.description && (
+                          {formErrors.subtitle && (
                             <div className="error-text">
-                              {formErrors.description}
+                              {formErrors.subtitle}
                             </div>
                           )}
                         </div>
@@ -1977,7 +1966,7 @@ setFormData({
               </div>
             )}
 
-            {/* Sub-step 7: Campaign Story */}
+            {/* Sub-step 7: Campaign description */}
             {currentSubStep === 7 && (
               <div className="w-full py-6 md:py-12">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16">
@@ -1990,15 +1979,15 @@ setFormData({
                     </p>
                   </div>
                   <div className="bg-white rounded-xl border border-black p-6 md:p-8">
-                    <StoryInput
-                      initialValue={formData.story}
+                    <CampaignDescriptionInput
+                      initialValue={formData.description}
                       onUpdate={(val) => {
-                        setFormData({ ...formData, story: val });
+                        setFormData({ ...formData, description: val });
                         if (val.length >= 10 && val.length <= 600) {
-                          setFormErrors({ ...formErrors, story: "" });
+                          setFormErrors({ ...formErrors, description: "" });
                         }
                       }}
-                      error={formErrors.story}
+                      error={formErrors.description}
                     />
                   </div>
                 </div>

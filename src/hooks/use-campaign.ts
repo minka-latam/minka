@@ -4,6 +4,7 @@ import { useToast } from "@/components/ui/use-toast";
 // Define the types for campaign form data
 export interface CampaignFormData {
   title: string;
+  subtitle: string;
   description: string;
   category: string;
   goalAmount: string | number;
@@ -19,8 +20,6 @@ export interface CampaignFormData {
     | "pando";
   province?: string; // Optional province field
   endDate: string;
-  // Story field corresponds to "Presentación de la campaña" in the form
-  story: string;
   mediaFiles?: File[];
   youtubeUrl?: string;
   youtubeUrls?: string[];
@@ -116,6 +115,13 @@ export function useCampaign() {
   const [campaignId, setCampaignId] = useState<string | null>(null);
   const { toast } = useToast();
 
+  const normalizedBeneficiariesDescription = (
+    value: string | undefined
+  ) => {
+    const trimmed = value?.trim();
+    return trimmed && trimmed.length >= 10 ? trimmed : undefined;
+  };
+
   // Function to create a new campaign (kept for backwards compatibility)
   const createCampaign = async (
     formData: CampaignFormData
@@ -126,10 +132,12 @@ export function useCampaign() {
       // Format the data according to API requirements
       const payload = {
         title: formData.title,
+        subtitle: formData.subtitle,
         description: formData.description,
-        story: formData.story,
         beneficiariesDescription:
-          formData.beneficiariesDescription || formData.story,
+          normalizedBeneficiariesDescription(
+            formData.beneficiariesDescription
+          ),
         category: formData.category,
         goalAmount: Number(formData.goalAmount),
         location: formData.location,
@@ -202,10 +210,12 @@ export function useCampaign() {
       // Format the data according to API requirements
       const payload: any = {
         title: formData.title,
+        subtitle: formData.subtitle,
         description: formData.description,
-        story: formData.story,
         beneficiariesDescription:
-          formData.beneficiariesDescription || formData.story,
+          normalizedBeneficiariesDescription(
+            formData.beneficiariesDescription
+          ),
         category: formData.category,
         goalAmount: formData.goalAmount
           ? Number(formData.goalAmount)
@@ -307,54 +317,6 @@ export function useCampaign() {
           error instanceof Error
             ? error.message
             : "Error al actualizar la campaña",
-        variant: "destructive",
-      });
-      return false;
-    }
-  };
-
-  // Add a method to update just the campaign story field
-  const updateCampaignStory = async (
-    story: string,
-    targetCampaignId: string = campaignId || ""
-  ): Promise<boolean> => {
-    if (!targetCampaignId) {
-      toast({
-        title: "Error",
-        description: "No se encontró ID de campaña para actualizar",
-        variant: "destructive",
-      });
-      return false;
-    }
-
-    try {
-      const response = await fetch(`/api/campaign/${targetCampaignId}/story`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify({ story }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to update campaign story");
-      }
-
-      toast({
-        title: "Éxito",
-        description: "Presentación de la campaña actualizada correctamente",
-      });
-      return true;
-    } catch (error) {
-      console.error("Error updating campaign story:", error);
-      toast({
-        title: "Error",
-        description:
-          error instanceof Error
-            ? error.message
-            : "Error al actualizar la presentación de la campaña",
         variant: "destructive",
       });
       return false;
@@ -721,7 +683,6 @@ export function useCampaign() {
     createCampaign,
     saveCampaignDraft,
     updateCampaign,
-    updateCampaignStory,
     getCampaignUpdates,
     publishCampaignUpdate,
     deleteCampaignUpdate,

@@ -22,6 +22,7 @@ export async function GET(req: NextRequest) {
     if (query) {
       whereClause.OR = [
         { title: { contains: query, mode: "insensitive" } },
+        { subtitle: { contains: query, mode: "insensitive" } },
         { description: { contains: query, mode: "insensitive" } },
         { location: { contains: query, mode: "insensitive" } },
       ];
@@ -91,7 +92,7 @@ export async function GET(req: NextRequest) {
         location: campaign.location,
         progress: Math.round(campaign.percentageFunded),
         verified: campaign.verificationStatus,
-        description: campaign.description,
+        description: campaign.subtitle || campaign.description,
         donorCount: campaign.donorCount,
         amountRaised: `Bs. ${campaign.collectedAmount.toFixed(2)}`,
         daysRemaining: campaign.daysRemaining,

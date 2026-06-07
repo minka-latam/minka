@@ -429,12 +429,12 @@ export default function CampaignDetailPage() {
       // Prepare the data to send to the API
       const campaignData: {
         title: any;
+        subtitle: any;
         description: any;
         category: any;
         goalAmount: any;
         location: any;
         endDate: any;
-        story: any;
         beneficiariesDescription: any;
         youtubeUrl: any;
         youtubeUrls: any;
@@ -446,12 +446,12 @@ export default function CampaignDetailPage() {
         }>;
       } = {
         title: campaign.title,
+        subtitle: campaign.subtitle,
         description: campaign.description,
         category: campaign.category,
         goalAmount: campaign.goal_amount,
         location: campaign.location,
         endDate: campaign.end_date,
-        story: campaign.story,
         beneficiariesDescription: campaign.beneficiaries_description,
         youtubeUrl: campaign.youtube_url,
         youtubeUrls: campaign.youtube_urls,
@@ -640,6 +640,7 @@ export default function CampaignDetailPage() {
             *,
             organizer:profiles(*),
             verification_request:campaign_verifications(verification_status),
+            legal_entity:legal_entities(id, name, description, website),
             media:campaign_media(*)
           `
           )
@@ -953,7 +954,7 @@ export default function CampaignDetailPage() {
                   </p>
                 </div>
               </div>
-              {isDraftCampaign && (
+              {isDraftCampaign && !isPendingReview && (
                 <p className="mt-4 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
                   Esta campaña está en borrador. Publícala o elimínala desde aquí.
                 </p>
@@ -1124,11 +1125,11 @@ export default function CampaignDetailPage() {
                         <textarea
                           className="w-full p-4 border border-black rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 min-h-[120px] resize-none"
                           placeholder="Resume tu campaña en una frase breve"
-                          defaultValue={campaign.description || ""}
+                          defaultValue={campaign.subtitle || ""}
                           onChange={(e) => {
                             setCampaign({
                               ...campaign,
-                              description: e.target.value,
+                              subtitle: e.target.value,
                             });
                             handleFormChange();
                           }}
@@ -1136,15 +1137,15 @@ export default function CampaignDetailPage() {
                       </div>
                       <div className="flex justify-between items-center mt-1">
   <ImproveTextButton
-    text={campaign.description || ""}
+    text={campaign.subtitle || ""}
     fieldType="description"
     maxLength={120}
     onAccept={(improved) => {
-      setCampaign({ ...campaign, description: improved.slice(0, 120) });
+      setCampaign({ ...campaign, subtitle: improved.slice(0, 120) });
       handleFormChange();
     }}
   />
-  <span className="text-sm text-black">{(campaign.description || "").length}/120</span>
+  <span className="text-sm text-black">{(campaign.subtitle || "").length}/120</span>
 </div>
                     </div>
 
@@ -1804,13 +1805,13 @@ export default function CampaignDetailPage() {
                       <div className="relative">
                         <textarea
                           className="w-full p-4 border border-black rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 min-h-[120px] resize-none"
-                          placeholder="Cuenta la historia completa de tu campaña"
-                          defaultValue={campaign.story || ""}
+                          placeholder="Cuenta la descripción completa de tu campaña"
+                          defaultValue={campaign.description || ""}
                           maxLength={600}
                           onChange={(e) => {
                             setCampaign({
                               ...campaign,
-                              story: e.target.value,
+                              description: e.target.value,
                             });
                             handleFormChange();
                           }}
@@ -1818,15 +1819,15 @@ export default function CampaignDetailPage() {
                       </div>
                       <div className="flex justify-between items-center mt-1">
   <ImproveTextButton
-    text={campaign.story || ""}
-    fieldType="story"
+    text={campaign.description || ""}
+    fieldType="description"
     maxLength={600}
     onAccept={(improved) => {
-      setCampaign({ ...campaign, story: improved.slice(0, 600) });
+      setCampaign({ ...campaign, description: improved.slice(0, 600) });
       handleFormChange();
     }}
   />
-  <span className="text-sm text-black">{(campaign.story || "").length}/600</span>
+  <span className="text-sm text-black">{(campaign.description || "").length}/600</span>
 </div>
                     </div>
 
@@ -1860,13 +1861,45 @@ export default function CampaignDetailPage() {
                                   <span className="text-sm text-gray-800 capitalize">{campaign.beneficiary_relationship}</span>
                                 </div>
                               )}
+                              <div className="space-y-2">
+                                <label
+                                  htmlFor="beneficiaries-description"
+                                  className="block text-sm font-medium text-gray-600"
+                                >
+                                  Destino de los fondos
+                                </label>
+                                <textarea
+                                  id="beneficiaries-description"
+                                  value={campaign.beneficiaries_description || ""}
+                                  onChange={(e) => {
+                                    setCampaign({
+                                      ...campaign,
+                                      beneficiaries_description: e.target.value,
+                                    });
+                                    handleFormChange();
+                                  }}
+                                  maxLength={600}
+                                  placeholder="Describe brevemente quién recibirá el apoyo, su situación y por qué estás organizando la campaña."
+                                  className="min-h-[100px] w-full rounded-md border border-gray-300 bg-white p-3 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#2c6e49]"
+                                />
+                                <p className="text-right text-xs text-gray-500">
+                                  {(campaign.beneficiaries_description || "").length}/600
+                                </p>
+                              </div>
                             </>
                           )}
 
-                          {campaign.recipient_type === "persona_juridica" && campaign.legal_entity_id && (
-                            <div className="flex items-center gap-2">
+                          {campaign.recipient_type === "persona_juridica" && (campaign.legal_entity || campaign.legal_entity_id) && (
+                            <div className="space-y-1">
                               <span className="text-sm font-medium text-gray-600">Organización asociada:</span>
-                              <span className="text-sm text-gray-800">ID: {campaign.legal_entity_id}</span>
+                              <p className="text-sm text-gray-800">
+                                {campaign.legal_entity?.name || campaign.legal_entity_id}
+                              </p>
+                              {campaign.legal_entity?.description && (
+                                <p className="text-sm text-gray-700">
+                                  {campaign.legal_entity.description}
+                                </p>
+                              )}
                             </div>
                           )}
                         </div>

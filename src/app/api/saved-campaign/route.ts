@@ -65,6 +65,7 @@ export async function GET() {
           select: {
             id: true,
             title: true,
+            subtitle: true,
             description: true,
             category: true,
             location: true,
@@ -88,7 +89,7 @@ export async function GET() {
       id: saved.campaign.id,
       savedId: saved.id,
       title: saved.campaign.title,
-      description: saved.campaign.description,
+      description: saved.campaign.subtitle || saved.campaign.description,
       imageUrl: saved.campaign.media[0]?.mediaUrl || "",
       category: saved.campaign.category,
       location: saved.campaign.location,

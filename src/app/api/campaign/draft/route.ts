@@ -8,9 +8,9 @@ import { Region } from "@prisma/client";
 const campaignDraftSchema = z.object({
   campaignId: z.string().uuid().optional(),
   title: z.string().min(3).max(80).optional(),
-  description: z.string().min(10).max(1000).optional(),
-  story: z.string().min(10).max(600).optional(),
-  beneficiariesDescription: z.string().min(10).max(600).optional(),
+  subtitle: z.string().min(10).max(150).optional(),
+  description: z.string().min(10).max(600).optional(),
+  beneficiariesDescription: z.string().max(600).optional(),
   category: z.enum([
     "cultura_arte", "educacion", "emergencia", "igualdad",
     "medioambiente", "salud", "otros",
@@ -95,8 +95,8 @@ export async function POST(req: NextRequest) {
         where: { id: validatedData.campaignId },
         data: {
           title: validatedData.title,
+          subtitle: validatedData.subtitle,
           description: validatedData.description,
-          story: validatedData.story,
           beneficiariesDescription: validatedData.beneficiariesDescription,
           category: validatedData.category,
           goalAmount: validatedData.goalAmount,
@@ -129,8 +129,8 @@ export async function POST(req: NextRequest) {
       campaign = await db.campaign.create({
         data: {
           title: validatedData.title || "Untitled Campaign",
+          subtitle: validatedData.subtitle || "",
           description: validatedData.description || "Draft description",
-          story: validatedData.story || "",
           beneficiariesDescription: validatedData.beneficiariesDescription || "",
           category: validatedData.category || "otros",
           goalAmount: validatedData.goalAmount || 0,

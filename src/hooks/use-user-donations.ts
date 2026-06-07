@@ -43,7 +43,7 @@ type DonationDetailsResponse = {
     };
     campaign: DonationCampaign & {
       description: string;
-      story: string;
+      subtitle?: string;
       goal_amount: number;
       collected_amount: number;
       percentage_funded: number;
@@ -153,7 +153,7 @@ const fetchDonationDetails = async (donationId: string) => {
         campaign: {
           ...donation.campaign,
           description: "Una campaña para apoyar a quienes más lo necesitan",
-          story: "Esta historia comenzó cuando...",
+          subtitle: "Una campaña para apoyar a quienes más lo necesitan",
           goal_amount: 10000,
           collected_amount: 5000,
           percentage_funded: 50,
@@ -223,4 +223,3 @@ export function useUserDonationDetails(donationId: string | null) {
     refetch,
   };
 }
-

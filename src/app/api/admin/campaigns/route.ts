@@ -103,7 +103,7 @@ export async function GET(req: NextRequest) {
       return {
         id: campaign.id,
         title: campaign.title,
-        description: campaign.description,
+        description: campaign.subtitle || campaign.description,
         category: campaign.category,
         location: campaign.location,
         goalAmount: Number(campaign.goalAmount),

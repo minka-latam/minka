@@ -6,10 +6,9 @@ import { z } from "zod";
 
 const campaignCreateSchema = z.object({
   title: z.string().min(3).max(80),
-  description: z.string().min(10).max(1000),
-  // Story field corresponds to "Presentación de la campaña" in the form
-  story: z.string().min(10).max(600),
-  beneficiariesDescription: z.string().min(10).max(600),
+  subtitle: z.string().min(10).max(150),
+  description: z.string().min(10).max(600),
+  beneficiariesDescription: z.string().max(600).optional().default(""),
   category: z.enum([
     "cultura_arte",
     "educacion",
@@ -105,9 +104,9 @@ export async function POST(req: NextRequest) {
     const campaign = await db.campaign.create({
       data: {
         title: validatedData.title,
+        subtitle: validatedData.subtitle,
         description: validatedData.description,
-        story: validatedData.story,
-        beneficiariesDescription: validatedData.beneficiariesDescription,
+        beneficiariesDescription: validatedData.beneficiariesDescription || "",
         category: validatedData.category,
         goalAmount: validatedData.goalAmount,
         collectedAmount: 0,

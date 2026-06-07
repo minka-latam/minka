@@ -73,10 +73,12 @@ export async function GET(request: Request) {
         // Build the search OR clause to include title, description, and location
         const searchConditions: Array<
           | { title: { contains: string; mode: string } }
+          | { subtitle: { contains: string; mode: string } }
           | { description: { contains: string; mode: string } }
           | { location: string }
         > = [
           { title: { contains: search, mode: "insensitive" } },
+          { subtitle: { contains: search, mode: "insensitive" } },
           { description: { contains: search, mode: "insensitive" } },
         ];
 

@@ -2,13 +2,13 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
-const VALID_FIELD_TYPES = ["title", "description", "story", "beneficiaries"] as const;
+const VALID_FIELD_TYPES = ["title", "subtitle", "description", "beneficiaries"] as const;
 type FieldType = typeof VALID_FIELD_TYPES[number];
 
 const MAX_LENGTHS: Record<FieldType, number> = {
   title: 50,
-  description: 120,
-  story: 600,
+  subtitle: 150,
+  description: 600,
   beneficiaries: 600,
 };
 
@@ -86,8 +86,8 @@ export async function POST(request: NextRequest) {
 
     const fieldInstructions: Record<FieldType, string> = {
       title: "título de una campaña de crowdfunding",
-      description: "descripción breve de una campaña de crowdfunding",
-      story: "historia y presentación de una campaña de crowdfunding",
+      subtitle: "subtítulo breve de una campaña de crowdfunding",
+      description: "descripción de una campaña de crowdfunding",
       beneficiaries: "descripción de los beneficiarios de una campaña de crowdfunding",
     };
 

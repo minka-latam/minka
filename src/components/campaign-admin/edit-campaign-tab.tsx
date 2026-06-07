@@ -63,8 +63,8 @@ export function EditCampaignTab({ campaign }: EditCampaignTabProps) {
   const initialFormState = useMemo(
     () => ({
       title: campaign.title || "",
+      subtitle: campaign.subtitle || "",
       description: campaign.description || "",
-      story: campaign.story || "",
       goalAmount: campaign.goal_amount || 0,
       location: campaign.location || "",
       category: campaign.category || "",
@@ -78,6 +78,11 @@ export function EditCampaignTab({ campaign }: EditCampaignTabProps) {
 
   const [formData, setFormData] = useState(initialFormState);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const shouldShowBeneficiaryDescription =
+    campaign.recipient_type === "otra_persona" ||
+    Boolean(campaign.beneficiary_name) ||
+    Boolean(campaign.beneficiary_relationship) ||
+    formData.beneficiariesDescription.trim().length > 0;
 
   useEffect(() => {
     // Check if form has any changes
@@ -353,8 +358,8 @@ export function EditCampaignTab({ campaign }: EditCampaignTabProps) {
         },
         body: JSON.stringify({
           title: formData.title,
+          subtitle: formData.subtitle,
           description: formData.description,
-          story: formData.story,
           goalAmount: Number(formData.goalAmount),
           location: formData.location,
           category: formData.category,
@@ -467,15 +472,15 @@ export function EditCampaignTab({ campaign }: EditCampaignTabProps) {
 
             <div className="md:col-span-2">
               <label
-                htmlFor="description"
+                htmlFor="subtitle"
                 className="block text-sm font-medium text-gray-700 mb-1"
               >
                 Subtítulo
               </label>
               <textarea
-                id="description"
-                name="description"
-                value={formData.description}
+                id="subtitle"
+                name="subtitle"
+                value={formData.subtitle}
                 onChange={handleInputChange}
                 placeholder="Resume tu campaña en una frase breve"
                 className="w-full rounded-md border border-gray-300 p-3 min-h-[100px]"
@@ -484,15 +489,15 @@ export function EditCampaignTab({ campaign }: EditCampaignTabProps) {
               />
               <div className="flex justify-between items-center mt-1">
   <ImproveTextButton
-    text={formData.description}
-    fieldType="description"
+    text={formData.subtitle}
+    fieldType="subtitle"
     maxLength={120}
     onAccept={(improved) => {
-      setFormData({ ...formData, description: improved.slice(0, 120) });
+      setFormData({ ...formData, subtitle: improved.slice(0, 120) });
     }}
   />
   <span className="text-xs text-gray-500">
-    {formData.description.length}/130
+    {formData.subtitle.length}/130
   </span>
 </div>
             </div>
@@ -721,15 +726,15 @@ export function EditCampaignTab({ campaign }: EditCampaignTabProps) {
 
             <div className="md:col-span-2">
               <label
-                htmlFor="story"
+                htmlFor="description"
                 className="block text-sm font-medium text-gray-700 mb-1"
               >
                 Descripción de la campaña
               </label>
               <textarea
-                id="story"
-                name="story"
-                value={formData.story}
+                id="description"
+                name="description"
+                value={formData.description}
                 onChange={handleInputChange}
                 placeholder="Cuenta la historia completa de tu campaña"
                 className="w-full rounded-md border border-gray-300 p-3 min-h-[100px]"
@@ -738,18 +743,41 @@ export function EditCampaignTab({ campaign }: EditCampaignTabProps) {
               />
               <div className="flex justify-between items-center mt-1">
   <ImproveTextButton
-    text={formData.story}
-    fieldType="story"
+    text={formData.description}
+    fieldType="description"
     maxLength={600}
     onAccept={(improved) => {
-      setFormData({ ...formData, story: improved.slice(0, 600) });
+      setFormData({ ...formData, description: improved.slice(0, 600) });
     }}
   />
   <span className="text-xs text-gray-500">
-    {formData.story.length}/600
+    {formData.description.length}/600
   </span>
 </div>
             </div>
+
+            {shouldShowBeneficiaryDescription && (
+              <div className="md:col-span-2">
+                <label
+                  htmlFor="beneficiariesDescription"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Destino de los fondos
+                </label>
+                <textarea
+                  id="beneficiariesDescription"
+                  name="beneficiariesDescription"
+                  value={formData.beneficiariesDescription}
+                  onChange={handleInputChange}
+                  placeholder="Describe brevemente quién recibirá el apoyo, su situación y por qué estás organizando la campaña."
+                  className="w-full rounded-md border border-gray-300 p-3 min-h-[100px]"
+                  maxLength={600}
+                />
+                <p className="text-xs text-gray-500 text-right mt-1">
+                  {formData.beneficiariesDescription.length}/600
+                </p>
+              </div>
+            )}
           </div>
         </form>
       </div>

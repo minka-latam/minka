@@ -35,7 +35,7 @@ export async function GET() {
         location: campaign.location,
         progress: Math.round(campaign.percentageFunded),
         verified: campaign.verificationStatus,
-        description: campaign.description,
+        description: campaign.subtitle || campaign.description,
         donorCount: campaign.donorCount,
         amountRaised: `Bs. ${campaign.collectedAmount.toFixed(2)}`,
       };
