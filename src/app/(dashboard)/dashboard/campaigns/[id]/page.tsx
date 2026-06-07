@@ -43,13 +43,16 @@ export default function CampaignDetailPage() {
   const [campaign, setCampaign] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("editar");
-  const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  );
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Add state variables for form fields
   const [selectedLocation, setSelectedLocation] = useState<string | null>(null);
   const [selectedEndDate, setSelectedEndDate] = useState<Date | undefined>(
-    undefined
+    undefined,
   );
   const [isFormModified, setIsFormModified] = useState(false);
 
@@ -62,7 +65,7 @@ export default function CampaignDetailPage() {
   const [youtubeUrls, setYoutubeUrls] = useState<string[]>([]);
   const [imageToEdit, setImageToEdit] = useState<string | null>(null);
   const [editingImageIndex, setEditingImageIndex] = useState<number | null>(
-    null
+    null,
   );
   const [newYoutubeUrl, setNewYoutubeUrl] = useState("");
   const [isPublishing, setIsPublishing] = useState(false);
@@ -70,7 +73,7 @@ export default function CampaignDetailPage() {
 
   // Track original campaign state for reset functionality
   const [originalCampaign, setOriginalCampaign] = useState<Record<string, any>>(
-    {}
+    {},
   );
 
   // Function to handle form changes
@@ -86,7 +89,7 @@ export default function CampaignDetailPage() {
     setSelectedEndDate(
       originalCampaign.end_date
         ? new Date(originalCampaign.end_date)
-        : undefined
+        : undefined,
     );
     setYoutubeUrls(originalCampaign.youtube_urls || []);
     setMediaPreviewUrls([]);
@@ -117,7 +120,6 @@ export default function CampaignDetailPage() {
   // Add handler for saving edited image
   const handleSaveEditedImage = async (editedUrl: string) => {
     try {
-
       // Create file from edited image dataURL first
       const blob = dataURLtoBlob(editedUrl);
       const fileName = uploadingFile
@@ -506,16 +508,17 @@ export default function CampaignDetailPage() {
     campaign?.campaign_status === "cancelled" ||
     campaign?.campaignStatus === "cancelled";
   const isPendingReview =
-    isDraftCampaign &&
+    !isDraftCampaign &&
+    !isCancelledCampaign &&
     Boolean(
-      campaign?.submitted_for_review_at ||
-        campaign?.submittedForReviewAt
-    );
+      campaign?.submitted_for_review_at || campaign?.submittedForReviewAt,
+    ) &&
+    !Boolean(campaign?.reviewed_at || campaign?.reviewedAt);
   const verificationRequest = Array.isArray(campaign?.verification_request)
     ? campaign.verification_request[0]
     : campaign?.verification_request;
   const isVerifiedCampaign = Boolean(
-    campaign?.verification_status ?? campaign?.verificationStatus
+    campaign?.verification_status ?? campaign?.verificationStatus,
   );
   const isPendingCampaignVerification =
     !isVerifiedCampaign &&
@@ -551,23 +554,26 @@ export default function CampaignDetailPage() {
 
       setCampaign((prev: Record<string, any>) => ({
         ...prev,
-        campaign_status: "draft",
+        campaign_status: "active",
+        campaignStatus: "active",
         submitted_for_review_at:
           data.campaign?.submittedForReviewAt ||
           data.campaign?.submitted_for_review_at ||
           new Date().toISOString(),
+        reviewed_at:
+          data.campaign?.reviewedAt || data.campaign?.reviewed_at || null,
       }));
 
       toast({
-        title: "Campaña enviada a revisión",
+        title: "Campaña publicada",
         description:
-          "El equipo de Minka la aprobará en un máximo de 24 horas o menos.",
+          "Tu campaña ya está pública. El equipo de Minka la revisará para confirmar que todo esté en orden.",
       });
     } catch (error) {
       console.error("Error publishing campaign:", error);
       toast({
         title: "Error",
-        description: "No se pudo enviar la campaña a revisión.",
+        description: "No se pudo publicar la campaña.",
         variant: "destructive",
       });
     } finally {
@@ -577,7 +583,7 @@ export default function CampaignDetailPage() {
 
   const handleDeleteCampaign = async () => {
     const confirmed = window.confirm(
-      "¿Cancelar esta campaña? Ya no será pública ni aceptará donaciones, pero sus registros se conservarán."
+      "¿Cancelar esta campaña? Ya no será pública ni aceptará donaciones, pero sus registros se conservarán.",
     );
     if (!confirmed) return;
 
@@ -594,7 +600,8 @@ export default function CampaignDetailPage() {
 
       toast({
         title: "Campaña cancelada",
-        description: "La campaña ya no es pública y sus registros se conservaron.",
+        description:
+          "La campaña ya no es pública y sus registros se conservaron.",
       });
       router.push("/dashboard/campaigns");
     } catch (error) {
@@ -643,7 +650,7 @@ export default function CampaignDetailPage() {
             verification_request:campaign_verifications(verification_status),
             legal_entity:legal_entities(id, name, description, website),
             media:campaign_media(*)
-          `
+          `,
           )
           .eq("id", params.id)
           .single();
@@ -697,7 +704,9 @@ export default function CampaignDetailPage() {
         // Find the primary image from campaign media
         const primaryMedia = campaignData.media?.find(
           (media: any) =>
-            media.is_primary && media.media_url && media.media_url.trim() !== ""
+            media.is_primary &&
+            media.media_url &&
+            media.media_url.trim() !== "",
         );
 
         // Merge campaign data with the primary image URL
@@ -866,7 +875,7 @@ export default function CampaignDetailPage() {
                     disabled={isPublishing || isDeleting}
                     className="h-8 px-4 rounded-full bg-[#2c6e49] hover:bg-[#1e4d33] text-white"
                   >
-                    {isPublishing ? "Enviando..." : "Enviar a revisión"}
+                    {isPublishing ? "Publicando..." : "Publicar"}
                   </Button>
                 )}
                 {canDeleteCampaign && (
@@ -884,8 +893,8 @@ export default function CampaignDetailPage() {
               </div>
               {isPendingReview && (
                 <div className="mb-5 rounded-lg border border-yellow-200 bg-yellow-50 p-4 text-sm text-yellow-900">
-                  Tu campaña fue enviada para revisión. El equipo de Minka la
-                  aprobará en un máximo de 24 horas o menos.
+                  Tu campaña ya está publicada. El equipo de Minka la revisará
+                  para confirmar que todo esté en orden.
                 </div>
               )}
 
@@ -917,7 +926,8 @@ export default function CampaignDetailPage() {
               </div>
               {isDraftCampaign && !isPendingReview && (
                 <p className="mt-4 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
-                  Esta campaña está en borrador. Publícala o elimínala desde aquí.
+                  Esta campaña está en borrador. Publícala o elimínala desde
+                  aquí.
                 </p>
               )}
             </div>
@@ -938,8 +948,8 @@ export default function CampaignDetailPage() {
               isCancelledCampaign
                 ? "bg-gray-100 text-gray-500 cursor-not-allowed opacity-75"
                 : activeTab === "editar"
-                ? "bg-white text-[#1a5535] after:absolute after:bottom-[-1px] after:left-0 after:right-0 after:h-[1px] after:bg-white after:z-10"
-                : "bg-[#f2f8f5] text-[#1a5535] hover:bg-[#e8f5ed]"
+                  ? "bg-white text-[#1a5535] after:absolute after:bottom-[-1px] after:left-0 after:right-0 after:h-[1px] after:bg-white after:z-10"
+                  : "bg-[#f2f8f5] text-[#1a5535] hover:bg-[#e8f5ed]"
             }`}
           >
             <span className="text-xs sm:text-sm">Editar campaña</span>
@@ -960,12 +970,17 @@ export default function CampaignDetailPage() {
                   isCancelledCampaign
                     ? "bg-gray-100 text-gray-500 cursor-not-allowed opacity-75"
                     : activeTab === "anuncios"
-                    ? "bg-white text-[#1a5535] after:absolute after:bottom-[-1px] after:left-0 after:right-0 after:h-[1px] after:bg-white after:z-10"
-                    : "bg-[#f2f8f5] text-[#1a5535] hover:bg-[#e8f5ed]"
+                      ? "bg-white text-[#1a5535] after:absolute after:bottom-[-1px] after:left-0 after:right-0 after:h-[1px] after:bg-white after:z-10"
+                      : "bg-[#f2f8f5] text-[#1a5535] hover:bg-[#e8f5ed]"
                 }`}
               >
                 <span className="text-xs sm:text-sm">Publicar anuncios</span>
-                <Image src="/icons/add_2.svg" alt="Add" width={16} height={16} />
+                <Image
+                  src="/icons/add_2.svg"
+                  alt="Add"
+                  width={16}
+                  height={16}
+                />
                 {isCancelledCampaign && (
                   <span className="pointer-events-none absolute inset-0 rounded-t-lg bg-black/10" />
                 )}
@@ -1064,17 +1079,22 @@ export default function CampaignDetailPage() {
                         />
                       </div>
                       <div className="flex justify-between items-center mt-1">
-  <ImproveTextButton
-    text={campaign.title || ""}
-    fieldType="title"
-    maxLength={50}
-    onAccept={(improved) => {
-      setCampaign({ ...campaign, title: improved.slice(0, 50) });
-      handleFormChange();
-    }}
-  />
-  <span className="text-sm text-black">{(campaign.title || "").length}/50</span>
-</div>
+                        <ImproveTextButton
+                          text={campaign.title || ""}
+                          fieldType="title"
+                          maxLength={50}
+                          onAccept={(improved) => {
+                            setCampaign({
+                              ...campaign,
+                              title: improved.slice(0, 50),
+                            });
+                            handleFormChange();
+                          }}
+                        />
+                        <span className="text-sm text-black">
+                          {(campaign.title || "").length}/50
+                        </span>
+                      </div>
                     </div>
 
                     {/* Subtítulo */}
@@ -1097,17 +1117,22 @@ export default function CampaignDetailPage() {
                         ></textarea>
                       </div>
                       <div className="flex justify-between items-center mt-1">
-  <ImproveTextButton
-    text={campaign.subtitle || ""}
-    fieldType="description"
-    maxLength={120}
-    onAccept={(improved) => {
-      setCampaign({ ...campaign, subtitle: improved.slice(0, 120) });
-      handleFormChange();
-    }}
-  />
-  <span className="text-sm text-black">{(campaign.subtitle || "").length}/120</span>
-</div>
+                        <ImproveTextButton
+                          text={campaign.subtitle || ""}
+                          fieldType="description"
+                          maxLength={120}
+                          onAccept={(improved) => {
+                            setCampaign({
+                              ...campaign,
+                              subtitle: improved.slice(0, 120),
+                            });
+                            handleFormChange();
+                          }}
+                        />
+                        <span className="text-sm text-black">
+                          {(campaign.subtitle || "").length}/120
+                        </span>
+                      </div>
                     </div>
 
                     {/* Categoría */}
@@ -1128,10 +1153,7 @@ export default function CampaignDetailPage() {
                           }}
                         >
                           {CAMPAIGN_CATEGORIES.map((category) => (
-                            <option
-                              key={category.value}
-                              value={category.value}
-                            >
+                            <option key={category.value} value={category.value}>
                               {category.label}
                             </option>
                           ))}
@@ -1174,14 +1196,14 @@ export default function CampaignDetailPage() {
                             // Remove non-numeric characters for storage
                             const numericValue = e.target.value.replace(
                               /[^0-9]/g,
-                              ""
+                              "",
                             );
                             const parsedValue = numericValue
                               ? parseInt(numericValue, 10)
                               : 0;
                             const boundedValue = Math.min(
                               parsedValue,
-                              MAX_GOAL_AMOUNT
+                              MAX_GOAL_AMOUNT,
                             );
                             setCampaign({
                               ...campaign,
@@ -1290,7 +1312,7 @@ export default function CampaignDetailPage() {
                                     </button>
                                   )}
                                 </div>
-                              )
+                              ),
                             )}
 
                             {/* Preview URLs for newly uploaded images (not yet saved to campaign.media) */}
@@ -1344,7 +1366,7 @@ export default function CampaignDetailPage() {
                                             ...mediaPreviewUrls,
                                           ];
                                           URL.revokeObjectURL(
-                                            newPreviewUrls[index]
+                                            newPreviewUrls[index],
                                           );
                                           newPreviewUrls.splice(index, 1);
                                           setMediaPreviewUrls(newPreviewUrls);
@@ -1502,7 +1524,7 @@ export default function CampaignDetailPage() {
                               // Extract video ID from URL
                               const videoId =
                                 url.match(
-                                  /(?:\/|v=)([a-zA-Z0-9_-]{11})(?:\?|&|$)/
+                                  /(?:\/|v=)([a-zA-Z0-9_-]{11})(?:\?|&|$)/,
                                 )?.[1] || "";
                               const thumbnailUrl = videoId
                                 ? `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`
@@ -1574,7 +1596,7 @@ export default function CampaignDetailPage() {
                               className={cn(
                                 "w-full h-12 justify-start text-left border-black rounded-md bg-white hover:bg-gray-50",
                                 !(selectedLocation || campaign.location) &&
-                                  "text-gray-400"
+                                  "text-gray-400",
                               )}
                             >
                               <div className="flex items-center w-full">
@@ -1592,7 +1614,7 @@ export default function CampaignDetailPage() {
                                         .map(
                                           (word: string) =>
                                             word.charAt(0).toUpperCase() +
-                                            word.slice(1)
+                                            word.slice(1),
                                         )
                                         .join(" ")
                                     : campaign.location
@@ -1601,7 +1623,7 @@ export default function CampaignDetailPage() {
                                           .map(
                                             (word: string) =>
                                               word.charAt(0).toUpperCase() +
-                                              word.slice(1)
+                                              word.slice(1),
                                           )
                                           .join(" ")
                                       : "¿Adónde irán los fondos?"}
@@ -1646,7 +1668,7 @@ export default function CampaignDetailPage() {
                                       .map(
                                         (word: string) =>
                                           word.charAt(0).toUpperCase() +
-                                          word.slice(1)
+                                          word.slice(1),
                                       )
                                       .join(" ")}
                                   </Button>
@@ -1688,7 +1710,7 @@ export default function CampaignDetailPage() {
                               className={cn(
                                 "w-full h-12 justify-start text-left relative pl-10 border-black rounded-md bg-white hover:bg-gray-50",
                                 !(selectedEndDate || campaign.end_date) &&
-                                  "text-gray-400"
+                                  "text-gray-400",
                               )}
                             >
                               <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -1700,7 +1722,7 @@ export default function CampaignDetailPage() {
                                   ? format(
                                       new Date(campaign.end_date),
                                       "dd/MM/yyyy",
-                                      { locale: es }
+                                      { locale: es },
                                     )
                                   : "DD/MM/AAAA"}
                             </Button>
@@ -1779,17 +1801,22 @@ export default function CampaignDetailPage() {
                         ></textarea>
                       </div>
                       <div className="flex justify-between items-center mt-1">
-  <ImproveTextButton
-    text={campaign.description || ""}
-    fieldType="description"
-    maxLength={600}
-    onAccept={(improved) => {
-      setCampaign({ ...campaign, description: improved.slice(0, 600) });
-      handleFormChange();
-    }}
-  />
-  <span className="text-sm text-black">{(campaign.description || "").length}/600</span>
-</div>
+                        <ImproveTextButton
+                          text={campaign.description || ""}
+                          fieldType="description"
+                          maxLength={600}
+                          onAccept={(improved) => {
+                            setCampaign({
+                              ...campaign,
+                              description: improved.slice(0, 600),
+                            });
+                            handleFormChange();
+                          }}
+                        />
+                        <span className="text-sm text-black">
+                          {(campaign.description || "").length}/600
+                        </span>
+                      </div>
                     </div>
 
                     {/* Información del beneficiario */}
@@ -1800,11 +1827,16 @@ export default function CampaignDetailPage() {
                         </label>
                         <div className="bg-gray-50 rounded-lg p-4 space-y-3">
                           <div className="flex items-center gap-2">
-                            <span className="text-sm font-medium text-gray-600">Tipo de destinatario:</span>
+                            <span className="text-sm font-medium text-gray-600">
+                              Tipo de destinatario:
+                            </span>
                             <span className="text-sm text-gray-800 capitalize">
-                              {campaign.recipient_type === "tu_mismo" && "Tú mismo"}
-                              {campaign.recipient_type === "otra_persona" && "Otra persona"}
-                              {campaign.recipient_type === "persona_juridica" && "Persona Jurídica"}
+                              {campaign.recipient_type === "tu_mismo" &&
+                                "Tú mismo"}
+                              {campaign.recipient_type === "otra_persona" &&
+                                "Otra persona"}
+                              {campaign.recipient_type === "persona_juridica" &&
+                                "Persona Jurídica"}
                             </span>
                           </div>
 
@@ -1812,14 +1844,22 @@ export default function CampaignDetailPage() {
                             <>
                               {campaign.beneficiary_name && (
                                 <div className="flex items-center gap-2">
-                                  <span className="text-sm font-medium text-gray-600">Nombre del beneficiario:</span>
-                                  <span className="text-sm text-gray-800">{campaign.beneficiary_name}</span>
+                                  <span className="text-sm font-medium text-gray-600">
+                                    Nombre del beneficiario:
+                                  </span>
+                                  <span className="text-sm text-gray-800">
+                                    {campaign.beneficiary_name}
+                                  </span>
                                 </div>
                               )}
                               {campaign.beneficiary_relationship && (
                                 <div className="flex items-center gap-2">
-                                  <span className="text-sm font-medium text-gray-600">Relación:</span>
-                                  <span className="text-sm text-gray-800 capitalize">{campaign.beneficiary_relationship}</span>
+                                  <span className="text-sm font-medium text-gray-600">
+                                    Relación:
+                                  </span>
+                                  <span className="text-sm text-gray-800 capitalize">
+                                    {campaign.beneficiary_relationship}
+                                  </span>
                                 </div>
                               )}
                               <div className="space-y-2">
@@ -1831,7 +1871,9 @@ export default function CampaignDetailPage() {
                                 </label>
                                 <textarea
                                   id="beneficiaries-description"
-                                  value={campaign.beneficiaries_description || ""}
+                                  value={
+                                    campaign.beneficiaries_description || ""
+                                  }
                                   onChange={(e) => {
                                     setCampaign({
                                       ...campaign,
@@ -1844,25 +1886,34 @@ export default function CampaignDetailPage() {
                                   className="min-h-[100px] w-full rounded-md border border-gray-300 bg-white p-3 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#2c6e49]"
                                 />
                                 <p className="text-right text-xs text-gray-500">
-                                  {(campaign.beneficiaries_description || "").length}/600
+                                  {
+                                    (campaign.beneficiaries_description || "")
+                                      .length
+                                  }
+                                  /600
                                 </p>
                               </div>
                             </>
                           )}
 
-                          {campaign.recipient_type === "persona_juridica" && (campaign.legal_entity || campaign.legal_entity_id) && (
-                            <div className="space-y-1">
-                              <span className="text-sm font-medium text-gray-600">Organización asociada:</span>
-                              <p className="text-sm text-gray-800">
-                                {campaign.legal_entity?.name || campaign.legal_entity_id}
-                              </p>
-                              {campaign.legal_entity?.description && (
-                                <p className="text-sm text-gray-700">
-                                  {campaign.legal_entity.description}
+                          {campaign.recipient_type === "persona_juridica" &&
+                            (campaign.legal_entity ||
+                              campaign.legal_entity_id) && (
+                              <div className="space-y-1">
+                                <span className="text-sm font-medium text-gray-600">
+                                  Organización asociada:
+                                </span>
+                                <p className="text-sm text-gray-800">
+                                  {campaign.legal_entity?.name ||
+                                    campaign.legal_entity_id}
                                 </p>
-                              )}
-                            </div>
-                          )}
+                                {campaign.legal_entity?.description && (
+                                  <p className="text-sm text-gray-700">
+                                    {campaign.legal_entity.description}
+                                  </p>
+                                )}
+                              </div>
+                            )}
                         </div>
                       </div>
                     )}

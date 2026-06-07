@@ -16,7 +16,7 @@ import { prisma } from "@/lib/prisma";
 
 const updateCampaignApprovalSchema = z.object({
   campaignId: z.string().uuid(),
-  action: z.enum(["approve", "cancel"]),
+  action: z.enum(["reviewed", "cancel"]),
 });
 
 type AdminCampaignApprovalRow = {
@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
 
     if (status !== "pending") {
       return NextResponse.json(
-        { error: "Estado de aprobación inválido" },
+        { error: "Estado de revisión inválido" },
         { status: 400 },
       );
     }
@@ -71,8 +71,9 @@ export async function GET(request: NextRequest) {
         campaigns.created_at as "createdAt"
       from public.campaigns
       join public.profiles organizer on organizer.id = campaigns.organizer_id
-      where campaigns.campaign_status = 'draft'::"CampaignStatus"
+      where campaigns.campaign_status = 'active'::"CampaignStatus"
         and campaigns.submitted_for_review_at is not null
+        and campaigns.reviewed_at is null
       order by campaigns.submitted_for_review_at asc
       limit ${limit}
     `;
@@ -86,7 +87,7 @@ export async function GET(request: NextRequest) {
 
     console.error("Error fetching campaign approvals:", error);
     return NextResponse.json(
-      { error: "Error al obtener campañas pendientes" },
+      { error: "Error al obtener campañas por revisar" },
       { status: 500 },
     );
   }
@@ -107,6 +108,7 @@ export async function PATCH(request: NextRequest) {
         campaignStatus: true,
         organizerId: true,
         submittedForReviewAt: true,
+        reviewedAt: true,
       },
     });
 
@@ -118,19 +120,20 @@ export async function PATCH(request: NextRequest) {
     }
 
     if (
-      existingCampaign.campaignStatus !== CampaignStatus.draft ||
-      !existingCampaign.submittedForReviewAt
+      existingCampaign.campaignStatus !== CampaignStatus.active ||
+      !existingCampaign.submittedForReviewAt ||
+      existingCampaign.reviewedAt
     ) {
       return NextResponse.json(
-        { error: "La campaña no está pendiente de aprobación" },
+        { error: "La campaña no está pendiente de revisión" },
         { status: 400 },
       );
     }
 
     const reviewedAt = new Date();
     const nextStatus =
-      action === "approve"
-        ? CampaignStatus.active
+      action === "reviewed"
+        ? existingCampaign.campaignStatus
         : CampaignStatus.cancelled;
 
     const updatedCampaign = await prisma.$transaction(async (tx) => {
@@ -150,8 +153,9 @@ export async function PATCH(request: NextRequest) {
       });
 
       if (
-        isCountedCampaignStatus(existingCampaign.campaignStatus) ||
-        isCountedCampaignStatus(nextStatus)
+        action === "cancel" &&
+        (isCountedCampaignStatus(existingCampaign.campaignStatus) ||
+          isCountedCampaignStatus(nextStatus))
       ) {
         await refreshOrganizerActiveCampaignsCount(
           tx,
@@ -165,8 +169,8 @@ export async function PATCH(request: NextRequest) {
     await createAdminAuditLog({
       adminId: admin.id,
       action:
-        action === "approve"
-          ? "campaign_review.approve"
+        action === "reviewed"
+          ? "campaign_review.mark_reviewed"
           : "campaign_review.cancel",
       entityType: "campaign",
       entityId: campaignId,
@@ -195,7 +199,7 @@ export async function PATCH(request: NextRequest) {
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: "Datos inválidos para actualizar campaña" },
+        { error: "Datos inválidos para actualizar revisión" },
         { status: 400 },
       );
     }

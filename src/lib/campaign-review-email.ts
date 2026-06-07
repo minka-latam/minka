@@ -21,7 +21,7 @@ function getAppUrl() {
   return appUrl;
 }
 
-export async function notifyCampaignSubmittedForReview({
+export async function notifyCampaignPublishedForReview({
   campaignId,
   campaignTitle,
   organizerName,

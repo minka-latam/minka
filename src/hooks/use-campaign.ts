@@ -115,16 +115,14 @@ export function useCampaign() {
   const [campaignId, setCampaignId] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const normalizedBeneficiariesDescription = (
-    value: string | undefined
-  ) => {
+  const normalizedBeneficiariesDescription = (value: string | undefined) => {
     const trimmed = value?.trim();
     return trimmed && trimmed.length >= 10 ? trimmed : undefined;
   };
 
   // Function to create a new campaign (kept for backwards compatibility)
   const createCampaign = async (
-    formData: CampaignFormData
+    formData: CampaignFormData,
   ): Promise<string | null> => {
     setIsCreating(true);
 
@@ -134,10 +132,9 @@ export function useCampaign() {
         title: formData.title,
         subtitle: formData.subtitle,
         description: formData.description,
-        beneficiariesDescription:
-          normalizedBeneficiariesDescription(
-            formData.beneficiariesDescription
-          ),
+        beneficiariesDescription: normalizedBeneficiariesDescription(
+          formData.beneficiariesDescription,
+        ),
         category: formData.category,
         goalAmount: Number(formData.goalAmount),
         location: formData.location,
@@ -193,7 +190,7 @@ export function useCampaign() {
 
   // Function to save a campaign draft
   const saveCampaignDraft = async (
-    formData: CampaignFormData
+    formData: CampaignFormData,
   ): Promise<string | null> => {
     setIsSavingDraft(true);
 
@@ -212,10 +209,9 @@ export function useCampaign() {
         title: formData.title,
         subtitle: formData.subtitle,
         description: formData.description,
-        beneficiariesDescription:
-          normalizedBeneficiariesDescription(
-            formData.beneficiariesDescription
-          ),
+        beneficiariesDescription: normalizedBeneficiariesDescription(
+          formData.beneficiariesDescription,
+        ),
         category: formData.category,
         goalAmount: formData.goalAmount
           ? Number(formData.goalAmount)
@@ -274,7 +270,7 @@ export function useCampaign() {
   // Helper method to update a campaign
   const updateCampaign = async (
     campaignData: Partial<CampaignFormData>,
-    targetCampaignId: string = campaignId || ""
+    targetCampaignId: string = campaignId || "",
   ): Promise<boolean> => {
     if (!targetCampaignId) {
       toast({
@@ -301,11 +297,11 @@ export function useCampaign() {
       }
 
       toast({
-        title: responseData.submittedForReview
-          ? "Campaña enviada a revisión"
+        title: responseData.pendingAdminReview
+          ? "Campaña publicada"
           : "Actualizado",
-        description: responseData.submittedForReview
-          ? "El equipo de Minka la aprobará en un máximo de 24 horas o menos."
+        description: responseData.pendingAdminReview
+          ? "Tu campaña ya está pública. El equipo de Minka la revisará para confirmar que todo esté en orden."
           : "Campaña actualizada correctamente",
       });
       return true;
@@ -325,7 +321,7 @@ export function useCampaign() {
 
   // Function to get campaign updates
   const getCampaignUpdates = async (
-    targetCampaignId: string
+    targetCampaignId: string,
   ): Promise<CampaignUpdate[] | null> => {
     setIsLoadingUpdates(true);
 
@@ -363,7 +359,7 @@ export function useCampaign() {
       message: string;
       youtubeUrl?: string;
       imageUrl?: string;
-    }
+    },
   ): Promise<boolean> => {
     setIsPublishingUpdate(true);
 
@@ -380,7 +376,7 @@ export function useCampaign() {
             "Content-Type": "application/json",
           },
           body: JSON.stringify(updateData),
-        }
+        },
       );
 
       if (!response.ok) {
@@ -412,14 +408,14 @@ export function useCampaign() {
   // Function to delete a campaign update
   const deleteCampaignUpdate = async (
     targetCampaignId: string,
-    updateId: string
+    updateId: string,
   ): Promise<boolean> => {
     try {
       const response = await fetch(
         `/api/campaign/${targetCampaignId}/updates?updateId=${updateId}`,
         {
           method: "DELETE",
-        }
+        },
       );
 
       if (!response.ok) {
@@ -451,7 +447,7 @@ export function useCampaign() {
     targetCampaignId: string,
     limit: number = 20,
     offset: number = 0,
-    sort: "recent" | "oldest" = "recent"
+    sort: "recent" | "oldest" = "recent",
   ): Promise<{
     comments: CampaignComment[];
     total: number;
@@ -461,7 +457,7 @@ export function useCampaign() {
 
     try {
       const response = await fetch(
-        `/api/campaign/${targetCampaignId}/comments?limit=${limit}&offset=${offset}&sort=${sort}`
+        `/api/campaign/${targetCampaignId}/comments?limit=${limit}&offset=${offset}&sort=${sort}`,
       );
 
       if (!response.ok) {
@@ -490,7 +486,7 @@ export function useCampaign() {
   // Function to post a campaign comment
   const postCampaignComment = async (
     targetCampaignId: string,
-    content: string
+    content: string,
   ): Promise<CampaignComment | null> => {
     setIsPostingComment(true);
 
@@ -507,7 +503,7 @@ export function useCampaign() {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({ content }),
-        }
+        },
       );
 
       if (!response.ok) {
@@ -536,14 +532,14 @@ export function useCampaign() {
   // Function to delete a campaign comment
   const deleteCampaignComment = async (
     targetCampaignId: string,
-    commentId: string
+    commentId: string,
   ): Promise<boolean> => {
     try {
       const response = await fetch(
         `/api/campaign/${targetCampaignId}/comments?commentId=${commentId}`,
         {
           method: "DELETE",
-        }
+        },
       );
 
       if (!response.ok) {
@@ -574,7 +570,7 @@ export function useCampaign() {
   const getCampaignDonations = async (
     targetCampaignId: string,
     limit: number = 20,
-    offset: number = 0
+    offset: number = 0,
   ): Promise<{
     donations: CampaignDonation[];
     total: number;
@@ -586,13 +582,13 @@ export function useCampaign() {
 
     try {
       const response = await fetch(
-        `/api/campaign/${targetCampaignId}/donations?limit=${limit}&offset=${offset}`
+        `/api/campaign/${targetCampaignId}/donations?limit=${limit}&offset=${offset}`,
       );
 
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(
-          errorData.error || "Failed to fetch campaign donations"
+          errorData.error || "Failed to fetch campaign donations",
         );
       }
 
@@ -618,7 +614,7 @@ export function useCampaign() {
   const replyToComment = async (
     targetCampaignId: string,
     commentId: string,
-    content: string
+    content: string,
   ): Promise<boolean> => {
     setIsReplyingToComment(true);
 
@@ -641,7 +637,7 @@ export function useCampaign() {
             parentCommentId: commentId, // Add parent comment ID to indicate this is a reply
             isReply: true,
           }),
-        }
+        },
       );
 
       if (!response.ok) {

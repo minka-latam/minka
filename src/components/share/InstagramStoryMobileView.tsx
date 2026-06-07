@@ -102,7 +102,7 @@ export function InstagramStoryMobileView({
       await navigator.clipboard.writeText(campaignUrl);
       toast({
         title: "Enlace copiado",
-        description: "Pégalo en el sticker de enlace de tu historia.",
+        description: "Pégalo en el sticker de ENLACE de tu historia.",
       });
     } catch (copyError) {
       console.error("Error copying campaign link:", copyError);
@@ -189,7 +189,7 @@ export function InstagramStoryMobileView({
           </h1>
           <p className="mt-2 text-base leading-relaxed text-gray-700">
             Comparte la imagen en Instagram y agrega el enlace de la campaña
-            con el sticker de enlace.
+            con el sticker de ENLACE/LINK.
           </p>
 
           <div className="mt-5 space-y-3">
@@ -213,7 +213,7 @@ export function InstagramStoryMobileView({
                   Paso 2
                 </span>
                 <p className="mt-3 text-lg font-medium leading-snug text-gray-900">
-                  Elige el sticker de enlace.
+                  Elige el sticker de ENLACE/LINK.
                 </p>
               </div>
               <div className="flex items-center justify-center border-l border-gray-200 bg-gray-50">

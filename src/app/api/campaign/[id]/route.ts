@@ -1,106 +1,104 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
-import { prisma as db } from '@/lib/prisma'
-import { getAuthSession } from '@/lib/auth'
+import { NextRequest, NextResponse } from "next/server";
+import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
+import { prisma as db } from "@/lib/prisma";
+import { getAuthSession } from "@/lib/auth";
 import {
   isCountedCampaignStatus,
   refreshOrganizerActiveCampaignsCount,
-} from '@/lib/campaigns/active-count'
-import { isPublicCampaign } from '@/lib/campaigns/visibility'
-import { notifyCampaignSubmittedForReview } from '@/lib/campaign-review-email'
-import { CampaignStatus } from '@prisma/client'
+} from "@/lib/campaigns/active-count";
+import { isPublicCampaign } from "@/lib/campaigns/visibility";
+import { notifyCampaignPublishedForReview } from "@/lib/campaign-review-email";
+import { CampaignStatus } from "@prisma/client";
 
 // Define interfaces to help with typing
 interface OrganizerProfile {
-  id: string
-  name: string
-  location: string
-  profile_picture: string | null
-  join_date?: string
-  active_campaigns_count?: number
-  bio?: string
+  id: string;
+  name: string;
+  location: string;
+  profile_picture: string | null;
+  join_date?: string;
+  active_campaigns_count?: number;
+  bio?: string;
 }
 
 interface CampaignMedia {
-  id: string
-  media_url: string
-  is_primary: boolean
-  type: string
-  order_index: number | null
+  id: string;
+  media_url: string;
+  is_primary: boolean;
+  type: string;
+  order_index: number | null;
 }
 
 interface CampaignUpdate {
-  id: string
-  title: string
-  content: string
-  image_url?: string
-  youtube_url?: string
-  created_at: string
+  id: string;
+  title: string;
+  content: string;
+  image_url?: string;
+  youtube_url?: string;
+  created_at: string;
 }
 
 interface CampaignComment {
-  id: string
-  message: string
-  created_at: string
+  id: string;
+  message: string;
+  created_at: string;
   profile: {
-    id: string
-    name: string
-  }
+    id: string;
+    name: string;
+  };
 }
 
 interface Campaign {
-  id: string
-  title: string
-  subtitle: string
-  description: string
-  beneficiaries_description?: string
-  recipient_type?: string | null
-  legal_entity_id?: string | null
-  beneficiary_name?: string | null
-  beneficiary_relationship?: string | null
+  id: string;
+  title: string;
+  subtitle: string;
+  description: string;
+  beneficiaries_description?: string;
+  recipient_type?: string | null;
+  legal_entity_id?: string | null;
+  beneficiary_name?: string | null;
+  beneficiary_relationship?: string | null;
   legal_entity?: {
-    id: string
-    name: string
-    description: string | null
-    website: string | null
-  } | null
-  category?: string
-  location: string
-  goal_amount: number
-  collected_amount: number
-  donor_count: number
-  percentage_funded: number
-  days_remaining: number
-  verification_status?: boolean
-  created_at?: string
-  campaign_status?: string
-  submitted_for_review_at?: string | null
-  reviewed_at?: string | null
-  organizer: OrganizerProfile | null
-  media: CampaignMedia[]
-  updates?: CampaignUpdate[]
-  comments?: CampaignComment[]
+    id: string;
+    name: string;
+    description: string | null;
+    website: string | null;
+  } | null;
+  category?: string;
+  location: string;
+  goal_amount: number;
+  collected_amount: number;
+  donor_count: number;
+  percentage_funded: number;
+  days_remaining: number;
+  verification_status?: boolean;
+  created_at?: string;
+  campaign_status?: string;
+  submitted_for_review_at?: string | null;
+  reviewed_at?: string | null;
+  organizer: OrganizerProfile | null;
+  media: CampaignMedia[];
+  updates?: CampaignUpdate[];
+  comments?: CampaignComment[];
 }
 
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const id = (await params).id
+  const id = (await params).id;
 
   if (!id) {
-    console.error(
-      'API: Campaign ID is required but not provided',
-    )
+    console.error("API: Campaign ID is required but not provided");
     return NextResponse.json(
-      { error: 'Campaign ID is required' },
+      { error: "Campaign ID is required" },
       { status: 400 },
-    )
+    );
   }
 
   try {
-    const cookieStore = await cookies()
+    const cookieStore = await cookies();
 
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -108,30 +106,25 @@ export async function GET(
       {
         cookies: {
           getAll() {
-            return cookieStore.getAll()
+            return cookieStore.getAll();
           },
           setAll(cookiesToSet) {
-            cookiesToSet.forEach(
-              ({ name, value, options }) =>
-                cookieStore.set(name, value, options),
-            )
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options),
+            );
           },
         },
       },
-    )
-    console.log(
-      `API: Created supabase client for campaign: ${id}`,
-    )
+    );
+    console.log(`API: Created supabase client for campaign: ${id}`);
     const {
       data: { session },
-    } = await supabase.auth.getSession()
+    } = await supabase.auth.getSession();
 
     // Fetch campaign data with organizer profile and campaign media
-    console.log(
-      `API: Executing supabase query for campaign: ${id}`,
-    )
+    console.log(`API: Executing supabase query for campaign: ${id}`);
     const { data, error: campaignError } = await supabase
-      .from('campaigns')
+      .from("campaigns")
       .select(
         `
         id,
@@ -168,21 +161,21 @@ export async function GET(
         )
       `,
       )
-      .eq('id', id)
-      .single()
+      .eq("id", id)
+      .single();
 
     if (campaignError) {
       console.error(
         `API: Error fetching campaign data: ${campaignError.message}`,
         campaignError,
-      )
+      );
 
       // If not found, return 404
-      if (campaignError.code === 'PGRST116') {
+      if (campaignError.code === "PGRST116") {
         return NextResponse.json(
-          { error: 'Campaign not found' },
+          { error: "Campaign not found" },
           { status: 404 },
-        )
+        );
       }
 
       return NextResponse.json(
@@ -191,39 +184,35 @@ export async function GET(
           details: campaignError,
         },
         { status: 500 },
-      )
+      );
     }
 
     if (!data) {
-      console.error(
-        `API: No data found for campaign: ${id}`,
-      )
+      console.error(`API: No data found for campaign: ${id}`);
       return NextResponse.json(
-        { error: 'Campaign not found' },
+        { error: "Campaign not found" },
         { status: 404 },
-      )
+      );
     }
-    const campaign = data as any
-    const profileWhere: Array<{ id: string } | { email: string }> = []
-    if (session?.user?.id) profileWhere.push({ id: session.user.id })
-    if (session?.user?.email)
-      profileWhere.push({ email: session.user.email })
+    const campaign = data as any;
+    const profileWhere: Array<{ id: string } | { email: string }> = [];
+    if (session?.user?.id) profileWhere.push({ id: session.user.id });
+    if (session?.user?.email) profileWhere.push({ email: session.user.email });
     const requester =
       profileWhere.length > 0
         ? await db.profile.findFirst({
             where: { OR: profileWhere },
             select: { id: true, role: true },
           })
-        : null
+        : null;
     const canViewCancelled =
-      requester?.role === 'admin' ||
-      requester?.id === campaign.organizer_id
+      requester?.role === "admin" || requester?.id === campaign.organizer_id;
 
     if (!isPublicCampaign(campaign) && !canViewCancelled) {
       return NextResponse.json(
-        { error: 'Campaign not found' },
+        { error: "Campaign not found" },
         { status: 404 },
-      )
+      );
     }
 
     const fallbackLegalEntity =
@@ -237,9 +226,9 @@ export async function GET(
               website: true,
             },
           })
-        : null
+        : null;
 
-    const legalEntity = campaign.legal_entity || fallbackLegalEntity
+    const legalEntity = campaign.legal_entity || fallbackLegalEntity;
 
     // Format the response with proper type handling
     const formattedCampaign: Campaign = {
@@ -247,13 +236,11 @@ export async function GET(
       title: campaign.title,
       subtitle: campaign.subtitle,
       description: campaign.description,
-      beneficiaries_description:
-        campaign.beneficiaries_description,
+      beneficiaries_description: campaign.beneficiaries_description,
       recipient_type: campaign.recipient_type,
       legal_entity_id: campaign.legal_entity_id,
       beneficiary_name: campaign.beneficiary_name,
-      beneficiary_relationship:
-        campaign.beneficiary_relationship,
+      beneficiary_relationship: campaign.beneficiary_relationship,
       legal_entity: legalEntity
         ? {
             id: legalEntity.id,
@@ -272,19 +259,16 @@ export async function GET(
       verification_status: campaign.verification_status,
       created_at: campaign.created_at,
       campaign_status: campaign.campaign_status,
-      submitted_for_review_at:
-        campaign.submitted_for_review_at,
+      submitted_for_review_at: campaign.submitted_for_review_at,
       reviewed_at: campaign.reviewed_at,
       organizer: campaign.organizer
         ? {
             id: campaign.organizer.id,
             name: campaign.organizer.name,
             location: campaign.organizer.location,
-            profile_picture:
-              campaign.organizer.profile_picture,
+            profile_picture: campaign.organizer.profile_picture,
             join_date: campaign.organizer.join_date,
-            active_campaigns_count:
-              campaign.organizer.active_campaigns_count,
+            active_campaigns_count: campaign.organizer.active_campaigns_count,
             bio: campaign.organizer.bio,
           }
         : null,
@@ -306,31 +290,23 @@ export async function GET(
             }))
             .sort(
               (a: any, b: any) =>
-                (a.order_index || 999) -
-                (b.order_index || 999),
+                (a.order_index || 999) - (b.order_index || 999),
             )
         : [],
-      updates: Array.isArray(campaign.updates)
-        ? campaign.updates
-        : [],
-      comments: Array.isArray(campaign.comments)
-        ? campaign.comments
-        : [],
-    }
+      updates: Array.isArray(campaign.updates) ? campaign.updates : [],
+      comments: Array.isArray(campaign.comments) ? campaign.comments : [],
+    };
 
-    return NextResponse.json(formattedCampaign)
+    return NextResponse.json(formattedCampaign);
   } catch (error) {
-    console.error(
-      'API: Unhandled error fetching campaign:',
-      error,
-    )
+    console.error("API: Unhandled error fetching campaign:", error);
     return NextResponse.json(
       {
-        error: 'Failed to fetch campaign data',
+        error: "Failed to fetch campaign data",
         details: error,
       },
       { status: 500 },
-    )
+    );
   }
 }
 
@@ -339,61 +315,60 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const campaignId = (await params).id
-    const cookieStore = await cookies()
+    const campaignId = (await params).id;
+    const cookieStore = await cookies();
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       {
         cookies: {
           getAll() {
-            return cookieStore.getAll()
+            return cookieStore.getAll();
           },
           setAll(cookiesToSet) {
-            cookiesToSet.forEach(
-              ({ name, value, options }) =>
-                cookieStore.set(name, value, options),
-            )
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options),
+            );
           },
         },
       },
-    )
+    );
     const {
       data: { session },
-    } = await supabase.auth.getSession()
+    } = await supabase.auth.getSession();
 
     if (!session?.user) {
       return NextResponse.json(
-        { error: 'Unauthorized - You must be logged in' },
+        { error: "Unauthorized - You must be logged in" },
         { status: 401 },
-      )
+      );
     }
 
-    const body = await req.json()
+    const body = await req.json();
 
     if (
-      Object.hasOwn(body, 'verificationStatus') ||
-      Object.hasOwn(body, 'verification_status')
+      Object.hasOwn(body, "verificationStatus") ||
+      Object.hasOwn(body, "verification_status")
     ) {
       return NextResponse.json(
         {
           error:
-            'Campaign verification status can only be changed by the admin verification workflow',
+            "Campaign verification status can only be changed by the admin verification workflow",
         },
         { status: 403 },
-      )
+      );
     }
 
     // Find the organizer profile by email
     const organizer = await db.profile.findUnique({
       where: { email: session.user.email },
-    })
+    });
 
     if (!organizer) {
       return NextResponse.json(
-        { error: 'Organizer profile not found' },
+        { error: "Organizer profile not found" },
         { status: 404 },
-      )
+      );
     }
 
     // Get the current campaign to check ownership
@@ -401,31 +376,30 @@ export async function PATCH(
       where: {
         id: campaignId,
       },
-    })
+    });
 
     if (!existingCampaign) {
       return NextResponse.json(
-        { error: 'Campaign not found' },
+        { error: "Campaign not found" },
         { status: 404 },
-      )
+      );
     }
 
     // Ensure the user owns the campaign
     if (existingCampaign.organizerId !== organizer.id) {
       return NextResponse.json(
         {
-          error:
-            "You don't have permission to update this campaign",
+          error: "You don't have permission to update this campaign",
         },
         { status: 403 },
-      )
+      );
     }
 
-    if (existingCampaign.campaignStatus === 'cancelled') {
+    if (existingCampaign.campaignStatus === "cancelled") {
       return NextResponse.json(
-        { error: 'Cancelled campaigns cannot be updated' },
+        { error: "Cancelled campaigns cannot be updated" },
         { status: 400 },
-      )
+      );
     }
 
     // Prepare the update data, extracting all valid fields from the body
@@ -449,18 +423,15 @@ export async function PATCH(
       legalEntityId,
       media,
       presentation,
-    } = body
+    } = body;
 
-    if (
-      goalAmount !== undefined &&
-      Number(goalAmount) > 1000000
-    ) {
+    if (goalAmount !== undefined && Number(goalAmount) > 1000000) {
       return NextResponse.json(
         {
-          error: 'La meta no debe superar Bs. 1.000.000',
+          error: "La meta no debe superar Bs. 1.000.000",
         },
         { status: 400 },
-      )
+      );
     }
 
     if (
@@ -468,94 +439,75 @@ export async function PATCH(
       !Object.values(CampaignStatus).includes(campaignStatus)
     ) {
       return NextResponse.json(
-        { error: 'Invalid campaign status' },
+        { error: "Invalid campaign status" },
         { status: 400 },
-      )
+      );
     }
 
     // Build the data object dynamically with only the fields that were provided
-    const updateData: any = {}
+    const updateData: any = {};
 
-    if (title !== undefined) updateData.title = title
-    if (subtitle !== undefined) updateData.subtitle = subtitle
-    if (description !== undefined)
-      updateData.description = description
+    if (title !== undefined) updateData.title = title;
+    if (subtitle !== undefined) updateData.subtitle = subtitle;
+    if (description !== undefined) updateData.description = description;
     if (beneficiariesDescription !== undefined)
-      updateData.beneficiariesDescription =
-        beneficiariesDescription
-    if (category !== undefined)
-      updateData.category = category
-    if (categoryId !== undefined)
-      updateData.categoryId = categoryId
-    if (goalAmount !== undefined)
-      updateData.goalAmount = goalAmount
-    if (location !== undefined)
-      updateData.location = location
-    if (endDate !== undefined)
-      updateData.endDate = new Date(endDate)
-    if (youtubeUrl !== undefined)
-      updateData.youtubeUrl = youtubeUrl
-    if (youtubeUrls !== undefined)
-      updateData.youtubeUrls = youtubeUrls
+      updateData.beneficiariesDescription = beneficiariesDescription;
+    if (category !== undefined) updateData.category = category;
+    if (categoryId !== undefined) updateData.categoryId = categoryId;
+    if (goalAmount !== undefined) updateData.goalAmount = goalAmount;
+    if (location !== undefined) updateData.location = location;
+    if (endDate !== undefined) updateData.endDate = new Date(endDate);
+    if (youtubeUrl !== undefined) updateData.youtubeUrl = youtubeUrl;
+    if (youtubeUrls !== undefined) updateData.youtubeUrls = youtubeUrls;
 
-    let submittedForReviewAt: Date | null = null
-    const isReviewSubmission =
+    let publishedForReviewAt: Date | null = null;
+    const isPublishingCampaign =
       campaignStatus === CampaignStatus.active &&
-      existingCampaign.campaignStatus === CampaignStatus.draft
+      existingCampaign.campaignStatus === CampaignStatus.draft;
     const shouldSendReviewEmail =
-      isReviewSubmission &&
-      !existingCampaign.submittedForReviewAt
+      isPublishingCampaign && !existingCampaign.submittedForReviewAt;
 
     if (campaignStatus !== undefined) {
       if (campaignStatus === CampaignStatus.active) {
         if (existingCampaign.campaignStatus === CampaignStatus.draft) {
-          updateData.campaignStatus = CampaignStatus.draft
+          updateData.campaignStatus = CampaignStatus.active;
 
           if (!existingCampaign.submittedForReviewAt) {
-            submittedForReviewAt = new Date()
-            updateData.submittedForReviewAt =
-              submittedForReviewAt
-            updateData.reviewedAt = null
+            publishedForReviewAt = new Date();
+            updateData.submittedForReviewAt = publishedForReviewAt;
+            updateData.reviewedAt = null;
           }
-        } else if (
-          existingCampaign.campaignStatus ===
-          CampaignStatus.active
-        ) {
-          updateData.campaignStatus = CampaignStatus.active
+        } else if (existingCampaign.campaignStatus === CampaignStatus.active) {
+          updateData.campaignStatus = CampaignStatus.active;
         } else {
           return NextResponse.json(
             {
-              error:
-                'Only draft campaigns can be submitted for review',
+              error: "Only draft or active campaigns can be published",
             },
             { status: 400 },
-          )
+          );
         }
       } else {
-        updateData.campaignStatus = campaignStatus
+        updateData.campaignStatus = campaignStatus;
       }
     }
-    if (presentation !== undefined)
-      updateData.presentation = presentation
+    if (presentation !== undefined) updateData.presentation = presentation;
 
     // Handle recipient/beneficiary fields
-    const nextRecipientType = recipientType ?? recipient
+    const nextRecipientType = recipientType ?? recipient;
     if (nextRecipientType !== undefined)
-      updateData.recipientType = nextRecipientType
+      updateData.recipientType = nextRecipientType;
     if (beneficiaryName !== undefined)
-      updateData.beneficiaryName = beneficiaryName
+      updateData.beneficiaryName = beneficiaryName;
     if (beneficiaryRelationship !== undefined)
-      updateData.beneficiaryRelationship =
-        beneficiaryRelationship
-    if (legalEntityId !== undefined)
-      updateData.legalEntityId = legalEntityId
+      updateData.beneficiaryRelationship = beneficiaryRelationship;
+    if (legalEntityId !== undefined) updateData.legalEntityId = legalEntityId;
 
     const statusAffectsActiveCount =
       updateData.campaignStatus !== undefined &&
-      existingCampaign.campaignStatus !==
-        updateData.campaignStatus &&
+      existingCampaign.campaignStatus !== updateData.campaignStatus &&
       (isCountedCampaignStatus(existingCampaign.campaignStatus) ||
-        isCountedCampaignStatus(updateData.campaignStatus))
+        isCountedCampaignStatus(updateData.campaignStatus));
 
     const campaign = await db.$transaction(async (tx) => {
       const updatedCampaign = await tx.campaign.update({
@@ -563,26 +515,26 @@ export async function PATCH(
           id: campaignId,
         },
         data: updateData,
-      })
+      });
 
       if (statusAffectsActiveCount) {
         await refreshOrganizerActiveCampaignsCount(
           tx,
           existingCampaign.organizerId,
-        )
+        );
       }
 
-      return updatedCampaign
-    })
+      return updatedCampaign;
+    });
 
-    if (shouldSendReviewEmail && submittedForReviewAt) {
-      await notifyCampaignSubmittedForReview({
+    if (shouldSendReviewEmail && publishedForReviewAt) {
+      await notifyCampaignPublishedForReview({
         campaignId,
         campaignTitle: existingCampaign.title,
         organizerName: organizer.name,
         organizerEmail: organizer.email,
-        submittedAt: submittedForReviewAt,
-      })
+        submittedAt: publishedForReviewAt,
+      });
     }
 
     // If media was provided, update the media records
@@ -590,7 +542,7 @@ export async function PATCH(
       // Delete existing media
       await db.campaignMedia.deleteMany({
         where: { campaignId },
-      })
+      });
 
       // Create new media
       await Promise.all(
@@ -605,25 +557,25 @@ export async function PATCH(
             },
           }),
         ),
-      )
+      );
     }
 
     return NextResponse.json(
       {
-        message: isReviewSubmission
-          ? 'Campaign submitted for review successfully'
-          : 'Campaign updated successfully',
-        submittedForReview: isReviewSubmission,
+        message: isPublishingCampaign
+          ? "Campaign published successfully"
+          : "Campaign updated successfully",
+        pendingAdminReview: isPublishingCampaign,
         campaign,
       },
       { status: 200 },
-    )
+    );
   } catch (error) {
-    console.error('Error updating campaign:', error)
+    console.error("Error updating campaign:", error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: "Internal server error" },
       { status: 500 },
-    )
+    );
   }
 }
 
@@ -632,47 +584,46 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const cookieStore = await cookies()
+    const cookieStore = await cookies();
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       {
         cookies: {
           getAll() {
-            return cookieStore.getAll()
+            return cookieStore.getAll();
           },
           setAll(cookiesToSet) {
-            cookiesToSet.forEach(
-              ({ name, value, options }) =>
-                cookieStore.set(name, value, options),
-            )
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options),
+            );
           },
         },
       },
-    )
+    );
     const {
       data: { session },
-    } = await supabase.auth.getSession()
+    } = await supabase.auth.getSession();
 
     if (!session?.user) {
       return NextResponse.json(
-        { error: 'Unauthorized - You must be logged in' },
+        { error: "Unauthorized - You must be logged in" },
         { status: 401 },
-      )
+      );
     }
 
     const organizer = await db.profile.findUnique({
       where: { email: session.user.email },
-    })
+    });
 
     if (!organizer) {
       return NextResponse.json(
-        { error: 'Organizer profile not found' },
+        { error: "Organizer profile not found" },
         { status: 404 },
-      )
+      );
     }
 
-    const campaignId = (await params).id
+    const campaignId = (await params).id;
     const existingCampaign = await db.campaign.findUnique({
       where: { id: campaignId },
       select: {
@@ -680,80 +631,78 @@ export async function DELETE(
         organizerId: true,
         campaignStatus: true,
       },
-    })
+    });
 
     if (!existingCampaign) {
       return NextResponse.json(
-        { error: 'Campaign not found' },
+        { error: "Campaign not found" },
         { status: 404 },
-      )
+      );
     }
 
     if (existingCampaign.organizerId !== organizer.id) {
       return NextResponse.json(
         {
-          error:
-            "You don't have permission to delete this campaign",
+          error: "You don't have permission to delete this campaign",
         },
         { status: 403 },
-      )
+      );
     }
 
-    if (existingCampaign.campaignStatus === 'cancelled') {
+    if (existingCampaign.campaignStatus === "cancelled") {
       return NextResponse.json(
-        { message: 'Campaign is already cancelled' },
+        { message: "Campaign is already cancelled" },
         { status: 200 },
-      )
+      );
     }
 
-    if (existingCampaign.campaignStatus === 'completed') {
+    if (existingCampaign.campaignStatus === "completed") {
       return NextResponse.json(
         {
-          error:
-            'Completed campaigns cannot be cancelled from this endpoint',
+          error: "Completed campaigns cannot be cancelled from this endpoint",
         },
         { status: 400 },
-      )
+      );
     }
 
     if (
-      existingCampaign.campaignStatus !== 'draft' &&
-      existingCampaign.campaignStatus !== 'active'
+      existingCampaign.campaignStatus !== "draft" &&
+      existingCampaign.campaignStatus !== "active"
     ) {
       return NextResponse.json(
         {
           error:
-            'Only draft or active campaigns can be cancelled from this endpoint',
+            "Only draft or active campaigns can be cancelled from this endpoint",
         },
         { status: 400 },
-      )
+      );
     }
 
     await db.$transaction(async (tx) => {
       await tx.campaign.update({
         where: { id: campaignId },
         data: {
-          campaignStatus: 'cancelled',
+          campaignStatus: "cancelled",
         },
-      })
+      });
 
       if (isCountedCampaignStatus(existingCampaign.campaignStatus)) {
         await refreshOrganizerActiveCampaignsCount(
           tx,
           existingCampaign.organizerId,
-        )
+        );
       }
-    })
+    });
 
     return NextResponse.json(
-      { message: 'Campaign cancelled successfully' },
+      { message: "Campaign cancelled successfully" },
       { status: 200 },
-    )
+    );
   } catch (error) {
-    console.error('Error deleting campaign:', error)
+    console.error("Error deleting campaign:", error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: "Internal server error" },
       { status: 500 },
-    )
+    );
   }
 }

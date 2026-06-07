@@ -46,9 +46,9 @@ Deno.serve(async (request) => {
     );
   }
 
-  const payload = (await request.json().catch(() => null)) as
-    | CampaignReviewEmailPayload
-    | null;
+  const payload = (await request
+    .json()
+    .catch(() => null)) as CampaignReviewEmailPayload | null;
 
   if (
     !payload?.campaignId ||
@@ -74,18 +74,18 @@ Deno.serve(async (request) => {
     timeZone: "America/La_Paz",
   });
 
-  const subject = `Nueva campaña PENDIENTE DE REVISION`;
-  const preheader = `La campaña "${payload.campaignTitle}" fue enviada para aprobación.`;
+  const subject = `Nueva campaña para REVISION`;
+  const preheader = `La campaña "${payload.campaignTitle}" fue publicada y necesita revisión.`;
 
   const text = [
-    "Nueva campaña PENDIENTE DE REVISION",
+    "Nueva campaña para REVISION",
     "",
-    "Una campaña fue enviada para aprobación en Minka Comunidad.",
+    "Una campaña fue publicada en Minka Comunidad y necesita revisión administrativa.",
     "",
     `Campaña: ${payload.campaignTitle}`,
     `Organizador: ${payload.organizerName}`,
     `Email: ${payload.organizerEmail}`,
-    `Fecha de envío: ${submittedAt}`,
+    `Fecha de publicación: ${submittedAt}`,
     "",
     `Ver campaña: ${payload.campaignUrl}`,
     `Panel admin: ${payload.dashboardUrl}`,
@@ -111,13 +111,13 @@ Deno.serve(async (request) => {
             <tr>
               <td style="background:#2f7d3f;padding:24px 28px;">
                 <p style="margin:0;color:#dcefd9;font-size:13px;letter-spacing:.02em;text-transform:uppercase;">Minka Comunidad</p>
-                <h1 style="margin:8px 0 0;color:#ffffff;font-size:24px;line-height:1.25;font-weight:700;">Nueva campaña en REVISION</h1>
+                <h1 style="margin:8px 0 0;color:#ffffff;font-size:24px;line-height:1.25;font-weight:700;">Nueva campaña para REVISION</h1>
               </td>
             </tr>
             <tr>
               <td style="padding:28px;">
                 <p style="margin:0 0 22px;color:#415041;font-size:16px;line-height:1.5;">
-                  Una campaña fue enviada para aprobación y está <strong style="color:#172017;">PENDIENTE DE REVISION</strong>. Revisa el contenido y define si debe publicarse.
+                  Una campaña fue publicada y está <strong style="color:#172017;">PENDIENTE DE REVISION</strong>. Revisa el contenido y, si detectas información incorrecta o dañina, cancélala desde el panel admin.
                 </p>
 
                 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;margin:0 0 24px;">
@@ -136,7 +136,7 @@ Deno.serve(async (request) => {
                     </td>
                   </tr>
                   <tr>
-                    <td style="padding:12px 0;color:#6a7468;font-size:13px;">Enviada</td>
+                    <td style="padding:12px 0;color:#6a7468;font-size:13px;">Publicada</td>
                     <td style="padding:12px 0;color:#172017;font-size:14px;">${escapeHtml(submittedAt)}</td>
                   </tr>
                 </table>
@@ -154,7 +154,7 @@ Deno.serve(async (request) => {
                 </table>
 
                 <p style="margin:0;color:#6a7468;font-size:12px;line-height:1.5;">
-                  Este aviso se envió automáticamente porque una campaña entró a la cola de revisión.
+                  Este aviso se envió automáticamente porque una nueva campaña fue publicada y quedó pendiente de revisión interna.
                 </p>
               </td>
             </tr>

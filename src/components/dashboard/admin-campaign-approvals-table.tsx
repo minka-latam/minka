@@ -50,7 +50,9 @@ export function AdminCampaignApprovalsTable({
   const fetchCampaigns = async () => {
     try {
       setLoading(true);
-      const response = await fetch("/api/admin/campaign-approvals?status=pending");
+      const response = await fetch(
+        "/api/admin/campaign-approvals?status=pending",
+      );
       const data = await response.json();
 
       if (!response.ok) {
@@ -75,7 +77,7 @@ export function AdminCampaignApprovalsTable({
 
   const updateCampaignApproval = async (
     campaignId: string,
-    action: "approve" | "cancel",
+    action: "reviewed" | "cancel",
   ) => {
     try {
       setUpdatingId(campaignId);
@@ -94,8 +96,8 @@ export function AdminCampaignApprovalsTable({
 
       toast({
         title:
-          action === "approve"
-            ? "Campaña activada"
+          action === "reviewed"
+            ? "Campaña marcada como revisada"
             : "Campaña cancelada",
         description: "El estado fue actualizado correctamente.",
       });
@@ -131,9 +133,10 @@ export function AdminCampaignApprovalsTable({
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg">Campañas por aprobar</CardTitle>
+        <CardTitle className="text-lg">Campañas nuevas por revisar</CardTitle>
         <p className="mt-1 text-sm text-gray-600">
-          Revisa campañas enviadas para publicación y activa o cancela cada una.
+          Revisa campañas publicadas recientemente y márcalas como revisadas o
+          cancélalas si no corresponden.
         </p>
       </CardHeader>
       <CardContent className="p-0">
@@ -150,7 +153,7 @@ export function AdminCampaignApprovalsTable({
                   <TableHead>Organizador</TableHead>
                   <TableHead>Meta</TableHead>
                   <TableHead>Categoría</TableHead>
-                  <TableHead>Enviada</TableHead>
+                  <TableHead>Publicada</TableHead>
                   <TableHead>Estado</TableHead>
                   <TableHead className="text-right">Acciones</TableHead>
                 </TableRow>
@@ -185,7 +188,7 @@ export function AdminCampaignApprovalsTable({
                     <TableCell>{formatDate(campaign.submittedAt)}</TableCell>
                     <TableCell>
                       <Badge className="bg-yellow-100 text-yellow-800">
-                        Pendiente
+                        Por revisar
                       </Badge>
                     </TableCell>
                     <TableCell>
@@ -206,11 +209,11 @@ export function AdminCampaignApprovalsTable({
                           className="bg-[#2c6e49] text-white hover:bg-[#1e4d33]"
                           disabled={updatingId === campaign.id}
                           onClick={() =>
-                            updateCampaignApproval(campaign.id, "approve")
+                            updateCampaignApproval(campaign.id, "reviewed")
                           }
                         >
                           <CheckCircle className="h-4 w-4" />
-                          Activar
+                          Revisada
                         </Button>
                         <Button
                           variant="outline"

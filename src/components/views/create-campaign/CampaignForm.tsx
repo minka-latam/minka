@@ -41,9 +41,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { InlineSpinner } from "@/components/ui/inline-spinner";
-import {
-  getProvincesForDepartment,
-} from "@/constants/bolivia-provinces";
+import { getProvincesForDepartment } from "@/constants/bolivia-provinces";
 import { CampaignDescriptionInput } from "./CampaignDescriptionInput";
 import { Input } from "@/components/ui/input";
 import {
@@ -174,7 +172,9 @@ const CampaignPreview = ({
                 <div className="flex items-center gap-3 py-4 border-b border-gray-200">
                   <div className="h-10 w-10 rounded-full bg-[#e8f0e9] flex items-center justify-center">
                     <span className="text-sm font-medium text-[#2c6e49]">
-                      {profile?.name ? profile.name.charAt(0).toUpperCase() : "A"}
+                      {profile?.name
+                        ? profile.name.charAt(0).toUpperCase()
+                        : "A"}
                     </span>
                   </div>
                   <div>
@@ -216,7 +216,6 @@ const CampaignPreview = ({
                       "El Parque Nacional Amboró es uno de los lugares más biodiversos del mundo, hogar de especies únicas y ecosistemas vitales. Su conservación depende de todos nosotros."}
                   </p>
                 </div>
-
               </div>
             </div>
 
@@ -320,11 +319,7 @@ const CampaignPreview = ({
 export function CampaignForm() {
   const router = useRouter();
   const { toast } = useToast();
-  const {
-    campaignId,
-    saveCampaignDraft,
-    updateCampaign,
-  } = useCampaign();
+  const { campaignId, saveCampaignDraft, updateCampaign } = useCampaign();
   const {
     isUploading,
     progress,
@@ -350,7 +345,7 @@ export function CampaignForm() {
   // Add new state for animation
   const [isAnimating, setIsAnimating] = useState(false);
   const [animationDirection, setAnimationDirection] = useState<"next" | "prev">(
-    "next"
+    "next",
   );
 
   // Sync the current step with the context
@@ -407,7 +402,7 @@ export function CampaignForm() {
   // Add new state for image editing
   const [imageToEdit, setImageToEdit] = useState<string | null>(null);
   const [editingImageIndex, setEditingImageIndex] = useState<number | null>(
-    null
+    null,
   );
 
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
@@ -417,7 +412,7 @@ export function CampaignForm() {
 
   // Add state to track available provinces based on selected department
   const [availableProvinces, setAvailableProvinces] = useState(
-    getProvincesForDepartment("la_paz")
+    getProvincesForDepartment("la_paz"),
   );
 
   // Update available provinces when location changes
@@ -427,7 +422,7 @@ export function CampaignForm() {
     if (formData.province) {
       const newProvinces = getProvincesForDepartment(formData.location);
       const isProvinceStillValid = newProvinces.some(
-        (p) => p.value === formData.province
+        (p) => p.value === formData.province,
       );
       if (!isProvinceStillValid) {
         setFormData((prev) => ({ ...prev, province: undefined }));
@@ -482,7 +477,9 @@ export function CampaignForm() {
         ...prev,
         recipient,
         legalEntityId:
-          recipient === "persona_juridica" ? updateData.legalEntityId : undefined,
+          recipient === "persona_juridica"
+            ? updateData.legalEntityId
+            : undefined,
         beneficiaryName:
           recipient === "otra_persona" ? updateData.beneficiaryName : undefined,
         beneficiaryRelationship:
@@ -553,7 +550,7 @@ export function CampaignForm() {
         {
           campaignStatus: "active",
         },
-        campaignId
+        campaignId,
       );
 
       if (!success) {
@@ -565,7 +562,7 @@ export function CampaignForm() {
       console.error("Error publishing campaign:", error);
       toast({
         title: "Error",
-        description: "Error al enviar la campaña a revisión",
+        description: "Error al publicar la campaña",
         variant: "destructive",
       });
     } finally {
@@ -585,12 +582,12 @@ export function CampaignForm() {
         return;
       }
 
-      // Submit the campaign for admin review before optional badge verification.
+      // Publish the campaign before optional badge verification.
       const publishSuccess = await updateCampaign(
         {
           campaignStatus: "active",
         },
-        campaignId
+        campaignId,
       );
 
       if (!publishSuccess) {
@@ -606,7 +603,7 @@ export function CampaignForm() {
       console.error("Error preparing for verification:", error);
       toast({
         title: "Error",
-        description: "Error al enviar la campaña para revisión",
+        description: "Error al publicar la campaña",
         variant: "destructive",
       });
     }
@@ -615,11 +612,11 @@ export function CampaignForm() {
   const closeOtraPersonaModal = () => {
     setShowOtraPersonaModal(false);
     // Reset form when closing modal
-      setOtraPersonaForm({
-        beneficiaryName: "",
-        relationship: "",
-        beneficiariesDescription: "",
-      });
+    setOtraPersonaForm({
+      beneficiaryName: "",
+      relationship: "",
+      beneficiariesDescription: "",
+    });
   };
 
   const closePersonaJuridicaModal = () => {
@@ -664,7 +661,7 @@ export function CampaignForm() {
       if (!validateForm()) {
         // Show alert for validation errors
         alert(
-          "Por favor completa todos los campos requeridos antes de continuar."
+          "Por favor completa todos los campos requeridos antes de continuar.",
         );
 
         // Show toast for validation errors
@@ -686,7 +683,6 @@ export function CampaignForm() {
 
       // Validate that we have uploaded URLs
       if (!uploadedUrls.length) {
-
         // Try to ensure media is uploaded
         setIsSubmitting(true);
         const mediaUploadFixed = await ensureMediaIsUploaded();
@@ -725,7 +721,7 @@ export function CampaignForm() {
 
         if (!newCampaignId) {
           console.error(
-            "Failed to create or update campaign draft - no ID returned"
+            "Failed to create or update campaign draft - no ID returned",
           );
           toast({
             title: "Error",
@@ -741,7 +737,7 @@ export function CampaignForm() {
         setIsAnimating(true);
         setTimeout(() => {
           // Proceed to next step
-setCurrentStep(currentStep + 1);
+          setCurrentStep(currentStep + 1);
           window.scrollTo(0, 0);
           // Reset animation state after a short delay
           setTimeout(() => {
@@ -774,7 +770,7 @@ setCurrentStep(currentStep + 1);
             {
               beneficiariesDescription: formData.beneficiariesDescription,
             },
-            campaignId
+            campaignId,
           );
 
           if (!success) {
@@ -879,7 +875,6 @@ setCurrentStep(currentStep + 1);
   // Add handler for saving edited image
   const handleSaveEditedImage = async (editedUrl: string) => {
     try {
-
       // Create file from edited image dataURL first
       const blob = dataURLtoBlob(editedUrl);
       const fileName = uploadingFile
@@ -1054,7 +1049,6 @@ setCurrentStep(currentStep + 1);
     }
 
     try {
-
       toast({
         title: "Beneficiario agregado",
         description:
@@ -1089,7 +1083,7 @@ setCurrentStep(currentStep + 1);
     try {
       // Find the selected entity for logging and validation
       const selectedEntity = legalEntities.find(
-        (e) => e.id === selectedEntityId
+        (e) => e.id === selectedEntityId,
       );
 
       if (!selectedEntity) {
@@ -1237,7 +1231,7 @@ setCurrentStep(currentStep + 1);
       id: 1,
       title: "Nombre de la campaña",
       description:
-                    "Dale un nombre claro a tu campaña y agrega un subtítulo breve para transmitir rápidamente su esencia y objetivo.",
+        "Dale un nombre claro a tu campaña y agrega un subtítulo breve para transmitir rápidamente su esencia y objetivo.",
     },
     {
       id: 2,
@@ -1321,8 +1315,7 @@ setCurrentStep(currentStep + 1);
           errors.title = "El título debe tener al menos 3 caracteres";
         }
         if (!formData.subtitle || formData.subtitle.length < 10) {
-          errors.subtitle =
-            "La descripción debe tener al menos 10 caracteres";
+          errors.subtitle = "La descripción debe tener al menos 10 caracteres";
         }
         break;
       case 2: // Category
@@ -1382,7 +1375,6 @@ setCurrentStep(currentStep + 1);
   // Add style block for transitions at the beginning of the component return statement
   return (
     <div className="campaign-form">
-
       {/* STEP #1 - Now with sub-steps */}
       {currentStep === 1 && (
         <div className="max-w-6xl mx-auto px-4 sm:px-6 md:px-0">
@@ -1432,15 +1424,20 @@ setCurrentStep(currentStep + 1);
                             maxLength={50}
                           />
                           <div className="flex justify-between items-center mt-1">
-  <ImproveTextButton
-    text={formData.title}
-    fieldType="title"
-    onAccept={(improved) => {
-      setFormData({ ...formData, title: improved.slice(0, 50) });
-    }}
-  />
-  <span className="text-sm text-gray-500">{formData.title.length}/50</span>
-</div>
+                            <ImproveTextButton
+                              text={formData.title}
+                              fieldType="title"
+                              onAccept={(improved) => {
+                                setFormData({
+                                  ...formData,
+                                  title: improved.slice(0, 50),
+                                });
+                              }}
+                            />
+                            <span className="text-sm text-gray-500">
+                              {formData.title.length}/50
+                            </span>
+                          </div>
                           {formErrors.title && (
                             <div className="error-text">{formErrors.title}</div>
                           )}
@@ -1472,15 +1469,20 @@ setCurrentStep(currentStep + 1);
                             maxLength={150}
                           />
                           <div className="flex justify-between items-center mt-1">
-  <ImproveTextButton
-    text={formData.subtitle}
-    fieldType="subtitle"
-    onAccept={(improved) => {
-      setFormData({ ...formData, subtitle: improved.slice(0, 150) });
-    }}
-  />
-  <span className="text-sm text-gray-500">{formData.subtitle.length}/150</span>
-</div>
+                            <ImproveTextButton
+                              text={formData.subtitle}
+                              fieldType="subtitle"
+                              onAccept={(improved) => {
+                                setFormData({
+                                  ...formData,
+                                  subtitle: improved.slice(0, 150),
+                                });
+                              }}
+                            />
+                            <span className="text-sm text-gray-500">
+                              {formData.subtitle.length}/150
+                            </span>
+                          </div>
                           {formErrors.subtitle && (
                             <div className="error-text">
                               {formErrors.subtitle}
@@ -1577,7 +1579,9 @@ setCurrentStep(currentStep + 1);
                           placeholder="Ingresa el monto a recaudar en bolivianos"
                           className={`w-full rounded-lg border ${formErrors.goalAmount ? "error-input" : "border-black"} bg-white shadow-sm focus:border-[#478C5C] focus:ring-[#478C5C] focus:ring-0 h-14 pl-16 pr-4`}
                           inputMode="numeric"
-                          value={formatNumberWithSeparators(formData.goalAmount)}
+                          value={formatNumberWithSeparators(
+                            formData.goalAmount,
+                          )}
                           onChange={handleGoalAmountChange}
                         />
                       </div>
@@ -1935,20 +1939,23 @@ setCurrentStep(currentStep + 1);
                           <CalendarComponent
                             mode="single"
                             selected={
-  formData.endDate
-    ? new Date(formData.endDate + "T12:00:00")
-    : undefined
-}
+                              formData.endDate
+                                ? new Date(formData.endDate + "T12:00:00")
+                                : undefined
+                            }
                             onSelect={(date) => {
                               if (date) {
-                               // Fix timezone: set to noon UTC to avoid day shifting
-const fixedDate = new Date(date);
-fixedDate.setUTCHours(12, 0, 0, 0);
-const formattedDate = format(fixedDate, "yyyy-MM-dd");
-setFormData({
-  ...formData,
-  endDate: formattedDate,
-});
+                                // Fix timezone: set to noon UTC to avoid day shifting
+                                const fixedDate = new Date(date);
+                                fixedDate.setUTCHours(12, 0, 0, 0);
+                                const formattedDate = format(
+                                  fixedDate,
+                                  "yyyy-MM-dd",
+                                );
+                                setFormData({
+                                  ...formData,
+                                  endDate: formattedDate,
+                                });
                                 setFormErrors({ ...formErrors, endDate: "" });
                               }
                             }}
@@ -2019,7 +2026,7 @@ setFormData({
                         if (!validateForm()) {
                           // Show alert for validation errors
                           alert(
-                            "Por favor completa todos los campos requeridos antes de guardar."
+                            "Por favor completa todos los campos requeridos antes de guardar.",
                           );
                           return;
                         }
@@ -2035,7 +2042,7 @@ setFormData({
                           ...formData,
                           // Convert goalAmount to number by removing separators
                           goalAmount: removeNumberSeparators(
-                            String(formData.goalAmount)
+                            String(formData.goalAmount),
                           ),
                           media: uploadedUrls.map((url, index) => ({
                             mediaUrl: url,
@@ -2102,7 +2109,7 @@ setFormData({
       )}
 
       {/* STEP #2 */}
-{currentStep === 2 && (
+      {currentStep === 2 && (
         <div
           className={`form-step ${isAnimating ? (animationDirection === "next" ? "fade-out" : "fade-in") : ""} max-w-6xl mx-auto space-y-24`}
         >
@@ -2243,8 +2250,8 @@ setFormData({
                     Revisa cómo quedó
                   </h2>
                   <p className="text-lg text-white/90 mb-6">
-                    Antes de enviar tu campaña a revisión, verifica que todo
-                    esté correcto. Puedes ver cómo lucirá en Minka.
+                    Antes de publicar tu campaña, verifica que todo esté
+                    correcto. Puedes ver cómo lucirá en Minka.
                   </p>
                   <Button
                     variant="outline"
@@ -2320,12 +2327,13 @@ setFormData({
                     </h3>
                     <p className="text-gray-600 mb-6 text-center">
                       Puedes verificar tu campaña para destacarla y generar
-                      confianza, o enviarla directamente para revisión del
-                      equipo de Minka.
+                      confianza, o publicarla directamente mientras el equipo de
+                      Minka la revisa.
                     </p>
                     <div className="mb-6 rounded-lg border border-yellow-200 bg-yellow-50 p-4 text-sm text-yellow-900">
-                      Tu campaña será revisada por los administradores de Minka
-                      y aprobada en un máximo de 24 horas o menos.
+                      Al publicar, tu campaña quedará visible de inmediato y el
+                      equipo de Minka la revisará para confirmar que todo esté
+                      en orden.
                     </div>
                     <div className="w-full h-px bg-gray-200 my-6"></div>
                     <div className="space-y-3">
@@ -2357,7 +2365,7 @@ setFormData({
                         variant="outline"
                         disabled={isSubmitting}
                       >
-                        Enviar a revisión sin verificar
+                        Publicar sin verificar
                       </Button>
                     </div>
                   </div>
@@ -2662,7 +2670,7 @@ setFormData({
               <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
                 {(() => {
                   const selectedEntity = legalEntities.find(
-                    (e) => e.id === personaJuridicaForm.selectedEntityId
+                    (e) => e.id === personaJuridicaForm.selectedEntityId,
                   );
                   return selectedEntity ? (
                     <div>
