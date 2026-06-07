@@ -84,16 +84,12 @@ export function getCampaignShareTitle(campaign: CampaignShareData) {
 
 export function getCampaignShareDescription(
   campaign: Pick<CampaignShareData, "subtitle" | "description">,
-  maxLength = 180,
+  maxLength = 110,
 ) {
   const description =
     cleanText(campaign.subtitle) || cleanText(campaign.description);
 
-  return trimForShare(
-    description ||
-      "Conoce esta campaña en Minka y sé parte del cambio.",
-    maxLength,
-  );
+  return trimForShare(description, maxLength);
 }
 
 export function buildCampaignSharePayload(
@@ -106,11 +102,10 @@ export function buildCampaignSharePayload(
   const intent = options.intent || "support";
   const url = getCampaignShareUrl(campaign.id, options.baseUrl);
   const title = getCampaignShareTitle(campaign);
-  const description = getCampaignShareDescription(campaign, 130);
   const text =
     intent === "donation"
-      ? `Acabo de apoyar "${title}" en Minka. ${description} Súmate tú también.`
-      : `Apoya "${title}" en Minka. ${description} Cada aporte cuenta.`;
+      ? `Acabo de donar a "${title}" en Minka. Entra al enlace para conocer la campaña y aportar directamente.`
+      : `Apoya la campaña "${title}". Entra al enlace para conocer la historia y donar directamente en Minka.`;
   const caption = `${text}\n${url}`;
 
   return {
@@ -120,7 +115,7 @@ export function buildCampaignSharePayload(
     caption,
     links: {
       whatsapp: `https://wa.me/?text=${encodeURIComponent(caption)}`,
-      facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,
+      facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}&quote=${encodeURIComponent(text)}`,
       twitter: `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`,
       linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`,
       instagram: "https://www.instagram.com/",

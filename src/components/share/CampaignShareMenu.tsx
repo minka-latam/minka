@@ -83,6 +83,16 @@ export function CampaignShareMenu({
     }
   };
 
+  const tryCopyToClipboard = async (value: string) => {
+    try {
+      await navigator.clipboard.writeText(value);
+      return true;
+    } catch (error) {
+      console.error("Failed to copy share text:", error);
+      return false;
+    }
+  };
+
   const openShareUrl = (
     url: string,
     platform: CampaignSharePlatform,
@@ -129,16 +139,29 @@ export function CampaignShareMenu({
       return;
     }
 
-    if (platform === "instagram") {
-      copyToClipboard(
-        sharePayload.caption,
-        "El texto y enlace fueron copiados. Pégalos en Instagram para compartir.",
-      );
-      window.open(
-        sharePayload.links.instagram,
-        "_blank",
-        "noopener,noreferrer",
-      );
+    if (
+      platform === "facebook" ||
+      platform === "linkedin" ||
+      platform === "instagram"
+    ) {
+      tryCopyToClipboard(sharePayload.caption).then((copied) => {
+        window.open(
+          sharePayload.links[platform],
+          "_blank",
+          platform === "instagram"
+            ? "noopener,noreferrer"
+            : "noopener,noreferrer,width=640,height=560",
+        );
+        closeMenu();
+        toast({
+          title: "Texto copiado",
+          description: copied
+            ? platform === "instagram"
+              ? "Instagram no permite crear publicaciones desde web con texto precargado. Crea una publicación o historia y pega el texto copiado."
+              : `Pega el texto copiado en ${platformLabels[platform]} para acompañar el enlace.`
+            : `${platformLabels[platform]} no permite rellenar el post automáticamente; copia el texto manualmente si lo necesitas.`,
+        });
+      });
       return;
     }
 
@@ -249,12 +272,16 @@ export function CampaignShareMenu({
               <button
                 type="button"
                 onClick={() => shareOnPlatform("copy")}
-                className="flex items-center gap-2 p-3 hover:bg-gray-50 rounded-xl transition-colors col-span-2"
+                className="flex items-center gap-2 p-3 hover:bg-gray-50 rounded-xl transition-colors"
               >
                 <Copy className="h-5 w-5 text-gray-600" />
                 <span className="text-sm">Copiar enlace</span>
               </button>
             </div>
+
+            <p className="mt-3 text-center text-md leading-relaxed text-gray-800">
+              Hemos preparado un texto y lo copiamos por ti. Solo pégalo en la publicación.
+            </p>
 
             <button
               type="button"
