@@ -13,6 +13,7 @@ export interface CampaignShareData {
   title?: string | null;
   subtitle?: string | null;
   description?: string | null;
+  imageUrl?: string | null;
 }
 
 export interface CampaignSharePayload {
@@ -76,6 +77,13 @@ export function getCampaignShareUrl(
   baseUrl = getClientShareBaseUrl(),
 ) {
   return `${baseUrl.replace(/\/+$/, "")}/campaign/${campaignId}`;
+}
+
+export function getInstagramStoryShareUrl(
+  campaignId: string,
+  baseUrl = getClientShareBaseUrl(),
+) {
+  return `${getCampaignShareUrl(campaignId, baseUrl)}/share/instagram-story`;
 }
 
 export function getCampaignShareTitle(campaign: CampaignShareData) {

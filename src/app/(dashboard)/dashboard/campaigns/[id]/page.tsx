@@ -840,6 +840,7 @@ export default function CampaignDetailPage() {
                     title: campaign.title,
                     subtitle: campaign.subtitle,
                     description: campaign.description,
+                    imageUrl: campaign.image_url,
                   }}
                   buttonLabel="Compartir"
                   triggerVariant="ghost"

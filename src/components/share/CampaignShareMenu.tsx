@@ -17,6 +17,7 @@ import {
 import { Button, type ButtonProps } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { cn } from "@/lib/utils";
+import { InstagramStoryShareDialog } from "@/components/share/InstagramStoryShareDialog";
 
 interface CampaignShareMenuProps {
   campaign: CampaignShareData;
@@ -34,7 +35,7 @@ const platformLabels: Record<CampaignSharePlatform, string> = {
   facebook: "Facebook",
   twitter: "X (Twitter)",
   linkedin: "LinkedIn",
-  instagram: "Instagram",
+  instagram: "Historia IG",
   copy: "Copiar enlace",
 };
 
@@ -51,9 +52,11 @@ export function CampaignShareMenu({
   triggerClassName,
   dropdownClassName,
   dropdownPlacement = "top",
-  useNativeShare = true,
+  useNativeShare = false,
 }: CampaignShareMenuProps) {
   const [showShareOptions, setShowShareOptions] =
+    useState(false);
+  const [showInstagramStoryDialog, setShowInstagramStoryDialog] =
     useState(false);
   const { toast } = useToast();
   const sharePayload = buildCampaignSharePayload(campaign, {
@@ -141,27 +144,28 @@ export function CampaignShareMenu({
 
     if (
       platform === "facebook" ||
-      platform === "linkedin" ||
-      platform === "instagram"
+      platform === "linkedin"
     ) {
       tryCopyToClipboard(sharePayload.caption).then((copied) => {
         window.open(
           sharePayload.links[platform],
           "_blank",
-          platform === "instagram"
-            ? "noopener,noreferrer"
-            : "noopener,noreferrer,width=640,height=560",
+          "noopener,noreferrer,width=640,height=560",
         );
         closeMenu();
         toast({
           title: "Texto copiado",
           description: copied
-            ? platform === "instagram"
-              ? "Instagram no permite crear publicaciones desde web con texto precargado. Crea una publicación o historia y pega el texto copiado."
-              : `Pega el texto copiado en ${platformLabels[platform]} para acompañar el enlace.`
+            ? `Pega el texto copiado en ${platformLabels[platform]} para acompañar el enlace.`
             : `${platformLabels[platform]} no permite rellenar el post automáticamente; copia el texto manualmente si lo necesitas.`,
         });
       });
+      return;
+    }
+
+    if (platform === "instagram") {
+      closeMenu();
+      setShowInstagramStoryDialog(true);
       return;
     }
 
@@ -266,7 +270,7 @@ export function CampaignShareMenu({
                 className="flex items-center gap-2 p-3 hover:bg-gray-50 rounded-xl transition-colors"
               >
                 <Instagram className="h-5 w-5 text-[#E4405F]" />
-                <span className="text-sm">Instagram</span>
+                <span className="text-sm">Historia IG</span>
               </button>
 
               <button
@@ -279,7 +283,7 @@ export function CampaignShareMenu({
               </button>
             </div>
 
-            <p className="mt-3 text-center text-md leading-relaxed text-gray-800">
+            <p className="mt-3 text-center text-sm leading-relaxed text-gray-800">
               Hemos preparado un texto y lo copiamos por ti. Solo pégalo en la publicación.
             </p>
 
@@ -293,6 +297,11 @@ export function CampaignShareMenu({
           </div>
         </>
       )}
+      <InstagramStoryShareDialog
+        open={showInstagramStoryDialog}
+        onOpenChange={setShowInstagramStoryDialog}
+        campaign={campaign}
+      />
     </div>
   );
 }

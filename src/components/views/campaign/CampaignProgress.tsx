@@ -29,6 +29,7 @@ interface CampaignProgressProps {
   campaignTitle?: string;
   campaignSubtitle?: string;
   campaignDescription?: string;
+  campaignImageUrl?: string;
   campaignOrganizer?: string;
   campaignLocation?: string;
   campaignId?: string;
@@ -65,6 +66,7 @@ export function CampaignProgress({
   campaignTitle = "",
   campaignSubtitle = "",
   campaignDescription = "",
+  campaignImageUrl = "",
   campaignOrganizer = "",
   campaignLocation = "",
   campaignId = "",
@@ -325,6 +327,7 @@ export function CampaignProgress({
             title: campaignTitle,
             subtitle: campaignSubtitle,
             description: campaignDescription,
+            imageUrl: campaignImageUrl,
           }}
           triggerClassName="w-full border-[#2c6e49] hover:bg-gray-50 rounded-full py-6 text-[#2c6e49]"
           dropdownClassName="left-0 right-0"

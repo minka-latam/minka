@@ -495,6 +495,7 @@ export default function CampaignClientPage({ id }: { id: string }) {
                   campaignTitle={formattedData.title}
                   campaignSubtitle={formattedData.subtitle}
                   campaignDescription={formattedData.description}
+                  campaignImageUrl={formattedData.images[0]?.url}
                   campaignId={id}
                 />
               </StickyProgressWrapper>
@@ -586,6 +587,7 @@ export default function CampaignClientPage({ id }: { id: string }) {
                 campaignTitle={formattedData.title}
                 campaignSubtitle={formattedData.subtitle}
                 campaignDescription={formattedData.description}
+                campaignImageUrl={formattedData.images[0]?.url}
                 campaignId={id}
               />
             </div>

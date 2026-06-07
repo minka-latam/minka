@@ -1246,6 +1246,7 @@ export function DonatePageContent({
                     title: campaign?.title,
                     subtitle: campaign?.subtitle,
                     description: campaign?.description,
+                    imageUrl: campaignImage,
                   }}
                   intent='donation'
                   buttonLabel='Compartir campaña'
