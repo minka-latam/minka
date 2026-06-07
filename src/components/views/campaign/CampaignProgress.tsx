@@ -321,21 +321,23 @@ export function CampaignProgress({
           </Button>
         </Link>
 
-        <CampaignShareMenu
-          campaign={{
-            id: campaignId,
-            title: campaignTitle,
-            subtitle: campaignSubtitle,
-            description: campaignDescription,
-            imageUrl: campaignImageUrl,
-          }}
-          triggerClassName="w-full border-[#2c6e49] hover:bg-gray-50 rounded-full py-6 text-[#2c6e49]"
-          dropdownClassName="left-0 right-0"
-        />
+        <div className="flex justify-start">
+          <CampaignShareMenu
+            campaign={{
+              id: campaignId,
+              title: campaignTitle,
+              subtitle: campaignSubtitle,
+              description: campaignDescription,
+              imageUrl: campaignImageUrl,
+            }}
+            triggerClassName="border-[#2c6e49] hover:bg-gray-50 rounded-full px-5 py-5 text-[#2c6e49]"
+            dropdownClassName="left-0 w-72 max-w-[calc(100vw-2rem)]"
+          />
+        </div>
 
         <Button
           variant="ghost"
-          className="w-full hover:bg-gray-50 rounded-full py-6 text-[#2c6e49]"
+          className="mx-auto flex w-fit hover:bg-gray-50 rounded-full px-5 py-5 text-[#2c6e49]"
           onClick={handleSaveToggle}
           disabled={isSaving || authLoading || hasPendingSaveIntent}
         >

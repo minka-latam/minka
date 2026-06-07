@@ -40,9 +40,11 @@ export function CampaignCard({
     <Link
       href={campaignUrl}
       rel="noopener noreferrer"
-      className="block h-full rounded-xl overflow-hidden transition-shadow duration-300 hover:shadow-lg"
+      className={`block h-full rounded-2xl overflow-hidden border-4 transition-shadow duration-300 hover:shadow-lg ${
+        verified ? "border-[#8fbea0]" : "border-transparent"
+      }`}
     >
-      <div className="bg-white rounded-xl overflow-hidden group relative h-full flex flex-col h-[520px]">
+      <div className="bg-white rounded-2xl overflow-hidden group relative h-full flex flex-col h-[520px]">
         {/* Campaign Image - Animated height */}
         <div className="relative h-64 group-hover:h-32 transition-all duration-300 overflow-hidden flex-shrink-0">
           <Image

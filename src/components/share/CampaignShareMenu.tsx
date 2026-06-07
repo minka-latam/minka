@@ -1,11 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import {
-  Copy,
-  Instagram,
-  Share2,
-} from "lucide-react";
+import { Copy, Instagram, Share2 } from "lucide-react";
 import { useState } from "react";
 
 import {
@@ -54,8 +50,7 @@ export function CampaignShareMenu({
   dropdownPlacement = "top",
   useNativeShare = false,
 }: CampaignShareMenuProps) {
-  const [showShareOptions, setShowShareOptions] =
-    useState(false);
+  const [showShareOptions, setShowShareOptions] = useState(false);
   const [showInstagramStoryDialog, setShowInstagramStoryDialog] =
     useState(false);
   const { toast } = useToast();
@@ -65,10 +60,7 @@ export function CampaignShareMenu({
 
   const closeMenu = () => setShowShareOptions(false);
 
-  const copyToClipboard = async (
-    value: string,
-    successDescription: string,
-  ) => {
+  const copyToClipboard = async (value: string, successDescription: string) => {
     try {
       await navigator.clipboard.writeText(value);
       closeMenu();
@@ -96,15 +88,8 @@ export function CampaignShareMenu({
     }
   };
 
-  const openShareUrl = (
-    url: string,
-    platform: CampaignSharePlatform,
-  ) => {
-    window.open(
-      url,
-      "_blank",
-      "noopener,noreferrer,width=640,height=560",
-    );
+  const openShareUrl = (url: string, platform: CampaignSharePlatform) => {
+    window.open(url, "_blank", "noopener,noreferrer,width=640,height=560");
     closeMenu();
     toast({
       title: "Compartir campaña",
@@ -113,11 +98,7 @@ export function CampaignShareMenu({
   };
 
   const handleShareClick = () => {
-    if (
-      useNativeShare &&
-      isMobileDevice() &&
-      navigator.share
-    ) {
+    if (useNativeShare && isMobileDevice() && navigator.share) {
       navigator
         .share({
           title: sharePayload.title,
@@ -142,10 +123,7 @@ export function CampaignShareMenu({
       return;
     }
 
-    if (
-      platform === "facebook" ||
-      platform === "linkedin"
-    ) {
+    if (platform === "facebook" || platform === "linkedin") {
       tryCopyToClipboard(sharePayload.caption).then((copied) => {
         window.open(
           sharePayload.links[platform],
@@ -173,12 +151,10 @@ export function CampaignShareMenu({
   };
 
   const placementClass =
-    dropdownPlacement === "bottom"
-      ? "top-full mt-2"
-      : "bottom-full mb-2";
+    dropdownPlacement === "bottom" ? "top-full mt-2" : "bottom-full mb-2";
 
   return (
-    <div className="relative">
+    <div className="relative inline-flex items-center">
       <Button
         type="button"
         variant={triggerVariant}
@@ -284,7 +260,8 @@ export function CampaignShareMenu({
             </div>
 
             <p className="mt-3 text-center text-sm leading-relaxed text-gray-800">
-              Hemos preparado un texto y lo copiamos por ti. Solo pégalo en la publicación.
+              Hemos preparado un texto y lo copiamos por ti. Solo pégalo en la
+              publicación.
             </p>
 
             <button

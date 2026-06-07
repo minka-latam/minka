@@ -18,7 +18,6 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
-import { EditCampaignTab } from "@/components/campaign-admin/edit-campaign-tab";
 import { AdsTab } from "@/components/campaign-admin/ads-tab";
 import { CommentsTab } from "@/components/campaign-admin/comments-tab";
 import { DonationsTab } from "@/components/campaign-admin/donations-tab";
@@ -35,6 +34,11 @@ import { uploadMedia } from "@/lib/supabase/upload-media";
 import { ImproveTextButton } from "@/components/ui/improve-text-button";
 import { CAMPAIGN_CATEGORIES } from "@/lib/campaign-categories";
 import { CampaignShareMenu } from "@/components/share/CampaignShareMenu";
+import {
+  CAMPAIGN_IMAGE_MAX_COUNT,
+  getCampaignImageFiles,
+  validateCampaignImageFile,
+} from "@/lib/uploads/image-upload-validation";
 
 export default function CampaignDetailPage() {
   const MAX_GOAL_AMOUNT = 1000000;
@@ -67,6 +71,8 @@ export default function CampaignDetailPage() {
   const [editingImageIndex, setEditingImageIndex] = useState<number | null>(
     null,
   );
+  const [pendingImageFiles, setPendingImageFiles] = useState<File[]>([]);
+  const [isDraggingImage, setIsDraggingImage] = useState(false);
   const [newYoutubeUrl, setNewYoutubeUrl] = useState("");
   const [isPublishing, setIsPublishing] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -220,6 +226,11 @@ export default function CampaignDetailPage() {
         title: "Imagen subida",
         description: "La imagen se ha subido correctamente.",
       });
+
+      const [nextFile, ...remainingFiles] = pendingImageFiles;
+      if (nextFile) {
+        prepareImageForEditor(nextFile, remainingFiles);
+      }
     } catch (error) {
       console.error("Error processing edited image:", error);
       toast({
@@ -231,6 +242,7 @@ export default function CampaignDetailPage() {
       // Reset editing state even if there's an error
       setImageToEdit(null);
       setEditingImageIndex(null);
+      setPendingImageFiles([]);
     }
   };
 
@@ -268,19 +280,12 @@ export default function CampaignDetailPage() {
   };
 
   const handleFileUpload = async (file: File) => {
-    if (file.size > 2 * 1024 * 1024) {
-      // 2MB limit
+    const validation = validateCampaignImageFile(file);
+    if (!validation.valid) {
       toast({
-        title: "Archivo muy grande",
-        description: "El archivo es demasiado grande. El tamaño máximo es 2MB.",
-      });
-      return null;
-    }
-
-    if (!file.type.includes("image/")) {
-      toast({
-        title: "Formato inválido",
-        description: "Solo se permiten archivos de imagen (JPEG, PNG).",
+        title: validation.title,
+        description: validation.description,
+        variant: "destructive",
       });
       return null;
     }
@@ -306,34 +311,23 @@ export default function CampaignDetailPage() {
     }
   };
 
-  // Function to handle file selection
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files || e.target.files.length === 0) return;
+  const prepareImageForEditor = (file: File, remainingFiles: File[] = []) => {
+    const validation = validateCampaignImageFile(file);
 
-    const file = e.target.files[0];
-
-    // Basic validation
-    if (file.size > 2 * 1024 * 1024) {
-      // 2MB limit
+    if (!validation.valid) {
       toast({
-        title: "Archivo muy grande",
-        description: "El archivo es demasiado grande. El tamaño máximo es 2MB.",
+        title: validation.title,
+        description: validation.description,
         variant: "destructive",
       });
       return;
     }
 
-    if (!file.type.includes("image/")) {
-      toast({
-        title: "Formato inválido",
-        description: "Solo se permiten archivos de imagen (JPEG, PNG).",
-        variant: "destructive",
-      });
-      return;
-    }
+    setPendingImageFiles(remainingFiles);
 
     // Create a preview URL
     const previewUrl = URL.createObjectURL(file);
+
     // Set the image to edit
     setImageToEdit(previewUrl);
     setUploadingFile(file);
@@ -342,6 +336,54 @@ export default function CampaignDetailPage() {
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
+  };
+
+  const handleSelectedImageFiles = (files: FileList) => {
+    const currentImageCount =
+      (campaign.media?.length || 0) + mediaPreviewUrls.length;
+    const validation = getCampaignImageFiles(files, currentImageCount);
+
+    if (!validation.valid) {
+      toast({
+        title: validation.title,
+        description: validation.description,
+        variant: "destructive",
+      });
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+
+    const [firstFile, ...remainingFiles] = validation.files;
+    prepareImageForEditor(firstFile, remainingFiles);
+  };
+
+  // Function to handle file selection
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    handleSelectedImageFiles(e.target.files);
+  };
+
+  const handleImageDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isUploading) setIsDraggingImage(true);
+  };
+
+  const handleImageDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.currentTarget.contains(e.relatedTarget as Node)) return;
+    setIsDraggingImage(false);
+  };
+
+  const handleImageDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDraggingImage(false);
+
+    if (isUploading) return;
+
+    handleSelectedImageFiles(e.dataTransfer.files);
   };
 
   // Function to remove media
@@ -427,6 +469,15 @@ export default function CampaignDetailPage() {
   // Function to handle saving changes
   const handleSaveChanges = async () => {
     try {
+      if (!campaign.media || campaign.media.length === 0) {
+        toast({
+          title: "Falta una imagen",
+          description: "La campaña debe tener al menos una imagen.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       setIsFormModified(false);
 
       // Prepare the data to send to the API
@@ -853,7 +904,7 @@ export default function CampaignDetailPage() {
                   }}
                   buttonLabel="Compartir"
                   triggerVariant="ghost"
-                  triggerClassName="h-auto rounded-none p-0 text-[#1a5535] gap-2 text-sm font-medium hover:underline hover:bg-transparent"
+                  triggerClassName="inline-flex h-auto items-center rounded-none p-0 text-[#1a5535] gap-2 text-sm font-medium hover:underline hover:bg-transparent"
                   dropdownPlacement="bottom"
                   dropdownClassName="left-0 w-64"
                 />
@@ -1390,8 +1441,15 @@ export default function CampaignDetailPage() {
 
                       {/* Upload new image */}
                       <div
-                        className="border-2 border-dashed border-gray-400 rounded-lg p-10 text-center bg-white cursor-pointer"
+                        className={`border-2 border-dashed ${
+                          isDraggingImage
+                            ? "border-[#2c6e49] bg-[#f0f8f4]"
+                            : "border-gray-400 bg-white"
+                        } rounded-lg p-10 text-center cursor-pointer transition-colors`}
                         onClick={() => fileInputRef.current?.click()}
+                        onDragOver={handleImageDragOver}
+                        onDragLeave={handleImageDragLeave}
+                        onDrop={handleImageDrop}
                       >
                         <div className="flex flex-col items-center justify-center">
                           <Image
@@ -1405,20 +1463,22 @@ export default function CampaignDetailPage() {
                             Arrastra o carga tus fotos aquí
                           </p>
                           <p className="text-xs text-gray-400 mb-4">
-                            Sólo archivos en formato JPEG, PNG y máximo 2 MB
+                            Sólo archivos JPEG o PNG. Máximo 2 MB por imagen y{" "}
+                            {CAMPAIGN_IMAGE_MAX_COUNT} imágenes en total.
                           </p>
                           <input
                             type="file"
                             ref={fileInputRef}
                             className="hidden"
                             accept="image/jpeg,image/png"
+                            multiple
                             onChange={handleFileChange}
                             disabled={isUploading}
                           />
                           <Button
                             type="button"
                             variant="outline"
-                            className="bg-[#2c6e49] text-white hover:bg-[#1e4d33] border-0 rounded-full"
+                            className="bg-[#2c6e49] text-white hover:bg-[#1e4d33] hover:text-white border-0 rounded-full"
                             onClick={(e) => {
                               e.stopPropagation();
                               fileInputRef.current?.click();
@@ -1996,11 +2056,14 @@ export default function CampaignDetailPage() {
       {/* Image Editor Modal - Moved to root level for proper rendering */}
       {imageToEdit && (
         <ImageEditor
+          key={imageToEdit}
           imageUrl={imageToEdit}
           onSave={handleSaveEditedImage}
           onCancel={() => {
             setImageToEdit(null);
             setEditingImageIndex(null);
+            setUploadingFile(null);
+            setPendingImageFiles([]);
           }}
           isLoading={isUploading}
         />

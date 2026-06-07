@@ -55,6 +55,11 @@ import {
 import { useCurrentStep } from "@/contexts/current-step-context";
 import { useAuth } from "@/providers/auth-provider";
 import { CAMPAIGN_CATEGORIES } from "@/lib/campaign-categories";
+import {
+  CAMPAIGN_IMAGE_MAX_COUNT,
+  getCampaignImageFiles,
+  validateCampaignImageFile,
+} from "@/lib/uploads/image-upload-validation";
 
 // Campaign Preview component
 const CampaignPreview = ({
@@ -398,12 +403,14 @@ export function CampaignForm() {
   const [uploadingFile, setUploadingFile] = useState<File | null>(null);
   const [mediaFiles, setMediaFiles] = useState<File[]>([]);
   const [mediaPreviewUrls, setMediaPreviewUrls] = useState<string[]>([]);
+  const [isDraggingImage, setIsDraggingImage] = useState(false);
 
   // Add new state for image editing
   const [imageToEdit, setImageToEdit] = useState<string | null>(null);
   const [editingImageIndex, setEditingImageIndex] = useState<number | null>(
     null,
   );
+  const [pendingImageFiles, setPendingImageFiles] = useState<File[]>([]);
 
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
@@ -831,31 +838,29 @@ export function CampaignForm() {
     }, 500);
   };
 
-  // Handle file input change
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files || e.target.files.length === 0) return;
+  const clearMediaError = () => {
+    setFormErrors((prev) => {
+      if (!prev.media) return prev;
+      const next = { ...prev };
+      delete next.media;
+      return next;
+    });
+  };
 
-    const file = e.target.files[0];
+  const openImageEditorForFile = (file: File, remainingFiles: File[] = []) => {
+    const validation = validateCampaignImageFile(file);
 
-    // Basic validation
-    if (file.size > 2 * 1024 * 1024) {
-      // 2MB limit
+    if (!validation.valid) {
       toast({
-        title: "Archivo muy grande",
-        description: "El archivo es demasiado grande. El tamaño máximo es 2MB.",
+        title: validation.title,
+        description: validation.description,
         variant: "destructive",
       });
       return;
     }
 
-    if (!file.type.includes("image/")) {
-      toast({
-        title: "Formato inválido",
-        description: "Solo se permiten archivos de imagen (JPEG, PNG).",
-        variant: "destructive",
-      });
-      return;
-    }
+    clearMediaError();
+    setPendingImageFiles(remainingFiles);
 
     // Create a preview URL
     const previewUrl = URL.createObjectURL(file);
@@ -870,6 +875,52 @@ export function CampaignForm() {
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
+  };
+
+  const handleSelectedImageFiles = (files: FileList) => {
+    const validation = getCampaignImageFiles(files, mediaPreviewUrls.length);
+
+    if (!validation.valid) {
+      toast({
+        title: validation.title,
+        description: validation.description,
+        variant: "destructive",
+      });
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+
+    const [firstFile, ...remainingFiles] = validation.files;
+    openImageEditorForFile(firstFile, remainingFiles);
+  };
+
+  // Handle file input change
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    handleSelectedImageFiles(e.target.files);
+  };
+
+  const handleImageDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isUploading) setIsDraggingImage(true);
+  };
+
+  const handleImageDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.currentTarget.contains(e.relatedTarget as Node)) return;
+    setIsDraggingImage(false);
+  };
+
+  const handleImageDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDraggingImage(false);
+
+    if (isUploading) return;
+
+    handleSelectedImageFiles(e.dataTransfer.files);
   };
 
   // Add handler for saving edited image
@@ -923,6 +974,11 @@ export function CampaignForm() {
         title: "Imagen subida",
         description: "La imagen se ha subido correctamente.",
       });
+
+      const [nextFile, ...remainingFiles] = pendingImageFiles;
+      if (nextFile) {
+        openImageEditorForFile(nextFile, remainingFiles);
+      }
     } catch (error) {
       console.error("Error processing edited image:", error);
       toast({
@@ -934,6 +990,7 @@ export function CampaignForm() {
       // Reset editing state even if there's an error
       setImageToEdit(null);
       setEditingImageIndex(null);
+      setPendingImageFiles([]);
     }
   };
 
@@ -967,6 +1024,7 @@ export function CampaignForm() {
     setImageToEdit(null);
     setEditingImageIndex(null);
     setUploadingFile(null);
+    setPendingImageFiles([]);
   };
 
   // Add handler for updating YouTube links
@@ -1614,8 +1672,17 @@ export function CampaignForm() {
                   <div className="bg-white rounded-xl border border-black p-6 md:p-8">
                     <div className="space-y-6" id="media">
                       <div
-                        className={`border-2 border-dashed ${formErrors.media ? "border-red-500" : "border-gray-400"} rounded-lg p-10 text-center bg-white`}
+                        className={`border-2 border-dashed ${
+                          formErrors.media
+                            ? "border-red-500"
+                            : isDraggingImage
+                              ? "border-[#2c6e49] bg-[#f0f8f4]"
+                              : "border-gray-400 bg-white"
+                        } rounded-lg p-10 text-center transition-colors`}
                         onClick={() => fileInputRef.current?.click()}
+                        onDragOver={handleImageDragOver}
+                        onDragLeave={handleImageDragLeave}
+                        onDrop={handleImageDrop}
                       >
                         <div className="flex flex-col items-center justify-center">
                           <Image
@@ -1629,19 +1696,21 @@ export function CampaignForm() {
                             Arrastra o carga tus fotos aquí
                           </p>
                           <p className="text-xs text-gray-400 mb-4">
-                            Sólo archivos en formato JPEG, PNG y máximo 2 MB
+                            Sólo archivos JPEG o PNG. Máximo 2 MB por imagen y{" "}
+                            {CAMPAIGN_IMAGE_MAX_COUNT} imágenes en total.
                           </p>
                           <input
                             type="file"
                             ref={fileInputRef}
                             className="hidden"
                             accept="image/jpeg,image/png"
+                            multiple
                             onChange={handleFileChange}
                             disabled={isUploading}
                           />
                           <Button
                             variant="outline"
-                            className="bg-[#2c6e49] text-white hover:bg-[#1e4d33] border-0 rounded-full"
+                            className="bg-[#2c6e49] text-white hover:bg-[#1e4d33] hover:text-white border-0 rounded-full"
                             onClick={(e) => {
                               e.stopPropagation();
                               fileInputRef.current?.click();
@@ -2399,6 +2468,7 @@ export function CampaignForm() {
       {/* Image editor modal */}
       {imageToEdit && (
         <ImageEditor
+          key={imageToEdit}
           imageUrl={imageToEdit}
           onSave={handleSaveEditedImage}
           onCancel={handleCancelImageEdit}

@@ -75,6 +75,7 @@ function formatCampaignData(campaign: any) {
     location:
       formatRegionDisplayName(campaign.organizer?.location) ||
       "Ubicación no indicada",
+    profilePicture: campaign.organizer?.profilePicture || null,
     memberSince: campaign.organizer?.join_date
       ? new Date(campaign.organizer.join_date).getFullYear().toString()
       : new Date().getFullYear().toString(),
@@ -129,6 +130,7 @@ function CustomCampaignDetails({
     name: string;
     role: string;
     location: string;
+    profilePicture: string | null;
     memberSince: string;
     successfulCampaigns: number;
     bio: string;
@@ -166,20 +168,6 @@ function CustomCampaignDetails({
 
   return (
     <div className="space-y-8">
-      {/* Campaign meta */}
-      <div className="flex items-center gap-4 pb-4 border-b border-gray-200">
-        <div className="h-10 w-10 rounded-full bg-[#e8f0e9] flex items-center justify-center flex-shrink-0">
-          <span className="text-sm font-medium text-[#2c6e49]">
-            {campaignLocation[0] || "B"}
-          </span>
-        </div>
-        <div className="min-w-0 flex-1">
-          <h3 className="text-base font-medium text-[#2c6e49] break-words">
-            {campaignMeta}
-          </h3>
-        </div>
-      </div>
-
       {/* Verification Badge - Only show if verified */}
       {isVerified && (
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-gray-200">
@@ -201,6 +189,15 @@ function CustomCampaignDetails({
           >
             Más información sobre la verificación
           </Link>
+        </div>
+      )}
+
+      {/* Campaign meta */}
+      {campaignMeta && (
+        <div className="pb-4 border-b border-gray-200">
+          <h3 className="text-base font-medium text-[#2c6e49] break-words">
+            {campaignMeta}
+          </h3>
         </div>
       )}
 
@@ -289,10 +286,19 @@ function CustomCampaignDetails({
           Sobre el organizador
         </h2>
         <div className="flex items-center gap-4">
-          <div className="h-10 w-10 rounded-full bg-[#e8f0e9] flex items-center justify-center flex-shrink-0">
-            <span className="text-sm font-medium text-[#2c6e49]">
-              {organizer.name[0]}
-            </span>
+          <div className="relative h-12 w-12 rounded-full bg-[#e8f0e9] flex items-center justify-center flex-shrink-0 overflow-hidden">
+            {organizer.profilePicture ? (
+              <Image
+                src={organizer.profilePicture}
+                alt={organizer.name}
+                fill
+                className="object-cover"
+              />
+            ) : (
+              <span className="text-base font-medium text-[#2c6e49]">
+                {organizer.name[0]}
+              </span>
+            )}
           </div>
           <div className="min-w-0 flex-1">
             <h3 className="text-base font-medium text-[#2c6e49] break-words">

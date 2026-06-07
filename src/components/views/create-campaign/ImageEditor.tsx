@@ -4,13 +4,6 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { X, RotateCw, ZoomIn, ZoomOut } from "lucide-react";
-import ReactCrop, {
-  Crop as CropType,
-  PixelCrop,
-  centerCrop,
-  makeAspectCrop,
-} from "react-image-crop";
-import "react-image-crop/dist/ReactCrop.css";
 import { InlineSpinner } from "@/components/ui/inline-spinner";
 
 interface ImageEditorProps {
@@ -20,6 +13,11 @@ interface ImageEditorProps {
   isLoading?: boolean;
 }
 
+type PanPosition = {
+  x: number;
+  y: number;
+};
+
 export function ImageEditor({
   imageUrl,
   onSave,
@@ -28,23 +26,97 @@ export function ImageEditor({
 }: ImageEditorProps) {
   const [imgSrc, setImgSrc] = useState(imageUrl);
   const imgRef = useRef<HTMLImageElement>(null);
-  const [crop, setCrop] = useState<CropType>();
-  const [completedCrop, setCompletedCrop] = useState<PixelCrop | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const dragStateRef = useRef<{
+    pointerId: number;
+    startX: number;
+    startY: number;
+    startPan: PanPosition;
+  } | null>(null);
   const [rotation, setRotation] = useState(0);
   const [modalSize, setModalSize] = useState({ width: 800, height: 600 });
-  const previewCanvasRef = useRef<HTMLCanvasElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
   const [naturalWidth, setNaturalWidth] = useState(0);
   const [naturalHeight, setNaturalHeight] = useState(0);
   const [imgReady, setImgReady] = useState(false);
-  const [scale, setScale] = useState(0.8);
-  const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
+  const [zoom, setZoom] = useState(0);
+  const [pan, setPan] = useState<PanPosition>({ x: 0, y: 0 });
+  const [isPanning, setIsPanning] = useState(false);
 
-  // Track if user has modified the crop
-  const [hasModifiedCrop, setHasModifiedCrop] = useState(false);
+  const scale = 1 + zoom;
 
-  // Load image dimensions before rendering
+  const calculateModalSize = useCallback((width: number, height: number) => {
+    const HEADER_HEIGHT = 60;
+    const CONTROLS_HEIGHT = 64;
+    const FOOTER_HEIGHT = 80;
+    const FIXED_HEIGHT = HEADER_HEIGHT + CONTROLS_HEIGHT + FOOTER_HEIGHT + 20;
+
+    const viewportWidth = window.innerWidth * 0.9;
+    const viewportHeight = window.innerHeight * 0.9;
+
+    const maxImageWidth = viewportWidth - 40;
+    const maxImageHeight = viewportHeight - FIXED_HEIGHT;
+    const imgAspect = width / height;
+
+    let imgWidth = width;
+    let imgHeight = height;
+
+    if (imgWidth > maxImageWidth) {
+      imgWidth = maxImageWidth;
+      imgHeight = imgWidth / imgAspect;
+    }
+
+    if (imgHeight > maxImageHeight) {
+      imgHeight = maxImageHeight;
+      imgWidth = imgHeight * imgAspect;
+    }
+
+    const finalWidth = Math.max(Math.round(imgWidth) + 40, 400);
+    const finalHeight = Math.round(imgHeight) + FIXED_HEIGHT;
+
+    setModalSize({
+      width: Math.min(finalWidth, viewportWidth),
+      height: Math.min(finalHeight, viewportHeight),
+    });
+  }, []);
+
+  const clampPan = useCallback(
+    (nextPan: PanPosition, nextScale = scale): PanPosition => {
+      const image = imgRef.current;
+      const container = containerRef.current;
+
+      if (!image || !container || nextScale <= 1) {
+        return { x: 0, y: 0 };
+      }
+
+      const containerRect = container.getBoundingClientRect();
+      const displayedWidth = image.width;
+      const displayedHeight = image.height;
+
+      const maxX = Math.max(
+        0,
+        (displayedWidth * nextScale - containerRect.width) / 2,
+      );
+      const maxY = Math.max(
+        0,
+        (displayedHeight * nextScale - containerRect.height) / 2,
+      );
+
+      return {
+        x: Math.min(maxX, Math.max(-maxX, nextPan.x)),
+        y: Math.min(maxY, Math.max(-maxY, nextPan.y)),
+      };
+    },
+    [scale],
+  );
+
   useEffect(() => {
+    setImgSrc(imageUrl);
+    setImgReady(false);
+    setRotation(0);
+    setZoom(0);
+    setPan({ x: 0, y: 0 });
+    setIsPanning(false);
+
     const img = new Image();
     img.crossOrigin = "anonymous";
     img.onload = () => {
@@ -57,342 +129,206 @@ export function ImageEditor({
       console.error("Failed to load image");
     };
     img.src = imageUrl;
-  }, [imageUrl]);
+  }, [imageUrl, calculateModalSize]);
 
-  // Calculate ideal modal size based on image and viewport
-  const calculateModalSize = useCallback((width: number, height: number) => {
-    // Fixed heights for header, footer and controls
-    const HEADER_HEIGHT = 60;
-    const CONTROLS_HEIGHT = 64;
-    const FOOTER_HEIGHT = 80;
-    const FIXED_HEIGHT = HEADER_HEIGHT + CONTROLS_HEIGHT + FOOTER_HEIGHT + 20; // +20 for margins
-
-    // Get viewport dimensions with a small margin
-    const viewportWidth = window.innerWidth * 0.9;
-    const viewportHeight = window.innerHeight * 0.9;
-
-    // Maximum available space for the image
-    const maxImageWidth = viewportWidth - 40; // 20px padding on each side
-    const maxImageHeight = viewportHeight - FIXED_HEIGHT;
-
-    // Calculate aspect ratio
-    const imgAspect = width / height;
-
-    // Determine dimensions to fit within constraints
-    let imgWidth = width;
-    let imgHeight = height;
-
-    // Scale down if needed
-    if (imgWidth > maxImageWidth) {
-      imgWidth = maxImageWidth;
-      imgHeight = imgWidth / imgAspect;
-    }
-
-    if (imgHeight > maxImageHeight) {
-      imgHeight = maxImageHeight;
-      imgWidth = imgHeight * imgAspect;
-    }
-
-    // Final modal size (image area + fixed elements)
-    const finalWidth = Math.max(Math.round(imgWidth) + 40, 400); // min width 400px
-    const finalHeight = Math.round(imgHeight) + FIXED_HEIGHT;
-
-    setModalSize({
-      width: Math.min(finalWidth, viewportWidth),
-      height: Math.min(finalHeight, viewportHeight),
-    });
-  }, []);
-
-  // Handle image load
   const onImageLoad = useCallback(
     (e: React.SyntheticEvent<HTMLImageElement>) => {
-      const { width, height } = e.currentTarget;
       const { naturalWidth, naturalHeight } = e.currentTarget;
 
       setNaturalWidth(naturalWidth);
       setNaturalHeight(naturalHeight);
-      setImageSize({ width, height });
+      setPan({ x: 0, y: 0 });
       setImgReady(true);
-
-      // Reset crop when loading a new image
-      setCrop(undefined);
-      setHasModifiedCrop(false);
-
-      // Set initial completedCrop to entire image dimensions
-      const initialCrop: PixelCrop = {
-        x: 0,
-        y: 0,
-        width,
-        height,
-        unit: "px",
-      };
-
-      setCompletedCrop(initialCrop);
     },
-    []
+    [],
   );
 
-  // Handle window resize
   useEffect(() => {
     const handleResize = () => {
-      if (naturalWidth && naturalHeight) {
-        // For rotated image, swap dimensions
-        if (rotation % 180 !== 0) {
-          calculateModalSize(naturalHeight, naturalWidth);
-        } else {
-          calculateModalSize(naturalWidth, naturalHeight);
-        }
+      if (!naturalWidth || !naturalHeight) return;
+
+      if (rotation % 180 !== 0) {
+        calculateModalSize(naturalHeight, naturalWidth);
+      } else {
+        calculateModalSize(naturalWidth, naturalHeight);
       }
+
+      setPan((currentPan) => clampPan(currentPan));
     };
 
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
-  }, [naturalWidth, naturalHeight, calculateModalSize, rotation]);
+  }, [naturalWidth, naturalHeight, calculateModalSize, rotation, clampPan]);
 
-  // Rotate image
+  useEffect(() => {
+    setPan((currentPan) => clampPan(currentPan));
+  }, [zoom, rotation, clampPan]);
+
   const handleRotate = useCallback(() => {
     setRotation((prev) => (prev + 90) % 360);
+    setPan({ x: 0, y: 0 });
 
-    // Reset crop when rotating
-    setCrop(undefined);
-    setHasModifiedCrop(false);
-
-    // When rotating, swap dimensions for modal size calculation
     if (naturalWidth && naturalHeight) {
-      // If we're going from landscape to portrait or vice versa, swap dimensions
-      const isCurrentlyLandscape =
-        rotation % 180 === 0
-          ? naturalWidth > naturalHeight
-          : naturalHeight > naturalWidth;
-
-      const willBeLandscape =
-        (rotation + 90) % 180 === 0
-          ? naturalWidth > naturalHeight
-          : naturalHeight > naturalWidth;
-
-      if (isCurrentlyLandscape !== willBeLandscape) {
-        calculateModalSize(naturalHeight, naturalWidth);
-      }
+      calculateModalSize(naturalHeight, naturalWidth);
     }
-  }, [naturalWidth, naturalHeight, calculateModalSize, rotation]);
+  }, [naturalWidth, naturalHeight, calculateModalSize]);
 
-  // Handle zoom in
+  const setZoomValue = useCallback(
+    (nextZoom: number) => {
+      const normalizedZoom = Math.min(Math.max(nextZoom, 0), 2);
+      setZoom(normalizedZoom);
+      setPan((currentPan) => clampPan(currentPan, 1 + normalizedZoom));
+    },
+    [clampPan],
+  );
+
   const handleZoomIn = useCallback(() => {
-    setScale((prev) => Math.min(prev + 0.1, 3));
-  }, []);
+    setZoomValue(zoom + 0.1);
+  }, [setZoomValue, zoom]);
 
-  // Handle zoom out
   const handleZoomOut = useCallback(() => {
-    setScale((prev) => Math.max(prev - 0.1, 0.5));
-  }, []);
+    setZoomValue(zoom - 0.1);
+  }, [setZoomValue, zoom]);
 
-  // Handle slider change
-  const handleSliderChange = useCallback((values: number[]) => {
-    if (!values || values.length === 0) return;
-    setScale(values[0]);
-  }, []);
+  const handleSliderChange = useCallback(
+    (values: number[]) => {
+      if (!values || values.length === 0) return;
+      setZoomValue(values[0]);
+    },
+    [setZoomValue],
+  );
 
-  // When scale changes, reset crop
-  useEffect(() => {
-    if (hasModifiedCrop) {
-      // If user has already set a crop, don't reset it
+  const handlePointerDown = (e: React.PointerEvent<HTMLImageElement>) => {
+    if (scale <= 1) return;
+
+    e.currentTarget.setPointerCapture(e.pointerId);
+    dragStateRef.current = {
+      pointerId: e.pointerId,
+      startX: e.clientX,
+      startY: e.clientY,
+      startPan: pan,
+    };
+    setIsPanning(true);
+  };
+
+  const handlePointerMove = (e: React.PointerEvent<HTMLImageElement>) => {
+    const dragState = dragStateRef.current;
+    if (!dragState || dragState.pointerId !== e.pointerId) return;
+
+    const nextPan = {
+      x: dragState.startPan.x + e.clientX - dragState.startX,
+      y: dragState.startPan.y + e.clientY - dragState.startY,
+    };
+
+    setPan(clampPan(nextPan));
+  };
+
+  const endPan = (e: React.PointerEvent<HTMLImageElement>) => {
+    if (dragStateRef.current?.pointerId === e.pointerId) {
+      dragStateRef.current = null;
+      setIsPanning(false);
+    }
+  };
+
+  const drawFullImage = (
+    canvas: HTMLCanvasElement,
+    ctx: CanvasRenderingContext2D,
+    image: HTMLImageElement,
+  ) => {
+    const sourceWidth = image.naturalWidth;
+    const sourceHeight = image.naturalHeight;
+    let targetWidth = sourceWidth;
+    let targetHeight = sourceHeight;
+
+    if (rotation % 180 !== 0) {
+      [targetWidth, targetHeight] = [targetHeight, targetWidth];
+    }
+
+    canvas.width = targetWidth;
+    canvas.height = targetHeight;
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+
+    if (rotation > 0) {
+      ctx.save();
+      ctx.translate(canvas.width / 2, canvas.height / 2);
+      ctx.rotate((rotation * Math.PI) / 180);
+      ctx.drawImage(
+        image,
+        -sourceWidth / 2,
+        -sourceHeight / 2,
+        sourceWidth,
+        sourceHeight,
+      );
+      ctx.restore();
       return;
     }
 
-    // Reset crop only if it's not been explicitly set by user
-    setCrop(undefined);
-  }, [scale, hasModifiedCrop]);
+    ctx.drawImage(image, 0, 0, targetWidth, targetHeight);
+  };
 
-  // Save the edited image
+  const drawVisibleViewport = (
+    canvas: HTMLCanvasElement,
+    ctx: CanvasRenderingContext2D,
+    image: HTMLImageElement,
+    container: HTMLDivElement,
+  ) => {
+    const containerRect = container.getBoundingClientRect();
+    const displayRatioX = image.naturalWidth / image.width;
+    const displayRatioY = image.naturalHeight / image.height;
+
+    canvas.width = Math.max(1, Math.round(containerRect.width * displayRatioX));
+    canvas.height = Math.max(
+      1,
+      Math.round(containerRect.height * displayRatioY),
+    );
+
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+
+    ctx.save();
+    ctx.translate(
+      canvas.width / 2 + pan.x * displayRatioX,
+      canvas.height / 2 + pan.y * displayRatioY,
+    );
+    ctx.rotate((rotation * Math.PI) / 180);
+    ctx.scale(scale, scale);
+    ctx.drawImage(
+      image,
+      -image.naturalWidth / 2,
+      -image.naturalHeight / 2,
+      image.naturalWidth,
+      image.naturalHeight,
+    );
+    ctx.restore();
+  };
+
   const handleSave = useCallback(() => {
-    if (!imgRef.current || !completedCrop) return;
+    const image = imgRef.current;
+    const container = containerRef.current;
+    if (!image || !container) return;
 
     try {
-      const image = imgRef.current;
       const canvas = document.createElement("canvas");
       const ctx = canvas.getContext("2d");
       if (!ctx) return;
 
-      // Get natural dimensions of the image
-      const naturalWidth = image.naturalWidth;
-      const naturalHeight = image.naturalHeight;
-
-      // Get the displayed dimensions of the image (before scaling and rotation)
-      const displayedWidth = image.width;
-      const displayedHeight = image.height;
-
-      // Calculate the ratio between natural and displayed dimensions
-      const scaleRatioX = naturalWidth / displayedWidth;
-      const scaleRatioY = naturalHeight / displayedHeight;
-
-      // If user has made a crop selection
-      if (hasModifiedCrop && completedCrop) {
-        // Convert crop from display coordinates to natural image coordinates
-        // We need to account for the current scale factor
-        const sourceX = Math.round((completedCrop.x / scale) * scaleRatioX);
-        const sourceY = Math.round((completedCrop.y / scale) * scaleRatioY);
-        const sourceWidth = Math.round(
-          (completedCrop.width / scale) * scaleRatioX
-        );
-        const sourceHeight = Math.round(
-          (completedCrop.height / scale) * scaleRatioY
-        );
-
-        // Output dimensions for the cropped image
-        let targetWidth = sourceWidth;
-        let targetHeight = sourceHeight;
-
-        // If rotated by 90 or 270 degrees, swap width and height
-        if (rotation % 180 !== 0) {
-          [targetWidth, targetHeight] = [targetHeight, targetWidth];
-        }
-
-        // Create canvas with correct dimensions
-        canvas.width = targetWidth;
-        canvas.height = targetHeight;
-
-        // Enable high quality rendering
-        ctx.imageSmoothingEnabled = true;
-        ctx.imageSmoothingQuality = "high";
-
-        // Draw the cropped image with rotation
-        if (rotation > 0) {
-          // For rotation, we need to:
-          // 1. Translate to the center of the canvas
-          // 2. Rotate by the specified angle
-          // 3. Draw the image with correct offsets
-          // 4. Restore the context
-
-          const centerX = canvas.width / 2;
-          const centerY = canvas.height / 2;
-
-          ctx.save();
-          ctx.translate(centerX, centerY);
-          ctx.rotate((rotation * Math.PI) / 180);
-
-          const rotatedOffsetX =
-            rotation % 180 !== 0 ? -sourceHeight / 2 : -sourceWidth / 2;
-          const rotatedOffsetY =
-            rotation % 180 !== 0 ? -sourceWidth / 2 : -sourceHeight / 2;
-
-          ctx.drawImage(
-            image,
-            sourceX,
-            sourceY,
-            sourceWidth,
-            sourceHeight,
-            rotatedOffsetX,
-            rotatedOffsetY,
-            sourceWidth,
-            sourceHeight
-          );
-
-          ctx.restore();
-        } else {
-          // No rotation - simple draw
-          ctx.drawImage(
-            image,
-            sourceX,
-            sourceY,
-            sourceWidth,
-            sourceHeight,
-            0,
-            0,
-            targetWidth,
-            targetHeight
-          );
-        }
+      if (zoom === 0 && pan.x === 0 && pan.y === 0) {
+        drawFullImage(canvas, ctx, image);
       } else {
-        // Use the full image
-        const sourceX = 0;
-        const sourceY = 0;
-        const sourceWidth = naturalWidth;
-        const sourceHeight = naturalHeight;
-
-        // Get output dimensions, accounting for rotation
-        let targetWidth = sourceWidth;
-        let targetHeight = sourceHeight;
-
-        if (rotation % 180 !== 0) {
-          [targetWidth, targetHeight] = [targetHeight, targetWidth];
-        }
-
-        // Set canvas size
-        canvas.width = targetWidth;
-        canvas.height = targetHeight;
-
-        ctx.imageSmoothingEnabled = true;
-        ctx.imageSmoothingQuality = "high";
-
-        // Apply rotation if needed
-        if (rotation > 0) {
-          const centerX = canvas.width / 2;
-          const centerY = canvas.height / 2;
-
-          ctx.save();
-          ctx.translate(centerX, centerY);
-          ctx.rotate((rotation * Math.PI) / 180);
-
-          const rotatedOffsetX =
-            rotation % 180 !== 0 ? -sourceHeight / 2 : -sourceWidth / 2;
-          const rotatedOffsetY =
-            rotation % 180 !== 0 ? -sourceWidth / 2 : -sourceHeight / 2;
-
-          ctx.drawImage(
-            image,
-            sourceX,
-            sourceY,
-            sourceWidth,
-            sourceHeight,
-            rotatedOffsetX,
-            rotatedOffsetY,
-            sourceWidth,
-            sourceHeight
-          );
-
-          ctx.restore();
-        } else {
-          // No rotation - simple draw
-          ctx.drawImage(
-            image,
-            sourceX,
-            sourceY,
-            sourceWidth,
-            sourceHeight,
-            0,
-            0,
-            targetWidth,
-            targetHeight
-          );
-        }
+        drawVisibleViewport(canvas, ctx, image, container);
       }
 
-      // Create a high-quality JPEG data URL
       const dataUrl = canvas.toDataURL("image/jpeg", 0.95);
       onSave(dataUrl);
     } catch (error) {
       console.error("Error saving edited image:", error);
     }
-  }, [imgRef, completedCrop, rotation, onSave, hasModifiedCrop, scale]);
-
-  // Handle crop change with scale adjustment
-  const handleCropChange = useCallback((c: CropType) => {
-    // Store the crop coordinates as they are shown on screen
-    setCrop(c);
-    setHasModifiedCrop(true);
-  }, []);
-
-  // Store the final crop coordinates, adjusted for scale
-  const handleCropComplete = useCallback((c: PixelCrop) => {
-
-    // Store the completed crop as-is (in screen coordinates)
-    // The scale adjustment will happen when saving
-    setCompletedCrop(c);
-  }, []);
+  }, [onSave, pan, rotation, scale, zoom]);
 
   const getEditorAreaStyle = () => {
-    // Calculate the available height for the image area
-    // Modal height minus header (60px), controls (64px), footer (80px), and some padding
     const fixedHeight = 60 + 64 + 80 + 10;
     const imageAreaHeight = modalSize.height - fixedHeight;
 
@@ -408,7 +344,6 @@ export function ImageEditor({
         style={{ width: modalSize.width, height: modalSize.height }}
         className="bg-white rounded-lg flex flex-col overflow-hidden max-w-[90vw] max-h-[90vh]"
       >
-        {/* Header */}
         <div className="p-4 flex justify-between items-center h-[60px]">
           <h2 className="text-xl font-medium">Editar foto</h2>
           <button
@@ -419,51 +354,48 @@ export function ImageEditor({
           </button>
         </div>
 
-        {/* Image editor area */}
         <div
           ref={containerRef}
           style={getEditorAreaStyle()}
           className="flex-1 relative overflow-hidden bg-gray-900 flex items-center justify-center p-2"
         >
           {imgReady && (
-            <ReactCrop
-              crop={crop}
-              onChange={handleCropChange}
-              onComplete={handleCropComplete}
-              aspect={undefined}
-              minWidth={10}
-              minHeight={10}
-              className="flex items-center justify-center max-h-full max-w-full"
-              keepSelection={true}
-            >
-              <img
-                ref={imgRef}
-                src={imgSrc}
-                alt="Editable"
-                style={{
-                  transform: `scale(${scale}) rotate(${rotation}deg)`,
-                  transformOrigin: "center",
-                  transition: "transform 0.2s ease",
-                }}
-                onLoad={onImageLoad}
-                crossOrigin="anonymous"
-                className="object-contain max-h-full max-w-full"
-              />
-            </ReactCrop>
+            <img
+              ref={imgRef}
+              src={imgSrc}
+              alt="Editable"
+              style={{
+                transform: `translate(${pan.x}px, ${pan.y}px) scale(${scale}) rotate(${rotation}deg)`,
+                transformOrigin: "center",
+                transition: isPanning ? "none" : "transform 0.18s ease",
+                touchAction: "none",
+              }}
+              onLoad={onImageLoad}
+              onPointerDown={handlePointerDown}
+              onPointerMove={handlePointerMove}
+              onPointerUp={endPan}
+              onPointerCancel={endPan}
+              crossOrigin="anonymous"
+              draggable={false}
+              className={`object-contain max-h-full max-w-full select-none ${
+                scale > 1
+                  ? isPanning
+                    ? "cursor-grabbing"
+                    : "cursor-grab"
+                  : "cursor-default"
+              }`}
+            />
           )}
           {!imgReady && (
             <div className="flex items-center justify-center h-full w-full">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#478C5C]"></div>
             </div>
           )}
-          <canvas ref={previewCanvasRef} className="hidden" />
         </div>
 
-        {/* Controls bar */}
         <div className="border-t border-gray-300 h-[64px]">
           <div className="flex h-full">
-            {/* Rotate button */}
-            <div className="flex-none w-52 border-r border-gray-300">
+            <div className="flex-none w-40 sm:w-52 border-r border-gray-300">
               <button
                 onClick={handleRotate}
                 className="flex items-center justify-center h-full w-full gap-2 text-gray-700 hover:bg-gray-100"
@@ -473,21 +405,20 @@ export function ImageEditor({
               </button>
             </div>
 
-            {/* Zoom controls */}
-            <div className="flex-1 flex items-center justify-center px-4">
+            <div className="flex-1 flex items-center justify-center px-3 sm:px-4">
               <button
                 onClick={handleZoomOut}
-                className="text-gray-500 hover:text-gray-900 p-2"
+                className="text-gray-500 hover:text-gray-900 p-2 disabled:opacity-40"
                 aria-label="Zoom out"
+                disabled={zoom === 0}
               >
                 <ZoomOut className="h-5 w-5 flex-shrink-0" />
               </button>
-              <div className="w-[60%] mx-4">
+              <div className="w-[60%] mx-2 sm:mx-4">
                 <Slider
-                  defaultValue={[scale]}
-                  value={[scale]}
-                  min={0.5}
-                  max={3}
+                  value={[zoom]}
+                  min={0}
+                  max={2}
                   step={0.1}
                   onValueChange={handleSliderChange}
                   className="[&_.relative]:h-8 [&_[data-orientation=horizontal]]:h-[4px] [&_[role=slider]]:h-5 [&_[role=slider]]:w-5 [&_[role=slider]]:border-black"
@@ -495,8 +426,9 @@ export function ImageEditor({
               </div>
               <button
                 onClick={handleZoomIn}
-                className="text-gray-500 hover:text-gray-900 p-2"
+                className="text-gray-500 hover:text-gray-900 p-2 disabled:opacity-40"
                 aria-label="Zoom in"
+                disabled={zoom >= 2}
               >
                 <ZoomIn className="h-5 w-5 flex-shrink-0" />
               </button>
@@ -504,7 +436,6 @@ export function ImageEditor({
           </div>
         </div>
 
-        {/* Save button */}
         <div className="p-4 flex justify-center border-t border-gray-300 h-[80px]">
           <Button
             onClick={handleSave}

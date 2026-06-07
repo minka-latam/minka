@@ -169,9 +169,9 @@ export function CampaignVerificationView({
     },
     {
       id: 3,
-      title: "Historia de tu campaña",
+      title: "Cuéntanos...",
       description:
-        "Ahora cuéntanos aquí personalmente tu historia para que podamos entenderte mejor.",
+      "Aquí deja un mensaje para nosotros, no es público. Detalla tu situación, y cómo los documentos que envias muestran la veracidad de tu necesidad. Todo lo que veas neceario para que verifiquemos tu campaña.",
     },
     {
       id: 4,
@@ -1334,7 +1334,7 @@ export function CampaignVerificationView({
                   </p>
                   <p className="mt-2 text-sm text-gray-500">
                     Ejemplos: diagnóstico de la clínica, invitación al evento
-                    internacional, factura de gastos, cotizaciones o permisos.
+                    internacional, factura de gastos, cotizaciones, permisos o cualquier documento que ayude con la verificación.
                   </p>
                 </div>
 
@@ -2143,11 +2143,11 @@ export function CampaignVerificationView({
                   <div className="bg-white rounded-xl border border-black p-6 md:p-8">
                     <div className="space-y-4">
                       <label className="block text-lg font-medium mb-2">
-                        Historia personal de tu campaña
+                        Mensaje para Minka
                       </label>
                       <textarea
                         rows={8}
-                        placeholder="Cuéntanos personalmente tu historia: qué está pasando, por qué necesitas apoyo, quién recibirá la ayuda y cómo se usarán los fondos..."
+                        placeholder="Cuéntanos personalmente tu historia: qué está pasando, por qué necesitas apoyo, quién recibirá la ayuda, cómo se usarán los fondos, explica los documentos que estas proporcionando, etc..."
                         className={`w-full rounded-lg border ${formErrors.campaignStory ? "error-input" : "border-black"} bg-white shadow-sm focus:border-[#478C5C] focus:ring-[#478C5C] focus:ring-0 p-4`}
                         value={campaignStory}
                         onChange={(e) => {
@@ -2156,11 +2156,11 @@ export function CampaignVerificationView({
                             setFormErrors({ ...formErrors, campaignStory: "" });
                           }
                         }}
-                        maxLength={2000}
+                        maxLength={5000}
                       />
                       <div className="flex justify-between items-center">
                         <div className="text-sm text-gray-500">
-                          {campaignStory.length}/2000 caracteres
+                          {campaignStory.length}/5000 caracteres
                         </div>
                         <div className="text-sm text-gray-500">
                           Mínimo 50 caracteres

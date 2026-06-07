@@ -26,6 +26,10 @@ import {
 } from "@/components/ui/alert-dialog";
 import { createBrowserClient } from "@supabase/ssr";
 import { STORAGE_BUCKET, STORAGE_PREFIXES } from "@/lib/storage/config";
+import {
+  getSingleImageDropFile,
+  validateCampaignImageFile,
+} from "@/lib/uploads/image-upload-validation";
 
 interface AdsTabProps {
   campaign: Record<string, any>;
@@ -41,6 +45,7 @@ export function AdsTab({ campaign }: AdsTabProps) {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [showImageEditor, setShowImageEditor] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [isDraggingImage, setIsDraggingImage] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const initialFormState = {
@@ -79,14 +84,13 @@ export function AdsTab({ campaign }: AdsTabProps) {
     const updatesData = await getCampaignUpdates(campaign.id);
     if (updatesData) {
       // Log individual update data for better debugging
-      updatesData.forEach((update) => {
-      });
+      updatesData.forEach((update) => {});
       setUpdates(updatesData);
     }
   };
 
   const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     const { name, value } = e.target;
     setFormData({
@@ -196,25 +200,12 @@ export function AdsTab({ campaign }: AdsTabProps) {
     setIsDeleteDialogOpen(true);
   };
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files || e.target.files.length === 0) return;
-
-    const file = e.target.files[0];
-    const fileSize = file.size / 1024 / 1024; // Convert to MB
-
-    if (fileSize > 2) {
+  const prepareImageForEditor = (file: File) => {
+    const validation = validateCampaignImageFile(file);
+    if (!validation.valid) {
       toast({
-        title: "Archivo demasiado grande",
-        description: "El tamaño máximo permitido es de 2 MB",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!file.type.startsWith("image/")) {
-      toast({
-        title: "Formato no soportado",
-        description: "Solo se permiten archivos de imagen",
+        title: validation.title,
+        description: validation.description,
         variant: "destructive",
       });
       return;
@@ -227,6 +218,56 @@ export function AdsTab({ campaign }: AdsTabProps) {
 
     // Show the image editor
     setShowImageEditor(true);
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+
+    const validation = getSingleImageDropFile(e.target.files);
+    if (!validation.valid) {
+      toast({
+        title: validation.title,
+        description: validation.description,
+        variant: "destructive",
+      });
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+
+    prepareImageForEditor(validation.file);
+  };
+
+  const handleImageDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isUploadingImage) setIsDraggingImage(true);
+  };
+
+  const handleImageDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.currentTarget.contains(e.relatedTarget as Node)) return;
+    setIsDraggingImage(false);
+  };
+
+  const handleImageDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDraggingImage(false);
+
+    if (isUploadingImage) return;
+
+    const validation = getSingleImageDropFile(e.dataTransfer.files);
+    if (!validation.valid) {
+      toast({
+        title: validation.title,
+        description: validation.description,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    prepareImageForEditor(validation.file);
   };
 
   const handleSaveEditedImage = (editedUrl: string) => {
@@ -276,7 +317,10 @@ export function AdsTab({ campaign }: AdsTabProps) {
       });
 
       // Upload to Supabase Storage
-      const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
+      const supabase = createBrowserClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      );
       const fileExt = "jpg";
       const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
       const filePath = `${STORAGE_PREFIXES.campaignImages}/${fileName}`;
@@ -435,8 +479,15 @@ export function AdsTab({ campaign }: AdsTabProps) {
               </label>
               {!uploadedImage ? (
                 <div
-                  className="border-2 border-dashed border-gray-400 rounded-lg p-10 text-center bg-white"
+                  className={`border-2 border-dashed ${
+                    isDraggingImage
+                      ? "border-[#2c6e49] bg-[#f0f8f4]"
+                      : "border-gray-400 bg-white"
+                  } rounded-lg p-10 text-center transition-colors`}
                   onClick={() => fileInputRef.current?.click()}
+                  onDragOver={handleImageDragOver}
+                  onDragLeave={handleImageDragLeave}
+                  onDrop={handleImageDrop}
                 >
                   <div className="flex flex-col items-center justify-center">
                     <div className="mb-4">
@@ -464,7 +515,7 @@ export function AdsTab({ campaign }: AdsTabProps) {
                     </p>
                     <input
                       type="file"
-                      accept="image/*"
+                      accept="image/jpeg,image/png"
                       className="hidden"
                       ref={fileInputRef}
                       onChange={handleFileChange}
@@ -472,7 +523,7 @@ export function AdsTab({ campaign }: AdsTabProps) {
                     <Button
                       type="button"
                       variant="outline"
-                      className="bg-[#2c6e49] text-white hover:bg-[#1e4d33] border-0 rounded-full"
+                      className="bg-[#2c6e49] text-white hover:bg-[#1e4d33] hover:text-white border-0 rounded-full"
                       onClick={(e) => {
                         e.stopPropagation();
                         fileInputRef.current?.click();
@@ -588,7 +639,6 @@ export function AdsTab({ campaign }: AdsTabProps) {
             ) : updates.length > 0 ? (
               <div className="divide-y divide-gray-200">
                 {updates.map((update) => {
-
                   return (
                     <div key={update.id} className="py-4">
                       <div className="flex space-x-3">
@@ -601,7 +651,7 @@ export function AdsTab({ campaign }: AdsTabProps) {
                                 className="object-cover w-full h-full"
                                 onError={(e) => {
                                   console.error(
-                                    `Failed to load image: ${update.imageUrl}`
+                                    `Failed to load image: ${update.imageUrl}`,
                                   );
                                   // Replace with fallback instead of hiding
                                   e.currentTarget.parentElement!.innerHTML = `
