@@ -1,7 +1,165 @@
 import { Suspense } from "react";
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import {
+  CampaignStatus,
+  MediaType,
+  Status,
+} from "@prisma/client";
+
 import Loading from "./loading";
 import CampaignClientPage from "@/components/views/campaign/CampaignClientPage";
+import { prisma } from "@/lib/prisma";
+import {
+  getCampaignShareDescription,
+  getCampaignShareTitle,
+  getCampaignShareUrl,
+  getPublicAppUrl,
+  MINKA_FALLBACK_SHARE_IMAGE,
+  toAbsoluteShareUrl,
+} from "@/lib/campaign-share";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const baseUrl = getPublicAppUrl();
+  const campaignUrl = getCampaignShareUrl(id, baseUrl);
+  const fallbackImage = toAbsoluteShareUrl(
+    MINKA_FALLBACK_SHARE_IMAGE,
+    baseUrl,
+  );
+
+  try {
+    const campaign = await prisma.campaign.findFirst({
+      where: {
+        id,
+        campaignStatus: CampaignStatus.active,
+      },
+      select: {
+        id: true,
+        title: true,
+        subtitle: true,
+        description: true,
+        media: {
+          where: {
+            status: Status.active,
+            type: MediaType.image,
+          },
+          orderBy: [
+            { isPrimary: "desc" },
+            { orderIndex: "asc" },
+          ],
+          take: 1,
+          select: {
+            mediaUrl: true,
+          },
+        },
+      },
+    });
+
+    if (!campaign) {
+      return {
+        title: "Campaña en Minka",
+        description:
+          "Conoce campañas solidarias y causas sociales en Minka.",
+        alternates: {
+          canonical: campaignUrl,
+        },
+        openGraph: {
+          title: "Campaña en Minka",
+          description:
+            "Conoce campañas solidarias y causas sociales en Minka.",
+          url: campaignUrl,
+          siteName: "Minka",
+          type: "website",
+          images: [
+            {
+              url: fallbackImage,
+              alt: "Minka",
+            },
+          ],
+        },
+        twitter: {
+          card: "summary_large_image",
+          title: "Campaña en Minka",
+          description:
+            "Conoce campañas solidarias y causas sociales en Minka.",
+          images: [fallbackImage],
+        },
+      };
+    }
+
+    const title = getCampaignShareTitle(campaign);
+    const description = getCampaignShareDescription(campaign);
+    const primaryImage = toAbsoluteShareUrl(
+      campaign.media[0]?.mediaUrl || MINKA_FALLBACK_SHARE_IMAGE,
+      baseUrl,
+    );
+
+    return {
+      title,
+      description,
+      alternates: {
+        canonical: campaignUrl,
+      },
+      openGraph: {
+        title,
+        description,
+        url: campaignUrl,
+        siteName: "Minka",
+        locale: "es_BO",
+        type: "website",
+        images: [
+          {
+            url: primaryImage,
+            alt: title,
+          },
+        ],
+      },
+      twitter: {
+        card: "summary_large_image",
+        title,
+        description,
+        images: [primaryImage],
+      },
+    };
+  } catch (error) {
+    console.error("Error generating campaign metadata:", error);
+
+    return {
+      title: "Campaña en Minka",
+      description:
+        "Conoce campañas solidarias y causas sociales en Minka.",
+      alternates: {
+        canonical: campaignUrl,
+      },
+      openGraph: {
+        title: "Campaña en Minka",
+        description:
+          "Conoce campañas solidarias y causas sociales en Minka.",
+        url: campaignUrl,
+        siteName: "Minka",
+        type: "website",
+        images: [
+          {
+            url: fallbackImage,
+            alt: "Minka",
+          },
+        ],
+      },
+      twitter: {
+        card: "summary_large_image",
+        title: "Campaña en Minka",
+        description:
+          "Conoce campañas solidarias y causas sociales en Minka.",
+        images: [fallbackImage],
+      },
+    };
+  }
+}
 
 // Server component that passes the campaign ID to the client component
 export default async function CampaignPage({

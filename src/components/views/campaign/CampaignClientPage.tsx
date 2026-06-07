@@ -492,6 +492,9 @@ export default function CampaignClientPage({ id }: { id: string }) {
                   donorsCount={formattedData.progress.donorsCount}
                   isVerified={formattedData.progress.isVerified}
                   createdAt={formattedData.progress.createdAt}
+                  campaignTitle={formattedData.title}
+                  campaignSubtitle={formattedData.subtitle}
+                  campaignDescription={formattedData.description}
                   campaignId={id}
                 />
               </StickyProgressWrapper>
@@ -580,6 +583,9 @@ export default function CampaignClientPage({ id }: { id: string }) {
                 donorsCount={formattedData.progress.donorsCount}
                 isVerified={formattedData.progress.isVerified}
                 createdAt={formattedData.progress.createdAt}
+                campaignTitle={formattedData.title}
+                campaignSubtitle={formattedData.subtitle}
+                campaignDescription={formattedData.description}
                 campaignId={id}
               />
             </div>

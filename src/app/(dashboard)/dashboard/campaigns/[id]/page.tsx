@@ -34,6 +34,7 @@ import { cn } from "@/lib/utils";
 import { uploadMedia } from "@/lib/supabase/upload-media";
 import { ImproveTextButton } from "@/components/ui/improve-text-button";
 import { CAMPAIGN_CATEGORIES } from "@/lib/campaign-categories";
+import { CampaignShareMenu } from "@/components/share/CampaignShareMenu";
 
 export default function CampaignDetailPage() {
   const MAX_GOAL_AMOUNT = 1000000;
@@ -833,60 +834,19 @@ export default function CampaignDetailPage() {
                     height={18}
                   />
                 </Link>
-                <button
-                  className="flex items-center text-[#1a5535] gap-2 text-sm font-medium hover:underline"
-                  onClick={() => {
-                    // Create the URL to share
-                    const shareUrl = `${window.location.origin}/campaign/${params.id}`;
-
-                    // Try to use the Web Share API if available
-                    if (navigator.share) {
-                      navigator
-                        .share({
-                          title: campaign.title,
-                          text: campaign.description?.substring(0, 100) + "...",
-                          url: shareUrl,
-                        })
-                        .catch(() => {
-                          // Fallback to clipboard if sharing fails
-                          navigator.clipboard.writeText(shareUrl).then(() => {
-                            toast({
-                              title: "Enlace copiado",
-                              description:
-                                "El enlace ha sido copiado al portapapeles.",
-                            });
-                          });
-                        });
-                    } else {
-                      // Fallback for browsers that don't support sharing
-                      navigator.clipboard
-                        .writeText(shareUrl)
-                        .then(() => {
-                          toast({
-                            title: "Enlace copiado",
-                            description:
-                              "El enlace ha sido copiado al portapapeles.",
-                          });
-                        })
-                        .catch(() => {
-                          // Silent fail - don't show errors to user
-                          toast({
-                            title: "Enlace copiado",
-                            description:
-                              "El enlace ha sido copiado al portapapeles.",
-                          });
-                        });
-                    }
+                <CampaignShareMenu
+                  campaign={{
+                    id: String(params.id),
+                    title: campaign.title,
+                    subtitle: campaign.subtitle,
+                    description: campaign.description,
                   }}
-                >
-                  <span>Compartir</span>
-                  <Image
-                    src="/icons/share.svg"
-                    alt="Share"
-                    width={18}
-                    height={18}
-                  />
-                </button>
+                  buttonLabel="Compartir"
+                  triggerVariant="ghost"
+                  triggerClassName="h-auto rounded-none p-0 text-[#1a5535] gap-2 text-sm font-medium hover:underline hover:bg-transparent"
+                  dropdownPlacement="bottom"
+                  dropdownClassName="left-0 w-64"
+                />
                 {isVerifiedCampaign && (
                   <span className="flex items-center text-[#1a5535] gap-2 text-sm font-medium">
                     <span>Verificada</span>

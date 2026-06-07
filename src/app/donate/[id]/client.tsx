@@ -20,6 +20,7 @@ import { LoadingSpinner } from '@/components/ui/loading-spinner'
 import { QRPaymentStep } from '@/components/donate/QRPaymentStep'
 import { toast } from '@/components/ui/use-toast'
 import { formatRegionDisplayName } from '@/lib/region-utils'
+import { CampaignShareMenu } from '@/components/share/CampaignShareMenu'
 
 // Key for storing pending donation in localStorage
 const PENDING_DONATION_KEY = 'minka_pending_donation'
@@ -125,10 +126,6 @@ export function DonatePageContent({
   >('percentage')
   const [customTipAmount, setCustomTipAmount] =
     useState<string>('')
-
-  // Share functionality state
-  const [showShareOptions, setShowShareOptions] =
-    useState(false)
 
   // QR Payment state
   const [showQRStep, setShowQRStep] = useState(false)
@@ -678,69 +675,6 @@ export function DonatePageContent({
     // Only allow numbers and decimal point, max 2 decimal places
     if (/^\d*(\.\d{0,2})?$/.test(value)) {
       setCustomTipAmount(value)
-    }
-  }
-
-  // Share functionality
-  const handleShareClick = () => {
-    const shareUrl = `${window.location.origin}/campaign/${campaignId}`
-    const shareTitle =
-      campaign?.title || 'Apoya esta campaña'
-    const shareText = `¡Acabo de apoyar esta campaña en Minka! ${shareTitle}`
-
-    // Try to use native Web Share API if available (mobile devices)
-    if (
-      navigator.share &&
-      /Mobi|Android/i.test(navigator.userAgent)
-    ) {
-      navigator
-        .share({
-          title: shareTitle,
-          text: shareText,
-          url: shareUrl,
-        })
-        .catch(() => {
-          // Fallback to custom share options
-          setShowShareOptions(true)
-        })
-    } else {
-      // Show custom share options for desktop
-      setShowShareOptions(true)
-    }
-  }
-
-  const shareOnPlatform = (platform: string) => {
-    const shareUrl = `${window.location.origin}/campaign/${campaignId}`
-    const shareTitle =
-      campaign?.title || 'Apoya esta campaña'
-    const shareText = `¡Acabo de apoyar esta campaña en Minka! ${shareTitle}`
-
-    const urls = {
-      facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`,
-      twitter: `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`,
-      whatsapp: `https://wa.me/?text=${encodeURIComponent(shareText + ' ' + shareUrl)}`,
-      linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`,
-    }
-
-    if (platform === 'copy') {
-      copyToClipboard(shareUrl)
-    } else if (urls[platform as keyof typeof urls]) {
-      window.open(
-        urls[platform as keyof typeof urls],
-        '_blank',
-        'width=600,height=400',
-      )
-      setShowShareOptions(false)
-    }
-  }
-
-  const copyToClipboard = async (url: string) => {
-    try {
-      await navigator.clipboard.writeText(url)
-      setShowShareOptions(false)
-      // You could add a toast notification here if you have the toast hook available
-    } catch (error) {
-      console.error('Failed to copy: ', error)
     }
   }
 
@@ -1306,142 +1240,18 @@ export function DonatePageContent({
 
               {/* Share section */}
               <div className='mt-4'>
-                <div className='relative'>
-                  <button
-                    type='button'
-                    className='inline-flex items-center justify-center px-6 py-2 text-sm font-medium text-[#2c6e49] hover:text-[#1e4d33] border border-[#2c6e49] hover:border-[#1e4d33] rounded-full transition-colors'
-                    onClick={handleShareClick}
-                  >
-                    Compartir campaña
-                    <svg
-                      className='ml-2 h-4 w-4'
-                      fill='none'
-                      stroke='currentColor'
-                      viewBox='0 0 24 24'
-                    >
-                      <path
-                        strokeLinecap='round'
-                        strokeLinejoin='round'
-                        strokeWidth={2}
-                        d='M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z'
-                      />
-                    </svg>
-                  </button>
-
-                  {/* Share Options Dropdown */}
-                  {showShareOptions && (
-                    <div className='absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 bg-white border border-gray-200 rounded-2xl shadow-lg p-4 z-10 w-64'>
-                      <div className='text-sm font-medium text-gray-700 mb-3 text-center'>
-                        Compartir en:
-                      </div>
-                      <div className='grid grid-cols-2 gap-2'>
-                        <button
-                          onClick={() =>
-                            shareOnPlatform('whatsapp')
-                          }
-                          className='flex items-center gap-2 p-3 hover:bg-gray-50 rounded-xl transition-colors'
-                        >
-                          <Image
-                            src='/social-media/whatsapp.svg'
-                            alt='WhatsApp'
-                            width={20}
-                            height={20}
-                          />
-                          <span className='text-sm'>
-                            WhatsApp
-                          </span>
-                        </button>
-
-                        <button
-                          onClick={() =>
-                            shareOnPlatform('facebook')
-                          }
-                          className='flex items-center gap-2 p-3 hover:bg-gray-50 rounded-xl transition-colors'
-                        >
-                          <Image
-                            src='/social-media/facebook.svg'
-                            alt='Facebook'
-                            width={20}
-                            height={20}
-                          />
-                          <span className='text-sm'>
-                            Facebook
-                          </span>
-                        </button>
-
-                        <button
-                          onClick={() =>
-                            shareOnPlatform('twitter')
-                          }
-                          className='flex items-center gap-2 p-3 hover:bg-gray-50 rounded-xl transition-colors'
-                        >
-                          <Image
-                            src='/social-media/X.svg'
-                            alt='X (Twitter)'
-                            width={20}
-                            height={20}
-                          />
-                          <span className='text-sm'>
-                            X (Twitter)
-                          </span>
-                        </button>
-
-                        <button
-                          onClick={() =>
-                            shareOnPlatform('linkedin')
-                          }
-                          className='flex items-center gap-2 p-3 hover:bg-gray-50 rounded-xl transition-colors'
-                        >
-                          <Image
-                            src='/icons/LinkedIN_white.svg'
-                            alt='LinkedIn'
-                            width={20}
-                            height={20}
-                            style={{
-                              filter: 'brightness(0.43)',
-                            }}
-                          />
-                          <span className='text-sm'>
-                            LinkedIn
-                          </span>
-                        </button>
-
-                        <button
-                          onClick={() =>
-                            shareOnPlatform('copy')
-                          }
-                          className='flex items-center gap-2 p-3 hover:bg-gray-50 rounded-xl transition-colors col-span-2'
-                        >
-                          <svg
-                            className='h-5 w-5 text-gray-600'
-                            fill='none'
-                            stroke='currentColor'
-                            viewBox='0 0 24 24'
-                          >
-                            <path
-                              strokeLinecap='round'
-                              strokeLinejoin='round'
-                              strokeWidth={2}
-                              d='M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z'
-                            />
-                          </svg>
-                          <span className='text-sm'>
-                            Copiar enlace
-                          </span>
-                        </button>
-                      </div>
-
-                      <button
-                        onClick={() =>
-                          setShowShareOptions(false)
-                        }
-                        className='w-full mt-3 text-sm text-gray-500 hover:text-gray-700 transition-colors'
-                      >
-                        Cancelar
-                      </button>
-                    </div>
-                  )}
-                </div>
+                <CampaignShareMenu
+                  campaign={{
+                    id: campaignId,
+                    title: campaign?.title,
+                    subtitle: campaign?.subtitle,
+                    description: campaign?.description,
+                  }}
+                  intent='donation'
+                  buttonLabel='Compartir campaña'
+                  triggerClassName='inline-flex px-6 py-2 text-sm font-medium text-[#2c6e49] hover:text-[#1e4d33] border border-[#2c6e49] hover:border-[#1e4d33] rounded-full transition-colors'
+                  dropdownClassName='left-1/2 -translate-x-1/2 w-64'
+                />
               </div>
 
               {!user && (
@@ -1491,14 +1301,6 @@ export function DonatePageContent({
             </div>
           </div>
         </div>
-      )}
-
-      {/* Click outside to close share options */}
-      {showShareOptions && (
-        <div
-          className='fixed inset-0 z-40'
-          onClick={() => setShowShareOptions(false)}
-        />
       )}
     </div>
   )

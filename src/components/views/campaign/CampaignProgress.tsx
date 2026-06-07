@@ -2,15 +2,8 @@
 
 import { Button } from "@/components/ui/button";
 import {
-  Check,
-  Clock,
-  Share2,
   Bookmark,
   BookmarkCheck,
-  Copy,
-  Facebook,
-  MessageCircle,
-  Instagram,
 } from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect } from "react";
@@ -25,6 +18,7 @@ import {
   SAVE_CAMPAIGN_INTENT_KEY,
   SAVE_CAMPAIGN_INTENT_UPDATED_EVENT,
 } from "@/constants/saved-campaign";
+import { CampaignShareMenu } from "@/components/share/CampaignShareMenu";
 
 interface CampaignProgressProps {
   isVerified: boolean;
@@ -33,6 +27,8 @@ interface CampaignProgressProps {
   targetAmount: number;
   donorsCount: number;
   campaignTitle?: string;
+  campaignSubtitle?: string;
+  campaignDescription?: string;
   campaignOrganizer?: string;
   campaignLocation?: string;
   campaignId?: string;
@@ -67,6 +63,8 @@ export function CampaignProgress({
   targetAmount,
   donorsCount,
   campaignTitle = "",
+  campaignSubtitle = "",
+  campaignDescription = "",
   campaignOrganizer = "",
   campaignLocation = "",
   campaignId = "",
@@ -76,7 +74,6 @@ export function CampaignProgress({
   const { isCampaignSaved, saveCampaign, unsaveCampaign } = useSavedCampaigns();
   const [isSaving, setIsSaving] = useState(false);
   const [isSessionLoaded, setIsSessionLoaded] = useState(false);
-  const [showShareOptions, setShowShareOptions] = useState(false);
   const [hasPendingSaveIntent, setHasPendingSaveIntent] = useState(false);
   const [cachedIsSaved, setCachedIsSaved] = useState(() => {
     if (typeof window === "undefined") return false;
@@ -237,82 +234,6 @@ export function CampaignProgress({
     }
   };
 
-  const handleShareClick = () => {
-    const shareUrl = `${window.location.origin}/campaign/${campaignId}`;
-    const shareTitle = campaignTitle || "Apoya esta campaña";
-    const shareText = `¡Apoya esta campaña en Minka! ${shareTitle}`;
-
-    // Try to use native Web Share API if available (mobile devices)
-    if (navigator.share && /Mobi|Android/i.test(navigator.userAgent)) {
-      navigator
-        .share({
-          title: shareTitle,
-          text: shareText,
-          url: shareUrl,
-        })
-        .catch((error) => {
-          // Fallback to custom share options
-          setShowShareOptions(true);
-        });
-    } else {
-      // Show custom share options for desktop
-      setShowShareOptions(true);
-    }
-  };
-
-  const shareOnPlatform = (platform: string) => {
-    const shareUrl = `${window.location.origin}/campaign/${campaignId}`;
-    const shareTitle = campaignTitle || "Apoya esta campaña";
-    const shareText = `¡Apoya esta campaña en Minka! ${shareTitle}`;
-
-    const urls = {
-      facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`,
-      twitter: `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`,
-      whatsapp: `https://wa.me/?text=${encodeURIComponent(shareText + " " + shareUrl)}`,
-      linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`,
-    };
-
-    if (platform === "copy") {
-      copyToClipboard(shareUrl);
-    } else if (platform === "instagram") {
-      copyToClipboard(shareUrl);
-      toast({
-        title: "Instagram",
-        description: "Enlace copiado. Abre Instagram para compartir.",
-      });
-      setShowShareOptions(false);
-    } else if (urls[platform as keyof typeof urls]) {
-      window.open(
-        urls[platform as keyof typeof urls],
-        "_blank",
-        "width=600,height=400"
-      );
-      setShowShareOptions(false);
-      toast({
-        title: "¡Compartiendo!",
-        description: `Se abrió ${platform} para compartir la campaña`,
-      });
-    }
-  };
-
-  const copyToClipboard = async (url: string) => {
-    try {
-      await navigator.clipboard.writeText(url);
-      setShowShareOptions(false);
-      toast({
-        title: "¡Enlace copiado!",
-        description: "El enlace de la campaña ha sido copiado al portapapeles",
-      });
-    } catch (error) {
-      console.error("Failed to copy: ", error);
-      toast({
-        title: "Error",
-        description: "No se pudo copiar el enlace",
-        variant: "destructive",
-      });
-    }
-  };
-
   return (
     <div
       className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm relative"
@@ -398,103 +319,16 @@ export function CampaignProgress({
           </Button>
         </Link>
 
-        {/* Share Button with Dropdown */}
-        <div className="relative">
-          <Button
-            variant="outline"
-            className="w-full border-[#2c6e49] hover:bg-gray-50 rounded-full py-6 text-[#2c6e49]"
-            onClick={handleShareClick}
-          >
-            Compartir
-            <Share2 className="ml-2 h-4 w-4" />
-          </Button>
-
-          {/* Share Options Dropdown */}
-          {showShareOptions && (
-            <div className="absolute bottom-full left-0 right-0 mb-2 bg-white border border-gray-200 rounded-2xl shadow-lg p-4 z-10">
-              <div className="text-sm font-medium text-gray-700 mb-3 text-center">
-                Compartir en:
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  onClick={() => shareOnPlatform("whatsapp")}
-                  className="flex items-center gap-2 p-3 hover:bg-gray-50 rounded-xl transition-colors"
-                >
-                  <Image
-                    src="/social-media/whatsapp.svg"
-                    alt="WhatsApp"
-                    width={20}
-                    height={20}
-                  />
-                  <span className="text-sm">WhatsApp</span>
-                </button>
-
-                <button
-                  onClick={() => shareOnPlatform("facebook")}
-                  className="flex items-center gap-2 p-3 hover:bg-gray-50 rounded-xl transition-colors"
-                >
-                  <Image
-                    src="/social-media/facebook.svg"
-                    alt="Facebook"
-                    width={20}
-                    height={20}
-                  />
-                  <span className="text-sm">Facebook</span>
-                </button>
-
-                <button
-                  onClick={() => shareOnPlatform("twitter")}
-                  className="flex items-center gap-2 p-3 hover:bg-gray-50 rounded-xl transition-colors"
-                >
-                  <Image
-                    src="/social-media/X.svg"
-                    alt="X (Twitter)"
-                    width={20}
-                    height={20}
-                  />
-                  <span className="text-sm">X (Twitter)</span>
-                </button>
-
-                <button
-                  onClick={() => shareOnPlatform("linkedin")}
-                  className="flex items-center gap-2 p-3 hover:bg-gray-50 rounded-xl transition-colors"
-                >
-                  <Image
-                    src="/icons/LinkedIN_white.svg"
-                    alt="LinkedIn"
-                    width={20}
-                    height={20}
-                    style={{ filter: "brightness(0.43)" }}
-                  />
-                  <span className="text-sm">LinkedIn</span>
-                </button>
-
-                <button
-                  onClick={() => shareOnPlatform("instagram")}
-                  className="flex items-center gap-2 p-3 hover:bg-gray-50 rounded-xl transition-colors"
-                >
-                  <Instagram className="h-5 w-5 text-[#E4405F]" />
-                  <span className="text-sm">Instagram</span>
-                </button>
-
-                <button
-                  onClick={() => shareOnPlatform("copy")}
-                  className="flex items-center gap-2 p-3 hover:bg-gray-50 rounded-xl transition-colors col-span-2"
-                >
-                  <Copy className="h-5 w-5 text-gray-600" />
-                  <span className="text-sm">Copiar enlace</span>
-                </button>
-              </div>
-
-              <button
-                onClick={() => setShowShareOptions(false)}
-                className="w-full mt-3 text-sm text-gray-500 hover:text-gray-700 transition-colors"
-              >
-                Cancelar
-              </button>
-            </div>
-          )}
-        </div>
+        <CampaignShareMenu
+          campaign={{
+            id: campaignId,
+            title: campaignTitle,
+            subtitle: campaignSubtitle,
+            description: campaignDescription,
+          }}
+          triggerClassName="w-full border-[#2c6e49] hover:bg-gray-50 rounded-full py-6 text-[#2c6e49]"
+          dropdownClassName="left-0 right-0"
+        />
 
         <Button
           variant="ghost"
@@ -515,14 +349,6 @@ export function CampaignProgress({
           )}
         </Button>
       </div>
-
-      {/* Click outside to close share options */}
-      {showShareOptions && (
-        <div
-          className="fixed inset-0 z-5"
-          onClick={() => setShowShareOptions(false)}
-        />
-      )}
     </div>
   );
 }
