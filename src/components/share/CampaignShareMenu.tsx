@@ -154,7 +154,12 @@ export function CampaignShareMenu({
     dropdownPlacement === "bottom" ? "top-full mt-2" : "bottom-full mb-2";
 
   return (
-    <div className="relative inline-flex items-center">
+    <div
+      className={cn(
+        "relative inline-flex items-center",
+        triggerClassName?.includes("w-full") && "w-full",
+      )}
+    >
       <Button
         type="button"
         variant={triggerVariant}

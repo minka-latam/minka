@@ -7,5 +7,5 @@ export const STORAGE_PREFIXES = {
   campaignImages: "campaign-images",
   campaignVideos: "campaign-videos",
   campaignDocuments: "campaign-documents",
+  profilePictures: "profile-pictures",
 } as const;
-

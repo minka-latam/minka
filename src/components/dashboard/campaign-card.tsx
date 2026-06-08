@@ -89,7 +89,7 @@ export function CampaignCard({
 
   return (
     <div
-      className={`cursor-pointer rounded-lg overflow-hidden bg-white border-4 h-[380px] grid grid-rows-[160px_1fr_auto] hover:shadow-md transition-all duration-200 ${
+      className={`cursor-pointer rounded-2xl overflow-hidden bg-white border-4 h-[380px] grid grid-rows-[160px_1fr_auto] hover:shadow-md transition-all duration-200 ${
         isVerified ? 'border-[#8fbea0]' : 'border-gray-100'
       } ${isCancelled ? 'opacity-75 grayscale-[15%]' : ''}`}
       onClick={handleCardClick}

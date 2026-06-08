@@ -12,7 +12,6 @@ export type ProfileRow = {
   birthDate: Date | null;
   bio: string | null;
   location: string | null;
-  verificationStatus: boolean;
   status: string;
   createdAt: Date;
   updatedAt: Date;
@@ -45,7 +44,6 @@ export function formatProfileForApi(profile: ProfileRow) {
     birth_date: profile.birthDate?.toISOString() || null,
     bio: profile.bio,
     location: profile.location,
-    verification_status: profile.verificationStatus,
     status: profile.status,
     created_at: profile.createdAt.toISOString(),
     updated_at: profile.updatedAt.toISOString(),
@@ -60,7 +58,6 @@ export function formatAdminProfileForApi(profile: ProfileRow) {
     email: profile.email,
     role: profile.role,
     profile_picture: profile.profilePicture,
-    verification_status: profile.verificationStatus,
     status: profile.status,
     created_at: profile.createdAt.toISOString(),
     updated_at: profile.updatedAt.toISOString(),
@@ -105,7 +102,6 @@ export async function getProfileById(userId: string) {
       birth_date as "birthDate",
       bio,
       location,
-      verification_status as "verificationStatus",
       status::text,
       created_at as "createdAt",
       updated_at as "updatedAt",
@@ -138,7 +134,6 @@ export async function ensureProfileForUser(user: User) {
       location,
       join_date,
       status,
-      verification_status,
       updated_at
     )
     values (
@@ -154,10 +149,10 @@ export async function ensureProfileForUser(user: User) {
       null,
       current_timestamp,
       'active'::"Status",
-      false,
       current_timestamp
     )
-    on conflict (id) do update set
+    on conflict (email) do update set
+      id = excluded.id,
       name = case
         when public.profiles.name is null
           or public.profiles.name = ''
@@ -192,7 +187,6 @@ export async function ensureProfileForUser(user: User) {
       birth_date as "birthDate",
       bio,
       location,
-      verification_status as "verificationStatus",
       status::text,
       created_at as "createdAt",
       updated_at as "updatedAt",

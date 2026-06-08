@@ -64,9 +64,12 @@ export async function POST(request: NextRequest) {
       ...technicalAnonymousProfileExclusion(),
     };
 
-    // Filter by role if needed
+    // Filter by audience if needed. Organizers are users with at least one campaign,
+    // not a separate profile role.
     if (target === "organizers") {
-      whereClause.role = "organizer";
+      whereClause.campaigns = {
+        some: {},
+      };
     } else if (target === "admins") {
       whereClause.role = "admin";
     } else if (target === "donors") {
@@ -85,29 +88,7 @@ export async function POST(request: NextRequest) {
       select: { id: true },
     });
 
-    // Filter users who have opted in for general news notifications
-    // (we'll only send system notifications to users who want news updates)
-    const usersWithNewsPrefs = await prisma.notificationPreference.findMany({
-      where: {
-        userId: { in: targetUsers.map((u) => u.id) },
-        newsUpdates: true,
-        status: "active",
-      },
-      select: { userId: true },
-    });
-
-    const eligibleUserIds = usersWithNewsPrefs.map((p) => p.userId);
-
-    // Also include users without preferences (default to receiving news)
-    const usersWithoutPrefs = targetUsers.filter(
-      (user) => !usersWithNewsPrefs.some((pref) => pref.userId === user.id)
-    );
-
-    // Add users without preferences to eligible users (they get news by default)
-    const allEligibleUserIds = [
-      ...eligibleUserIds,
-      ...usersWithoutPrefs.map((u) => u.id),
-    ];
+    const allEligibleUserIds = targetUsers.map((user) => user.id);
 
     if (allEligibleUserIds.length === 0) {
       return NextResponse.json(

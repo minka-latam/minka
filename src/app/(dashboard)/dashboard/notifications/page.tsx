@@ -3,29 +3,21 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Info, CheckCheck, Bell } from "lucide-react";
-import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { useAuth } from "@/providers/auth-provider";
-import { useDb, NotificationPreferences, Notification } from "@/hooks/use-db";
+import { useDb, Notification } from "@/hooks/use-db";
 
 export default function NotificationsPage() {
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [markingAsRead, setMarkingAsRead] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [preferences, setPreferences] = useState<NotificationPreferences>({
-    newsUpdates: false,
-    campaignUpdates: true,
-  });
 
   const router = useRouter();
   const { user } = useAuth();
   const {
-    getNotificationPreferences,
-    updateNotificationPreferences,
     getNotifications,
     markNotificationsAsRead,
   } = useDb();
@@ -39,16 +31,6 @@ export default function NotificationsPage() {
         if (!user) {
           router.push("/sign-in");
           return;
-        }
-
-        // Get user's notification preferences
-        const prefsData = await getNotificationPreferences(user.id);
-
-        if (prefsData) {
-          setPreferences({
-            newsUpdates: prefsData.newsUpdates,
-            campaignUpdates: prefsData.campaignUpdates,
-          });
         }
 
         // Fetch real notifications
@@ -81,51 +63,7 @@ export default function NotificationsPage() {
     }
 
     fetchData();
-  }, [user, router, getNotificationPreferences, getNotifications, toast]);
-
-  const handleToggle = async (key: "newsUpdates" | "campaignUpdates") => {
-    try {
-      // Update local state immediately for responsive UI
-      const newPreferences = {
-        ...preferences,
-        [key]: !preferences[key],
-      };
-      setPreferences(newPreferences);
-
-      // Start saving
-      setSaving(true);
-
-      if (!user) {
-        router.push("/sign-in");
-        return;
-      }
-
-      const { error } = await updateNotificationPreferences(
-        user.id,
-        newPreferences
-      );
-
-      if (error) throw error;
-
-      toast({
-        title: "Preferencia actualizada",
-        description:
-          "Tu configuración de notificaciones se ha guardado correctamente.",
-        duration: 2000,
-      });
-    } catch (error) {
-      console.error("Error saving preference:", error);
-      // Revert the local state if there was an error
-      setPreferences(preferences);
-      toast({
-        title: "Error",
-        description: "No se pudo guardar tu preferencia. Inténtalo de nuevo.",
-        variant: "destructive",
-      });
-    } finally {
-      setSaving(false);
-    }
-  };
+  }, [user, router, getNotifications, toast]);
 
   const handleMarkAllAsRead = async () => {
     try {
@@ -221,44 +159,6 @@ export default function NotificationsPage() {
             {markingAsRead ? "Marcando..." : "Marcar todas como leídas"}
           </Button>
         )}
-      </div>
-
-      {/* Notification Settings Card */}
-      <div className="bg-white rounded-lg shadow-sm p-6">
-        <div className="grid grid-cols-2 gap-4 mb-4">
-          <div className="text-gray-600 font-medium">Notificación</div>
-          <div className="text-gray-600 font-medium">Estado</div>
-        </div>
-
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4 items-center py-3 border-b border-gray-100">
-            <div className="font-medium text-gray-800">Novedades de Minka</div>
-            <div>
-              <Switch
-                id="news-updates"
-                checked={preferences.newsUpdates}
-                onCheckedChange={() => handleToggle("newsUpdates")}
-                className="data-[state=checked]:bg-[#2c6e49]"
-                disabled={saving}
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4 items-center py-3">
-            <div className="font-medium text-gray-800">
-              Noticias de campañas
-            </div>
-            <div>
-              <Switch
-                id="campaign-updates"
-                checked={preferences.campaignUpdates}
-                onCheckedChange={() => handleToggle("campaignUpdates")}
-                className="data-[state=checked]:bg-[#2c6e49]"
-                disabled={saving}
-              />
-            </div>
-          </div>
-        </div>
       </div>
 
       {/* Notifications List */}

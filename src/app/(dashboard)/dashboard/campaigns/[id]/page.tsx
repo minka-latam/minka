@@ -135,85 +135,59 @@ export default function CampaignDetailPage() {
         type: "image/jpeg",
       });
 
-      // Start upload
-      setIsUploading(true);
-      try {
-        const result = await uploadMedia(file);
-        if (result.success) {
-          if (editingImageIndex !== null) {
-            // If we're editing an existing image from campaign.media
-            if (editingImageIndex < (campaign.media?.length || 0)) {
-              // Update existing media
-              const updatedMedia = [...(campaign.media || [])];
-              updatedMedia[editingImageIndex] = {
-                ...updatedMedia[editingImageIndex],
-                media_url: result.url,
-              };
-
-              setCampaign((prev) => ({
-                ...prev,
-                media: updatedMedia,
-              }));
-            }
-            // If we're editing a newly added image that's not saved yet
-            else {
-              const localIndex =
-                editingImageIndex - (campaign.media?.length || 0);
-
-              // Clean up preview URLs if they exist
-              if (localIndex >= 0 && localIndex < mediaPreviewUrls.length) {
-                URL.revokeObjectURL(mediaPreviewUrls[localIndex]);
-
-                // Remove from preview arrays as we're adding to campaign.media
-                const newPreviewUrls = [...mediaPreviewUrls];
-                newPreviewUrls.splice(localIndex, 1);
-                setMediaPreviewUrls(newPreviewUrls);
-
-                const newMediaFiles = [...mediaFiles];
-                newMediaFiles.splice(localIndex, 1);
-                setMediaFiles(newMediaFiles);
-              }
-
-              // Add to campaign media
-              setCampaign((prev) => ({
-                ...prev,
-                media: [
-                  ...(prev.media || []),
-                  {
-                    media_url: result.url,
-                    is_primary: prev.media?.length === 0,
-                  },
-                ],
-              }));
-            }
-          } else {
-            // If adding a completely new image
-            // Don't add to preview arrays, only to campaign.media
-            setCampaign((prev) => ({
-              ...prev,
-              media: [
-                ...(prev.media || []),
-                {
-                  media_url: result.url,
-                  is_primary: prev.media?.length === 0,
-                },
-              ],
-            }));
+      if (
+        editingImageIndex !== null &&
+        editingImageIndex < (campaign.media?.length || 0)
+      ) {
+        setIsUploading(true);
+        try {
+          const result = await uploadMedia(file);
+          if (!result.success) {
+            throw new Error("Failed to upload media");
           }
-          handleFormChange();
-        } else {
-          throw new Error("Failed to upload media");
+
+          const updatedMedia = [...(campaign.media || [])];
+          updatedMedia[editingImageIndex] = {
+            ...updatedMedia[editingImageIndex],
+            media_url: result.url,
+          };
+
+          setCampaign((prev) => ({
+            ...prev,
+            media: updatedMedia,
+          }));
+        } catch (error) {
+          console.error("Error uploading file:", error);
+          toast({
+            title: "Error de carga",
+            description: "Error al subir la imagen. Intenta nuevamente.",
+            variant: "destructive",
+          });
+          return;
+        } finally {
+          setIsUploading(false);
         }
-      } catch (error) {
-        console.error("Error uploading file:", error);
-        toast({
-          title: "Error de carga",
-          description: "Error al subir la imagen. Intenta nuevamente.",
-          variant: "destructive",
-        });
-      } finally {
-        setIsUploading(false);
+      } else if (editingImageIndex !== null) {
+        const localIndex = editingImageIndex - (campaign.media?.length || 0);
+
+        if (localIndex >= 0 && localIndex < mediaPreviewUrls.length) {
+          const objectUrl = URL.createObjectURL(blob);
+          const newPreviewUrls = [...mediaPreviewUrls];
+          URL.revokeObjectURL(newPreviewUrls[localIndex]);
+          newPreviewUrls[localIndex] = objectUrl;
+          setMediaPreviewUrls(newPreviewUrls);
+
+          const newMediaFiles = [...mediaFiles];
+          newMediaFiles[localIndex] = file;
+          setMediaFiles(newMediaFiles);
+        }
+      } else {
+        const objectUrl = URL.createObjectURL(blob);
+        setMediaPreviewUrls((prev) => [...prev, objectUrl]);
+        setMediaFiles((prev) => [...prev, file]);
       }
+
+      handleFormChange();
 
       setUploadingFile(null);
 
@@ -223,8 +197,8 @@ export default function CampaignDetailPage() {
 
       // Show success toast
       toast({
-        title: "Imagen subida",
-        description: "La imagen se ha subido correctamente.",
+        title: "Imagen lista",
+        description: "La imagen se guardará al guardar los cambios.",
       });
 
       const [nextFile, ...remainingFiles] = pendingImageFiles;
@@ -276,38 +250,6 @@ export default function CampaignDetailPage() {
       setEditingImageIndex(index);
     } else {
       console.error("Invalid media index:", index);
-    }
-  };
-
-  const handleFileUpload = async (file: File) => {
-    const validation = validateCampaignImageFile(file);
-    if (!validation.valid) {
-      toast({
-        title: validation.title,
-        description: validation.description,
-        variant: "destructive",
-      });
-      return null;
-    }
-
-    setIsUploading(true);
-    try {
-      const result = await uploadMedia(file);
-      if (result.success) {
-        return result.url;
-      } else {
-        throw new Error("Failed to upload media");
-      }
-    } catch (error) {
-      console.error("Error uploading file:", error);
-      toast({
-        title: "Error de carga",
-        description: "Error al subir la imagen. Intenta nuevamente.",
-        variant: "destructive",
-      });
-      return null;
-    } finally {
-      setIsUploading(false);
     }
   };
 
@@ -388,6 +330,22 @@ export default function CampaignDetailPage() {
 
   // Function to remove media
   const removeMedia = (index: number) => {
+    const savedMediaCount = campaign.media?.length || 0;
+
+    if (index >= savedMediaCount) {
+      const previewIndex = index - savedMediaCount;
+      const newPreviewUrls = [...mediaPreviewUrls];
+      URL.revokeObjectURL(newPreviewUrls[previewIndex]);
+      newPreviewUrls.splice(previewIndex, 1);
+      setMediaPreviewUrls(newPreviewUrls);
+
+      const newMediaFiles = [...mediaFiles];
+      newMediaFiles.splice(previewIndex, 1);
+      setMediaFiles(newMediaFiles);
+      handleFormChange();
+      return;
+    }
+
     const newMedia = [...(campaign.media || [])];
     newMedia.splice(index, 1);
 
@@ -400,19 +358,6 @@ export default function CampaignDetailPage() {
       ...campaign,
       media: newMedia,
     });
-
-    // Remove from preview URLs if it exists
-    if (index < mediaPreviewUrls.length) {
-      const newPreviewUrls = [...mediaPreviewUrls];
-      URL.revokeObjectURL(newPreviewUrls[index]); // Clean up object URL
-      newPreviewUrls.splice(index, 1);
-      setMediaPreviewUrls(newPreviewUrls);
-
-      // Also remove from files array
-      const newMediaFiles = [...mediaFiles];
-      newMediaFiles.splice(index, 1);
-      setMediaFiles(newMediaFiles);
-    }
 
     handleFormChange();
   };
@@ -430,6 +375,34 @@ export default function CampaignDetailPage() {
     });
 
     handleFormChange();
+  };
+
+  const uploadPendingMediaFiles = async () => {
+    if (mediaFiles.length === 0) return [];
+
+    setIsUploading(true);
+    try {
+      const uploadedMedia = [];
+
+      for (const file of mediaFiles) {
+        const result = await uploadMedia(file);
+        if (!result.success) {
+          throw new Error("Failed to upload media");
+        }
+
+        uploadedMedia.push({
+          media_url: result.url,
+          type: "image",
+          is_primary:
+            (campaign.media?.length || 0) === 0 && uploadedMedia.length === 0,
+          order_index: (campaign.media?.length || 0) + uploadedMedia.length,
+        });
+      }
+
+      return uploadedMedia;
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   // Function to add YouTube URL
@@ -469,7 +442,10 @@ export default function CampaignDetailPage() {
   // Function to handle saving changes
   const handleSaveChanges = async () => {
     try {
-      if (!campaign.media || campaign.media.length === 0) {
+      if (
+        (!campaign.media || campaign.media.length === 0) &&
+        mediaFiles.length === 0
+      ) {
         toast({
           title: "Falta una imagen",
           description: "La campaña debe tener al menos una imagen.",
@@ -479,6 +455,8 @@ export default function CampaignDetailPage() {
       }
 
       setIsFormModified(false);
+      const uploadedPendingMedia = await uploadPendingMediaFiles();
+      const finalMedia = [...(campaign.media || []), ...uploadedPendingMedia];
 
       // Prepare the data to send to the API
       const campaignData: {
@@ -511,13 +489,12 @@ export default function CampaignDetailPage() {
         youtubeUrls: campaign.youtube_urls,
       };
 
-      // If media was modified, include it in the update
-      if (campaign.media) {
-        campaignData.media = campaign.media.map((item: any) => ({
+      if (finalMedia.length > 0) {
+        campaignData.media = finalMedia.map((item: any, index: number) => ({
           mediaUrl: item.media_url,
           type: item.type || "image",
-          isPrimary: item.is_primary,
-          orderIndex: item.order_index || 0,
+          isPrimary: item.is_primary || index === 0,
+          orderIndex: item.order_index ?? index,
         }));
       }
 
@@ -535,8 +512,12 @@ export default function CampaignDetailPage() {
         throw new Error(errorData.error || "Error al guardar los cambios");
       }
 
-      // Update the original campaign state with the new values
-      setOriginalCampaign({ ...campaign });
+      mediaPreviewUrls.forEach((url) => URL.revokeObjectURL(url));
+      setMediaPreviewUrls([]);
+      setMediaFiles([]);
+      const updatedCampaign = { ...campaign, media: finalMedia };
+      setCampaign(updatedCampaign);
+      setOriginalCampaign(updatedCampaign);
 
       toast({
         title: "Cambios guardados",

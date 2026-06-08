@@ -71,7 +71,9 @@ export async function GET(request: NextRequest) {
     const totalOrganizers = await prisma.profile.count({
       where: {
         ...activeRealUserWhere,
-        role: UserRole.organizer,
+        campaigns: {
+          some: {},
+        },
       },
     });
 
@@ -82,45 +84,14 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    // Get notification preferences stats
-    const usersWithNewsUpdates = await prisma.notificationPreference.count({
-      where: {
-        userId: { in: activeRealUserIds },
-        newsUpdates: true,
-        status: "active",
-      },
-    });
-
-    const usersWithCampaignUpdates = await prisma.notificationPreference.count({
-      where: {
-        userId: { in: activeRealUserIds },
-        campaignUpdates: true,
-        status: "active",
-      },
-    });
-
-    // Users without preferences default to receiving news
-    const usersWithPreferences = await prisma.notificationPreference.count({
-      where: {
-        userId: { in: activeRealUserIds },
-        status: "active",
-      },
-    });
-
-    const usersWithoutPreferences = totalUsers - usersWithPreferences;
-
-    // Add users without preferences to news updates count (they get news by default)
-    const effectiveNewsSubscribers =
-      usersWithNewsUpdates + usersWithoutPreferences;
-
     return NextResponse.json({
       totalUsers,
       totalDonors,
       totalOrganizers,
       totalAdmins,
-      usersWithNewsUpdates: effectiveNewsSubscribers,
-      usersWithCampaignUpdates,
-      usersWithoutPreferences,
+      usersWithNewsUpdates: totalUsers,
+      usersWithCampaignUpdates: totalUsers,
+      usersWithoutPreferences: 0,
     });
   } catch (error) {
     console.error("Error fetching notification stats:", error);

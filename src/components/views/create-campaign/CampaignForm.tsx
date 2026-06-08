@@ -330,7 +330,6 @@ export function CampaignForm() {
     progress,
     uploadedUrls,
     setUploadedUrls,
-    uploadFile,
     uploadFiles,
   } = useUpload();
   const { fetchActiveLegalEntities } = useLegalEntities();
@@ -640,26 +639,28 @@ export function CampaignForm() {
   };
 
   // Utility function to help with image URL issues
-  const ensureMediaIsUploaded = async (): Promise<boolean> => {
-    // If uploadedUrls is empty but we have mediaFiles, try to upload them now
-    if (uploadedUrls.length === 0 && mediaFiles.length > 0) {
+  const ensureMediaIsUploaded = async (): Promise<string[] | null> => {
+    if (uploadedUrls.length === mediaFiles.length && uploadedUrls.length > 0) {
+      return uploadedUrls;
+    }
+
+    if (mediaFiles.length > 0) {
       try {
-        // Upload the files
         const urls = await uploadFiles(mediaFiles);
-        if (urls.length > 0) {
-          return true;
-        } else {
-          console.error("Failed to upload media files");
-          return false;
+        if (urls.length === mediaFiles.length) {
+          setUploadedUrls(urls);
+          return urls;
         }
+
+        console.error("Failed to upload all media files");
+        return null;
       } catch (error) {
         console.error("Error uploading media files:", error);
-        return false;
+        return null;
       }
     }
 
-    // If we already have uploaded URLs, we're good
-    return uploadedUrls.length > 0;
+    return null;
   };
 
   // Update the nextStep function to include animations
@@ -688,14 +689,12 @@ export function CampaignForm() {
         return;
       }
 
-      // Validate that we have uploaded URLs
-      if (!uploadedUrls.length) {
-        // Try to ensure media is uploaded
+      try {
         setIsSubmitting(true);
-        const mediaUploadFixed = await ensureMediaIsUploaded();
+        const mediaUrls = await ensureMediaIsUploaded();
 
-        if (!mediaUploadFixed) {
-          console.error("Could not fix media upload issue");
+        if (!mediaUrls) {
+          console.error("Could not upload media");
           toast({
             title: "Error de imágenes",
             description:
@@ -705,17 +704,14 @@ export function CampaignForm() {
           setIsSubmitting(false);
           return;
         }
-      }
 
-      try {
-        setIsSubmitting(true);
         // Create or update draft campaign before proceeding to step 2
         const draftData = {
           ...formData,
           // Convert goalAmount to number by removing separators
           goalAmount: removeNumberSeparators(String(formData.goalAmount)),
           // Include media information
-          media: uploadedUrls.map((url, index) => ({
+          media: mediaUrls.map((url, index) => ({
             mediaUrl: url,
             type: "image" as const,
             isPrimary: index === 0,
@@ -958,11 +954,6 @@ export function CampaignForm() {
         setMediaPreviewUrls((prev) => [...prev, objectUrl]);
         setMediaFiles((prev) => [...prev, file]);
       }
-      const result = await uploadFile(file);
-
-      if (!result.success) {
-        throw new Error("Failed to upload file");
-      }
       setUploadingFile(null);
 
       // Reset editing state
@@ -971,8 +962,8 @@ export function CampaignForm() {
 
       // Show success toast
       toast({
-        title: "Imagen subida",
-        description: "La imagen se ha subido correctamente.",
+        title: "Imagen lista",
+        description: "La imagen se guardará al continuar.",
       });
 
       const [nextFile, ...remainingFiles] = pendingImageFiles;
@@ -1240,7 +1231,7 @@ export function CampaignForm() {
     }
 
     // Validate at least one image and ensure it's been uploaded properly
-    if (mediaPreviewUrls.length === 0 || uploadedUrls.length === 0) {
+    if (mediaPreviewUrls.length === 0) {
       errors.media = "Debes subir al menos una imagen";
     }
 
@@ -1390,7 +1381,7 @@ export function CampaignForm() {
         }
         break;
       case 4: // Media
-        if (mediaPreviewUrls.length === 0 || uploadedUrls.length === 0) {
+        if (mediaPreviewUrls.length === 0) {
           errors.media = "Debes subir al menos una imagen";
         }
         break;
@@ -2101,8 +2092,8 @@ export function CampaignForm() {
                         }
 
                         // Process media if not already done
-                        const mediaUploaded = await ensureMediaIsUploaded();
-                        if (!mediaUploaded) {
+                        const mediaUrls = await ensureMediaIsUploaded();
+                        if (!mediaUrls) {
                           return;
                         }
 
@@ -2113,7 +2104,7 @@ export function CampaignForm() {
                           goalAmount: removeNumberSeparators(
                             String(formData.goalAmount),
                           ),
-                          media: uploadedUrls.map((url, index) => ({
+                          media: mediaUrls.map((url, index) => ({
                             mediaUrl: url,
                             type: "image" as const,
                             isPrimary: index === 0,
@@ -2183,12 +2174,12 @@ export function CampaignForm() {
           className={`form-step ${isAnimating ? (animationDirection === "next" ? "fade-out" : "fade-in") : ""} max-w-6xl mx-auto space-y-24`}
         >
           {/* Full-width header for "Destino de los fondos" */}
-          <div className="w-screen relative left-[50%] right-[50%] ml-[-50vw] mr-[-50vw] h-[300px] md:h-[500px]">
+          <div className="w-screen relative left-[50%] right-[50%] ml-[-50vw] mr-[-50vw] h-[100px] md:h-[200px] lg:h-[300px]">
             <Image
               src="/page-header.svg"
               alt="Page Header"
               fill
-              className="object-cover"
+              className="object-cover object-bottom"
               priority
             />
             <div className="absolute inset-0 flex items-center justify-center">

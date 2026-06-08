@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from "@/providers/auth-provider";
 import { ThemeProvider } from "@/context/theme-context";
 import { LoadingProvider } from "@/components/ui/loading-provider";
+import { GlobalActivityToast } from "@/components/notifications/GlobalActivityToast";
 
 const APP_NAME = "MINKA - Impulsa sueños, transforma vidas";
 const APP_DESCRIPTION =
@@ -139,6 +140,7 @@ export default function RootLayout({
             <LoadingProvider>
               <QueryProvider>
                 <div className="flex-grow">{children}</div>
+                <GlobalActivityToast />
                 <Toaster />
               </QueryProvider>
             </LoadingProvider>

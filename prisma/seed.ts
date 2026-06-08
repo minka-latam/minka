@@ -29,7 +29,7 @@ const userData = [
     email: "tester@minka.com",
     password: "Test123!",
     name: "María González",
-    role: "organizer" as const,
+    role: "user" as const,
     bio: "Activista ambiental comprometida con la protección de áreas naturales en Bolivia",
     location: "Santa Cruz",
   },
@@ -37,7 +37,7 @@ const userData = [
     email: "tester2@minka.com",
     password: "Test123!",
     name: "Carlos Mamani",
-    role: "organizer" as const,
+    role: "user" as const,
     bio: "Educador rural dedicado a mejorar las oportunidades educativas en comunidades indígenas",
     location: "La Paz",
   },
@@ -45,7 +45,7 @@ const userData = [
     email: "tester3@minka.com",
     password: "Test123!",
     name: "Ana Pérez",
-    role: "organizer" as const,
+    role: "user" as const,
     bio: "Artista y gestora cultural que promueve las tradiciones bolivianas",
     location: "Cochabamba",
   },
@@ -61,7 +61,7 @@ const userData = [
     email: "tester5@minka.com",
     password: "Test123!",
     name: "Patricia Rojas",
-    role: "organizer" as const,
+    role: "user" as const,
     bio: "Médica comprometida con mejorar la salud en zonas rurales",
     location: "Oruro",
   },
@@ -275,7 +275,6 @@ async function main() {
           phone: `+591 ${Math.floor(Math.random() * 90000000) + 10000000}`,
           location: user.location,
           bio: user.bio,
-          verificationStatus: true,
           profilePicture: `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.email}`,
         },
       });
@@ -541,31 +540,6 @@ async function main() {
   }
 
   console.log(`✅ Created ${savedCount} saved campaigns\n`);
-
-  // Step 6: Create notification preferences
-  console.log("=== Step 6: Creating Notification Preferences ===\n");
-
-  for (const profile of createdProfiles) {
-    try {
-      const existing = await prisma.notificationPreference.findUnique({
-        where: { userId: profile.id },
-      });
-
-      if (!existing) {
-        await prisma.notificationPreference.create({
-          data: {
-            userId: profile.id,
-            newsUpdates: Math.random() > 0.5,
-            campaignUpdates: true,
-          },
-        });
-      }
-    } catch (error: any) {
-      console.error(`✗ Error creating notification preferences:`, error.message);
-    }
-  }
-
-  console.log(`✅ Created notification preferences\n`);
 
   // Print summary
   console.log("\n" + "=".repeat(50));

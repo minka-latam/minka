@@ -33,6 +33,11 @@ interface CampaignProgressProps {
   campaignOrganizer?: string;
   campaignLocation?: string;
   campaignId?: string;
+  latestDonors?: Array<{
+    id: string;
+    name: string;
+    amount: number;
+  }>;
 }
 
 // Function to calculate relative time
@@ -70,6 +75,7 @@ export function CampaignProgress({
   campaignOrganizer = "",
   campaignLocation = "",
   campaignId = "",
+  latestDonors = [],
 }: CampaignProgressProps) {
   const { session, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
@@ -321,7 +327,7 @@ export function CampaignProgress({
           </Button>
         </Link>
 
-        <div className="flex justify-start">
+        <div className="flex w-full">
           <CampaignShareMenu
             campaign={{
               id: campaignId,
@@ -330,8 +336,8 @@ export function CampaignProgress({
               description: campaignDescription,
               imageUrl: campaignImageUrl,
             }}
-            triggerClassName="border-[#2c6e49] hover:bg-gray-50 rounded-full px-5 py-5 text-[#2c6e49]"
-            dropdownClassName="left-0 w-72 max-w-[calc(100vw-2rem)]"
+            triggerClassName="w-full border-[#2c6e49] hover:bg-gray-50 rounded-full py-6 text-[#2c6e49]"
+            dropdownClassName="left-0 right-0"
           />
         </div>
 
@@ -353,6 +359,24 @@ export function CampaignProgress({
             <Bookmark className="ml-2 h-4 w-4 text-[#2c6e49]" />
           )}
         </Button>
+
+        {latestDonors.length > 0 && (
+          <div className="border-t border-gray-200 pt-4 text-left">
+            <h3 className="mb-2 text-sm font-semibold text-[#2c6e49]">
+              Últimos donadores
+            </h3>
+            <ul className="space-y-1 text-[12.5px] leading-relaxed text-gray-600">
+              {latestDonors.slice(0, 3).map((donor) => (
+                <li key={donor.id}>
+                  <span className="truncate">{donor.name}</span>
+                </li>
+              ))}
+            </ul>
+            <p className="mt-2 text-[12.5px] text-gray-500">
+              ...y muchos más, ¿tú?
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

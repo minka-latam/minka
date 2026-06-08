@@ -19,7 +19,7 @@ import { es } from "date-fns/locale";
 import { ProfileData } from "@/types";
 import { useAuth } from "@/providers/auth-provider";
 import { toast } from "@/components/ui/use-toast";
-import { useUpload } from "@/hooks/use-upload";
+import { uploadAvatar } from "@/lib/supabase/upload-avatar";
 import { useDb } from "@/hooks/use-db";
 import { InlineSpinner } from "@/components/ui/inline-spinner";
 import { formatDocumentForDisplay } from "@/utils/document-formatter";
@@ -98,7 +98,7 @@ export function UserDashboardContent({
   const [imageToEdit, setImageToEdit] = useState<string | null>(null);
   const router = useRouter();
   const { signOut } = useAuth();
-  const { isUploading, uploadFile } = useUpload();
+  const [isUploading, setIsUploading] = useState(false);
   const { updateProfile } = useDb();
   const [optimisticImage, setOptimisticImage] = useState<string | undefined>(
     undefined
@@ -252,20 +252,17 @@ export function UserDashboardContent({
         });
       }
 
-      const result = await uploadFile(imageFile);
-
-      if (!result.success) {
-        throw new Error("Failed to upload profile picture");
-      }
+      setIsUploading(true);
+      const profilePictureUrl = await uploadAvatar(imageFile, profile.id);
 
       // Optimistically set the new image immediately
-      setOptimisticImage(result.url);
+      setOptimisticImage(profilePictureUrl);
 
       // Reset editing state immediately so modal closes and user sees the new image
       setImageToEdit(null);
 
       const { error } = await updateProfile(profile.id, {
-        profile_picture: result.url,
+        profile_picture: profilePictureUrl,
       });
 
       if (error) {
@@ -294,6 +291,7 @@ export function UserDashboardContent({
       setOptimisticImage(undefined);
     } finally {
       setIsSubmitting(false);
+      setIsUploading(false);
     }
   };
 

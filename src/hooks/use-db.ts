@@ -57,11 +57,6 @@ export interface DonationSummary {
   totalDonations: number;
 }
 
-export interface NotificationPreferences {
-  newsUpdates: boolean;
-  campaignUpdates: boolean;
-}
-
 export interface Notification {
   id: string;
   type: string;
@@ -443,82 +438,6 @@ export function useDb() {
     }
   }, []);
 
-  // Notification preferences
-  const getNotificationPreferences = useCallback(
-    async (userId: string): Promise<NotificationPreferences | null> => {
-      const cacheKey = `notificationPreferences:${userId}`;
-      const cachedData = getCachedData(cacheKey);
-
-      if (cachedData) {
-        return cachedData;
-      }
-
-      setLoading(true);
-      try {
-        const response = await fetch(
-          `/api/user/${userId}/notification-preferences`,
-          {
-            credentials: "include",
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error("Failed to fetch notification preferences");
-        }
-
-        const data = await response.json();
-        setCacheData(cacheKey, data.preferences);
-        return data.preferences;
-      } catch (error) {
-        console.error("Error fetching notification preferences:", error);
-        return null;
-      } finally {
-        setLoading(false);
-      }
-    },
-    []
-  );
-
-  const updateNotificationPreferences = useCallback(
-    async (
-      userId: string,
-      data: NotificationPreferences
-    ): Promise<{ error?: any }> => {
-      setLoading(true);
-      try {
-        const response = await fetch(
-          `/api/user/${userId}/notification-preferences`,
-          {
-            method: "PUT",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            credentials: "include",
-            body: JSON.stringify(data),
-          }
-        );
-
-        if (!response.ok) {
-          const error = await response.json();
-          throw new Error(
-            error.message || "Failed to update notification preferences"
-          );
-        }
-
-        // Invalidate notification preferences cache after update
-        cache.delete(`notificationPreferences:${userId}`);
-
-        return {};
-      } catch (error) {
-        console.error("Error updating notification preferences:", error);
-        return { error };
-      } finally {
-        setLoading(false);
-      }
-    },
-    []
-  );
-
   // Notification functions
   const getNotifications = useCallback(
     async (
@@ -710,8 +629,6 @@ export function useDb() {
       // Analytics
       getAnalytics,
       // Notifications
-      getNotificationPreferences,
-      updateNotificationPreferences,
       getNotifications,
       markNotificationsAsRead,
       // Fund transfers
@@ -727,8 +644,6 @@ export function useDb() {
       getCampaigns,
       getOrganizers,
       getAnalytics,
-      getNotificationPreferences,
-      updateNotificationPreferences,
       getNotifications,
       markNotificationsAsRead,
       createFundTransfer,

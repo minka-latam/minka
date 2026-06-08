@@ -3,7 +3,7 @@
 import { Separator } from "@/components/ui/separator";
 import { SidebarNav } from "./components/sidebar-nav";
 import type { LucideIcon } from "lucide-react";
-import { User as UserIcon, Bell as BellIcon } from "lucide-react";
+import { User as UserIcon } from "lucide-react";
 
 const sidebarNavItems: {
   title: string;
@@ -14,11 +14,6 @@ const sidebarNavItems: {
     title: "Perfil",
     icon: UserIcon,
     href: "/settings",
-  },
-  {
-    title: "Notificaciones",
-    icon: BellIcon,
-    href: "/settings/notifications",
   },
 ];
 
@@ -32,7 +27,7 @@ export default function SettingsLayout({
       <div className="space-y-0.5">
         <h1 className="text-2xl font-bold tracking-tight">Configuración</h1>
         <p className="text-muted-foreground">
-          Administra tu cuenta y preferencias de notificaciones.
+          Administra la información de tu cuenta.
         </p>
       </div>
       <Separator className="my-6" />
@@ -44,4 +39,4 @@ export default function SettingsLayout({
       </div>
     </div>
   );
-} 
+}

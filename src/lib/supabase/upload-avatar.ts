@@ -1,7 +1,6 @@
 ﻿import { createBrowserClient } from "@supabase/ssr";
+import { STORAGE_BUCKET, STORAGE_PREFIXES } from "@/lib/storage/config";
 
-const STORAGE_BUCKET =
-  process.env.NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET || "avatars";
 const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
 const ACCEPTED_IMAGE_TYPES = [
   "image/jpeg",
@@ -25,12 +24,17 @@ export async function uploadAvatar(file: File, userId: string) {
   }
 
   try {
-    const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
+    const supabase = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
 
     // Upload the file to Supabase storage
     const fileExt = file.name.split(".").pop();
-    const fileName = `${userId}-${Math.random()}.${fileExt}`;
-    const filePath = `${fileName}`;
+    const fileName = `${userId}-${Date.now()}-${Math.random()
+      .toString(36)
+      .slice(2)}.${fileExt}`;
+    const filePath = `${STORAGE_PREFIXES.profilePictures}/${fileName}`;
 
     // Upload file
     const { error: uploadError } = await supabase.storage
@@ -53,4 +57,3 @@ export async function uploadAvatar(file: File, userId: string) {
     throw error;
   }
 }
-

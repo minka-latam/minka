@@ -24,11 +24,7 @@ const personalFields = new Set([
   "identity_number",
 ]);
 
-const adminFields = new Set([
-  "verificationStatus",
-  "verification_status",
-  "status",
-]);
+const adminFields = new Set(["status"]);
 
 const statusValues = new Set<string>(Object.values(Status));
 
@@ -239,18 +235,9 @@ export async function PATCH(
 
     if (hasAdminFields) {
       const nextStatus = json.status;
-      const verificationStatus =
-        json.verificationStatus ?? json.verification_status;
-      const hasVerificationStatus =
-        Object.hasOwn(json, "verificationStatus") ||
-        Object.hasOwn(json, "verification_status");
 
       if (nextStatus !== undefined && !statusValues.has(nextStatus)) {
         return jsonError("Invalid status", 400);
-      }
-
-      if (hasVerificationStatus && typeof verificationStatus !== "boolean") {
-        return jsonError("verificationStatus must be a boolean", 400);
       }
 
       if (
@@ -274,10 +261,6 @@ export async function PATCH(
       const [profile] = await prisma.$queryRaw<ProfileRow[]>`
         update public.profiles
         set
-          verification_status = case
-            when ${hasVerificationStatus} then ${verificationStatus ?? false}
-            else verification_status
-          end,
           status = case
             when ${Object.hasOwn(json, "status")} then ${nextStatus ?? "active"}::"Status"
             else status
@@ -295,7 +278,6 @@ export async function PATCH(
           birth_date as "birthDate",
           bio,
           location,
-          verification_status as "verificationStatus",
           status::text,
           created_at as "createdAt",
           updated_at as "updatedAt",
@@ -310,8 +292,6 @@ export async function PATCH(
         metadata: {
           previousStatus: existingProfile.status,
           newStatus: profile.status,
-          previousVerificationStatus: existingProfile.verificationStatus,
-          newVerificationStatus: profile.verificationStatus,
         },
       });
 
@@ -371,7 +351,6 @@ export async function PATCH(
         birth_date as "birthDate",
         bio,
         location,
-        verification_status as "verificationStatus",
         status::text,
         created_at as "createdAt",
         updated_at as "updatedAt",

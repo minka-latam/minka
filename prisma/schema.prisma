@@ -24,7 +24,6 @@ model Profile {
   profilePicture         String?                 @map("profile_picture")
   status                 Status                  @default(active)
   updatedAt              DateTime                @updatedAt @map("updated_at") @db.Timestamp(6)
-  verificationStatus     Boolean                 @default(false) @map("verification_status")
   id                     String                  @id @default(uuid()) @db.Uuid
   campaigns              Campaign[]              @relation("OrganizerCampaigns")
   comments               Comment[]               @relation("ProfileComments")
@@ -226,18 +225,6 @@ model SavedCampaign {
   @@map("saved_campaigns")
 }
 
-model NotificationPreference {
-  id              String   @id @default(uuid()) @db.Uuid
-  userId          String   @unique @map("user_id") @db.Uuid
-  newsUpdates     Boolean  @default(false) @map("news_updates")
-  campaignUpdates Boolean  @default(true) @map("campaign_updates")
-  status          Status   @default(active)
-  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamp(6)
-  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamp(6)
-
-  @@map("notification_preferences")
-}
-
 model Notification {
   id         String           @id @default(uuid()) @db.Uuid
   userId     String           @map("user_id") @db.Uuid
@@ -363,7 +350,6 @@ model LegalEntity {
 
 enum UserRole {
   user
-  organizer
   admin
 }
 

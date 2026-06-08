@@ -244,9 +244,9 @@ export default function AdminNotificationsPage() {
       case "all":
         return stats.usersWithNewsUpdates;
       case "donors":
-        return Math.round(stats.totalDonors * 0.8); // Estimate based on news preferences
+        return stats.totalDonors;
       case "organizers":
-        return Math.round(stats.totalOrganizers * 0.9); // Most organizers want updates
+        return stats.totalOrganizers;
       case "admins":
         return stats.totalAdmins;
       default:

@@ -747,13 +747,13 @@ export function DonatePageContent({
       {/* Spacer div to account for the fixed header height */}
       <div className='h-20 md:h-28'></div>
 
-      {/* Page header with increased height */}
-      <div className='w-full h-[300px] md:h-[500px] relative border-t border-[#2c6e49]/5'>
+      {/* Page header */}
+      <div className='w-full h-[100px] md:h-[200px] lg:h-[300px] relative border-t border-[#2c6e49]/5'>
         <Image
           src='/page-header.svg'
           alt='Page Header'
           fill
-          className='object-cover'
+          className='object-cover object-bottom'
           priority
         />
         <div className='absolute inset-0 flex items-center justify-center p-4'>

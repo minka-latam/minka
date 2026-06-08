@@ -24,6 +24,12 @@ import {
 import { formatRegionDisplayName } from "@/lib/region-utils";
 import { formatCampaignCategory } from "@/lib/campaign-categories";
 
+type LatestDonor = {
+  id: string;
+  name: string;
+  amount: number;
+};
+
 // Helper function to format campaign data for components
 function formatCampaignData(campaign: any) {
   // Format gallery images
@@ -371,6 +377,7 @@ export default function CampaignClientPage({ id }: { id: string }) {
   const { campaign, isLoading, error } = useCampaign(id);
   const [relatedCampaigns, setRelatedCampaigns] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState("descripcion");
+  const [latestDonors, setLatestDonors] = useState<LatestDonor[]>([]);
   const autoSaveHandledRef = useRef(false);
   const { session, isLoading: authLoading } = useAuth();
   const {
@@ -392,6 +399,45 @@ export default function CampaignClientPage({ id }: { id: string }) {
         );
     }
   }, [campaign, id]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchLatestDonors = async () => {
+      try {
+        const response = await fetch(`/api/campaign/${id}/donations?limit=3`, {
+          headers: {
+            "Cache-Control": "no-cache",
+          },
+        });
+
+        if (!response.ok) return;
+
+        const data = await response.json();
+        const donors: LatestDonor[] = Array.isArray(data.data)
+          ? data.data.map((donation: any) => ({
+              id: donation.id,
+              name: donation.donor?.name || "Donante anónimo",
+              amount: Number(donation.amount || 0),
+            }))
+          : [];
+
+        if (!isMounted) return;
+
+        setLatestDonors(donors);
+      } catch (donationsError) {
+        console.error("Error fetching latest donors:", donationsError);
+      }
+    };
+
+    void fetchLatestDonors();
+    const intervalId = window.setInterval(fetchLatestDonors, 20000);
+
+    return () => {
+      isMounted = false;
+      window.clearInterval(intervalId);
+    };
+  }, [id]);
 
   useEffect(() => {
     const tryAutoSave = async () => {
@@ -503,6 +549,7 @@ export default function CampaignClientPage({ id }: { id: string }) {
                   campaignDescription={formattedData.description}
                   campaignImageUrl={formattedData.images[0]?.url}
                   campaignId={id}
+                  latestDonors={latestDonors}
                 />
               </StickyProgressWrapper>
             </div>
@@ -595,6 +642,7 @@ export default function CampaignClientPage({ id }: { id: string }) {
                 campaignDescription={formattedData.description}
                 campaignImageUrl={formattedData.images[0]?.url}
                 campaignId={id}
+                latestDonors={latestDonors}
               />
             </div>
           </div>

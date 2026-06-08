@@ -153,8 +153,6 @@ export default function DashboardPage() {
         birth_date: data.birth_date || data.birthDate,
         bio: data.bio || null,
         location: data.location || null,
-        verification_status:
-          data.verification_status ?? data.verificationStatus ?? false,
         status: data.status || "active",
         active_campaigns_count:
           data.active_campaigns_count ?? data.activeCampaignsCount ?? 0,

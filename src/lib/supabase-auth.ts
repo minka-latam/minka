@@ -32,6 +32,9 @@ export const signInWithSocial = async (provider: "google") => {
     provider,
     options: {
       redirectTo: `${appOrigin}/auth/callback`,
+      queryParams: {
+        prompt: "select_account",
+      },
     },
   });
 
