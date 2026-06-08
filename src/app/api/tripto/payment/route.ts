@@ -5,6 +5,10 @@ import { getOrCreateCampaignAnonymousProfileId } from '@/lib/donations/anonymous
 import { canReceiveCampaignPayments } from '@/lib/campaigns/visibility'
 import { parseDonationCreateBody } from '@/lib/api/donation-dto'
 import { resolveTriptoCardCurrency } from '@/lib/payments/provider-validation'
+import {
+  convertUsdToBob,
+  getUsdToBobExchangeRate,
+} from '@/lib/platform-settings'
 
 export async function POST(req: Request) {
   try {
@@ -90,26 +94,69 @@ export async function POST(req: Request) {
       )
     }
 
-    const totalAmount = Number(amount) + Number(tipAmount)
-    const expectedAmountMinor = Math.round(totalAmount * 100)
-    const cardCurrency = resolveTriptoCardCurrency(currency)
+    const donationAmountUsd = Number(amount)
+    const tipAmountUsd = Number(tipAmount)
 
-    const pendingDonation = await db.donation.create({
-      data: {
-        campaignId,
-        donorId: donorProfileId,
-        amount: Number(amount),
-        tip_amount: Number(tipAmount),
-        total_amount: totalAmount,
-        currency: cardCurrency,
-        paymentStatus: 'pending',
-        paymentProvider: 'tripto',
-        paymentMethod: 'credit_card' as any,
-        isAnonymous: !!isAnonymous,
-        notificationEnabled: !!notificationEnabled,
-        message: message || null,
-      },
-      select: { id: true },
+    if (
+      !Number.isFinite(donationAmountUsd) ||
+      donationAmountUsd <= 0 ||
+      !Number.isFinite(tipAmountUsd) ||
+      tipAmountUsd < 0
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Invalid donation amount',
+        },
+        { status: 400 },
+      )
+    }
+
+    const totalAmountUsd = donationAmountUsd + tipAmountUsd
+    const expectedAmountMinor = Math.round(totalAmountUsd * 100)
+    const cardCurrency = resolveTriptoCardCurrency(currency)
+    const usdToBobExchangeRate = await getUsdToBobExchangeRate()
+    const donationAmountBob = convertUsdToBob(
+      donationAmountUsd,
+      usdToBobExchangeRate,
+    )
+    const tipAmountBob = convertUsdToBob(
+      tipAmountUsd,
+      usdToBobExchangeRate,
+    )
+    const totalAmountBob = donationAmountBob + tipAmountBob
+
+    const pendingDonation = await db.$transaction(async (tx) => {
+      const donation = await tx.donation.create({
+        data: {
+          campaignId,
+          donorId: donorProfileId,
+          amount: donationAmountBob,
+          tip_amount: tipAmountBob,
+          total_amount: totalAmountBob,
+          currency: 'BOB',
+          paymentStatus: 'pending',
+          paymentProvider: 'tripto',
+          paymentMethod: 'credit_card' as any,
+          isAnonymous: !!isAnonymous,
+          notificationEnabled: !!notificationEnabled,
+          message: message || null,
+        },
+        select: { id: true },
+      })
+
+      await tx.$executeRaw`
+        update "donations"
+        set
+          "exchange_rate" = ${usdToBobExchangeRate},
+          "provider_amount" = ${donationAmountUsd},
+          "provider_tip_amount" = ${tipAmountUsd},
+          "provider_total_amount" = ${totalAmountUsd},
+          "provider_currency" = ${cardCurrency}
+        where "id" = ${donation.id}::uuid
+      `
+
+      return donation
     })
 
     const slug = `donacion-${campaignId}-${pendingDonation.id}`
@@ -125,11 +172,15 @@ export async function POST(req: Request) {
       donationId: pendingDonation.id,
       campaignId,
       donorId: donorProfileId,
-      amount: String(amount),
-      tipAmount: String(tipAmount),
-      expectedTotalAmount: String(totalAmount),
+      amount: String(donationAmountUsd),
+      tipAmount: String(tipAmountUsd),
+      expectedTotalAmount: String(totalAmountUsd),
       expectedAmountMinor: String(expectedAmountMinor),
       expectedCurrency: cardCurrency,
+      exchangeRate: String(usdToBobExchangeRate),
+      storedAmountBob: String(donationAmountBob),
+      storedTipAmountBob: String(tipAmountBob),
+      storedTotalAmountBob: String(totalAmountBob),
       message,
       isAnonymous: isAnonymous ? 'true' : 'false',
       notificationEnabled: notificationEnabled

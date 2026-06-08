@@ -320,8 +320,10 @@ export async function POST(req: Request) {
       }
 
       if (isCompletedEvent) {
-        const expectedAmount =
-          expectedDonationTotal(donation)
+        const expectedAmount = toNumber(
+          metadata.expectedTotalAmount,
+          expectedDonationTotal(donation),
+        )
         const expectedCurrency =
           normalizeCurrency(metadata.expectedCurrency) ||
           normalizeCurrency(donation.currency)

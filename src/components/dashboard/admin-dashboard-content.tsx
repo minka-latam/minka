@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { ProfileData } from "@/types";
@@ -8,6 +8,7 @@ import { useAuth } from "@/providers/auth-provider";
 import { toast } from "@/components/ui/use-toast";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   LogOut,
   CheckCircle,
@@ -17,6 +18,8 @@ import {
   LibraryBig,
   ArrowRight,
   Building2,
+  DollarSign,
+  Save,
 } from "lucide-react";
 
 interface AdminDashboardContentProps {
@@ -26,6 +29,112 @@ interface AdminDashboardContentProps {
 export function AdminDashboardContent({ profile }: AdminDashboardContentProps) {
   const router = useRouter();
   const { signOut } = useAuth();
+  const [exchangeRate, setExchangeRate] = useState("");
+  const [savedExchangeRate, setSavedExchangeRate] = useState<number | null>(
+    null
+  );
+  const [isLoadingExchangeRate, setIsLoadingExchangeRate] = useState(true);
+  const [isSavingExchangeRate, setIsSavingExchangeRate] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadExchangeRate = async () => {
+      try {
+        setIsLoadingExchangeRate(true);
+        const response = await fetch(
+          "/api/admin/platform-settings/exchange-rate",
+          { cache: "no-store" }
+        );
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data?.error || "No se pudo cargar el tipo de cambio");
+        }
+
+        if (!isMounted) return;
+
+        const rate = Number(data.usdToBobExchangeRate);
+        setSavedExchangeRate(rate);
+        setExchangeRate(String(rate));
+      } catch (error) {
+        if (!isMounted) return;
+
+        toast({
+          title: "Error",
+          description:
+            error instanceof Error
+              ? error.message
+              : "No se pudo cargar el tipo de cambio",
+          variant: "destructive",
+        });
+      } finally {
+        if (isMounted) {
+          setIsLoadingExchangeRate(false);
+        }
+      }
+    };
+
+    loadExchangeRate();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const handleExchangeRateSubmit = async (
+    event: React.FormEvent<HTMLFormElement>
+  ) => {
+    event.preventDefault();
+
+    const rate = Number(exchangeRate);
+
+    if (!Number.isFinite(rate) || rate <= 0) {
+      toast({
+        title: "Tipo de cambio inválido",
+        description: "Ingresa un número mayor a cero.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setIsSavingExchangeRate(true);
+      const response = await fetch(
+        "/api/admin/platform-settings/exchange-rate",
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ usdToBobExchangeRate: rate }),
+        }
+      );
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data?.error || "No se pudo guardar el tipo de cambio");
+      }
+
+      const savedRate = Number(data.usdToBobExchangeRate);
+      setSavedExchangeRate(savedRate);
+      setExchangeRate(String(savedRate));
+
+      toast({
+        title: "Tipo de cambio actualizado",
+        description: `1 USD = Bs. ${savedRate.toFixed(4)}`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description:
+          error instanceof Error
+            ? error.message
+            : "No se pudo guardar el tipo de cambio",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSavingExchangeRate(false);
+    }
+  };
 
   const handleSignOut = async () => {
     try {
@@ -53,7 +162,7 @@ export function AdminDashboardContent({ profile }: AdminDashboardContentProps) {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 p-5">
       <div className="rounded-lg p-6">
         <h2 className="text-2xl font-semibold mb-4">Panel Administrativo</h2>
         <p>
@@ -61,6 +170,50 @@ export function AdminDashboardContent({ profile }: AdminDashboardContentProps) {
           . Desde aquí puedes gestionar todas las campañas, usuarios y
           configuraciones de la plataforma.
         </p>
+      </div>
+
+      <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-100 w-fit">
+        <div className="flex items-center mb-4">
+          <DollarSign className="h-6 w-6 mr-2 text-[#2c6e49]" />
+          <h3 className="text-xl font-semibold">Tipo de cambio</h3>
+        </div>
+        <form
+          className="grid gap-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-center "
+          onSubmit={handleExchangeRateSubmit}
+        >
+          <div>
+            <label
+              htmlFor="usd-to-bob-exchange-rate"
+              className="block text-sm font-medium text-gray-700 mb-2"
+            >
+              Tipo de cambio bs/$:
+            </label>
+            <Input
+              id="usd-to-bob-exchange-rate"
+              type="number"
+              min="0.0001"
+              step="0.0001"
+              inputMode="decimal"
+              value={exchangeRate}
+              onChange={(event) => setExchangeRate(event.target.value)}
+              disabled={isLoadingExchangeRate || isSavingExchangeRate}
+              placeholder="6.9600"
+            />
+            <p className="text-sm text-gray-500 mt-2">
+              {savedExchangeRate
+                ? `Actual: 1 USD = Bs. ${savedExchangeRate.toFixed(4)}`
+                : "Se usará para convertir donaciones por tarjeta a Bs."}
+            </p>
+          </div>
+          <Button
+            type="submit"
+            disabled={isLoadingExchangeRate || isSavingExchangeRate}
+            className="bg-[#2c6e49] hover:bg-[#24583b] text-white"
+          >
+            <Save className="h-4 w-4 mr-2" />
+            {isSavingExchangeRate ? "Guardando..." : "Guardar"}
+          </Button>
+        </form>
       </div>
 
       <h3 className="text-xl font-semibold mb-4">Gestión de Plataforma</h3>

@@ -6,6 +6,11 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { parseDonationCreateBody } from "@/lib/api/donation-dto";
 import { createBisaQrAccessToken } from "@/lib/bisa/qr-access-token";
+import { resolveTriptoCardCurrency } from "@/lib/payments/provider-validation";
+import {
+  convertUsdToBob,
+  getUsdToBobExchangeRate,
+} from "@/lib/platform-settings";
 
 export async function POST(request: NextRequest) {
   try {
@@ -38,6 +43,7 @@ export async function POST(request: NextRequest) {
       amount,
       tipAmount = 0,
       paymentMethod,
+      currency,
       message,
       isAnonymous = false,
       notificationEnabled = false,
@@ -110,26 +116,65 @@ export async function POST(request: NextRequest) {
       ? await getOrCreateCampaignAnonymousProfileId(campaignId)
       : userId;
 
-    // Calculate total amount
-    const totalAmount = Number(amount) + Number(tipAmount);
+    const donationAmount = Number(amount);
+    const donationTipAmount = Number(tipAmount);
+
+    if (!Number.isFinite(donationTipAmount) || donationTipAmount < 0) {
+      return NextResponse.json(
+        { error: "Valid tip amount is required" },
+        { status: 400 }
+      );
+    }
+
+    const totalAmount = donationAmount + donationTipAmount;
+    const isCardPayment = paymentMethod === "card";
+    const cardCurrency = resolveTriptoCardCurrency(currency);
+    const usdToBobExchangeRate = isCardPayment
+      ? await getUsdToBobExchangeRate()
+      : null;
+    const storedDonationAmount = usdToBobExchangeRate
+      ? convertUsdToBob(donationAmount, usdToBobExchangeRate)
+      : donationAmount;
+    const storedTipAmount = usdToBobExchangeRate
+      ? convertUsdToBob(donationTipAmount, usdToBobExchangeRate)
+      : donationTipAmount;
+    const storedTotalAmount = storedDonationAmount + storedTipAmount;
 
     // 1. Create donor for both cases (card y qr)
-    const donation = await prisma.donation.create({
-      data: {
-        campaignId,
-        donorId: donorProfileId!,
-        amount: Number(amount),
-        tip_amount: Number(tipAmount),
-        total_amount: totalAmount,
-        paymentMethod: paymentMethodEnum,
-        paymentStatus: 'pending',
-        paymentProvider:
-          paymentMethod === 'card' ? 'tripto' : 'bisa',
-        message: message || null,
-        isAnonymous,
-        notificationEnabled,
-        predefinedAmount: !customAmount,
-      },
+    const donation = await prisma.$transaction(async (tx) => {
+      const createdDonation = await tx.donation.create({
+        data: {
+          campaignId,
+          donorId: donorProfileId!,
+          amount: storedDonationAmount,
+          tip_amount: storedTipAmount,
+          total_amount: storedTotalAmount,
+          currency: "BOB",
+          paymentMethod: paymentMethodEnum,
+          paymentStatus: 'pending',
+          paymentProvider:
+            paymentMethod === 'card' ? 'tripto' : 'bisa',
+          message: message || null,
+          isAnonymous,
+          notificationEnabled,
+          predefinedAmount: !customAmount,
+        },
+      })
+
+      if (usdToBobExchangeRate) {
+        await tx.$executeRaw`
+          update "donations"
+          set
+            "exchange_rate" = ${usdToBobExchangeRate},
+            "provider_amount" = ${donationAmount},
+            "provider_tip_amount" = ${donationTipAmount},
+            "provider_total_amount" = ${totalAmount},
+            "provider_currency" = ${cardCurrency}
+          where "id" = ${createdDonation.id}::uuid
+        `;
+      }
+
+      return createdDonation;
     })
 
     return NextResponse.json(

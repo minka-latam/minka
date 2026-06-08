@@ -304,15 +304,15 @@ export function UserDashboardContent({
       : profile?.profilePicture || profile?.profile_picture;
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-8 px-1 sm:px-0">
       {/* ... (header) */}
       
       {/* Personal Information Card */}
-      <div className="bg-white rounded-lg p-8 shadow-sm">
+      <div className="bg-white rounded-lg p-4 shadow-sm sm:p-6 lg:p-8">
         {/* Profile Picture Section */}
-        <div className="flex items-start gap-8 pb-8 border-b border-gray-200">
-          <div className="flex flex-col items-center gap-4">
-            <div className="w-32 h-32 bg-[#2c6e49] rounded-full flex items-center justify-center overflow-hidden">
+        <div className="flex flex-col items-center gap-5 border-b border-gray-200 pb-6 sm:flex-row sm:items-start sm:gap-8 sm:pb-8">
+          <div className="flex flex-col items-center gap-4 shrink-0">
+            <div className="h-28 w-28 bg-[#2c6e49] rounded-full flex items-center justify-center overflow-hidden sm:h-32 sm:w-32">
               {displayedImage ? (
                 <Image
                   src={displayedImage}
@@ -338,15 +338,15 @@ export function UserDashboardContent({
               )}
             </div>
           </div>
-          <div className="flex-1">
-            <p className="text-gray-600 mb-2">
+          <div className="w-full min-w-0 flex-1 text-center sm:text-left">
+            <p className="mb-3 break-words text-sm text-gray-600 sm:text-base">
               Imagen de perfil (Recomendado: 800×800 px)
             </p>
 
-            <div className="flex flex-wrap gap-3 mb-4">
+            <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
               <Button
                 variant="outline"
-                className="flex items-center gap-2 text-[#2c6e49] border-[#2c6e49] hover:bg-[#2c6e49] hover:text-white"
+                className="flex w-full items-center justify-center gap-2 whitespace-normal text-[#2c6e49] border-[#2c6e49] hover:bg-[#2c6e49] hover:text-white sm:w-auto"
                 onClick={handleSelectImage}
                 disabled={isSubmitting}
               >
@@ -365,7 +365,7 @@ export function UserDashboardContent({
               {displayedImage && (
                 <Button
                   variant="outline"
-                  className="flex items-center gap-2 text-red-600 border-red-600 hover:bg-red-600 hover:text-white"
+                  className="flex w-full items-center justify-center gap-2 whitespace-normal text-red-600 border-red-600 hover:bg-red-600 hover:text-white sm:w-auto"
                   onClick={handleDeleteImage}
                   disabled={isSubmitting}
                 >
@@ -392,24 +392,24 @@ export function UserDashboardContent({
               />
             </div>
 
-            <div className="text-sm text-gray-500">
+            <div className="text-sm text-gray-500 break-words">
               Formatos permitidos: JPG, PNG, GIF (máx. 2MB)
             </div>
           </div>
         </div>
 
          {/* Edit Profile Button */}
-        <div className="flex justify-end pt-6 gap-3">
+        <div className="flex flex-col gap-3 pt-6 sm:flex-row sm:justify-end">
           <Button
             variant="outline"
-            className="flex items-center gap-2 text-[#2c6e49] border-[#2c6e49] hover:bg-[#2c6e49] hover:text-white"
+            className="flex w-full items-center justify-center gap-2 whitespace-normal text-[#2c6e49] border-[#2c6e49] hover:bg-[#2c6e49] hover:text-white sm:w-auto"
             onClick={onChangePassword}
           >
             Cambiar contraseña
           </Button>
           <Button
             variant="outline"
-            className="flex items-center gap-2 text-[#2c6e49] border-[#2c6e49] hover:bg-[#2c6e49] hover:text-white"
+            className="flex w-full items-center justify-center gap-2 whitespace-normal text-[#2c6e49] border-[#2c6e49] hover:bg-[#2c6e49] hover:text-white sm:w-auto"
             onClick={onEditProfile}
           >
             <Edit size={16} />
@@ -475,7 +475,7 @@ export function UserDashboardContent({
       </div>
 
       {/* Control Cards Section - Single card with 2 cards per row */}
-      <div className="bg-white rounded-lg p-8 shadow-sm">
+      <div className="bg-white rounded-lg p-0 lg:p-8 shadow-sm">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* My Donations Card */}
           <Link href="/dashboard/donations" className="block">

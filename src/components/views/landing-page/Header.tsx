@@ -122,8 +122,8 @@ export function Header() {
   };
 
   const menuItems = [
-    { href: "/all-campaigns", label: "Ver campañas" },
-    { href: "/create-campaign", label: "Crear una" },
+    { href: "/all-campaigns", label: "Explorar" },
+    { href: "/create-campaign", label: "Crear Campañas" },
     { href: "/about-us", label: "Nosotros" },
     { href: "/help", label: "Ayuda" },
   ];

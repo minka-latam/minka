@@ -70,7 +70,7 @@ function DonatePageContent() {
         />
         <div className="absolute inset-0 flex items-center justify-center p-4">
           <h1 className="text-4xl sm:text-6xl md:text-7xl lg:text-[90px] font-bold text-white text-center">
-            Ver campañas
+            Explorar
           </h1>
         </div>
       </div>
@@ -91,7 +91,7 @@ function DonatePageContent() {
               className="bg-[#2c6e49] hover:bg-[#1e4d33] text-white py-6 px-8 rounded-full"
               asChild
             >
-              <Link href="/all-campaigns">Ver campañas</Link>
+              <Link href="/all-campaigns">Explorar</Link>
             </Button>
           </div>
         </div>

@@ -88,7 +88,7 @@ export function CausesSection() {
           </p>
           <Link href="/all-campaigns" rel="noopener noreferrer">
             <Button className="bg-[#2c6e49] text-white hover:bg-[#1e4d33] hover:text-white rounded-full">
-              Ver campañas
+              Explorar
             </Button>
           </Link>
         </div>

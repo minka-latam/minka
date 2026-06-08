@@ -1288,7 +1288,7 @@ export function DonatePageContent({
                   className='w-full inline-flex justify-center border border-[#2c6e49] bg-white px-6 py-2 text-sm font-medium text-[#2c6e49] hover:bg-[#f5f7e9] focus:outline-none rounded-full'
                   onClick={() => router.push('/all-campaigns')}
                 >
-                  Ver campañas
+                  Explorar
                 </button>
 
                 <button

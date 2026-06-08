@@ -155,6 +155,11 @@ model Donation {
   triptoSessionId     String?        @map("tripto_session_id")
   tip_amount          Decimal?       @db.Decimal
   total_amount        Decimal?       @db.Decimal
+  exchangeRate        Decimal?       @map("exchange_rate") @db.Decimal(10, 4)
+  providerAmount      Decimal?       @map("provider_amount") @db.Decimal
+  providerTipAmount   Decimal?       @map("provider_tip_amount") @db.Decimal
+  providerTotalAmount Decimal?       @map("provider_total_amount") @db.Decimal
+  providerCurrency    String?        @map("provider_currency")
   bisaAlias           String?        @map("bisa_alias")
   bisaPayerAccount    String?        @map("bisa_payer_account")
   bisaPayerDocument   String?        @map("bisa_payer_document")
@@ -195,6 +200,16 @@ model PaymentLog {
   createdat       DateTime?       @default(now()) @db.Timestamptz(6)
 
   @@map("payment_logs")
+}
+
+model PlatformSettings {
+  id                    String   @id @default("default")
+  usdToBobExchangeRate  Decimal  @default(6.9600) @map("usd_to_bob_exchange_rate") @db.Decimal(10, 4)
+  updatedById           String?  @map("updated_by_id") @db.Uuid
+  createdAt             DateTime @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt             DateTime @updatedAt @map("updated_at") @db.Timestamp(6)
+
+  @@map("platform_settings")
 }
 
 model Comment {

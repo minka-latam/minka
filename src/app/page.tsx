@@ -3,7 +3,7 @@ import { CausesSection } from "@/components/views/landing-page/CausesSection";
 import { TrustSection } from "@/components/views/landing-page/TrustSection";
 import { StartCampaignSection } from "@/components/views/landing-page/StartCampaignSection";
 import { TestimonialsSection } from "@/components/views/landing-page/TestimonialsSection";
-import { PartnersSection } from "@/components/views/landing-page/PartnersSection";
+// import { PartnersSection } from "@/components/views/landing-page/PartnersSection";
 import { Header } from "@/components/views/landing-page/Header";
 import { Footer } from "@/components/views/landing-page/Footer";
 import type { Metadata } from "next";
@@ -55,7 +55,7 @@ export default function Home() {
           <StartCampaignSection />
         </div>
         <TestimonialsSection />
-        <PartnersSection />
+        {/* <PartnersSection /> */}
       </main>
       <Footer />
     </div>
