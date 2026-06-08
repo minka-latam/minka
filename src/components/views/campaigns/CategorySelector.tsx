@@ -109,6 +109,15 @@ export function CategorySelector({
             height={24}
           />
         );
+      case "Otros":
+        return (
+          <Image
+            src="/icons/handshake.svg"
+            alt="Otro"
+            width={24}
+            height={24}
+          />
+        );
       default:
         return (
           <Image

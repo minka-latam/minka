@@ -1,64 +1,65 @@
-"use client";
+'use client'
 
-import { Button } from "@/components/ui/button";
-import {
-  Bookmark,
-  BookmarkCheck,
-} from "lucide-react";
-import Link from "next/link";
-import { useState, useEffect } from "react";
-import { useSavedCampaigns } from "@/hooks/use-saved-campaigns";
-import { useAuth } from "@/providers/auth-provider";
-import { useToast } from "@/components/ui/use-toast";
-import { useRouter } from "next/navigation";
-import Image from "next/image";
+import { Button } from '@/components/ui/button'
+import { Bookmark, BookmarkCheck } from 'lucide-react'
+import Link from 'next/link'
+import { useState, useEffect } from 'react'
+import { useSavedCampaigns } from '@/hooks/use-saved-campaigns'
+import { useAuth } from '@/providers/auth-provider'
+import { useToast } from '@/components/ui/use-toast'
+import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import {
   SAVED_CAMPAIGN_IDS_CACHE_KEY,
   SAVED_CAMPAIGNS_UPDATED_EVENT,
   SAVE_CAMPAIGN_INTENT_KEY,
   SAVE_CAMPAIGN_INTENT_UPDATED_EVENT,
-} from "@/constants/saved-campaign";
-import { CampaignShareMenu } from "@/components/share/CampaignShareMenu";
+} from '@/constants/saved-campaign'
+import { CampaignShareMenu } from '@/components/share/CampaignShareMenu'
 
 interface CampaignProgressProps {
-  isVerified: boolean;
-  createdAt: string;
-  currentAmount: number;
-  targetAmount: number;
-  donorsCount: number;
-  campaignTitle?: string;
-  campaignSubtitle?: string;
-  campaignDescription?: string;
-  campaignImageUrl?: string;
-  campaignOrganizer?: string;
-  campaignLocation?: string;
-  campaignId?: string;
+  isVerified: boolean
+  createdAt: string
+  currentAmount: number
+  targetAmount: number
+  donorsCount: number
+  campaignTitle?: string
+  campaignSubtitle?: string
+  campaignDescription?: string
+  campaignImageUrl?: string
+  campaignOrganizer?: string
+  campaignLocation?: string
+  campaignId?: string
   latestDonors?: Array<{
-    id: string;
-    name: string;
-    amount: number;
-  }>;
+    id: string
+    name: string
+    amount: number
+  }>
 }
 
 // Function to calculate relative time
 function getRelativeTime(dateString: string): string {
-  const now = new Date();
-  const createdDate = new Date(dateString);
-  const diffTime = Math.abs(now.getTime() - createdDate.getTime());
-  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+  const now = new Date()
+  const createdDate = new Date(dateString)
+  const diffTime = Math.abs(
+    now.getTime() - createdDate.getTime(),
+  )
+  const diffDays = Math.floor(
+    diffTime / (1000 * 60 * 60 * 24),
+  )
 
   if (diffDays === 0) {
-    return "hoy";
+    return 'hoy'
   } else if (diffDays === 1) {
-    return "1 día";
+    return '1 día'
   } else if (diffDays < 30) {
-    return `${diffDays} días`;
+    return `${diffDays} días`
   } else if (diffDays < 365) {
-    const months = Math.floor(diffDays / 30);
-    return months === 1 ? "1 mes" : `${months} meses`;
+    const months = Math.floor(diffDays / 30)
+    return months === 1 ? '1 mes' : `${months} meses`
   } else {
-    const years = Math.floor(diffDays / 365);
-    return years === 1 ? "1 año" : `${years} años`;
+    const years = Math.floor(diffDays / 365)
+    return years === 1 ? '1 año' : `${years} años`
   }
 }
 
@@ -68,120 +69,141 @@ export function CampaignProgress({
   currentAmount,
   targetAmount,
   donorsCount,
-  campaignTitle = "",
-  campaignSubtitle = "",
-  campaignDescription = "",
-  campaignImageUrl = "",
-  campaignOrganizer = "",
-  campaignLocation = "",
-  campaignId = "",
+  campaignTitle = '',
+  campaignSubtitle = '',
+  campaignDescription = '',
+  campaignImageUrl = '',
+  campaignOrganizer = '',
+  campaignLocation = '',
+  campaignId = '',
   latestDonors = [],
 }: CampaignProgressProps) {
-  const { session, isLoading: authLoading } = useAuth();
-  const { toast } = useToast();
-  const { isCampaignSaved, saveCampaign, unsaveCampaign } = useSavedCampaigns();
-  const [isSaving, setIsSaving] = useState(false);
-  const [isSessionLoaded, setIsSessionLoaded] = useState(false);
-  const [hasPendingSaveIntent, setHasPendingSaveIntent] = useState(false);
+  const { session, isLoading: authLoading } = useAuth()
+  const { toast } = useToast()
+  const { isCampaignSaved, saveCampaign, unsaveCampaign } =
+    useSavedCampaigns()
+  const [isSaving, setIsSaving] = useState(false)
+  const [isSessionLoaded, setIsSessionLoaded] =
+    useState(false)
+  const [hasPendingSaveIntent, setHasPendingSaveIntent] =
+    useState(false)
   const [cachedIsSaved, setCachedIsSaved] = useState(() => {
-    if (typeof window === "undefined") return false;
+    if (typeof window === 'undefined') return false
     try {
-      const rawIds = localStorage.getItem(SAVED_CAMPAIGN_IDS_CACHE_KEY);
-      if (!rawIds) return false;
-      const ids = JSON.parse(rawIds) as string[];
-      return Array.isArray(ids) && ids.includes(campaignId);
+      const rawIds = localStorage.getItem(
+        SAVED_CAMPAIGN_IDS_CACHE_KEY,
+      )
+      if (!rawIds) return false
+      const ids = JSON.parse(rawIds) as string[]
+      return Array.isArray(ids) && ids.includes(campaignId)
     } catch {
-      return false;
+      return false
     }
-  });
-  const router = useRouter();
+  })
+  const router = useRouter()
 
-  const isLoggedIn = !!session;
-  const isSaved = isCampaignSaved(campaignId);
+  const isLoggedIn = !!session
+  const isSaved = isCampaignSaved(campaignId)
   const effectiveIsSaved =
-    isSaved || cachedIsSaved || hasPendingSaveIntent;
+    isSaved || cachedIsSaved || hasPendingSaveIntent
 
   // Debug component state
-  useEffect(() => {
-  }, [campaignId, session, isLoggedIn, authLoading, isSaved]);
+  useEffect(() => {}, [
+    campaignId,
+    session,
+    isLoggedIn,
+    authLoading,
+    isSaved,
+  ])
 
   // Debug session state
   useEffect(() => {
     if (!authLoading) {
-      setIsSessionLoaded(true);
+      setIsSessionLoaded(true)
     }
-  }, [session, authLoading, isLoggedIn, campaignId]);
+  }, [session, authLoading, isLoggedIn, campaignId])
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    if (typeof window === 'undefined') return
 
     const syncClientState = () => {
       try {
-        const rawIntent = sessionStorage.getItem(SAVE_CAMPAIGN_INTENT_KEY);
+        const rawIntent = sessionStorage.getItem(
+          SAVE_CAMPAIGN_INTENT_KEY,
+        )
         if (!rawIntent) {
-          setHasPendingSaveIntent(false);
+          setHasPendingSaveIntent(false)
         } else {
           const parsedIntent = JSON.parse(rawIntent) as {
-            campaignId?: string;
-          };
-          setHasPendingSaveIntent(parsedIntent?.campaignId === campaignId);
+            campaignId?: string
+          }
+          setHasPendingSaveIntent(
+            parsedIntent?.campaignId === campaignId,
+          )
         }
 
         const rawIds = localStorage.getItem(
-          SAVED_CAMPAIGN_IDS_CACHE_KEY
-        );
+          SAVED_CAMPAIGN_IDS_CACHE_KEY,
+        )
         if (!rawIds) {
-          setCachedIsSaved(false);
+          setCachedIsSaved(false)
         } else {
-          const ids = JSON.parse(rawIds) as string[];
+          const ids = JSON.parse(rawIds) as string[]
           setCachedIsSaved(
-            Array.isArray(ids) && ids.includes(campaignId)
-          );
+            Array.isArray(ids) && ids.includes(campaignId),
+          )
         }
       } catch (intentError) {
-        console.error("Error reading save campaign intent:", intentError);
-        setHasPendingSaveIntent(false);
-        setCachedIsSaved(false);
+        console.error(
+          'Error reading save campaign intent:',
+          intentError,
+        )
+        setHasPendingSaveIntent(false)
+        setCachedIsSaved(false)
       }
-    };
+    }
 
-    syncClientState();
+    syncClientState()
     window.addEventListener(
       SAVE_CAMPAIGN_INTENT_UPDATED_EVENT,
-      syncClientState
-    );
+      syncClientState,
+    )
     window.addEventListener(
       SAVED_CAMPAIGNS_UPDATED_EVENT,
-      syncClientState
-    );
+      syncClientState,
+    )
 
     return () => {
       window.removeEventListener(
         SAVE_CAMPAIGN_INTENT_UPDATED_EVENT,
-        syncClientState
-      );
+        syncClientState,
+      )
       window.removeEventListener(
         SAVED_CAMPAIGNS_UPDATED_EVENT,
-        syncClientState
-      );
-    };
-  }, [campaignId]);
+        syncClientState,
+      )
+    }
+  }, [campaignId])
 
-  const safeCurrentAmount = currentAmount || 0;
-  const safeTargetAmount = targetAmount || 1;
+  const safeCurrentAmount = currentAmount || 0
+  const safeTargetAmount = targetAmount || 1
   const progress =
     safeTargetAmount > 0
-      ? Math.min((safeCurrentAmount / safeTargetAmount) * 100, 100)
-      : 0;
+      ? Math.min(
+          (safeCurrentAmount / safeTargetAmount) * 100,
+          100,
+        )
+      : 0
 
   const handleSaveToggle = async () => {
     // Don't proceed until auth is confirmed loaded
     if (authLoading) {
       toast({
-        title: "Cargando",
-        description: "Por favor espera mientras verificamos tu sesión",
-      });
-      return;
+        title: 'Cargando',
+        description:
+          'Por favor espera mientras verificamos tu sesión',
+      })
+      return
     }
 
     if (!isLoggedIn) {
@@ -191,143 +213,188 @@ export function CampaignProgress({
           JSON.stringify({
             campaignId,
             createdAt: Date.now(),
-          })
-        );
+          }),
+        )
         window.dispatchEvent(
-          new Event(SAVE_CAMPAIGN_INTENT_UPDATED_EVENT)
-        );
+          new Event(SAVE_CAMPAIGN_INTENT_UPDATED_EVENT),
+        )
       } catch (storageError) {
-        console.error("Error storing save campaign intent:", storageError);
+        console.error(
+          'Error storing save campaign intent:',
+          storageError,
+        )
       }
       const returnUrl =
-        typeof window !== "undefined"
+        typeof window !== 'undefined'
           ? `${window.location.pathname}${window.location.search}`
-          : `/campaign/${campaignId}`;
-      router.push(`/sign-in?returnUrl=${encodeURIComponent(returnUrl)}`);
-      return;
+          : `/campaign/${campaignId}`
+      router.push(
+        `/sign-in?returnUrl=${encodeURIComponent(returnUrl)}`,
+      )
+      return
     }
 
     // Validate campaign ID
-    if (!campaignId || campaignId.trim() === "") {
-      console.error("Campaign ID is missing or empty:", campaignId);
+    if (!campaignId || campaignId.trim() === '') {
+      console.error(
+        'Campaign ID is missing or empty:',
+        campaignId,
+      )
       toast({
-        title: "Error",
-        description: "ID de campaña no válido. Por favor recarga la página",
-        variant: "destructive",
-      });
-      return;
+        title: 'Error',
+        description:
+          'ID de campaña no válido. Por favor recarga la página',
+        variant: 'destructive',
+      })
+      return
     }
 
-    setIsSaving(true);
+    setIsSaving(true)
     try {
       if (effectiveIsSaved) {
-        const result = await unsaveCampaign(campaignId);
+        const result = await unsaveCampaign(campaignId)
         if (result) {
         }
       } else {
-        const result = await saveCampaign(campaignId);
+        const result = await saveCampaign(campaignId)
         if (result) {
         }
       }
     } catch (error) {
-      console.error("Error toggling saved state:", error);
+      console.error('Error toggling saved state:', error)
       toast({
-        title: "Error",
+        title: 'Error',
         description:
-          "No se pudo completar la operación. Por favor intenta nuevamente",
-        variant: "destructive",
-      });
+          'No se pudo completar la operación. Por favor intenta nuevamente',
+        variant: 'destructive',
+      })
     } finally {
-      setIsSaving(false);
+      setIsSaving(false)
     }
-  };
+  }
+
+  const displayedDonors: Array<{
+    id: string
+    name: string
+    amount: number
+  }> = []
+
+  // 1. Get unique real names (to avoid showing the same person twice if they donated twice)
+  const uniqueNamedDonors = Array.from(
+    new Map(
+      (latestDonors || []).map((d) => [d.name, d]),
+    ).values(),
+  )
+
+  // 2. Add up to 3 named donors
+  const numNamedToDisplay = Math.min(
+    uniqueNamedDonors.length,
+    3,
+  )
+  for (let i = 0; i < numNamedToDisplay; i++) {
+    displayedDonors.push(uniqueNamedDonors[i])
+  }
+
+  // 3. Calculate total slots to fill (max 5, or total donors if less than 5)
+  const totalItemsToDisplay = Math.min(donorsCount, 5)
+
+  // 4. Fill remaining slots with anonymous placeholders
+  const anonymousPlaceholdersNeeded =
+    totalItemsToDisplay - displayedDonors.length
+
+  for (let i = 0; i < anonymousPlaceholdersNeeded; i++) {
+    displayedDonors.push({
+      id: `anonymous-${i}`,
+      name: 'Donante anónimo',
+      amount: 0,
+    })
+  }
 
   return (
     <div
-      className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm relative"
-      id="campaign-progress"
+      className='rounded-2xl border border-gray-200 bg-white p-6 shadow-sm relative'
+      id='campaign-progress'
     >
       {/* Centered title - increased size */}
-      <h2 className="text-2xl font-semibold text-[#2c6e49] mb-1 text-center">
+      <h2 className='text-2xl font-semibold text-[#2c6e49] mb-1 text-center'>
         Avances de la campaña
       </h2>
-      {/* Green subtitle - increased size */}
-      <p className="text-base text-[#2c6e49] mb-4 text-center">
-        Cada aporte cuenta. ¡Sé parte del cambio!
-      </p>
 
       {/* Verified and Created Date - Left and Right aligned */}
-      <div className="flex justify-between items-center mb-4">
+      <div className='flex justify-between items-center mb-4'>
         {isVerified && (
-          <div className="flex items-center gap-2">
+          <div className='flex items-center gap-2'>
             <Image
-              src="/icons/verified.svg"
-              alt="Verified"
+              src='/icons/verified.svg'
+              alt='Verified'
               width={24}
               height={24}
             />
-            <span className="text-sm">Campaña verificada</span>
+            <span className='text-sm'>
+              Campaña verificada
+            </span>
           </div>
         )}
-        <div className="flex items-center gap-2">
+        <div className='flex items-center gap-2'>
           <Image
-            src="/icons/schedule.svg"
-            alt="Schedule"
+            src='/icons/schedule.svg'
+            alt='Schedule'
             width={24}
             height={24}
           />
-          <span className="text-sm">
-  {getRelativeTime(createdAt) === "hoy" 
-    ? "Creada hoy" 
-    : `Creada hace ${getRelativeTime(createdAt)}`}
-</span>
+          <span className='text-sm'>
+            {getRelativeTime(createdAt) === 'hoy'
+              ? 'Creada hoy'
+              : `Creada hace ${getRelativeTime(createdAt)}`}
+          </span>
         </div>
       </div>
 
       {/* First separator */}
-      <hr className="h-px w-full bg-gray-200 my-4" />
+      <hr className='h-px w-full bg-gray-200 my-4' />
 
-      <div className="space-y-4 mb-4">
-        <div className="flex justify-between text-sm">
-          <span className="text-[#2c6e49] font-medium">
-            Recaudado Bs. {(currentAmount || 0).toLocaleString()}
+      <div className='space-y-4 mb-4'>
+        <div className='flex justify-between text-sm'>
+          <span className='text-[#2c6e49] font-medium'>
+            Recaudado Bs.{' '}
+            {(currentAmount || 0).toLocaleString()}
           </span>
-          <span className="text-[#2c6e49] font-medium">
+          <span className='text-[#2c6e49] font-medium'>
             {donorsCount || 0} donadores
           </span>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="h-2 flex-1 bg-gray-100 rounded-full overflow-hidden">
+        <div className='flex items-center gap-3'>
+          <div className='h-2 flex-1 bg-gray-100 rounded-full overflow-hidden'>
             <div
-              className="h-full bg-[#2c6e49] rounded-full"
+              className='h-full bg-[#2c6e49] rounded-full'
               style={{ width: `${progress}%` }}
             />
           </div>
-          <span className="text-lg font-bold text-[#2c6e49] min-w-[60px]">
+          <span className='text-lg font-bold text-[#2c6e49] min-w-[60px]'>
             {Math.round(progress)}%
           </span>
         </div>
-        <div className="flex justify-between text-sm">
-          <span className="text-[#2c6e49] font-medium">
+        <div className='flex justify-between text-sm'>
+          <span className='text-[#2c6e49] font-medium'>
             Objetivo de recaudación
           </span>
-          <span className="text-[#2c6e49] font-medium">
+          <span className='text-[#2c6e49] font-medium'>
             Bs. {(targetAmount || 0).toLocaleString()}
           </span>
         </div>
       </div>
 
       {/* Second separator */}
-      <hr className="h-px w-full bg-gray-200 my-4" />
+      <hr className='h-px w-full bg-gray-200 my-4' />
 
-      <div className="space-y-3">
+      <div className='space-y-3'>
         <Link href={`/donate/${campaignId}`}>
-          <Button className="w-full bg-[#2c6e49] hover:bg-[#1e4d33] text-white rounded-full py-6">
+          <Button className='w-full bg-[#2c6e49] hover:bg-[#1e4d33] text-white rounded-full py-6'>
             Donar ahora
           </Button>
         </Link>
 
-        <div className="flex w-full">
+        <div className='flex w-full'>
           <CampaignShareMenu
             campaign={{
               id: campaignId,
@@ -336,48 +403,54 @@ export function CampaignProgress({
               description: campaignDescription,
               imageUrl: campaignImageUrl,
             }}
-            triggerClassName="w-full border-[#2c6e49] hover:bg-gray-50 rounded-full py-6 text-[#2c6e49]"
-            dropdownClassName="left-0 right-0"
+            triggerClassName='w-full border-[#2c6e49] hover:bg-gray-50 rounded-full py-6 text-[#2c6e49]'
+            dropdownClassName='left-0 right-0'
           />
         </div>
 
         <Button
-          variant="ghost"
-          className="mx-auto flex w-fit hover:bg-gray-50 rounded-full px-5 py-5 text-[#2c6e49]"
+          variant='ghost'
+          className='mx-auto flex w-fit hover:bg-gray-50 rounded-full px-5 py-5 text-[#2c6e49]'
           onClick={handleSaveToggle}
-          disabled={isSaving || authLoading || hasPendingSaveIntent}
+          disabled={
+            isSaving || authLoading || hasPendingSaveIntent
+          }
         >
           {hasPendingSaveIntent
-            ? "Guardando campaña..."
+            ? 'Guardando campaña...'
             : effectiveIsSaved
-              ? "Campaña guardada"
-              : "Guardar campaña"}
-          {authLoading && " (cargando...)"}
+              ? 'Campaña guardada'
+              : 'Guardar campaña'}
+          {authLoading && ' (cargando...)'}
           {effectiveIsSaved ? (
-            <BookmarkCheck className="ml-2 h-4 w-4 text-[#2c6e49]" />
+            <BookmarkCheck className='ml-2 h-4 w-4 text-[#2c6e49]' />
           ) : (
-            <Bookmark className="ml-2 h-4 w-4 text-[#2c6e49]" />
+            <Bookmark className='ml-2 h-4 w-4 text-[#2c6e49]' />
           )}
         </Button>
 
-        {latestDonors.length > 0 && (
-          <div className="border-t border-gray-200 pt-4 text-left">
-            <h3 className="mb-2 text-sm font-semibold text-[#2c6e49]">
+        {displayedDonors.length > 0 && (
+          <div className='border-t border-gray-200 pt-4 text-left'>
+            <h3 className='mb-2 text-sm font-semibold text-[#2c6e49]'>
               Últimos donadores
             </h3>
-            <ul className="space-y-1 text-[12.5px] leading-relaxed text-gray-600">
-              {latestDonors.slice(0, 3).map((donor) => (
+            <ul className='space-y-1 text-[12.5px] leading-relaxed text-gray-600'>
+              {displayedDonors.map((donor) => (
                 <li key={donor.id}>
-                  <span className="truncate">{donor.name}</span>
+                  <span className='truncate'>
+                    {donor.name}
+                  </span>
                 </li>
               ))}
             </ul>
-            <p className="mt-2 text-[12.5px] text-gray-500">
-              ...y muchos más, ¿tú?
+            <p className='mt-2 text-[12.5px] text-gray-500 italic'>
+              {donorsCount > 5
+                ? '...y muchos más, ¿tú?'
+                : '¡Tú también puedes apoyar!'}
             </p>
           </div>
         )}
       </div>
     </div>
-  );
+  )
 }

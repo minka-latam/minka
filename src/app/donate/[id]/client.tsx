@@ -24,7 +24,8 @@ import { CampaignShareMenu } from '@/components/share/CampaignShareMenu'
 
 // Key for storing pending donation in localStorage
 const PENDING_DONATION_KEY = 'minka_pending_donation'
-const PENDING_CARD_CHECKOUT_KEY = 'minka_pending_card_checkout'
+const PENDING_CARD_CHECKOUT_KEY =
+  'minka_pending_card_checkout'
 const CARD_CHECKOUT_MAX_AGE = 30 * 60 * 1000
 
 const DONATION_AMOUNTS_BS = [
@@ -141,7 +142,10 @@ export function DonatePageContent({
       )
     }
 
-    window.addEventListener('pageshow', resetCardRedirectState)
+    window.addEventListener(
+      'pageshow',
+      resetCardRedirectState,
+    )
     window.addEventListener('focus', resetCardRedirectState)
 
     return () => {
@@ -149,7 +153,10 @@ export function DonatePageContent({
         'pageshow',
         resetCardRedirectState,
       )
-      window.removeEventListener('focus', resetCardRedirectState)
+      window.removeEventListener(
+        'focus',
+        resetCardRedirectState,
+      )
     }
   }, [])
 
@@ -449,7 +456,8 @@ export function DonatePageContent({
 
         if (storedCheckout) {
           try {
-            const pendingCheckout = JSON.parse(storedCheckout)
+            const pendingCheckout =
+              JSON.parse(storedCheckout)
             const createdAt = new Date(
               pendingCheckout.createdAt,
             ).getTime()
@@ -724,17 +732,22 @@ export function DonatePageContent({
   const campaignTitle =
     campaign?.title ||
     'Nombre de la campaña sin especificar'
+
   const campaignImage =
-    campaign?.media && campaign.media.length > 0
-      ? campaign.media[0].media_url
-      : '/placeholder.svg'
+    campaign?.media?.find((m: any) => m.is_primary)
+      ?.media_url ||
+    campaign?.media?.[0]?.media_url ||
+    '/placeholder.svg'
+
   const organizer = {
     name:
       campaign?.organizer?.name || 'Nombre sin especificar',
     role: 'Organizador de campaña',
     location:
       formatRegionDisplayName(campaign?.location) ||
-      formatRegionDisplayName(campaign?.organizer?.location) ||
+      formatRegionDisplayName(
+        campaign?.organizer?.location,
+      ) ||
       'Ubicación no especificada',
     profilePicture:
       campaign?.organizer?.profilePicture || null,
@@ -835,13 +848,17 @@ export function DonatePageContent({
                   amount={totalAmount}
                   campaignId={campaignId}
                   onPaymentConfirmed={() => {
-                    localStorage.removeItem(PENDING_DONATION_KEY)
+                    localStorage.removeItem(
+                      PENDING_DONATION_KEY,
+                    )
                     setShowQRStep(false)
                     setQrAccessToken(null)
                     setShowSuccessModal(true)
                   }}
                   onCancel={() => {
-                    localStorage.removeItem(PENDING_DONATION_KEY)
+                    localStorage.removeItem(
+                      PENDING_DONATION_KEY,
+                    )
                     setDonationId(null)
                     setQrAccessToken(null)
                     setShowQRStep(false)
@@ -865,7 +882,9 @@ export function DonatePageContent({
                             : 'border-black hover:border-[#2c6e49] hover:bg-gray-50'
                         }`}
                         onClick={() =>
-                          handlePaymentMethodSelect(method.id)
+                          handlePaymentMethodSelect(
+                            method.id,
+                          )
                         }
                       >
                         <div className='flex items-start gap-4'>
@@ -886,7 +905,9 @@ export function DonatePageContent({
                               {method.id === 'card' ? (
                                 <>
                                   Tarjeta de crédito/débito{' '}
-                                  <strong>Internacional*</strong>
+                                  <strong>
+                                    Internacional*
+                                  </strong>
                                 </>
                               ) : (
                                 method.title
@@ -960,39 +981,54 @@ export function DonatePageContent({
                           className='block w-full pl-10 pr-3 py-3 border border-black rounded-lg focus:outline-none focus:ring-1 focus:ring-black focus:border-black text-black'
                           placeholder='0.00'
                           value={customAmount}
-                          onChange={handleCustomAmountChange}
+                          onChange={
+                            handleCustomAmountChange
+                          }
                         />
                       </div>
+
+                      <p className='mt-6'>
+                        <span className=' font-semibold'>
+                          Importante:
+                        </span>{' '}
+                        El tipo de cambio no es el oficial,
+                        sino el paralelo.
+                      </p>
                     </div>
 
-                    <div className='mt-24 mb-8'>
+                    <div className='mt-16 mb-8'>
                       <p className='text-sm text-black mb-3'>
-                        ¿Quieres también apoyar a Minka? La contribución voluntaria es
-                        opcional y ayuda a sostener la plataforma.
+                        ¿Quieres también apoyar a Minka? La
+                        contribución voluntaria es opcional
+                        y ayuda a sostener la plataforma.
                       </p>
 
                       <div className='flex flex-wrap gap-2 mb-4'>
                         <button
                           type='button'
-                          className={`px-3 py-2 text-sm rounded-md border ${
+                          className={`px-3 py-1 text-sm rounded-md border ${
                             tipMode === 'percentage'
                               ? 'bg-[#2c6e49] text-white border-[#2c6e49]'
                               : 'bg-white text-black border-black hover:bg-gray-100'
                           } transition-colors`}
                           onClick={() =>
-                            handleTipModeChange('percentage')
+                            handleTipModeChange(
+                              'percentage',
+                            )
                           }
                         >
                           Porcentaje
                         </button>
                         <button
                           type='button'
-                          className={`px-3 py-2 text-sm rounded-md border ${
+                          className={`px-3 py-1 text-sm rounded-md border ${
                             tipMode === 'custom'
                               ? 'bg-[#2c6e49] text-white border-[#2c6e49]'
                               : 'bg-white text-black border-black hover:bg-gray-100'
                           } transition-colors`}
-                          onClick={() => handleTipModeChange('custom')}
+                          onClick={() =>
+                            handleTipModeChange('custom')
+                          }
                         >
                           Cantidad personalizada
                         </button>
@@ -1003,7 +1039,9 @@ export function DonatePageContent({
                           <div className='relative h-8'>
                             <div
                               className='absolute -top-2 transform -translate-x-1/2 text-[#2c6e49] text-lg font-semibold'
-                              style={{ left: `${minkaContribution}%` }}
+                              style={{
+                                left: `${minkaContribution}%`,
+                              }}
                             >
                               {minkaContribution}%
                             </div>
@@ -1014,7 +1052,9 @@ export function DonatePageContent({
                             max='100'
                             step='1'
                             value={minkaContribution}
-                            onChange={handleMinkaContributionChange}
+                            onChange={
+                              handleMinkaContributionChange
+                            }
                             className='w-full h-2 cursor-pointer rounded-full appearance-none bg-gray-300 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[#2c6e49]'
                           />
                         </div>
@@ -1026,7 +1066,8 @@ export function DonatePageContent({
                             htmlFor='custom-tip'
                             className='block text-sm font-medium text-black'
                           >
-                            Ingresa el monto de tu contribución
+                            Ingresa el monto de tu
+                            contribución
                           </label>
                           <div className='relative'>
                             <span className='absolute inset-y-0 left-0 flex items-center pl-3 text-black'>
@@ -1038,7 +1079,9 @@ export function DonatePageContent({
                               className='block w-full pl-10 pr-3 py-2 border border-black rounded-lg focus:outline-none focus:ring-1 focus:ring-black focus:border-black text-black'
                               placeholder='0.00'
                               value={customTipAmount}
-                              onChange={handleCustomTipChange}
+                              onChange={
+                                handleCustomTipChange
+                              }
                             />
                           </div>
                         </div>
@@ -1051,7 +1094,9 @@ export function DonatePageContent({
                       </h3>
                       <div className='space-y-2 text-sm'>
                         <div className='flex justify-between gap-4'>
-                          <span className='text-gray-600'>Método</span>
+                          <span className='text-gray-600'>
+                            Método
+                          </span>
                           <span className='font-medium text-right'>
                             {paymentMethod === 'qr'
                               ? 'Código QR'
@@ -1059,9 +1104,12 @@ export function DonatePageContent({
                           </span>
                         </div>
                         <div className='flex justify-between gap-4'>
-                          <span className='text-gray-600'>Donación</span>
+                          <span className='text-gray-600'>
+                            Donación
+                          </span>
                           <span className='font-medium'>
-                            {currencyPrefix} {donationAmount.toFixed(2)}
+                            {currencyPrefix}{' '}
+                            {donationAmount.toFixed(2)}
                           </span>
                         </div>
                         <div className='flex justify-between gap-4'>
@@ -1069,13 +1117,17 @@ export function DonatePageContent({
                             Tip a Minka
                           </span>
                           <span className='font-medium'>
-                            {currencyPrefix} {platformFee.toFixed(2)}
+                            {currencyPrefix}{' '}
+                            {platformFee.toFixed(2)}
                           </span>
                         </div>
                         <div className='flex justify-between gap-4 border-t border-gray-200 pt-2 text-base'>
-                          <span className='font-semibold'>Total</span>
                           <span className='font-semibold'>
-                            {currencyPrefix} {totalAmount.toFixed(2)}
+                            Total
+                          </span>
+                          <span className='font-semibold'>
+                            {currencyPrefix}{' '}
+                            {totalAmount.toFixed(2)}
                           </span>
                         </div>
                       </div>
@@ -1083,8 +1135,12 @@ export function DonatePageContent({
 
                     {errorMessage && (
                       <div className='bg-red-50 border border-red-300 text-red-800 rounded-lg p-4 mb-4'>
-                        <p className='text-sm'>{errorMessage}</p>
-                        {errorMessage.includes('iniciar sesión') && (
+                        <p className='text-sm'>
+                          {errorMessage}
+                        </p>
+                        {errorMessage.includes(
+                          'iniciar sesión',
+                        ) && (
                           <Button
                             className='mt-2 bg-white border border-red-300 text-red-700 hover:bg-red-50'
                             onClick={handleLoginRedirect}
@@ -1097,7 +1153,9 @@ export function DonatePageContent({
 
                     {infoMessage && (
                       <div className='bg-blue-50 border border-blue-300 text-blue-800 rounded-lg p-4 mb-4'>
-                        <p className='text-sm'>{infoMessage}</p>
+                        <p className='text-sm'>
+                          {infoMessage}
+                        </p>
                       </div>
                     )}
                   </div>
@@ -1154,7 +1212,9 @@ export function DonatePageContent({
                     <Button
                       className='bg-[#2c6e49] hover:bg-[#1e4d33] text-white px-8 py-3 rounded-full'
                       onClick={handleConfirmDonation}
-                      disabled={!isPaymentFormReady || isSubmitting}
+                      disabled={
+                        !isPaymentFormReady || isSubmitting
+                      }
                     >
                       {isSubmitting
                         ? paymentMethod === 'card'
@@ -1286,7 +1346,9 @@ export function DonatePageContent({
                 <button
                   type='button'
                   className='w-full inline-flex justify-center border border-[#2c6e49] bg-white px-6 py-2 text-sm font-medium text-[#2c6e49] hover:bg-[#f5f7e9] focus:outline-none rounded-full'
-                  onClick={() => router.push('/all-campaigns')}
+                  onClick={() =>
+                    router.push('/all-campaigns')
+                  }
                 >
                   Explorar
                 </button>

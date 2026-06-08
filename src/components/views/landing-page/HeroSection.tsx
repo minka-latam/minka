@@ -32,7 +32,7 @@ export function HeroSection() {
               className="bg-white border-[#2c6e49] text-[#2c6e49] hover:bg-[#f5f7e9] text-xl w-full sm:w-auto rounded-full"
               size="lg"
             >
-              Crear Campañas
+              Crear Campaña
             </Button>
           </Link>
         </div>
