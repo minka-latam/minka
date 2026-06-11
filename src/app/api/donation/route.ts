@@ -6,6 +6,11 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { parseDonationCreateBody } from "@/lib/api/donation-dto";
 import { createBisaQrAccessToken } from "@/lib/bisa/qr-access-token";
+import {
+  generateDonationClaimToken,
+  hashDonationClaimToken,
+} from "@/lib/donations/claim-token";
+import { addMoney, roundMoney } from "@/lib/money";
 import { resolveTriptoCardCurrency } from "@/lib/payments/provider-validation";
 import {
   convertUsdToBob,
@@ -116,17 +121,18 @@ export async function POST(request: NextRequest) {
       ? await getOrCreateCampaignAnonymousProfileId(campaignId)
       : userId;
 
-    const donationAmount = Number(amount);
-    const donationTipAmount = Number(tipAmount);
+    const donationAmount = roundMoney(amount);
+    const rawDonationTipAmount = Number(tipAmount);
 
-    if (!Number.isFinite(donationTipAmount) || donationTipAmount < 0) {
+    if (!Number.isFinite(rawDonationTipAmount) || rawDonationTipAmount < 0) {
       return NextResponse.json(
         { error: "Valid tip amount is required" },
         { status: 400 }
       );
     }
 
-    const totalAmount = donationAmount + donationTipAmount;
+    const donationTipAmount = roundMoney(rawDonationTipAmount);
+    const totalAmount = addMoney(donationAmount, donationTipAmount);
     const isCardPayment = paymentMethod === "card";
     const cardCurrency = resolveTriptoCardCurrency(currency);
     const usdToBobExchangeRate = isCardPayment
@@ -138,7 +144,11 @@ export async function POST(request: NextRequest) {
     const storedTipAmount = usdToBobExchangeRate
       ? convertUsdToBob(donationTipAmount, usdToBobExchangeRate)
       : donationTipAmount;
-    const storedTotalAmount = storedDonationAmount + storedTipAmount;
+    const storedTotalAmount = addMoney(storedDonationAmount, storedTipAmount);
+    const claimToken = isAnonymous ? generateDonationClaimToken() : null;
+    const claimTokenHash = claimToken
+      ? hashDonationClaimToken(claimToken)
+      : null;
 
     // 1. Create donor for both cases (card y qr)
     const donation = await prisma.$transaction(async (tx) => {
@@ -161,6 +171,14 @@ export async function POST(request: NextRequest) {
         },
       })
 
+      if (claimTokenHash) {
+        await tx.$executeRaw`
+          update "donations"
+          set "claim_token_hash" = ${claimTokenHash}
+          where "id" = ${createdDonation.id}::uuid
+        `;
+      }
+
       if (usdToBobExchangeRate) {
         await tx.$executeRaw`
           update "donations"
@@ -181,6 +199,7 @@ export async function POST(request: NextRequest) {
       {
         success: true,
         donationId: donation.id,
+        claimToken,
         qrAccessToken:
           paymentMethod === "qr"
             ? createBisaQrAccessToken({

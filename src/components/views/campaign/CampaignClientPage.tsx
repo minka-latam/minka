@@ -31,6 +31,12 @@ type LatestDonor = {
   amount: number
 }
 
+type GalleryItem = {
+  url: string
+  type: 'image' | 'video' | 'youtube'
+  id: string
+}
+
 // Helper function to format campaign data for components
 function formatCampaignData(campaign: any) {
   // Format gallery images
@@ -42,12 +48,34 @@ function formatCampaignData(campaign: any) {
       })
     : []
 
-  const galleryItems =
+  const galleryItems: GalleryItem[] =
     sortedMedia.map((item: any) => ({
       url: item.media_url,
       type: item.type as 'image' | 'video',
       id: item.id,
     })) || []
+
+  const youtubeUrls = Array.from(
+    new Set(
+      [
+        ...(Array.isArray(campaign.youtube_urls)
+          ? campaign.youtube_urls
+          : []),
+        campaign.youtube_url,
+      ].filter(
+        (url): url is string =>
+          typeof url === 'string' && url.trim().length > 0,
+      ),
+    ),
+  )
+
+  youtubeUrls.forEach((url, index) => {
+    galleryItems.push({
+      url,
+      type: 'youtube',
+      id: `youtube-${index}-${url}`,
+    })
+  })
 
   // Format updates from campaign data
   const formattedUpdates: Array<{
@@ -586,6 +614,9 @@ export default function CampaignClientPage({
 
   // Format campaign data for components
   const formattedData = formatCampaignData(campaign)
+  const primaryCampaignImageUrl = formattedData.images.find(
+    (item) => item.type !== 'youtube',
+  )?.url
 
   return (
     <div className='flex flex-col min-h-screen'>
@@ -607,6 +638,7 @@ export default function CampaignClientPage({
             {/* Campaign Gallery */}
             <CampaignGallery
               images={formattedData.images}
+              campaignTitle={formattedData.title}
             />
 
             {/* Tabs for mobile view */}
@@ -634,7 +666,7 @@ export default function CampaignClientPage({
                     formattedData.description
                   }
                   campaignImageUrl={
-                    formattedData.images[0]?.url
+                    primaryCampaignImageUrl
                   }
                   campaignId={id}
                   latestDonors={latestDonors}
@@ -758,7 +790,7 @@ export default function CampaignClientPage({
                   formattedData.description
                 }
                 campaignImageUrl={
-                  formattedData.images[0]?.url
+                  primaryCampaignImageUrl
                 }
                 campaignId={id}
                 latestDonors={latestDonors}

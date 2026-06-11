@@ -9,6 +9,10 @@ function getRegistrationStatus(registered?: string): boolean {
   return registered === "true";
 }
 
+function getDonationClaimStatus(donationClaim?: string): boolean {
+  return donationClaim === "1" || donationClaim === "true";
+}
+
 // Define proper type for page props according to Next.js 15 standards
 export interface PageProps {
   params: Promise<Record<string, string>>;
@@ -19,7 +23,9 @@ export default async function SignInPage({ searchParams }: PageProps) {
   // Get registration status directly from the param
   const params = await searchParams;
   const registered = params.registered as string | undefined;
+  const donationClaim = params.donationClaim as string | undefined;
   const isRegistered = getRegistrationStatus(registered);
+  const hasDonationClaim = getDonationClaimStatus(donationClaim);
 
   return (
     <div className="w-full">
@@ -38,6 +44,13 @@ export default async function SignInPage({ searchParams }: PageProps) {
             electrónico para confirmarla antes de iniciar sesión.
           </div>
         </>
+      )}
+
+      {hasDonationClaim && (
+        <div className="mb-6 p-4 bg-[#f5f7e9] text-[#1f4d33] rounded-md border border-[#2c6e49]/20">
+          Inicia sesión para vincular automáticamente tu donación reciente a tu
+          cuenta y mostrar tu nombre como donador si corresponde.
+        </div>
       )}
 
       <Suspense

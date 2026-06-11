@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 
+import { multiplyMoney } from "@/lib/money";
 import { prisma } from "@/lib/prisma";
 
 export const DEFAULT_USD_TO_BOB_EXCHANGE_RATE = 6.96;
@@ -24,7 +25,7 @@ export function normalizeExchangeRate(value: unknown) {
 }
 
 export function convertUsdToBob(amountUsd: number, exchangeRate: number) {
-  return Number((amountUsd * exchangeRate).toFixed(2));
+  return multiplyMoney(amountUsd, exchangeRate);
 }
 
 export async function getUsdToBobExchangeRate(db: Queryable = prisma) {

@@ -1,6 +1,7 @@
 ﻿import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { bisaClient } from "@/lib/bisa/client";
+import { addMoney, roundMoney } from "@/lib/money";
 import {
   canAccessBisaDonation,
   isPendingBisaDonation,
@@ -58,9 +59,9 @@ export async function POST(request: NextRequest) {
     const bisaSuccess = await bisaClient.disableQR(donation.bisaAlias);
 
     const cancelReason = reason || "user_cancelled";
-    const tipAmount = Number(donation.tip_amount || 0);
-    const payableAmount = Number(
-      donation.total_amount ?? Number(donation.amount) + tipAmount
+    const tipAmount = roundMoney(donation.tip_amount || 0);
+    const payableAmount = roundMoney(
+      donation.total_amount ?? addMoney(donation.amount, tipAmount)
     );
 
     if (!bisaSuccess) {

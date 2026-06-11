@@ -2,9 +2,14 @@ import { NextResponse } from 'next/server'
 import { TriptoClient } from '@/lib/tripto/client'
 import { prisma as db } from '@/lib/prisma'
 import { getOrCreateCampaignAnonymousProfileId } from '@/lib/donations/anonymous-donor'
+import {
+  generateDonationClaimToken,
+  hashDonationClaimToken,
+} from '@/lib/donations/claim-token'
 import { canReceiveCampaignPayments } from '@/lib/campaigns/visibility'
 import { parseDonationCreateBody } from '@/lib/api/donation-dto'
 import { resolveTriptoCardCurrency } from '@/lib/payments/provider-validation'
+import { addMoney, roundMoney } from '@/lib/money'
 import {
   convertUsdToBob,
   getUsdToBobExchangeRate,
@@ -94,14 +99,14 @@ export async function POST(req: Request) {
       )
     }
 
-    const donationAmountUsd = Number(amount)
-    const tipAmountUsd = Number(tipAmount)
+    const rawDonationAmountUsd = Number(amount)
+    const rawTipAmountUsd = Number(tipAmount)
 
     if (
-      !Number.isFinite(donationAmountUsd) ||
-      donationAmountUsd <= 0 ||
-      !Number.isFinite(tipAmountUsd) ||
-      tipAmountUsd < 0
+      !Number.isFinite(rawDonationAmountUsd) ||
+      rawDonationAmountUsd <= 0 ||
+      !Number.isFinite(rawTipAmountUsd) ||
+      rawTipAmountUsd < 0
     ) {
       return NextResponse.json(
         {
@@ -112,7 +117,12 @@ export async function POST(req: Request) {
       )
     }
 
-    const totalAmountUsd = donationAmountUsd + tipAmountUsd
+    const donationAmountUsd = roundMoney(rawDonationAmountUsd)
+    const tipAmountUsd = roundMoney(rawTipAmountUsd)
+    const totalAmountUsd = addMoney(
+      donationAmountUsd,
+      tipAmountUsd,
+    )
     const expectedAmountMinor = Math.round(totalAmountUsd * 100)
     const cardCurrency = resolveTriptoCardCurrency(currency)
     const usdToBobExchangeRate = await getUsdToBobExchangeRate()
@@ -124,7 +134,16 @@ export async function POST(req: Request) {
       tipAmountUsd,
       usdToBobExchangeRate,
     )
-    const totalAmountBob = donationAmountBob + tipAmountBob
+    const totalAmountBob = addMoney(
+      donationAmountBob,
+      tipAmountBob,
+    )
+    const claimToken = isAnonymous
+      ? generateDonationClaimToken()
+      : null
+    const claimTokenHash = claimToken
+      ? hashDonationClaimToken(claimToken)
+      : null
 
     const pendingDonation = await db.$transaction(async (tx) => {
       const donation = await tx.donation.create({
@@ -152,7 +171,8 @@ export async function POST(req: Request) {
           "provider_amount" = ${donationAmountUsd},
           "provider_tip_amount" = ${tipAmountUsd},
           "provider_total_amount" = ${totalAmountUsd},
-          "provider_currency" = ${cardCurrency}
+          "provider_currency" = ${cardCurrency},
+          "claim_token_hash" = ${claimTokenHash}
         where "id" = ${donation.id}::uuid
       `
 
@@ -236,6 +256,7 @@ export async function POST(req: Request) {
       success: true,
       url: result.url,
       donationId: pendingDonation.id,
+      claimToken,
     })
   } catch (err: any) {
     console.error('❌ Error in /api/tripto/payment:', err)

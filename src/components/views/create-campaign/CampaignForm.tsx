@@ -14,6 +14,7 @@ import {
   Play,
   Search,
   Building2,
+  Info,
 } from "lucide-react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
@@ -60,6 +61,20 @@ import {
   getCampaignImageFiles,
   validateCampaignImageFile,
 } from "@/lib/uploads/image-upload-validation";
+
+const LOCAL_DONATION_FEE_RATE = 0.05;
+const INTERNATIONAL_DONATION_FEE_RATE = 0.11;
+
+function formatBobAmount(amount: number) {
+  return `Bs. ${amount.toLocaleString("es-BO", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+}
+
+function roundCurrency(amount: number) {
+  return Math.round((amount + Number.EPSILON) * 100) / 100;
+}
 
 // Campaign Preview component
 const CampaignPreview = ({
@@ -1421,6 +1436,19 @@ export function CampaignForm() {
     return true;
   };
 
+  const goalAmountNumber =
+    Number(removeNumberSeparators(String(formData.goalAmount || ""))) || 0;
+  const estimatedLocalFee = roundCurrency(
+    goalAmountNumber * LOCAL_DONATION_FEE_RATE,
+  );
+  const estimatedInternationalFee = roundCurrency(
+    goalAmountNumber * INTERNATIONAL_DONATION_FEE_RATE,
+  );
+  const estimatedLocalNet = roundCurrency(goalAmountNumber - estimatedLocalFee);
+  const estimatedInternationalNet = roundCurrency(
+    goalAmountNumber - estimatedInternationalFee,
+  );
+
   // Add style block for transitions at the beginning of the component return statement
   return (
     <div className="campaign-form">
@@ -1637,6 +1665,22 @@ export function CampaignForm() {
                       <p className="text-sm text-gray-500">
                         Ingresa el monto en bolivianos. Máximo Bs. 1.000.000.
                       </p>
+                      <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
+                        <div className="flex items-start gap-2">
+                          <Info className="mt-0.5 h-4 w-4 shrink-0" />
+                          <div className="space-y-2">
+                            <p className="font-semibold">
+                              Toma en cuenta la comisión antes de fijar tu meta.
+                            </p>
+                            <p>
+                              Minka descuenta una <b>comisión</b> antes de transferir
+                              los fondos al beneficiario: <b>5%</b> en donaciones
+                              locales por QR y <b>11%</b> en donaciones internacionales
+                              por tarjeta.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
                       {formErrors.goalAmount && (
                         <div className="error-text">
                           {formErrors.goalAmount}
@@ -2390,6 +2434,10 @@ export function CampaignForm() {
                       confianza, o publicarla directamente mientras el equipo de
                       Minka la revisa.
                     </p>
+                      <p className="text-gray-600 mb-6 text-center ">
+                      <span className="font-semibold"> No olvides: </span>
+                      revisar nuestras Preguntas Frecuentes con consejos para mejorar tu campaña, aumentar la visibilidad, conocer sobre la comisión de Minka, etc.
+                      </p>
                     <div className="mb-6 rounded-lg border border-yellow-200 bg-yellow-50 p-4 text-sm text-yellow-900">
                       Al publicar, tu campaña quedará visible de inmediato y el
                       equipo de Minka la revisará para confirmar que todo esté

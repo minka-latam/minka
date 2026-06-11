@@ -59,6 +59,8 @@ export interface Campaign {
   donor_count: number;
   percentage_funded: number;
   days_remaining: number;
+  youtube_url?: string | null;
+  youtube_urls?: string[];
   verification_status?: boolean;
   created_at?: string;
   campaign_status?: string;

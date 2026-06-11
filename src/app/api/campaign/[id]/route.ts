@@ -72,6 +72,8 @@ interface Campaign {
   donor_count: number;
   percentage_funded: number;
   days_remaining: number;
+  youtube_url?: string | null;
+  youtube_urls?: string[];
   verification_status?: boolean;
   created_at?: string;
   campaign_status?: string;
@@ -143,6 +145,8 @@ export async function GET(
         donor_count,
         percentage_funded,
         days_remaining,
+        youtube_url,
+        youtube_urls,
         verification_status,
         created_at,
         campaign_status,
@@ -256,6 +260,8 @@ export async function GET(
       donor_count: campaign.donor_count,
       percentage_funded: campaign.percentage_funded,
       days_remaining: campaign.days_remaining,
+      youtube_url: campaign.youtube_url,
+      youtube_urls: campaign.youtube_urls,
       verification_status: campaign.verification_status,
       created_at: campaign.created_at,
       campaign_status: campaign.campaign_status,

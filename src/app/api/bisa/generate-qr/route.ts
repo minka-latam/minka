@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { bisaClient } from "@/lib/bisa/client";
 import { canReceiveCampaignPayments } from "@/lib/campaigns/visibility";
+import { addMoney, roundMoney } from "@/lib/money";
 import {
   canAccessBisaDonation,
   isPendingBisaDonation,
@@ -89,9 +90,11 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    const baseAmount = Number(donation.amount);
-    const tipAmount = Number(donation.tip_amount || 0);
-    const payableAmount = Number(donation.total_amount || baseAmount + tipAmount);
+    const baseAmount = roundMoney(donation.amount);
+    const tipAmount = roundMoney(donation.tip_amount || 0);
+    const payableAmount = roundMoney(
+      donation.total_amount ?? addMoney(baseAmount, tipAmount),
+    );
 
     // Generate Alias: MINKA-{donationId short}-{timestamp}
     // Taking last 8 chars of donationId to ensure uniqueness but keep it short enough

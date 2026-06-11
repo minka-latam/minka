@@ -18,6 +18,7 @@ import {
   TRIPTO_OPEN_AMOUNT_TOLERANCE,
   validateProviderPayment,
 } from '@/lib/payments/provider-validation'
+import { roundMoney } from '@/lib/money'
 
 const TRIPTO_SIGNATURE_TOLERANCE_SECONDS = Number(
   process.env.TRIPTO_SIGNATURE_TOLERANCE_SECONDS || 300,
@@ -186,11 +187,11 @@ export async function POST(req: Request) {
     const providerTotalAmount =
       providerAmountMinor == null
         ? null
-        : providerAmountMinor / 100
+        : roundMoney(providerAmountMinor / 100)
     const loggedProviderAmount = providerTotalAmount ?? 0
     const loggedProviderCurrency = currency || 'UNKNOWN'
 
-    const tipAmount = toNumber(metadata.tipAmount, 0)
+    const tipAmount = roundMoney(toNumber(metadata.tipAmount, 0))
 
     const isCompletedEvent = event === 'payment.completed'
     const isFailedEvent = event === 'payment.failed'
@@ -357,7 +358,6 @@ export async function POST(req: Request) {
                 paymentStatus: PaymentStatus.failed,
                 paymentProvider: 'tripto',
                 paymentMethod: PaymentMethod.credit_card,
-                currency: expectedCurrencyForWrite,
                 triptoPaymentId: paymentId,
                 triptoSessionId: data.stripeSessionId
                   ? String(data.stripeSessionId)
@@ -377,24 +377,33 @@ export async function POST(req: Request) {
           return
         }
 
+        const storedTipAmount = roundMoney(
+          toNumber(metadata.storedTipAmountBob, tipAmount),
+        )
+        const storedTotalAmount = roundMoney(
+          toNumber(
+            metadata.storedTotalAmountBob,
+            expectedDonationTotal(donation),
+          ),
+        )
+
         const completion = await completeDonationAccounting(
           tx,
           {
             donationId: donation.id,
-            tipAmount,
+            tipAmount: storedTipAmount,
             donationUpdate: {
               paymentProvider: 'tripto',
               paymentMethod: PaymentMethod.credit_card,
-              currency: expectedCurrencyForWrite,
               triptoPaymentId: paymentId,
               triptoSessionId: data.stripeSessionId
                 ? String(data.stripeSessionId)
                 : null,
               // Persist breakdown if not already present on the pending row
               tip_amount:
-                donation.tip_amount ?? (tipAmount || null),
+                donation.tip_amount ?? (storedTipAmount || null),
               total_amount:
-                donation.total_amount ?? expectedAmount,
+                donation.total_amount ?? storedTotalAmount,
             },
           },
         )
@@ -416,7 +425,6 @@ export async function POST(req: Request) {
             paymentStatus: PaymentStatus.failed,
             paymentProvider: 'tripto',
             paymentMethod: PaymentMethod.credit_card,
-            currency: loggedProviderCurrency,
             triptoPaymentId: paymentId,
             triptoSessionId: data.stripeSessionId
               ? String(data.stripeSessionId)

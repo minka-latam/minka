@@ -46,9 +46,9 @@ model Campaign {
   description              String
   beneficiariesDescription String                @map("beneficiaries_description")
   category                 CampaignCategory
-  goalAmount               Decimal               @map("goal_amount") @db.Decimal
-  collectedAmount          Decimal               @default(0) @map("collected_amount") @db.Decimal
-  tipCollected             Decimal               @default(0) @map("tip_collected") @db.Decimal
+  goalAmount               Decimal               @map("goal_amount") @db.Decimal(12, 2)
+  collectedAmount          Decimal               @default(0) @map("collected_amount") @db.Decimal(12, 2)
+  tipCollected             Decimal               @default(0) @map("tip_collected") @db.Decimal(12, 2)
   donorCount               Int                   @default(0) @map("donor_count")
   percentageFunded         Float                 @map("percentage_funded")
   daysRemaining            Int                   @map("days_remaining")
@@ -139,7 +139,7 @@ model Donation {
   id                  String         @id @default(uuid()) @db.Uuid
   campaignId          String         @map("campaign_id") @db.Uuid
   donorId             String         @map("donor_id") @db.Uuid
-  amount              Decimal        @db.Decimal
+  amount              Decimal        @db.Decimal(12, 2)
   predefinedAmount    Boolean        @default(true) @map("predefined_amount")
   paymentMethod       PaymentMethod  @map("payment_method")
   paymentStatus       PaymentStatus  @default(pending) @map("payment_status")
@@ -153,13 +153,15 @@ model Donation {
   triptoPaymentId     String?        @map("tripto_payment_id")
   triptoCheckoutUrl   String?        @map("tripto_checkout_url")
   triptoSessionId     String?        @map("tripto_session_id")
-  tip_amount          Decimal?       @db.Decimal
-  total_amount        Decimal?       @db.Decimal
+  tip_amount          Decimal?       @db.Decimal(12, 2)
+  total_amount        Decimal?       @db.Decimal(12, 2)
   exchangeRate        Decimal?       @map("exchange_rate") @db.Decimal(10, 4)
-  providerAmount      Decimal?       @map("provider_amount") @db.Decimal
-  providerTipAmount   Decimal?       @map("provider_tip_amount") @db.Decimal
-  providerTotalAmount Decimal?       @map("provider_total_amount") @db.Decimal
+  providerAmount      Decimal?       @map("provider_amount") @db.Decimal(12, 2)
+  providerTipAmount   Decimal?       @map("provider_tip_amount") @db.Decimal(12, 2)
+  providerTotalAmount Decimal?       @map("provider_total_amount") @db.Decimal(12, 2)
   providerCurrency    String?        @map("provider_currency")
+  claimTokenHash      String?        @map("claim_token_hash")
+  claimedAt           DateTime?      @map("claimed_at") @db.Timestamp(6)
   bisaAlias           String?        @map("bisa_alias")
   bisaPayerAccount    String?        @map("bisa_payer_account")
   bisaPayerDocument   String?        @map("bisa_payer_document")
@@ -191,8 +193,8 @@ model PaymentLog {
   paymentmethod   PaymentMethod?
   paymentid       String
   status          String
-  amount          Decimal         @db.Decimal
-  tipamount       Decimal?        @db.Decimal
+  amount          Decimal         @db.Decimal(12, 2)
+  tipamount       Decimal?        @db.Decimal(12, 2)
   currency        String
   metadata        String?
   campaignid      String?         @db.Uuid
@@ -319,7 +321,7 @@ model FundTransfer {
   accountHolderName     String               @map("account_holder_name")
   bankName              String               @map("bank_name")
   accountNumber         String               @map("account_number")
-  amount                Decimal              @db.Decimal
+  amount                Decimal              @db.Decimal(12, 2)
   status                TransferStatus       @default(processing)
   transferDate          DateTime?            @map("transfer_date") @db.Timestamp(6)
   requestedById         String               @map("requested_by_id") @db.Uuid

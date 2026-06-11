@@ -69,19 +69,23 @@ export async function completeDonationAccounting(
     return { completedNow: false };
   }
 
+  const donationAmount = new Prisma.Decimal(
+    Number(donation.amount).toFixed(2),
+  );
   const donationTipAmount = new Prisma.Decimal(
-    donation.tip_amount ?? tipAmount ?? 0,
+    Number(donation.tip_amount ?? tipAmount ?? 0).toFixed(2),
   );
   const donationTotalAmount = new Prisma.Decimal(
-    donation.total_amount ??
-      new Prisma.Decimal(donation.amount).plus(donationTipAmount),
+    Number(
+      donation.total_amount ?? donationAmount.plus(donationTipAmount),
+    ).toFixed(2),
   );
 
   const updatedCampaign = await tx.campaign.update({
     where: { id: donation.campaignId },
     data: {
       collectedAmount: {
-        increment: donation.amount,
+        increment: donationAmount,
       },
       tipCollected: {
         increment: donationTipAmount,

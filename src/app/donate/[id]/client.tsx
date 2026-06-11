@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation'
 import { useRouter } from 'next/navigation'
 import type { User } from '@supabase/supabase-js'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
   ArrowRight,
   QrCode,
@@ -21,12 +22,16 @@ import { QRPaymentStep } from '@/components/donate/QRPaymentStep'
 import { toast } from '@/components/ui/use-toast'
 import { formatRegionDisplayName } from '@/lib/region-utils'
 import { CampaignShareMenu } from '@/components/share/CampaignShareMenu'
+import {
+  DONATION_CLAIM_INTENT_KEY,
+  type DonationClaimIntent,
+} from '@/constants/donation-claim'
+import { addMoney, roundMoney } from '@/lib/money'
 
 // Key for storing pending donation in localStorage
 const PENDING_DONATION_KEY = 'minka_pending_donation'
 const PENDING_CARD_CHECKOUT_KEY =
   'minka_pending_card_checkout'
-const CARD_CHECKOUT_MAX_AGE = 30 * 60 * 1000
 
 const DONATION_AMOUNTS_BS = [
   { value: 50 },
@@ -106,6 +111,10 @@ export function DonatePageContent({
     string | null
   >(null)
   const [reviewState, setReviewState] = useState(false)
+  const [wantsAccountAfterDonation, setWantsAccountAfterDonation] =
+    useState(false)
+  const [donationClaimIntent, setDonationClaimIntent] =
+    useState<DonationClaimIntent | null>(null)
 
   // State for error notification
   const [errorMessage, setErrorMessage] = useState<
@@ -247,9 +256,9 @@ export function DonatePageContent({
     (customAmount ? Number.parseFloat(customAmount) : 0)
   const platformFee =
     tipMode === 'percentage'
-      ? donationAmount * (minkaContribution / 100)
-      : Number.parseFloat(customTipAmount) || 0 // User-selected percentage or custom amount for platform fee
-  const totalAmount = donationAmount + platformFee
+      ? roundMoney(donationAmount * (minkaContribution / 100))
+      : roundMoney(Number.parseFloat(customTipAmount) || 0)
+  const totalAmount = addMoney(donationAmount, platformFee)
   const currencyPrefix =
     paymentMethod === 'card' ? '$' : 'Bs.'
   const donationAmounts =
@@ -262,6 +271,127 @@ export function DonatePageContent({
     donationAmount <= 50000
   const isPaymentFormReady =
     Boolean(paymentMethod) && isDonationAmountValid
+
+  const saveDonationClaimIntent = (
+    intent: DonationClaimIntent | null,
+  ) => {
+    if (!intent || !intent.donationId || !intent.claimToken)
+      return null
+
+    localStorage.setItem(
+      DONATION_CLAIM_INTENT_KEY,
+      JSON.stringify(intent),
+    )
+    setDonationClaimIntent(intent)
+    return intent
+  }
+
+  const getStoredDonationClaimIntent = (
+    completedDonationId: string,
+  ): DonationClaimIntent | null => {
+    const readStored = (key: string) => {
+      try {
+        const raw = key.startsWith('session:')
+          ? sessionStorage.getItem(key.replace('session:', ''))
+          : localStorage.getItem(key)
+        return raw ? JSON.parse(raw) : null
+      } catch {
+        return null
+      }
+    }
+
+    const pendingCardCheckout = readStored(
+      `session:${PENDING_CARD_CHECKOUT_KEY}`,
+    )
+    if (
+      pendingCardCheckout?.donationId === completedDonationId &&
+      pendingCardCheckout?.claimToken
+    ) {
+      return {
+        donationId: completedDonationId,
+        claimToken: pendingCardCheckout.claimToken,
+        campaignId,
+        createdAt:
+          pendingCardCheckout.createdAt ||
+          new Date().toISOString(),
+      }
+    }
+
+    const pendingDonation = readStored(PENDING_DONATION_KEY)
+    if (
+      pendingDonation?.donationId === completedDonationId &&
+      pendingDonation?.claimToken
+    ) {
+      return {
+        donationId: completedDonationId,
+        claimToken: pendingDonation.claimToken,
+        campaignId,
+        createdAt:
+          pendingDonation.createdAt ||
+          new Date().toISOString(),
+      }
+    }
+
+    return donationClaimIntent?.donationId === completedDonationId
+      ? donationClaimIntent
+      : null
+  }
+
+  const shouldRedirectToSignupAfterDonation = (
+    completedDonationId: string,
+  ) => {
+    try {
+      const storedCheckout = sessionStorage.getItem(
+        PENDING_CARD_CHECKOUT_KEY,
+      )
+      if (storedCheckout) {
+        const pendingCheckout = JSON.parse(storedCheckout)
+        if (pendingCheckout?.donationId === completedDonationId) {
+          return Boolean(
+            pendingCheckout.wantsAccountAfterDonation,
+          )
+        }
+      }
+
+      const storedDonation = localStorage.getItem(
+        PENDING_DONATION_KEY,
+      )
+      if (storedDonation) {
+        const pendingDonation = JSON.parse(storedDonation)
+        if (pendingDonation?.donationId === completedDonationId) {
+          return Boolean(
+            pendingDonation.wantsAccountAfterDonation,
+          )
+        }
+      }
+    } catch {
+      return wantsAccountAfterDonation
+    }
+
+    return wantsAccountAfterDonation
+  }
+
+  const finishSuccessfulDonation = (completedDonationId: string) => {
+    const intent = getStoredDonationClaimIntent(completedDonationId)
+
+    if (!user && intent) {
+      saveDonationClaimIntent(intent)
+    }
+
+    sessionStorage.removeItem(PENDING_CARD_CHECKOUT_KEY)
+    localStorage.removeItem(PENDING_DONATION_KEY)
+
+    if (
+      !user &&
+      intent &&
+      shouldRedirectToSignupAfterDonation(completedDonationId)
+    ) {
+      router.push('/sign-up?donationClaim=1')
+      return
+    }
+
+    setShowSuccessModal(true)
+  }
 
   //Poll by donationId
   const pollAbortRef = useRef<AbortController | null>(null)
@@ -331,7 +461,6 @@ export function DonatePageContent({
 
           if (paymentStatus === 'completed') {
             setInfoMessage(null)
-            setShowSuccessModal(true)
             setIsSubmitting(false)
 
             window.history.replaceState(
@@ -339,6 +468,7 @@ export function DonatePageContent({
               '',
               window.location.pathname,
             )
+            finishSuccessfulDonation(donationId)
             return
           }
 
@@ -449,42 +579,9 @@ export function DonatePageContent({
           donorId: user?.id ?? null,
           amount: donationAmount,
           tipAmount: platformFee,
+          wantsAccountAfterDonation,
         }
-        const storedCheckout = sessionStorage.getItem(
-          PENDING_CARD_CHECKOUT_KEY,
-        )
-
-        if (storedCheckout) {
-          try {
-            const pendingCheckout =
-              JSON.parse(storedCheckout)
-            const createdAt = new Date(
-              pendingCheckout.createdAt,
-            ).getTime()
-            const isFresh =
-              Number.isFinite(createdAt) &&
-              Date.now() - createdAt < CARD_CHECKOUT_MAX_AGE
-            const isSameCheckout =
-              pendingCheckout.campaignId ===
-                checkoutSignature.campaignId &&
-              pendingCheckout.donorId ===
-                checkoutSignature.donorId &&
-              Number(pendingCheckout.amount) ===
-                checkoutSignature.amount &&
-              Number(pendingCheckout.tipAmount) ===
-                checkoutSignature.tipAmount &&
-              pendingCheckout.url
-
-            if (isFresh && isSameCheckout) {
-              window.location.href = pendingCheckout.url
-              return
-            }
-          } catch {
-            sessionStorage.removeItem(
-              PENDING_CARD_CHECKOUT_KEY,
-            )
-          }
-        }
+        sessionStorage.removeItem(PENDING_CARD_CHECKOUT_KEY)
 
         setInfoMessage(
           'Estamos redirigiendo a la plataforma segura de pago por tarjeta, espera por favor.',
@@ -541,6 +638,8 @@ export function DonatePageContent({
             ...checkoutSignature,
             url: data.url,
             donationId: data.donationId ?? null,
+            claimToken: data.claimToken ?? null,
+            wantsAccountAfterDonation,
             createdAt: new Date().toISOString(),
           }),
         )
@@ -615,7 +714,17 @@ export function DonatePageContent({
             tipAmount: platformFee,
             paymentMethod: selectedMethod,
             qrAccessToken: data.qrAccessToken ?? null,
+            claimToken: data.claimToken ?? null,
+            wantsAccountAfterDonation,
             createdAt: new Date().toISOString(),
+          }
+          if (data.claimToken) {
+            setDonationClaimIntent({
+              donationId: data.donationId,
+              claimToken: data.claimToken,
+              campaignId,
+              createdAt: pendingDonation.createdAt,
+            })
           }
           setQrAccessToken(data.qrAccessToken ?? null)
           localStorage.setItem(
@@ -656,6 +765,20 @@ export function DonatePageContent({
   const handleCloseSuccessModal = () => {
     setShowSuccessModal(false)
     router.push('/')
+  }
+
+  const handleCreateAccountAfterDonation = () => {
+    const currentDonationId =
+      donationId || activeDonationIdRef.current || activeDonationId
+    const intent = currentDonationId
+      ? getStoredDonationClaimIntent(currentDonationId)
+      : donationClaimIntent
+
+    if (intent) {
+      saveDonationClaimIntent(intent)
+    }
+
+    router.push('/sign-up?donationClaim=1')
   }
 
   // Handle slider change for Minka contribution
@@ -848,12 +971,9 @@ export function DonatePageContent({
                   amount={totalAmount}
                   campaignId={campaignId}
                   onPaymentConfirmed={() => {
-                    localStorage.removeItem(
-                      PENDING_DONATION_KEY,
-                    )
                     setShowQRStep(false)
                     setQrAccessToken(null)
-                    setShowSuccessModal(true)
+                    finishSuccessfulDonation(donationId)
                   }}
                   onCancel={() => {
                     localStorage.removeItem(
@@ -1133,6 +1253,35 @@ export function DonatePageContent({
                       </div>
                     </div>
 
+                    {!user && (
+                      <div className='mb-6 rounded-lg border border-[#2c6e49]/25 bg-[#f5f7e9] p-4'>
+                        <label
+                          htmlFor='create-account-after-donation'
+                          className='flex items-start gap-3 cursor-pointer'
+                        >
+                          <Checkbox
+                            id='create-account-after-donation'
+                            checked={wantsAccountAfterDonation}
+                            onCheckedChange={(checked) =>
+                              setWantsAccountAfterDonation(
+                                checked === true,
+                              )
+                            }
+                            className='mt-1'
+                          />
+                          <span className='text-sm text-gray-800'>
+                            <span className='font-semibold text-[#2c6e49]'>
+                              ¿Quieres que tu nombre salga luego de donar?
+                            </span>{' '}
+                            Crea tu cuenta después de pagar para vincular esta
+                            donación, aparecer en últimos donadores, seguir tu
+                            historial, guardar campañas favoritas y recibir
+                            notificaciones en Minka.
+                          </span>
+                        </label>
+                      </div>
+                    )}
+
                     {errorMessage && (
                       <div className='bg-red-50 border border-red-300 text-red-800 rounded-lg p-4 mb-4'>
                         <p className='text-sm'>
@@ -1337,7 +1486,7 @@ export function DonatePageContent({
                   <button
                     type='button'
                     className='w-full inline-flex justify-center border-0 bg-[#2c6e49] px-6 py-2 text-sm font-medium text-white hover:bg-[#1e4d33] focus:outline-none rounded-full'
-                    onClick={() => router.push('/sign-up')}
+                    onClick={handleCreateAccountAfterDonation}
                   >
                     Crear mi cuenta
                   </button>

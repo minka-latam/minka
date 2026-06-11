@@ -11,6 +11,10 @@ import { createBrowserClient } from '@supabase/ssr'
 import type { User, Session } from '@supabase/supabase-js'
 import { useRouter } from 'next/navigation'
 import { toast } from '@/components/ui/use-toast'
+import {
+  DONATION_CLAIM_INTENT_KEY,
+  type DonationClaimIntent,
+} from '@/constants/donation-claim'
 import { getSafeAuthRedirectPath } from '@/lib/auth-redirect'
 
 export interface Profile {
@@ -76,6 +80,7 @@ export function AuthProvider({
   )
   const [isLoading, setIsLoading] = useState(true)
   const profileFetchInProgress = useRef(false)
+  const donationClaimInProgress = useRef(false)
   const router = useRouter()
 
   const supabase = createBrowserClient(
@@ -187,6 +192,70 @@ export function AuthProvider({
     }
   }
 
+  const claimPendingDonation = async () => {
+    if (
+      typeof window === 'undefined' ||
+      donationClaimInProgress.current
+    ) {
+      return
+    }
+
+    const rawIntent = localStorage.getItem(
+      DONATION_CLAIM_INTENT_KEY,
+    )
+
+    if (!rawIntent) return
+
+    let intent: DonationClaimIntent
+
+    try {
+      intent = JSON.parse(rawIntent)
+    } catch {
+      localStorage.removeItem(DONATION_CLAIM_INTENT_KEY)
+      return
+    }
+
+    if (!intent.donationId || !intent.claimToken) {
+      localStorage.removeItem(DONATION_CLAIM_INTENT_KEY)
+      return
+    }
+
+    try {
+      donationClaimInProgress.current = true
+      const response = await fetch('/api/donation/claim', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          donationId: intent.donationId,
+          claimToken: intent.claimToken,
+        }),
+      })
+
+      if (response.status === 401) {
+        return
+      }
+
+      if (response.ok) {
+        localStorage.removeItem(DONATION_CLAIM_INTENT_KEY)
+        toast({
+          title: 'Donación vinculada',
+          description:
+            'Tu donación ya aparece en tu cuenta y tu nombre podrá mostrarse en la campaña.',
+        })
+        return
+      }
+
+      if ([400, 403, 404, 409].includes(response.status)) {
+        localStorage.removeItem(DONATION_CLAIM_INTENT_KEY)
+      }
+    } catch (error) {
+      console.error('Error claiming pending donation:', error)
+    } finally {
+      donationClaimInProgress.current = false
+    }
+  }
+
   useEffect(() => {
     let isMounted = true
 
@@ -199,8 +268,10 @@ export function AuthProvider({
         if (!isMounted) return
         setSession(session)
         setUser(session?.user ?? null)
-        if (session?.user)
+        if (session?.user) {
           await fetchProfile(session.user.id)
+          await claimPendingDonation()
+        }
       } catch (error) {
         console.error(
           'Error al inicializar autenticación:',
@@ -232,6 +303,7 @@ export function AuthProvider({
 
         if (newSession?.user) {
           await fetchProfile(newSession.user.id)
+          await claimPendingDonation()
         } else {
           setProfile(null)
         }
@@ -338,12 +410,20 @@ export function AuthProvider({
       }
 
       const responseData = await response.json()
+      const hasDonationClaimIntent =
+        typeof window !== 'undefined' &&
+        Boolean(localStorage.getItem(DONATION_CLAIM_INTENT_KEY))
+
       toast({
         title: 'Éxito',
         description:
           'Cuenta creada exitosamente. Por favor inicia sesión.',
       })
-      router.push('/sign-in?registered=true')
+      router.push(
+        hasDonationClaimIntent
+          ? '/sign-in?registered=true&donationClaim=1'
+          : '/sign-in?registered=true',
+      )
       return responseData
     } catch (error) {
       console.error('Error en registro:', error)

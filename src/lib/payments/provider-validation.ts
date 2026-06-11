@@ -1,3 +1,5 @@
+import { addMoney } from "@/lib/money";
+
 export const BISA_PAYMENT_CURRENCY = "BOB";
 export const TRIPTO_CARD_CURRENCIES = ["USD"] as const;
 export const DEFAULT_TRIPTO_CARD_CURRENCY = "USD";
@@ -49,7 +51,7 @@ export function expectedDonationTotal(donation: DonationAmountSource) {
 
   const amount = Number(donation.amount);
   const tip = Number(donation.tip_amount || 0);
-  return amount + tip;
+  return addMoney(amount, tip);
 }
 
 function toMinorUnits(value: number) {
