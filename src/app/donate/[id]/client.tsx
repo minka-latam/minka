@@ -111,12 +111,18 @@ export function DonatePageContent({
     string | null
   >(null)
   const [reviewState, setReviewState] = useState(false)
-  const [wantsAccountAfterDonation, setWantsAccountAfterDonation] =
-    useState(false)
-  const [wantsSignInAfterDonation, setWantsSignInAfterDonation] =
-    useState(false)
-  const [wantsAnonymousDonation, setWantsAnonymousDonation] =
-    useState(false)
+  const [
+    wantsAccountAfterDonation,
+    setWantsAccountAfterDonation,
+  ] = useState(false)
+  const [
+    wantsSignInAfterDonation,
+    setWantsSignInAfterDonation,
+  ] = useState(false)
+  const [
+    wantsAnonymousDonation,
+    setWantsAnonymousDonation,
+  ] = useState(false)
   const [donationClaimIntent, setDonationClaimIntent] =
     useState<DonationClaimIntent | null>(null)
 
@@ -260,7 +266,9 @@ export function DonatePageContent({
     (customAmount ? Number.parseFloat(customAmount) : 0)
   const platformFee =
     tipMode === 'percentage'
-      ? roundMoney(donationAmount * (minkaContribution / 100))
+      ? roundMoney(
+          donationAmount * (minkaContribution / 100),
+        )
       : roundMoney(Number.parseFloat(customTipAmount) || 0)
   const totalAmount = addMoney(donationAmount, platformFee)
   const currencyPrefix =
@@ -299,7 +307,9 @@ export function DonatePageContent({
     const readStored = (key: string) => {
       try {
         const raw = key.startsWith('session:')
-          ? sessionStorage.getItem(key.replace('session:', ''))
+          ? sessionStorage.getItem(
+              key.replace('session:', ''),
+            )
           : localStorage.getItem(key)
         return raw ? JSON.parse(raw) : null
       } catch {
@@ -311,7 +321,8 @@ export function DonatePageContent({
       `session:${PENDING_CARD_CHECKOUT_KEY}`,
     )
     if (
-      pendingCardCheckout?.donationId === completedDonationId &&
+      pendingCardCheckout?.donationId ===
+        completedDonationId &&
       pendingCardCheckout?.claimToken
     ) {
       return {
@@ -339,7 +350,8 @@ export function DonatePageContent({
       }
     }
 
-    return donationClaimIntent?.donationId === completedDonationId
+    return donationClaimIntent?.donationId ===
+      completedDonationId
       ? donationClaimIntent
       : null
   }
@@ -353,7 +365,10 @@ export function DonatePageContent({
       )
       if (storedCheckout) {
         const pendingCheckout = JSON.parse(storedCheckout)
-        if (pendingCheckout?.donationId === completedDonationId) {
+        if (
+          pendingCheckout?.donationId ===
+          completedDonationId
+        ) {
           return Boolean(
             pendingCheckout.wantsAccountAfterDonation,
           )
@@ -365,7 +380,10 @@ export function DonatePageContent({
       )
       if (storedDonation) {
         const pendingDonation = JSON.parse(storedDonation)
-        if (pendingDonation?.donationId === completedDonationId) {
+        if (
+          pendingDonation?.donationId ===
+          completedDonationId
+        ) {
           return Boolean(
             pendingDonation.wantsAccountAfterDonation,
           )
@@ -387,7 +405,10 @@ export function DonatePageContent({
       )
       if (storedCheckout) {
         const pendingCheckout = JSON.parse(storedCheckout)
-        if (pendingCheckout?.donationId === completedDonationId) {
+        if (
+          pendingCheckout?.donationId ===
+          completedDonationId
+        ) {
           return Boolean(
             pendingCheckout.wantsSignInAfterDonation,
           )
@@ -399,7 +420,10 @@ export function DonatePageContent({
       )
       if (storedDonation) {
         const pendingDonation = JSON.parse(storedDonation)
-        if (pendingDonation?.donationId === completedDonationId) {
+        if (
+          pendingDonation?.donationId ===
+          completedDonationId
+        ) {
           return Boolean(
             pendingDonation.wantsSignInAfterDonation,
           )
@@ -412,8 +436,12 @@ export function DonatePageContent({
     return wantsSignInAfterDonation
   }
 
-  const finishSuccessfulDonation = (completedDonationId: string) => {
-    const intent = getStoredDonationClaimIntent(completedDonationId)
+  const finishSuccessfulDonation = (
+    completedDonationId: string,
+  ) => {
+    const intent = getStoredDonationClaimIntent(
+      completedDonationId,
+    )
 
     if (!user && intent) {
       saveDonationClaimIntent(intent)
@@ -425,7 +453,9 @@ export function DonatePageContent({
     if (
       !user &&
       intent &&
-      shouldRedirectToSignInAfterDonation(completedDonationId)
+      shouldRedirectToSignInAfterDonation(
+        completedDonationId,
+      )
     ) {
       router.push('/sign-in?donationClaim=1')
       return
@@ -434,7 +464,9 @@ export function DonatePageContent({
     if (
       !user &&
       intent &&
-      shouldRedirectToSignupAfterDonation(completedDonationId)
+      shouldRedirectToSignupAfterDonation(
+        completedDonationId,
+      )
     ) {
       router.push('/sign-up?donationClaim=1')
       return
@@ -822,7 +854,9 @@ export function DonatePageContent({
 
   const handleCreateAccountAfterDonation = () => {
     const currentDonationId =
-      donationId || activeDonationIdRef.current || activeDonationId
+      donationId ||
+      activeDonationIdRef.current ||
+      activeDonationId
     const intent = currentDonationId
       ? getStoredDonationClaimIntent(currentDonationId)
       : donationClaimIntent
@@ -1307,58 +1341,83 @@ export function DonatePageContent({
                     </div>
 
                     {!user && (
-                      <div className='mb-6 rounded-lg border border-[#2c6e49]/25 bg-[#f5f7e9] p-4'>
-                        <label
-                          htmlFor='create-account-after-donation'
-                          className='flex items-start gap-3 cursor-pointer'
-                        >
-                          <Checkbox
-                            id='create-account-after-donation'
-                            checked={wantsAccountAfterDonation}
-                            onCheckedChange={(checked) => {
-                              const isChecked = checked === true
-                              setWantsAccountAfterDonation(isChecked)
-                              if (isChecked) {
-                                setWantsSignInAfterDonation(false)
+                      <>
+                        <div className='mb-6 rounded-lg border border-[#2c6e49]/25 bg-[#f5f7e9] p-4'>
+                          <label
+                            htmlFor='create-account-after-donation'
+                            className='flex items-start gap-3 cursor-pointer'
+                          >
+                            <Checkbox
+                              id='create-account-after-donation'
+                              checked={
+                                wantsAccountAfterDonation
                               }
-                            }}
-                            className='mt-1'
-                          />
-                          <span className='text-sm text-gray-800'>
-                            <span className='font-semibold text-[#2c6e49]'>
-                              ¿Quieres que tu nombre salga luego de donar?
-                            </span>{' '}
-                            Crea tu cuenta después de pagar para vincular esta
-                            donación y aparecer en últimos donadores. También
-                            podrás ver tu historial, guardar favoritas y recibir
-                            notificaciones.
-                          </span>
-                        </label>
-                        <label
-                          htmlFor='sign-in-after-donation'
-                          className='mt-4 flex items-start gap-3 cursor-pointer'
-                        >
-                          <Checkbox
-                            id='sign-in-after-donation'
-                            checked={wantsSignInAfterDonation}
-                            onCheckedChange={(checked) => {
-                              const isChecked = checked === true
-                              setWantsSignInAfterDonation(isChecked)
-                              if (isChecked) {
-                                setWantsAccountAfterDonation(false)
+                              onCheckedChange={(
+                                checked,
+                              ) => {
+                                const isChecked =
+                                  checked === true
+                                setWantsAccountAfterDonation(
+                                  isChecked,
+                                )
+                                if (isChecked) {
+                                  setWantsSignInAfterDonation(
+                                    false,
+                                  )
+                                }
+                              }}
+                              className='mt-1'
+                            />
+                            <span className='text-sm text-gray-800'>
+                              <span className='font-semibold text-[#2c6e49]'>
+                                ¿Quieres que tu nombre salga
+                                luego de donar?
+                              </span>{' '}
+                              Crea tu cuenta después de
+                              pagar para vincular esta
+                              donación y aparecer en últimos
+                              donadores. También podrás ver
+                              tu historial, guardar
+                              favoritas y recibir
+                              notificaciones.
+                            </span>
+                          </label>
+                        </div>
+                        <div className='mb-6 rounded-lg border border-[#2c6e49]/25 bg-[#f5f7e9] p-4'>
+                          {' '}
+                          <label
+                            htmlFor='sign-in-after-donation'
+                            className='flex items-start gap-3 cursor-pointer'
+                          >
+                            <Checkbox
+                              id='sign-in-after-donation'
+                              checked={
+                                wantsSignInAfterDonation
                               }
-                            }}
-                            className='mt-1'
-                          />
-                          <span className='text-sm text-gray-800'>
-                            <span className='font-semibold text-[#2c6e49]'>
-                              Ya tengo cuenta
-                            </span>{' '}
-                            Después de pagar te llevaremos a iniciar sesión
-                            para vincular esta donación con tu perfil.
-                          </span>
-                        </label>
-                      </div>
+                              onCheckedChange={(
+                                checked,
+                              ) => {
+                                const isChecked =
+                                  checked === true
+                                setWantsSignInAfterDonation(
+                                  isChecked,
+                                )
+                                if (isChecked) {
+                                  setWantsAccountAfterDonation(
+                                    false,
+                                  )
+                                }
+                              }}
+                              className='mt-1'
+                            />
+                            <span className='text-sm text-gray-800'>
+                              <span className='font-semibold text-[#2c6e49]'>
+                                Ya tengo cuenta
+                              </span>
+                            </span>
+                          </label>
+                        </div>
+                      </>
                     )}
 
                     {user && (
@@ -1381,14 +1440,15 @@ export function DonatePageContent({
                             <span className='font-semibold text-[#2c6e49]'>
                               Hacer mi donación anónima
                             </span>{' '}
-                            Tu nombre no aparecerá públicamente en esta
-                            donación.
+                            Tu nombre no aparecerá
+                            públicamente en esta donación.
                           </span>
                         </label>
                         {wantsAnonymousDonation && (
                           <p className='mt-2 pl-8 text-xs text-gray-500'>
-                            Dejar tu apoyo con tu nombre ayuda a dar confianza
-                            al organizador y a otros donantes.
+                            Dejar tu apoyo con tu nombre
+                            ayuda a dar confianza al
+                            organizador y a otros donantes.
                           </p>
                         )}
                       </div>
@@ -1552,7 +1612,8 @@ export function DonatePageContent({
               {/* Account creation prompt for unauthenticated users */}
               {!user && (
                 <p className='mt-3 text-sm text-[#2c6e49] font-medium'>
-                  Crea una cuenta para dejar tu nombre en la donación que hiciste y seguir el impacto
+                  Crea una cuenta para dejar tu nombre en la
+                  donación que hiciste y seguir el impacto
                 </p>
               )}
 
@@ -1572,12 +1633,14 @@ export function DonatePageContent({
                     Haz que tu ayuda tenga más historia.
                   </p>
                   <p className='mt-1 text-sm text-gray-700'>
-                    Crear una cuenta permite dejar tu nombre si
-                    lo deseas en las donaciones, puedes también dejar
-                    mensajes de apoyo a la causa, guardar tus
-                    campañas favoritas, revisar tu historial de
-                    donaciones, volver fácilmente para ver
-                    actualizaciones cuando quieras y toma pocos segundos.
+                    Crear una cuenta permite dejar tu nombre
+                    si lo deseas en las donaciones, puedes
+                    también dejar mensajes de apoyo a la
+                    causa, guardar tus campañas favoritas,
+                    revisar tu historial de donaciones,
+                    volver fácilmente para ver
+                    actualizaciones cuando quieras y toma
+                    pocos segundos.
                   </p>
                 </div>
               )}
