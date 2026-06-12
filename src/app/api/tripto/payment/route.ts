@@ -10,6 +10,7 @@ import { canReceiveCampaignPayments } from '@/lib/campaigns/visibility'
 import { parseDonationCreateBody } from '@/lib/api/donation-dto'
 import { resolveTriptoCardCurrency } from '@/lib/payments/provider-validation'
 import { addMoney, roundMoney } from '@/lib/money'
+import { getAuthSession } from '@/lib/auth'
 import {
   convertUsdToBob,
   getUsdToBobExchangeRate,
@@ -84,9 +85,13 @@ export async function POST(req: Request) {
       )
     }
 
-    const donorProfileId = isAnonymous
-      ? await getOrCreateCampaignAnonymousProfileId(campaignId)
-      : donorId
+    const session = await getAuthSession()
+    const userId = session?.user?.id ?? null
+    const donorProfileId =
+      userId ??
+      (isAnonymous
+        ? await getOrCreateCampaignAnonymousProfileId(campaignId)
+        : donorId)
 
     if (!donorProfileId) {
       return NextResponse.json(
@@ -138,9 +143,8 @@ export async function POST(req: Request) {
       donationAmountBob,
       tipAmountBob,
     )
-    const claimToken = isAnonymous
-      ? generateDonationClaimToken()
-      : null
+    const claimToken =
+      isAnonymous && !userId ? generateDonationClaimToken() : null
     const claimTokenHash = claimToken
       ? hashDonationClaimToken(claimToken)
       : null

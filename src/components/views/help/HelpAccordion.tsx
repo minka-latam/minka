@@ -106,7 +106,7 @@ export function HelpAccordion({ searchTerm = "" }: HelpAccordionProps) {
                 </AccordionTrigger>
                 <AccordionContent className="text-lg text-gray-600 py-4">
                   <div className="whitespace-pre-line leading-relaxed">
-                    {highlightMatch(item.answer, searchTerm)}
+                    {renderFormattedText(item.answer, searchTerm)}
                   </div>
                 </AccordionContent>
               </AccordionItem>
@@ -115,6 +115,30 @@ export function HelpAccordion({ searchTerm = "" }: HelpAccordionProps) {
         </div>
       ))}
     </div>
+  );
+}
+
+function renderFormattedText(text: string, searchTerm: string) {
+  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+
+  return (
+    <>
+      {parts.map((part, index) => {
+        const boldMatch = part.match(/^\*\*([^*]+)\*\*$/);
+
+        if (boldMatch) {
+          return (
+            <strong key={index} className="font-semibold text-gray-700">
+              {highlightMatch(boldMatch[1], searchTerm)}
+            </strong>
+          );
+        }
+
+        return (
+          <span key={index}>{highlightMatch(part, searchTerm)}</span>
+        );
+      })}
+    </>
   );
 }
 

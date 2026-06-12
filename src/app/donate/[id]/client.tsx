@@ -113,6 +113,8 @@ export function DonatePageContent({
   const [reviewState, setReviewState] = useState(false)
   const [wantsAccountAfterDonation, setWantsAccountAfterDonation] =
     useState(false)
+  const [wantsAnonymousDonation, setWantsAnonymousDonation] =
+    useState(false)
   const [donationClaimIntent, setDonationClaimIntent] =
     useState<DonationClaimIntent | null>(null)
 
@@ -271,6 +273,9 @@ export function DonatePageContent({
     donationAmount <= 50000
   const isPaymentFormReady =
     Boolean(paymentMethod) && isDonationAmountValid
+  const isDonationAnonymous = user
+    ? wantsAnonymousDonation
+    : true
 
   const saveDonationClaimIntent = (
     intent: DonationClaimIntent | null,
@@ -599,7 +604,7 @@ export function DonatePageContent({
               amount: donationAmount,
               tipAmount: platformFee,
               message: '',
-              isAnonymous: !user,
+              isAnonymous: isDonationAnonymous,
               notificationEnabled: false,
               paymentMethod: selectedMethod,
             }),
@@ -662,7 +667,7 @@ export function DonatePageContent({
         tipAmount: platformFee,
         paymentMethod: selectedMethod,
         message: '',
-        isAnonymous: !user, // Explicitly set isAnonymous flag
+        isAnonymous: isDonationAnonymous,
         notificationEnabled: false,
         customAmount:
           !selectedAmount && customAmount ? true : false,
@@ -1273,12 +1278,42 @@ export function DonatePageContent({
                             <span className='font-semibold text-[#2c6e49]'>
                               ¿Quieres que tu nombre salga luego de donar?
                             </span>{' '}
-                            Crea tu cuenta después de pagar para vincular esta
-                            donación, aparecer en últimos donadores, seguir tu
-                            historial, guardar campañas favoritas y recibir
-                            notificaciones en Minka.
+                            Crea tu cuenta después de pagar para vincular ésta donación, aparecer en últimos donadores, tener historial, notificaciones, guardado de favoritas, y varios beneficios por crear un perfil lo cual toma pocos segundos.
                           </span>
                         </label>
+                      </div>
+                    )}
+
+                    {user && (
+                      <div className='mb-6 rounded-lg border border-gray-200 bg-white p-4'>
+                        <label
+                          htmlFor='anonymous-donation'
+                          className='flex items-start gap-3 cursor-pointer'
+                        >
+                          <Checkbox
+                            id='anonymous-donation'
+                            checked={wantsAnonymousDonation}
+                            onCheckedChange={(checked) =>
+                              setWantsAnonymousDonation(
+                                checked === true,
+                              )
+                            }
+                            className='mt-1'
+                          />
+                          <span className='text-sm text-gray-800'>
+                            <span className='font-semibold text-[#2c6e49]'>
+                              Hacer mi donación anónima
+                            </span>{' '}
+                            Tu nombre no aparecerá públicamente en esta
+                            donación.
+                          </span>
+                        </label>
+                        {wantsAnonymousDonation && (
+                          <p className='mt-2 pl-8 text-xs text-gray-500'>
+                            Dejar tu apoyo con tu nombre ayuda a dar confianza
+                            al organizador y a otros donantes.
+                          </p>
+                        )}
                       </div>
                     )}
 
@@ -1439,16 +1474,41 @@ export function DonatePageContent({
 
               {/* Account creation prompt for unauthenticated users */}
               {!user && (
-                <p className='mt-3 text-sm text-gray-600'>
-                  <span className='text-[#2c6e49] font-medium'>
-                    Crea una cuenta para seguir el impacto
-                    de tu donación
-                  </span>
+                <p className='mt-3 text-sm text-[#2c6e49] font-medium'>
+                  Crea una cuenta para dejar tu nombre en la donación que hiciste y seguir el impacto
                 </p>
               )}
 
-              {/* Share section */}
-              <div className='mt-4'>
+              {!user && (
+                <button
+                  type='button'
+                  className='mt-4 w-full inline-flex justify-center border-0 bg-[#2c6e49] px-6 py-2 text-sm font-medium text-white hover:bg-[#1e4d33] focus:outline-none rounded-full'
+                  onClick={handleCreateAccountAfterDonation}
+                >
+                  Crear mi cuenta
+                </button>
+              )}
+
+              {!user && (
+                <div className='mt-5 rounded-lg bg-[#f5f7e9] p-4 text-left'>
+                  <p className='text-sm font-semibold text-[#2c6e49]'>
+                    Haz que tu ayuda tenga más historia.
+                  </p>
+                  <p className='mt-1 text-sm text-gray-700'>
+                    Crear una cuenta permite dejar tu nombre si
+                    lo deseas en las donaciones, puedes también dejar
+                    mensajes de apoyo a la causa, guardar tus
+                    campañas favoritas, revisar tu historial de
+                    donaciones, volver fácilmente para ver
+                    actualizaciones cuando quieras y toma pocos segundos.
+                  </p>
+                </div>
+              )}
+
+              <div className='border-t border-black my-4'></div>
+
+              <div className='space-y-2'>
+                {/* Share section */}
                 <CampaignShareMenu
                   campaign={{
                     id: campaignId,
@@ -1459,38 +1519,9 @@ export function DonatePageContent({
                   }}
                   intent='donation'
                   buttonLabel='Compartir campaña'
-                  triggerClassName='inline-flex px-6 py-2 text-sm font-medium text-[#2c6e49] hover:text-[#1e4d33] border border-[#2c6e49] hover:border-[#1e4d33] rounded-full transition-colors'
+                  triggerClassName='w-full inline-flex justify-center px-6 py-2 text-sm font-medium text-[#2c6e49] hover:text-[#1e4d33] border border-[#2c6e49] hover:border-[#1e4d33] rounded-full transition-colors'
                   dropdownClassName='left-1/2 -translate-x-1/2 w-64'
                 />
-              </div>
-
-              {!user && (
-                <div className='mt-5 rounded-lg bg-[#f5f7e9] p-4 text-left'>
-                  <p className='text-sm font-semibold text-[#2c6e49]'>
-                    Haz que tu ayuda tenga más historia.
-                  </p>
-                  <p className='mt-1 text-sm text-gray-700'>
-                    Crear una cuenta te permite guardar tus
-                    campañas favoritas, revisar tu historial
-                    de donaciones, dejar mensajes y volver
-                    fácilmente para ver actualizaciones
-                    cuando quieras.
-                  </p>
-                </div>
-              )}
-
-              <div className='border-t border-black my-4'></div>
-
-              <div className='space-y-2'>
-                {!user && (
-                  <button
-                    type='button'
-                    className='w-full inline-flex justify-center border-0 bg-[#2c6e49] px-6 py-2 text-sm font-medium text-white hover:bg-[#1e4d33] focus:outline-none rounded-full'
-                    onClick={handleCreateAccountAfterDonation}
-                  >
-                    Crear mi cuenta
-                  </button>
-                )}
 
                 <button
                   type='button'
@@ -1499,7 +1530,7 @@ export function DonatePageContent({
                     router.push('/all-campaigns')
                   }
                 >
-                  Explorar
+                  Explorar otras
                 </button>
 
                 <button

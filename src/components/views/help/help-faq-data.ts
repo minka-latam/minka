@@ -82,49 +82,55 @@ export const faqCategories: FaqCategory[] = [
         question:
           '¿Puedo crear una campaña para otra persona?',
         answer:
-          'Sí. Puedes crear una campaña para apoyar a un familiar, amigo en necesidad o institución aprobada por Minka, siempre que cuentes con su consentimiento o con documentación que respalde tu relación con la persona beneficiaria. Esto contribuye a generar mayor transparencia y confianza para quienes realizan donaciones.',
+          'Sí. Puedes crear una campaña para apoyar a un familiar, amigo en necesidad o institución. Si se trata de una institución, recomendamos que esté aprobada por Minka para generar mayor confianza. En todos los casos, debes contar con su consentimiento o con documentación que respalde tu relación con la persona beneficiaria. Esto contribuye a generar mayor transparencia y confianza para quienes realizan donaciones.',
       },
       {
         id: 'campaign-5',
-        question: '¿Qué es la verificación de campañas?',
+        question: '¿Qué son las instituciones aprobadas por Minka?',
         answer:
-          'La verificación es un proceso mediante el cual el equipo de Minka revisa la documentación presentada por el organizador de una campaña para validar que la información proporcionada sea consistente con la causa publicada.\n\nLas campañas verificadas cuentan con un distintivo visible dentro de la plataforma que ayuda a generar mayor confianza entre los donantes.',
+          'Son empresas, asociaciones, instituciones, fundaciones u otras entidades legalmente reconocidas que pueden registrarse en la base de datos de Minka para generar mayor confianza sobre el destino de los aportes. Esto es especialmente importante para donantes internacionales, que suelen necesitar más señales de seguridad antes de apoyar una campaña.\n\nTe recomendamos hacerlo porque mejora la visibilidad, la creación de campañas y la confianza de los donantes.\n\nPara solicitarlo, envíanos un mensaje a info@minka-comunidad.org con: datos legales, número de registro, forma legal, NIT, cuenta bancaria, ubicación, información de contacto, sitio web, redes sociales y cualquier otro dato que quieran compartir con nosotros.\n\nEstos datos no son públicos; se usan únicamente para nuestra administración y para poder responder con mayor seguridad cuando un donante tenga dudas.',
       },
       {
         id: 'campaign-6',
+        question: '¿Qué es la verificación de campañas?',
+        answer:
+          'La verificación es un proceso mediante el cual el equipo de Minka revisa la documentación presentada por el organizador de una campaña para validar que la información proporcionada sea consistente con la causa publicada.\n\nDocumentos que se pueden presentar dependen del tipo de causa, pueden ser diagnóstico médico, receta farmacéutica, invitación a un torneo, factura de gastos realizados, presupuestos, etc.\n\nLas campañas verificadas cuentan con un distintivo visible dentro de la plataforma que ayuda a generar mayor confianza entre los donantes.',
+      },
+      {
+        id: 'campaign-7',
         question: '¿La verificación es obligatoria?',
         answer:
           'No. La verificación es completamente voluntaria.\n\nSin embargo, las campañas verificadas suelen generar mayor confianza y pueden aumentar sus posibilidades de éxito.',
       },
       {
-        id: 'campaign-7',
+        id: 'campaign-8',
         question:
           '¿Qué documentos se solicitan para verificar una campaña?',
         answer:
           'Los requisitos dependen del tipo de campaña.\n\nPor ejemplo:\n- Campañas médicas: informes médicos, diagnósticos, recetas o presupuestos.\n- Campañas educativas: certificados de inscripción o documentación académica.\n- Campañas institucionales: documentación legal de la organización.\n\nAdemás, se solicitarán documentos generales de identificación de la persona organizadora.',
       },
       {
-        id: 'campaign-8',
+        id: 'campaign-9',
         question: '¿Cuánto cuesta crear una campaña?',
         answer:
           'Crear una campaña en Minka es completamente gratuito.\n\nPara cubrir los costos operativos y tecnológicos de la plataforma, se aplica una comisión únicamente sobre los fondos efectivamente recaudados:\n\n- Donaciones nacionales: 5% del monto donado.\n- Donaciones internacionales: 11% del monto donado más USD 0,30 por transacción.\n\nAdicionalmente, las personas donantes pueden realizar una contribución voluntaria (tip) destinada al mantenimiento y desarrollo de la plataforma. Esta contribución es opcional y puede ajustarse libremente al momento de donar.',
       },
       {
-        id: 'campaign-9',
+        id: 'campaign-10',
         question:
           '¿Cómo aumentar las probabilidades de éxito de mi campaña?',
         answer:
-          'Las campañas más exitosas suelen:\n\n- Explicar claramente la necesidad o causa.\n- Utilizar fotografías y videos auténticos.\n- Establecer metas de recaudación realistas.\n- Compartirse ampliamente en redes sociales y aplicaciones de mensajería.\n- Mantener informados a los donantes mediante actualizaciones periódicas.\n- Solicitar la verificación de la campaña.\n\nLa transparencia y la comunicación constante son factores clave para generar confianza y apoyo.',
+          'Las campañas más exitosas suelen:\n\n- Explicar claramente la necesidad o causa.\n- Utilizar fotografías y videos auténticos. Dispones de 5 espacios para fotos y 1 espacio para un video de YouTube; aprovéchalos, porque las imágenes ayudan a contar mejor tu historia.\n- Establecer metas de recaudación realistas en tiempo y monto.\n- **Compartirse ampliamente en redes sociales y aplicaciones de mensajería.**\n- Mantener informados a los donantes mediante actualizaciones periódicas.\n- Solicitar la verificación de la campaña.\n\nLa transparencia y la comunicación constante son factores clave para generar confianza y apoyo.\n\nNosotros ponemos la plataforma: una herramienta para generar confianza, un puente para recibir donaciones del exterior y un espacio centralizado para nuestras necesidades. Te damos visibilidad y seguridad, pero el éxito de una campaña también depende en gran medida de que puedas compartir y viralizar tu causa en tu círculo.',
       },
       {
-        id: 'campaign-10',
+        id: 'campaign-11',
         question:
           '¿Qué pasa si no alcanzo mi meta de recaudación?',
         answer:
           'Minka utiliza un modelo de recaudación flexible. Esto significa que recibirás los fondos efectivamente recaudados al finalizar la campaña, incluso si no alcanzas la meta establecida, descontando las comisiones correspondientes.',
       },
       {
-        id: 'campaign-11',
+        id: 'campaign-12',
         question: '¿Cómo recibo el dinero recaudado?',
         answer:
           'Los desembolsos pueden solicitarse a través de la plataforma.\n\nAntes de cada transferencia, el equipo de Minka realizará una revisión básica para garantizar el cumplimiento de las políticas de la plataforma. Los fondos serán transferidos a la cuenta bancaria registrada y verificada por el organizador de la campaña.\n\nPara solicitar un desembolso anticipado, el monto mínimo acumulado deberá ser de Bs 100.',

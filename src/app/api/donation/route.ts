@@ -85,8 +85,8 @@ export async function POST(request: NextRequest) {
           ? "qr"
           : "bank_transfer";
 
-    // Handle anonymous vs. authenticated donations properly
-    // Only require authentication for non-anonymous donations
+    // Only require authentication for non-anonymous donations.
+    // Authenticated users can still mark a donation as publicly anonymous.
     if (!isAnonymous && !userId) {
       return NextResponse.json(
         { error: "User must be logged in for non-anonymous donations" },
@@ -117,9 +117,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const donorProfileId = isAnonymous
-      ? await getOrCreateCampaignAnonymousProfileId(campaignId)
-      : userId;
+    const donorProfileId =
+      userId ??
+      (isAnonymous
+        ? await getOrCreateCampaignAnonymousProfileId(campaignId)
+        : null);
 
     const donationAmount = roundMoney(amount);
     const rawDonationTipAmount = Number(tipAmount);
@@ -145,7 +147,8 @@ export async function POST(request: NextRequest) {
       ? convertUsdToBob(donationTipAmount, usdToBobExchangeRate)
       : donationTipAmount;
     const storedTotalAmount = addMoney(storedDonationAmount, storedTipAmount);
-    const claimToken = isAnonymous ? generateDonationClaimToken() : null;
+    const claimToken =
+      isAnonymous && !userId ? generateDonationClaimToken() : null;
     const claimTokenHash = claimToken
       ? hashDonationClaimToken(claimToken)
       : null;
