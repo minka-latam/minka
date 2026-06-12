@@ -47,9 +47,14 @@ export default async function SignInPage({ searchParams }: PageProps) {
       )}
 
       {hasDonationClaim && (
-        <div className="mb-6 p-4 bg-[#f5f7e9] text-[#1f4d33] rounded-md border border-[#2c6e49]/20">
-          Inicia sesión para vincular automáticamente tu donación reciente a tu
-          cuenta y mostrar tu nombre como donador si corresponde.
+        <div className="mb-6 rounded-lg border border-[#2c6e49]/30 bg-[#f5f7e9] p-5 text-[#1f4d33]">
+          <p className="text-base font-semibold">
+            Accede a tu cuenta para vincular tu donación.
+          </p>
+          <p className="mt-1 text-sm">
+            Accede a tu cuenta para que vinculemos la donación que acabas de
+            hacer con tu perfil.
+          </p>
         </div>
       )}
 
