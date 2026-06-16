@@ -45,9 +45,8 @@ export default async function ManageUsersPage() {
   // Fetch all user profiles if the user is an admin
   const { data: users, error } = await supabase
     .from("profiles")
-    .select("id, name, email, role, created_at, phone")
+    .select("id, name, email, role, status, created_at, phone")
     .not("email", "like", `${CAMPAIGN_ANONYMOUS_EMAIL_PREFIX}%@minka.org`)
-    .eq("status", "active")
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -61,9 +60,7 @@ export default async function ManageUsersPage() {
   }
 
   // Ensure users data is typed correctly, filtering out null if necessary
-  const validUsers: ProfileData[] = (users || []).filter(
-    (user): user is ProfileData => user !== null
-  );
+  const validUsers = (users || []).filter(Boolean) as ProfileData[];
 
   return (
     <div className="space-y-6 p-4 md:p-6">

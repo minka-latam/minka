@@ -44,10 +44,15 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
         description: "You have been signed in.",
       });
       router.push("/dashboard");
-    } catch {
+    } catch (error) {
+      const isInactiveAccount =
+        error instanceof Error && error.message === "inactive_account";
+
       toast({
-        title: "Error",
-        description: "Invalid email or password.",
+        title: isInactiveAccount ? "Cuenta inactiva" : "Error",
+        description: isInactiveAccount
+          ? "Tu cuenta está inactiva. Ponte en contacto con Minka si crees que es un error."
+          : "Invalid email or password.",
         variant: "destructive",
       });
     } finally {

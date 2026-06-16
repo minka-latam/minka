@@ -13,6 +13,16 @@ function getDonationClaimStatus(donationClaim?: string): boolean {
   return donationClaim === "1" || donationClaim === "true";
 }
 
+function getSignInErrorMessage(error?: string) {
+  if (!error) return null;
+
+  if (error === "inactive_account") {
+    return "Tu cuenta está inactiva. Ponte en contacto con Minka si crees que es un error.";
+  }
+
+  return error;
+}
+
 // Define proper type for page props according to Next.js 15 standards
 export interface PageProps {
   params: Promise<Record<string, string>>;
@@ -24,8 +34,12 @@ export default async function SignInPage({ searchParams }: PageProps) {
   const params = await searchParams;
   const registered = params.registered as string | undefined;
   const donationClaim = params.donationClaim as string | undefined;
+  const signInError = Array.isArray(params.error)
+    ? params.error[0]
+    : params.error;
   const isRegistered = getRegistrationStatus(registered);
   const hasDonationClaim = getDonationClaimStatus(donationClaim);
+  const errorMessage = getSignInErrorMessage(signInError);
 
   return (
     <div className="w-full">
@@ -58,6 +72,12 @@ export default async function SignInPage({ searchParams }: PageProps) {
         </div>
       )}
 
+      {errorMessage && (
+        <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+          {errorMessage}
+        </div>
+      )}
+
       <Suspense
         fallback={
           <LoadingScreen
@@ -74,9 +94,11 @@ export default async function SignInPage({ searchParams }: PageProps) {
 
       <div className="mt-8 text-center">
         <p className="text-black">
-          ¿Es la primera vez que usas Minka?{" "}
+          {hasDonationClaim
+            ? "¿No tienes cuenta? Créala para vincular esta donación."
+            : "¿Es la primera vez que usas Minka?"}{" "}
           <Link
-            href="/sign-up"
+            href={hasDonationClaim ? "/sign-up?donationClaim=1" : "/sign-up"}
             className="text-[#2c6e49] font-medium hover:underline"
             prefetch={true}
           >

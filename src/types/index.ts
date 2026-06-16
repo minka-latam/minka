@@ -6,6 +6,7 @@ export interface ProfileData {
   email: string;
   phone: string | null;
   role: string;
+  status?: string | null;
   created_at: string;
   identity_number?: string | null;
   identityNumber?: string | null;

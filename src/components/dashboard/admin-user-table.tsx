@@ -12,10 +12,11 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns"; // For formatting dates
-import { Pencil, Trash2 } from "lucide-react"; // Icons for actions
-import { useState } from "react";
+import { Pencil, Trash2, UserCheck } from "lucide-react"; // Icons for actions
+import { useMemo, useState } from "react";
 import { toast } from "@/components/ui/use-toast";
 import { useRouter } from "next/navigation";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -42,6 +43,26 @@ export function AdminUserTable({ users }: AdminUserTableProps) {
   const [editingUser, setEditingUser] = useState<ProfileData | null>(null);
   const [selectedRole, setSelectedRole] = useState<"admin" | "user">("user");
   const [updatingRoleId, setUpdatingRoleId] = useState<string | null>(null);
+  const [activatingUserId, setActivatingUserId] = useState<string | null>(null);
+  const [showInactiveUsers, setShowInactiveUsers] = useState(false);
+
+  const visibleUsers = useMemo(() => {
+    const filteredUsers = showInactiveUsers
+      ? users
+      : users.filter((user) => user.status !== "inactive");
+
+    return [...filteredUsers].sort((a, b) => {
+      if (showInactiveUsers && a.status !== b.status) {
+        if (a.status === "inactive") return -1;
+        if (b.status === "inactive") return 1;
+      }
+
+      return (
+        new Date(b.created_at || 0).getTime() -
+        new Date(a.created_at || 0).getTime()
+      );
+    });
+  }, [showInactiveUsers, users]);
 
   const handleDeleteUser = async (userId: string, userEmail: string | null) => {
     // Optional: Add a confirmation dialog here
@@ -87,6 +108,38 @@ export function AdminUserTable({ users }: AdminUserTableProps) {
     setSelectedRole(user.role === "admin" ? "admin" : "user");
   };
 
+  const handleActivateUser = async (user: ProfileData) => {
+    setActivatingUserId(user.id);
+    try {
+      const response = await fetch(`/api/admin/users/${user.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "active" }),
+      });
+
+      const responseData = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(responseData.error || "Could not activate the user.");
+      }
+
+      toast({
+        title: "Usuario activado",
+        description: `${user.email} fue activado nuevamente.`,
+      });
+      router.refresh();
+    } catch (error: any) {
+      console.error("Error activating user:", error);
+      toast({
+        title: "No se pudo activar el usuario",
+        description: error.message || "Could not activate the user.",
+        variant: "destructive",
+      });
+    } finally {
+      setActivatingUserId(null);
+    }
+  };
+
   const handleUpdateRole = async () => {
     if (!editingUser) return;
 
@@ -124,28 +177,43 @@ export function AdminUserTable({ users }: AdminUserTableProps) {
 
   return (
     <>
+      <div className="mb-4 flex items-center gap-2">
+        <Checkbox
+          id="show-inactive-users"
+          checked={showInactiveUsers}
+          onCheckedChange={(checked) => setShowInactiveUsers(checked === true)}
+        />
+        <label
+          htmlFor="show-inactive-users"
+          className="cursor-pointer text-sm font-medium text-gray-700"
+        >
+          mostrar usuarios inactivos
+        </label>
+      </div>
+
       <Table>
         <TableHeader>
           <TableRow>
             <TableHead>Name</TableHead>
             <TableHead>Email</TableHead>
             <TableHead>Role</TableHead>
+            <TableHead>Status</TableHead>
             <TableHead>Joined Date</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {users.length === 0 ? (
+          {visibleUsers.length === 0 ? (
             <TableRow>
               <TableCell
-                colSpan={5}
+                colSpan={6}
                 className="text-center text-muted-foreground"
               >
                 No users found.
               </TableCell>
             </TableRow>
           ) : (
-            users.map((user) => (
+            visibleUsers.map((user) => (
               <TableRow key={user.id}>
                 <TableCell className="font-medium">
                   {user.name || "-"}
@@ -161,6 +229,18 @@ export function AdminUserTable({ users }: AdminUserTableProps) {
                   </Badge>
                 </TableCell>
                 <TableCell>
+                  <Badge
+                    variant={user.status === "inactive" ? "outline" : "secondary"}
+                    className={
+                      user.status === "inactive"
+                        ? "border-gray-400 text-gray-600"
+                        : "bg-[#e8f0e9] text-[#2c6e49] hover:bg-[#e8f0e9]"
+                    }
+                  >
+                    {user.status === "inactive" ? "Inactive" : "Active"}
+                  </Badge>
+                </TableCell>
+                <TableCell>
                   {user.created_at
                     ? format(new Date(user.created_at), "PPP") // Format date nicely
                     : "-"}
@@ -173,21 +253,39 @@ export function AdminUserTable({ users }: AdminUserTableProps) {
                   >
                     <Pencil className="mr-1 h-4 w-4" /> Edit Role
                   </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-red-600 hover:text-red-700"
-                    onClick={() => handleDeleteUser(user.id, user.email)}
-                    disabled={deletingUserId === user.id}
-                  >
-                    {deletingUserId === user.id ? (
-                      "Deactivating..."
-                    ) : (
-                      <>
-                        <Trash2 className="mr-1 h-4 w-4" /> Deactivate
-                      </>
-                    )}
-                  </Button>
+                  {user.status === "inactive" ? (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-[#2c6e49] hover:text-[#1e4d33]"
+                      onClick={() => handleActivateUser(user)}
+                      disabled={activatingUserId === user.id}
+                    >
+                      {activatingUserId === user.id ? (
+                        "Activating..."
+                      ) : (
+                        <>
+                          <UserCheck className="mr-1 h-4 w-4" /> Activate
+                        </>
+                      )}
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-red-600 hover:text-red-700"
+                      onClick={() => handleDeleteUser(user.id, user.email)}
+                      disabled={deletingUserId === user.id}
+                    >
+                      {deletingUserId === user.id ? (
+                        "Deactivating..."
+                      ) : (
+                        <>
+                          <Trash2 className="mr-1 h-4 w-4" /> Deactivate
+                        </>
+                      )}
+                    </Button>
+                  )}
                 </TableCell>
               </TableRow>
             ))

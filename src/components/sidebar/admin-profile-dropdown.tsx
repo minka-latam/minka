@@ -46,8 +46,8 @@ export function AdminProfileDropdown() {
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-            <Avatar className="h-8 w-8 ring-2 ring-primary/10">
+          <Button variant="ghost" className="relative rounded-full">
+            <Avatar className="h-14 w-14 ring-4 ring-primary">
               <AvatarImage
                 src={
                   typeof profile.profile_picture === "string"

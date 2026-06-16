@@ -60,11 +60,15 @@ export function SignInForm() {
         // The loading screen will continue to show until redirect completes
       } catch (error) {
         console.error("Error during sign in:", error);
+        const isInactiveAccount =
+          error instanceof Error && error.message === "inactive_account";
 
         // Show a toast with the generic error message in Spanish
         toast({
-          title: "Error",
-          description: "Credenciales inválidas",
+          title: isInactiveAccount ? "Cuenta inactiva" : "Error",
+          description: isInactiveAccount
+            ? "Tu cuenta está inactiva. Ponte en contacto con Minka si crees que es un error."
+            : "Credenciales inválidas",
           variant: "destructive",
         });
 

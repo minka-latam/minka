@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { ProfileData } from "@/types";
 import { useAuth } from "@/providers/auth-provider";
 import { toast } from "@/components/ui/use-toast";
@@ -20,6 +19,8 @@ import {
   Building2,
   DollarSign,
   Save,
+  HandCoins,
+  FileClock,
 } from "lucide-react";
 
 interface AdminDashboardContentProps {
@@ -30,9 +31,14 @@ export function AdminDashboardContent({ profile }: AdminDashboardContentProps) {
   const router = useRouter();
   const { signOut } = useAuth();
   const [exchangeRate, setExchangeRate] = useState("");
-  const [savedExchangeRate, setSavedExchangeRate] = useState<number | null>(
-    null
-  );
+  const [automaticExchangeRate, setAutomaticExchangeRate] = useState<
+    number | null
+  >(null);
+  const [exchangeRateMode, setExchangeRateMode] = useState<
+    "automatic" | "manual"
+  >("automatic");
+  const [isManualExchangeRateEditing, setIsManualExchangeRateEditing] =
+    useState(false);
   const [isLoadingExchangeRate, setIsLoadingExchangeRate] = useState(true);
   const [isSavingExchangeRate, setIsSavingExchangeRate] = useState(false);
 
@@ -55,8 +61,18 @@ export function AdminDashboardContent({ profile }: AdminDashboardContentProps) {
         if (!isMounted) return;
 
         const rate = Number(data.usdToBobExchangeRate);
-        setSavedExchangeRate(rate);
-        setExchangeRate(String(rate));
+        const automaticRate =
+          data.automaticUsdToBobExchangeRate == null
+            ? null
+            : Number(data.automaticUsdToBobExchangeRate);
+        const mode = data.mode === "manual" ? "manual" : "automatic";
+
+        setAutomaticExchangeRate(
+          Number.isFinite(automaticRate) ? automaticRate : null
+        );
+        setExchangeRateMode(mode);
+        setIsManualExchangeRateEditing(false);
+        setExchangeRate(Number.isFinite(rate) ? String(rate) : "");
       } catch (error) {
         if (!isMounted) return;
 
@@ -87,6 +103,11 @@ export function AdminDashboardContent({ profile }: AdminDashboardContentProps) {
   ) => {
     event.preventDefault();
 
+    if (!isManualExchangeRateEditing) {
+      setIsManualExchangeRateEditing(true);
+      return;
+    }
+
     const rate = Number(exchangeRate);
 
     if (!Number.isFinite(rate) || rate <= 0) {
@@ -115,12 +136,13 @@ export function AdminDashboardContent({ profile }: AdminDashboardContentProps) {
       }
 
       const savedRate = Number(data.usdToBobExchangeRate);
-      setSavedExchangeRate(savedRate);
       setExchangeRate(String(savedRate));
+      setExchangeRateMode("manual");
+      setIsManualExchangeRateEditing(false);
 
       toast({
         title: "Tipo de cambio actualizado",
-        description: `1 USD = Bs. ${savedRate.toFixed(4)}`,
+        description: `Valor manual: 1 USD = Bs. ${savedRate.toFixed(4)}`,
       });
     } catch (error) {
       toast({
@@ -129,6 +151,56 @@ export function AdminDashboardContent({ profile }: AdminDashboardContentProps) {
           error instanceof Error
             ? error.message
             : "No se pudo guardar el tipo de cambio",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSavingExchangeRate(false);
+    }
+  };
+
+  const handleAutomaticExchangeRate = async () => {
+    try {
+      setIsSavingExchangeRate(true);
+      const response = await fetch(
+        "/api/admin/platform-settings/exchange-rate",
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ mode: "automatic" }),
+        }
+      );
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data?.error || "No se pudo activar el tipo de cambio automático"
+        );
+      }
+
+      const rate = Number(data.usdToBobExchangeRate);
+      const automaticRate =
+        data.automaticUsdToBobExchangeRate == null
+          ? rate
+          : Number(data.automaticUsdToBobExchangeRate);
+
+      setExchangeRate(String(rate));
+      setAutomaticExchangeRate(
+        Number.isFinite(automaticRate) ? automaticRate : rate
+      );
+      setExchangeRateMode("automatic");
+      setIsManualExchangeRateEditing(false);
+
+      toast({
+        title: "Tipo de cambio automático activado",
+        description: `1 USD = Bs. ${rate.toFixed(4)}`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description:
+          error instanceof Error
+            ? error.message
+            : "No se pudo activar el tipo de cambio automático",
         variant: "destructive",
       });
     } finally {
@@ -172,13 +244,13 @@ export function AdminDashboardContent({ profile }: AdminDashboardContentProps) {
         </p>
       </div>
 
-      <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-100 w-fit">
+      <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-100 w-fit max-w-full">
         <div className="flex items-center mb-4">
           <DollarSign className="h-6 w-6 mr-2 text-[#2c6e49]" />
           <h3 className="text-xl font-semibold">Tipo de cambio</h3>
         </div>
         <form
-          className="grid gap-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-center "
+          className="grid gap-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-center"
           onSubmit={handleExchangeRateSubmit}
         >
           <div>
@@ -196,23 +268,52 @@ export function AdminDashboardContent({ profile }: AdminDashboardContentProps) {
               inputMode="decimal"
               value={exchangeRate}
               onChange={(event) => setExchangeRate(event.target.value)}
-              disabled={isLoadingExchangeRate || isSavingExchangeRate}
+              disabled={
+                isLoadingExchangeRate ||
+                isSavingExchangeRate ||
+                !isManualExchangeRateEditing
+              }
               placeholder="6.9600"
             />
             <p className="text-sm text-gray-500 mt-2">
-              {savedExchangeRate
-                ? `Actual: 1 USD = Bs. ${savedExchangeRate.toFixed(4)}`
-                : "Se usará para convertir donaciones por tarjeta a Bs."}
+              Valor automático de dolarbluebolivia.click menos 10 centavos para
+              margen
+              {automaticExchangeRate
+                ? `: 1 USD = Bs. ${automaticExchangeRate.toFixed(4)}`
+                : "."}
             </p>
+            {exchangeRateMode === "manual" && (
+              <p className="mt-1 text-sm text-amber-700">
+                Actualmente se está usando un cambio manual.
+              </p>
+            )}
           </div>
-          <Button
-            type="submit"
-            disabled={isLoadingExchangeRate || isSavingExchangeRate}
-            className="bg-[#2c6e49] hover:bg-[#24583b] text-white"
-          >
-            <Save className="h-4 w-4 mr-2" />
-            {isSavingExchangeRate ? "Guardando..." : "Guardar"}
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="submit"
+              disabled={isLoadingExchangeRate || isSavingExchangeRate}
+              className="bg-[#2c6e49] hover:bg-[#24583b] text-white"
+            >
+              {isManualExchangeRateEditing && (
+                <Save className="h-4 w-4 mr-2" />
+              )}
+              {isSavingExchangeRate
+                ? "Guardando..."
+                : isManualExchangeRateEditing
+                  ? "Guardar"
+                  : "Cambio manual"}
+            </Button>
+            {exchangeRateMode === "manual" && !isManualExchangeRateEditing && (
+              <Button
+                type="button"
+                variant="outline"
+                disabled={isLoadingExchangeRate || isSavingExchangeRate}
+                onClick={handleAutomaticExchangeRate}
+              >
+                Automático
+              </Button>
+            )}
+          </div>
         </form>
       </div>
 
@@ -232,6 +333,40 @@ export function AdminDashboardContent({ profile }: AdminDashboardContentProps) {
             className="text-[#2c6e49] hover:underline font-medium flex items-center"
           >
             Ver estadísticas <ArrowRight className="ml-2 h-4 w-4" />
+          </Link>
+        </div>
+
+        <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-100 hover:shadow-md transition-shadow">
+          <div className="flex items-center mb-4">
+            <HandCoins className="h-6 w-6 mr-2 text-[#2c6e49]" />
+            <h3 className="text-xl font-semibold">Donaciones</h3>
+          </div>
+          <p className="text-gray-600 mb-6 h-24">
+            Revisa donaciones completadas, métodos de pago, tips y totales por
+            campaña.
+          </p>
+          <Link
+            href="/dashboard/donations"
+            className="text-[#2c6e49] hover:underline font-medium flex items-center"
+          >
+            Ver donaciones <ArrowRight className="ml-2 h-4 w-4" />
+          </Link>
+        </div>
+
+        <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-100 hover:shadow-md transition-shadow">
+          <div className="flex items-center mb-4">
+            <FileClock className="h-6 w-6 mr-2 text-[#2c6e49]" />
+            <h3 className="text-xl font-semibold">Auditoría</h3>
+          </div>
+          <p className="text-gray-600 mb-6 h-24">
+            Consulta cambios administrativos, responsable, fecha, entidad y
+            detalle de cada acción sensible.
+          </p>
+          <Link
+            href="/dashboard/audit-logs"
+            className="text-[#2c6e49] hover:underline font-medium flex items-center"
+          >
+            Ver auditoría <ArrowRight className="ml-2 h-4 w-4" />
           </Link>
         </div>
 

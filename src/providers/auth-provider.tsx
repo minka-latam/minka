@@ -66,6 +66,8 @@ const AuthContext = createContext<AuthContextType>({
   signOut: async () => {},
 })
 
+const INACTIVE_ACCOUNT_ERROR = 'inactive_account'
+
 export function AuthProvider({
   children,
 }: {
@@ -81,6 +83,7 @@ export function AuthProvider({
   const [isLoading, setIsLoading] = useState(true)
   const profileFetchInProgress = useRef(false)
   const donationClaimInProgress = useRef(false)
+  const inactiveAccountHandledRef = useRef(false)
   const router = useRouter()
 
   const supabase = createBrowserClient(
@@ -106,6 +109,21 @@ export function AuthProvider({
     return data.profile ?? null
   }
 
+  const handleInactiveProfile = async () => {
+    inactiveAccountHandledRef.current = true
+    setProfile(null)
+    setSession(null)
+    setUser(null)
+    await supabase.auth.signOut()
+    toast({
+      title: 'Cuenta inactiva',
+      description:
+        'Tu cuenta está inactiva. Ponte en contacto con Minka si crees que es un error.',
+      variant: 'destructive',
+    })
+    router.replace('/sign-in')
+  }
+
   const fetchProfile = async (
     userId: string,
     retryCount = 0,
@@ -118,6 +136,7 @@ export function AuthProvider({
     }
 
     try {
+      inactiveAccountHandledRef.current = false
       profileFetchInProgress.current = true
 
       const controller = new AbortController()
@@ -148,6 +167,11 @@ export function AuthProvider({
       if (response.status === 404) {
         const ensuredProfile = await ensureProfile()
         if (ensuredProfile?.id === userId) {
+          if (ensuredProfile.status === 'inactive') {
+            await handleInactiveProfile()
+            return null
+          }
+
           setProfile(ensuredProfile)
           return ensuredProfile
         }
@@ -165,6 +189,11 @@ export function AuthProvider({
       const data = await response.json()
 
       if (data.profile) {
+        if (data.profile.status === 'inactive') {
+          await handleInactiveProfile()
+          return null
+        }
+
         setProfile(data.profile)
         return data.profile
       } else {
@@ -173,6 +202,7 @@ export function AuthProvider({
     } catch (error) {
       const isRetryable =
         error instanceof Error &&
+        error.message !== INACTIVE_ACCOUNT_ERROR &&
         (error.name === 'AbortError' ||
           error.message.includes('network') ||
           error.message.includes('fetch'))
@@ -269,7 +299,8 @@ export function AuthProvider({
         setSession(session)
         setUser(session?.user ?? null)
         if (session?.user) {
-          await fetchProfile(session.user.id)
+          const profile = await fetchProfile(session.user.id)
+          if (!profile) return
           await claimPendingDonation()
         }
       } catch (error) {
@@ -302,7 +333,8 @@ export function AuthProvider({
         setUser(newSession?.user ?? null)
 
         if (newSession?.user) {
-          await fetchProfile(newSession.user.id)
+          const profile = await fetchProfile(newSession.user.id)
+          if (!profile) return
           await claimPendingDonation()
         } else {
           setProfile(null)
@@ -342,6 +374,15 @@ export function AuthProvider({
 
       setSession(data.session)
       setUser(data.user)
+
+      const profile = await fetchProfile(data.user.id)
+      if (!profile) {
+        if (inactiveAccountHandledRef.current) {
+          throw new Error(INACTIVE_ACCOUNT_ERROR)
+        }
+
+        throw new Error('No se pudo cargar la información del perfil')
+      }
 
       const urlParams = new URLSearchParams(
         window.location.search,

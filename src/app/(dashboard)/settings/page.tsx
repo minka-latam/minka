@@ -7,7 +7,7 @@ export default function SettingsProfilePage() {
       <div>
         <h3 className="text-lg font-medium">Perfil</h3>
         <p className="text-sm text-muted-foreground">
-          Administra tu información personal y cómo te ven otros usuarios.
+          Administra tu información personal.
         </p>
       </div>
       <Separator />

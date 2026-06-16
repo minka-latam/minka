@@ -5,6 +5,14 @@ import {
   HeartHandshake,
   Building2,
   ShieldCheck,
+  FileClock,
+  HandCoins,
+  Bell,
+  Megaphone,
+  Bookmark,
+  Compass,
+  PlusCircle,
+  Settings,
 } from "lucide-react";
 import type { SidebarData } from "../types";
 
@@ -33,12 +41,37 @@ export const sidebarData: SidebarData = {
         {
           title: "Campañas",
           url: "/dashboard/campaigns",
-          icon: LayoutDashboard,
+          icon: Megaphone,
+        },
+        {
+          title: "Guardadas para mí",
+          url: "/dashboard/saved",
+          icon: Bookmark,
+        },
+        {
+          title: "Explorar",
+          url: "/all-campaigns",
+          icon: Compass,
+        },
+        {
+          title: "Crear Campaña",
+          url: "/create-campaign",
+          icon: PlusCircle,
         },
         {
           title: "Verificaciones",
           url: "/dashboard/verification",
           icon: ShieldCheck,
+        },
+        {
+          title: "Donaciones",
+          url: "/dashboard/donations",
+          icon: HandCoins,
+        },
+        {
+          title: "Notificaciones",
+          url: "/dashboard/notifications/admin",
+          icon: Bell,
         },
         {
           title: "Usuarios",
@@ -54,6 +87,16 @@ export const sidebarData: SidebarData = {
           title: "Estadísticas",
           url: "/dashboard/analytics",
           icon: AreaChart,
+        },
+        {
+          title: "Auditoría",
+          url: "/dashboard/audit-logs",
+          icon: FileClock,
+        },
+        {
+          title: "Configuración",
+          url: "/settings",
+          icon: Settings,
         },
       ],
     },

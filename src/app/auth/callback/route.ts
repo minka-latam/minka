@@ -128,6 +128,13 @@ export async function GET(request: NextRequest) {
       const existingProfile = await getProfileById(data.user.id);
       const profile = await ensureProfileForUser(data.user);
 
+      if (profile.status !== "active") {
+        await supabase.auth.signOut();
+        return NextResponse.redirect(
+          new URL("/sign-in?error=inactive_account", request.url),
+        );
+      }
+
       shouldCompleteProfile =
         isGoogleAuth && !existingProfile && profileNeedsCompletion(profile);
       // Note: we no longer update verificationStatus on existing profiles

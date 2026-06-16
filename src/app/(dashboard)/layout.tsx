@@ -24,23 +24,25 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-const cookieStore = await cookies();
-const isPasswordRecoveryOnly =
-  cookieStore.get(PASSWORD_RECOVERY_COOKIE)?.value === "1";
-const supabase = createServerClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-  {
-    cookies: {
-      getAll() { return cookieStore.getAll(); },
-      setAll(cookiesToSet) {
-        cookiesToSet.forEach(({ name, value, options }) =>
-          cookieStore.set(name, value, options)
-        );
+  const cookieStore = await cookies();
+  const isPasswordRecoveryOnly =
+    cookieStore.get(PASSWORD_RECOVERY_COOKIE)?.value === "1";
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) =>
+            cookieStore.set(name, value, options)
+          );
+        },
       },
-    },
-  }
-);
+    }
+  );
   const {
     data: { session },
   } = await supabase.auth.getSession();
@@ -56,11 +58,21 @@ const supabase = createServerClient(
   // Get user profile and role
   const { data: profile } = await supabase
     .from("profiles")
-    .select("role")
+    .select("role,status")
     .eq("id", session.user.id)
     .single();
 
-  // Check if user is admin or organizer
+  if (!profile || profile.status !== "active") {
+    try {
+      await supabase.auth.signOut();
+    } catch (error) {
+      console.error("Failed to sign out inactive dashboard session:", error);
+    }
+
+    redirect("/sign-in?error=inactive_account");
+  }
+
+  // Check if user is admin
   const isAdmin = profile?.role === "admin";
 
   // Use different layouts based on user role

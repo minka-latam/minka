@@ -8,6 +8,7 @@ import {
 import { prisma } from "@/lib/prisma";
 
 const allowedRoles = new Set(["admin", "user"]);
+const allowedStatuses = new Set(["active", "inactive"]);
 
 export async function PATCH(
   request: NextRequest,
@@ -18,17 +19,41 @@ export async function PATCH(
     const { id: userId } = await params;
     const body = await request.json();
     const nextRole = body?.role;
+    const nextStatus = body?.status;
+    const hasRoleUpdate = Object.hasOwn(body ?? {}, "role");
+    const hasStatusUpdate = Object.hasOwn(body ?? {}, "status");
 
-    if (!allowedRoles.has(nextRole)) {
+    if (!hasRoleUpdate && !hasStatusUpdate) {
+      return NextResponse.json(
+        { error: "Role or status is required" },
+        { status: 400 }
+      );
+    }
+
+    if (hasRoleUpdate && !allowedRoles.has(nextRole)) {
       return NextResponse.json(
         { error: "Role must be admin or user" },
         { status: 400 }
       );
     }
 
-    if (admin.id === userId) {
+    if (hasStatusUpdate && !allowedStatuses.has(nextStatus)) {
+      return NextResponse.json(
+        { error: "Status must be active or inactive" },
+        { status: 400 }
+      );
+    }
+
+    if (hasRoleUpdate && admin.id === userId) {
       return NextResponse.json(
         { error: "Administrators cannot change their own role" },
+        { status: 400 }
+      );
+    }
+
+    if (hasStatusUpdate && admin.id === userId && nextStatus !== "active") {
+      return NextResponse.json(
+        { error: "Administrators cannot deactivate their own account" },
         { status: 400 }
       );
     }
@@ -51,7 +76,8 @@ export async function PATCH(
     if (
       targetUser.role === "admin" &&
       targetUser.status === "active" &&
-      nextRole !== "admin"
+      ((hasRoleUpdate && nextRole !== "admin") ||
+        (hasStatusUpdate && nextStatus !== "active"))
     ) {
       const activeAdminCount = await prisma.profile.count({
         where: {
@@ -70,7 +96,10 @@ export async function PATCH(
 
     const updatedUser = await prisma.profile.update({
       where: { id: userId },
-      data: { role: nextRole },
+      data: {
+        ...(hasRoleUpdate ? { role: nextRole } : {}),
+        ...(hasStatusUpdate ? { status: nextStatus } : {}),
+      },
       select: {
         id: true,
         name: true,
@@ -90,11 +119,13 @@ export async function PATCH(
         email: updatedUser.email,
         previousRole: targetUser.role,
         newRole: updatedUser.role,
+        previousStatus: targetUser.status,
+        newStatus: updatedUser.status,
       },
     });
 
     return NextResponse.json({
-      message: "User role updated successfully",
+      message: "User updated successfully",
       user: updatedUser,
     });
   } catch (error) {

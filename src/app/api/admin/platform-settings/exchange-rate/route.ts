@@ -6,9 +6,10 @@ import {
   requireAdminProfile,
 } from "@/lib/admin-auth";
 import {
-  getUsdToBobExchangeRate,
+  getUsdToBobExchangeRateSettings,
   normalizeExchangeRate,
   upsertUsdToBobExchangeRate,
+  useAutomaticUsdToBobExchangeRate,
 } from "@/lib/platform-settings";
 
 function readExchangeRate(body: unknown) {
@@ -16,12 +17,17 @@ function readExchangeRate(body: unknown) {
   return data.usdToBobExchangeRate ?? data.exchangeRate;
 }
 
+function readMode(body: unknown) {
+  const data = (body ?? {}) as Record<string, unknown>;
+  return data.mode;
+}
+
 export async function GET() {
   try {
     await requireAdminProfile();
-    const usdToBobExchangeRate = await getUsdToBobExchangeRate();
+    const settings = await getUsdToBobExchangeRateSettings();
 
-    return NextResponse.json({ usdToBobExchangeRate });
+    return NextResponse.json(settings);
   } catch (error) {
     const authResponse = adminAuthErrorResponse(error);
     if (authResponse) return authResponse;
@@ -38,6 +44,28 @@ export async function PUT(request: Request) {
   try {
     const admin = await requireAdminProfile();
     const body = await request.json();
+    const mode = readMode(body);
+
+    if (mode === "automatic") {
+      const automaticRate = await useAutomaticUsdToBobExchangeRate();
+
+      await createAdminAuditLog({
+        adminId: admin.id,
+        action: "update_exchange_rate",
+        entityType: "platform_settings",
+        metadata: {
+          mode: "automatic",
+          usdToBobExchangeRate: automaticRate,
+        },
+      });
+
+      return NextResponse.json({
+        usdToBobExchangeRate: automaticRate,
+        automaticUsdToBobExchangeRate: automaticRate,
+        mode: "automatic",
+      });
+    }
+
     const usdToBobExchangeRate = normalizeExchangeRate(
       readExchangeRate(body),
     );
@@ -51,10 +79,13 @@ export async function PUT(request: Request) {
       adminId: admin.id,
       action: "update_exchange_rate",
       entityType: "platform_settings",
-      metadata: { usdToBobExchangeRate: savedRate },
+      metadata: { mode: "manual", usdToBobExchangeRate: savedRate },
     });
 
-    return NextResponse.json({ usdToBobExchangeRate: savedRate });
+    return NextResponse.json({
+      usdToBobExchangeRate: savedRate,
+      mode: "manual",
+    });
   } catch (error) {
     const authResponse = adminAuthErrorResponse(error);
     if (authResponse) return authResponse;

@@ -66,6 +66,18 @@ export async function POST(request: Request) {
       );
     }
 
+    if (profile.status === "inactive") {
+      await supabase.auth.signOut();
+      return NextResponse.json(
+        {
+          error: "inactive_account",
+          message:
+            "Tu cuenta está inactiva. Ponte en contacto con Minka si crees que es un error.",
+        },
+        { status: 403 }
+      );
+    }
+
     return NextResponse.json(
       { message: "User logged in successfully", user: authData.user, profile },
       { status: 200 }

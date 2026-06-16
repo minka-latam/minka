@@ -37,7 +37,6 @@ import {
   Pencil,
   AlertCircle,
   Eye,
-  Users,
   Trash2,
   Clock,
 } from "lucide-react";
@@ -342,8 +341,7 @@ export function SuperAdminCampaignTable({
   );
 
   const renderFundingSummary = (
-    campaign: Campaign,
-    variant: "table" | "card" = "table"
+    campaign: Campaign
   ) => (
     <div className="space-y-2">
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
@@ -366,42 +364,6 @@ export function SuperAdminCampaignTable({
         <span className="text-sm font-medium">
           {(campaign.percentageFunded || 0).toFixed(1)}%
         </span>
-      </div>
-      <div
-        className={
-          variant === "card"
-            ? "flex flex-wrap items-center gap-x-6 gap-y-1 pt-2 text-sm"
-            : "grid grid-cols-2 gap-x-6 gap-y-2 pt-3 text-sm 2xl:grid-cols-4"
-        }
-      >
-        <div className={variant === "card" ? "flex items-baseline gap-1.5" : undefined}>
-          <p className="text-gray-500">Recaudado</p>
-          <p className={variant === "card" ? "font-semibold" : "text-base font-semibold"}>
-            {formatCurrency(campaign.collectedAmount)}
-          </p>
-        </div>
-        <div className={variant === "card" ? "flex items-baseline gap-1.5" : undefined}>
-          <p className="text-gray-500">Tips</p>
-          <p className={variant === "card" ? "font-semibold text-green-600" : "text-base font-semibold text-green-600"}>
-            {formatCurrency(campaign.tipAmount)}
-          </p>
-        </div>
-        <div className={variant === "card" ? "flex items-baseline gap-1.5" : undefined}>
-          <p className="text-gray-500">5% fee</p>
-          <p className={variant === "card" ? "font-semibold text-green-700" : "text-base font-semibold text-green-700"}>
-            {formatCurrency(campaign.platformFeeAmount)}
-          </p>
-        </div>
-        <div className={variant === "card" ? "flex items-baseline gap-1.5" : undefined}>
-          <p className="text-gray-500">Total</p>
-          <p className={variant === "card" ? "font-semibold text-gray-900" : "text-base font-semibold text-gray-900"}>
-            {formatCurrency(campaign.totalProcessedAmount)}
-          </p>
-        </div>
-        <div className="flex items-center gap-1 text-gray-500">
-          <Users className="h-3 w-3" />
-          <span>{campaign.donorCount} donadores</span>
-        </div>
       </div>
     </div>
   );
@@ -478,7 +440,7 @@ export function SuperAdminCampaignTable({
                   </div>
 
                   <div className="mt-3">
-                    {renderFundingSummary(campaign, "card")}
+                    {renderFundingSummary(campaign)}
                   </div>
                 </div>
               </div>
@@ -500,7 +462,7 @@ export function SuperAdminCampaignTable({
               <TableHead className="w-[22%]">Campaign</TableHead>
               <TableHead className="w-[16%]">Organizer</TableHead>
               <TableHead className="w-[9%]">Category</TableHead>
-              <TableHead className="w-[31%]">Funding</TableHead>
+              <TableHead className="w-[22%]">Funding</TableHead>
               <TableHead className="w-[7%]">Status</TableHead>
               <TableHead className="w-[8%]">Verified</TableHead>
               <TableHead className="w-[6%]">Created</TableHead>
