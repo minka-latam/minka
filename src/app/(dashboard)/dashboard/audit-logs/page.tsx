@@ -32,6 +32,7 @@ type AuditLogsSearchParams = {
 const actionLabels: Record<string, string> = {
   "profile.update_admin_fields": "Perfil",
   "user.role.update": "Usuario",
+  "user.activate": "Usuario",
   "user.deactivate": "Usuario",
   "fund_transfer.admin_update_status": "Transferencia",
   "fund_transfer.update_status": "Transferencia",
@@ -104,6 +105,26 @@ function displayName(metadata: Metadata) {
   );
 }
 
+function effectiveAuditAction(action: string, metadata: Metadata) {
+  if (action !== "user.role.update") return action;
+
+  const previousRole = metadataText(metadata, "previousRole");
+  const newRole = metadataText(metadata, "newRole");
+  const previousStatus = metadataText(metadata, "previousStatus");
+  const newStatus = metadataText(metadata, "newStatus");
+  const roleChanged = previousRole !== newRole;
+
+  if (!roleChanged && previousStatus === "inactive" && newStatus === "active") {
+    return "user.activate";
+  }
+
+  if (!roleChanged && previousStatus === "active" && newStatus === "inactive") {
+    return "user.deactivate";
+  }
+
+  return action;
+}
+
 function describeAuditAction(action: string, metadata: Metadata) {
   const target = displayName(metadata);
   const previousStatus = metadataText(metadata, "previousStatus");
@@ -133,6 +154,9 @@ function describeAuditAction(action: string, metadata: Metadata) {
         changes.length ? `: ${changes.join("; ")}.` : "."
       }`;
     }
+
+    case "user.activate":
+      return `Activó usuario ${target}.`;
 
     case "user.deactivate":
       return `Desactivó usuario ${target}.`;
@@ -365,6 +389,7 @@ export default async function AuditLogsPage({
               <TableBody>
                 {logs.map((log) => {
                   const metadata = metadataObject(log.metadata);
+                  const action = effectiveAuditAction(log.action, metadata);
 
                   return (
                     <TableRow key={log.id}>
@@ -382,13 +407,13 @@ export default async function AuditLogsPage({
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline">{actionLabel(log.action)}</Badge>
+                        <Badge variant="outline">{actionLabel(action)}</Badge>
                         <div className="mt-1 text-xs text-gray-500">
-                          {log.action}
+                          {action}
                         </div>
                       </TableCell>
                       <TableCell className="max-w-[520px] text-sm leading-6">
-                        {describeAuditAction(log.action, metadata)}
+                        {describeAuditAction(action, metadata)}
                       </TableCell>
                       <TableCell className="text-xs text-gray-600">
                         <div>{log.entityType}</div>

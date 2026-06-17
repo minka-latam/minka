@@ -44,10 +44,10 @@ export default async function DashboardLayout({
     }
   );
   const {
-    data: { session },
-  } = await supabase.auth.getSession();
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  if (!session) {
+  if (!user) {
     redirect("/sign-in");
   }
 
@@ -59,7 +59,7 @@ export default async function DashboardLayout({
   const { data: profile } = await supabase
     .from("profiles")
     .select("role,status")
-    .eq("id", session.user.id)
+    .eq("id", user.id)
     .single();
 
   if (!profile || profile.status !== "active") {

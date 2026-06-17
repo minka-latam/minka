@@ -11,6 +11,12 @@ export const profileFormSchema = z.object({
     .max(20, "El teléfono no puede exceder 20 caracteres")
     .optional()
     .nullable(),
+  identityNumber: z
+    .string()
+    .min(5, "El documento debe tener al menos 5 caracteres")
+    .max(30, "El documento no puede exceder 30 caracteres")
+    .optional()
+    .nullable(),
   bio: z
     .string()
     .max(500, "La biografía no puede exceder 500 caracteres")

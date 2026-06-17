@@ -23,16 +23,21 @@ export const createServerClient = async () => {
 // Function to get the current session
 export const getSession = async () => {
   const supabase = await createServerClient();
-  const { data, error } = await supabase.auth.getSession();
+  const { data, error } = await supabase.auth.getUser();
   if (error) {
-    console.error("Error getting session:", error.message);
+    console.error("Error getting user:", error.message);
     return null;
   }
-  return data.session;
+  return data.user ? { user: data.user } : null;
 };
 
 // Function to get the current user
 export const getUser = async () => {
-  const session = await getSession();
-  return session?.user || null;
+  const supabase = await createServerClient();
+  const { data, error } = await supabase.auth.getUser();
+  if (error) {
+    console.error("Error getting user:", error.message);
+    return null;
+  }
+  return data.user;
 };

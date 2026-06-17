@@ -4,7 +4,6 @@ import { cn } from "@/lib/utils";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/sidebar/app-sidebar";
 import SkipToMain from "@/components/skip-to-main";
-import { AdminProfileDropdown } from "../sidebar/admin-profile-dropdown";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -27,11 +26,6 @@ export function DashboardLayoutClient({ children }: DashboardLayoutProps) {
           "group-data-[scroll-locked=1]/body:has-[main.fixed-main]:min-h-screen"
         )}
       >
-          <div className="p-4 flex items-center justify-end border-b">
-            <div className="flex items-center space-x-4">
-               <AdminProfileDropdown />
-            </div>
-          </div>
         {children}
       </div>
     </SidebarProvider>

@@ -26,27 +26,26 @@ export async function GET() {
     }
   );
 
-    // Get the session from Supabase
     const {
-      data: { session },
+      data: { user },
       error,
-    } = await supabase.auth.getSession();
+    } = await supabase.auth.getUser();
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 401 });
     }
 
-    if (!session) {
+    if (!user) {
       return NextResponse.json({ authenticated: false }, { status: 200 });
     }
 
     // Fetch with raw SQL because OAuth users can have nullable completion
     // fields while the generated Prisma client may lag.
-    const profile = await getProfileById(session.user.id);
+    const profile = await getProfileById(user.id);
 
     if (!profile) {
       return NextResponse.json(
-        { authenticated: true, profileComplete: false, user: session.user },
+        { authenticated: true, profileComplete: false, user },
         { status: 200 }
       );
     }
@@ -56,7 +55,7 @@ export async function GET() {
       {
         authenticated: true,
         profileComplete: true,
-        user: session.user,
+        user,
         profile: formatProfileForApi(profile),
       },
       { status: 200 }

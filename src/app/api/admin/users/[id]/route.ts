@@ -109,9 +109,21 @@ export async function PATCH(
       },
     });
 
+    const roleChanged = hasRoleUpdate && targetUser.role !== updatedUser.role;
+    const statusChanged =
+      hasStatusUpdate && targetUser.status !== updatedUser.status;
+    const auditAction =
+      roleChanged
+        ? "user.role.update"
+        : statusChanged && updatedUser.status === "active"
+          ? "user.activate"
+          : statusChanged && updatedUser.status === "inactive"
+            ? "user.deactivate"
+            : "user.role.update";
+
     await createAdminAuditLog({
       adminId: admin.id,
-      action: "user.role.update",
+      action: auditAction,
       entityType: "profile",
       entityId: updatedUser.id,
       metadata: {

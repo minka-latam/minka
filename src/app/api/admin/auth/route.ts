@@ -22,13 +22,12 @@ export async function GET(req: NextRequest) {
       }
     );
 
-    // Get the session from Supabase
     const {
-      data: { session },
-      error: sessionError,
-    } = await supabase.auth.getSession();
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
 
-    if (sessionError || !session) {
+    if (userError || !user) {
       return NextResponse.json(
         { authenticated: false, isAdmin: false, message: "Not authenticated" },
         { status: 401 }
@@ -37,7 +36,7 @@ export async function GET(req: NextRequest) {
 
     // Check if user is admin
     const profile = await db.profile.findUnique({
-      where: { email: session.user.email },
+      where: { id: user.id },
     });
 
     if (!profile) {
@@ -76,4 +75,3 @@ export async function GET(req: NextRequest) {
     );
   }
 }
-

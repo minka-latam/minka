@@ -147,17 +147,17 @@ export default async function DonationsPage({
     },
   )
   const {
-    data: { session },
-  } = await supabase.auth.getSession()
+    data: { user },
+  } = await supabase.auth.getUser()
 
-  if (!session) {
+  if (!user) {
     redirect('/sign-in')
   }
 
   const { data: profile } = await supabase
     .from('profiles')
     .select('role')
-    .eq('id', session.user.id)
+    .eq('id', user.id)
     .single<Pick<ProfileData, 'role'>>()
 
   const isAdmin = profile?.role === 'admin'
@@ -650,7 +650,7 @@ export default async function DonationsPage({
       )
     `,
     )
-    .eq('donor_id', session.user.id)
+    .eq('donor_id', user.id)
     .order('created_at', { ascending: false })
 
   if (error) {

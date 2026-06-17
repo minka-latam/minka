@@ -1,6 +1,7 @@
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarHeader,
   SidebarRail,
 } from "@/components/ui/sidebar";
@@ -8,6 +9,7 @@ import { NavGroup } from "./nav-group";
 import { sidebarData } from "./data/sidebar-data";
 import type { NavGroupProps } from "./types";
 import { HeartHandshake } from "lucide-react";
+import { SidebarLogoutButton } from "./sidebar-logout-button";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
@@ -30,6 +32,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <NavGroup key={props.title} {...props} />
         ))}
       </SidebarContent>
+      <SidebarFooter>
+        <SidebarLogoutButton />
+      </SidebarFooter>
       <SidebarRail />
     </Sidebar>
   );

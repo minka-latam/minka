@@ -1,6 +1,3 @@
-﻿import { createBrowserClient } from "@supabase/ssr";
-import { STORAGE_BUCKET, STORAGE_PREFIXES } from "@/lib/storage/config";
-
 const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
 const ACCEPTED_IMAGE_TYPES = [
   "image/jpeg",
@@ -9,7 +6,7 @@ const ACCEPTED_IMAGE_TYPES = [
   "image/gif",
 ];
 
-export async function uploadAvatar(file: File, userId: string) {
+export async function uploadAvatar(file: File, _userId: string) {
   // Validate file before upload
   if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
     throw new Error(
@@ -24,34 +21,27 @@ export async function uploadAvatar(file: File, userId: string) {
   }
 
   try {
-    const supabase = createBrowserClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
+    const formData = new FormData();
+    formData.append("file", file);
 
-    // Upload the file to Supabase storage
-    const fileExt = file.name.split(".").pop();
-    const fileName = `${userId}-${Date.now()}-${Math.random()
-      .toString(36)
-      .slice(2)}.${fileExt}`;
-    const filePath = `${STORAGE_PREFIXES.profilePictures}/${fileName}`;
+    const response = await fetch("/api/profile/avatar", {
+      method: "POST",
+      body: formData,
+    });
 
-    // Upload file
-    const { error: uploadError } = await supabase.storage
-      .from(STORAGE_BUCKET)
-      .upload(filePath, file, {
-        cacheControl: "3600",
-        upsert: false,
-      });
+    const result = await response.json().catch(() => null);
 
-    if (uploadError) throw uploadError;
+    if (!response.ok) {
+      throw new Error(
+        result?.error || "No se pudo subir la imagen de perfil."
+      );
+    }
 
-    // Get the public URL
-    const {
-      data: { publicUrl },
-    } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(filePath);
+    if (typeof result?.url !== "string") {
+      throw new Error("La respuesta de carga no incluyó una URL válida.");
+    }
 
-    return publicUrl;
+    return result.url;
   } catch (error) {
     console.error("Error uploading avatar:", error);
     throw error;

@@ -42,16 +42,16 @@ export async function requireAdminProfile(): Promise<AdminProfile> {
   );
 
   const {
-    data: { session },
-    error: sessionError,
-  } = await supabase.auth.getSession();
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
 
-  if (sessionError || !session?.user) {
+  if (userError || !user) {
     throw new AdminAuthError("Authentication required", 401);
   }
 
   const profile = await prisma.profile.findUnique({
-    where: { id: session.user.id },
+    where: { id: user.id },
     select: {
       id: true,
       name: true,

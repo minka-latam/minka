@@ -37,6 +37,10 @@ export function ProfileForm() {
     defaultValues: {
       name: typeof profile?.name === "string" ? profile.name : "",
       phone: typeof profile?.phone === "string" ? profile.phone : "",
+      identityNumber:
+        typeof profile?.identity_number === "string"
+          ? profile.identity_number
+          : "",
       bio: typeof profile?.bio === "string" ? profile.bio : "",
       location: typeof profile?.location === "string" ? profile.location : "",
     },
@@ -142,15 +146,6 @@ export function ProfileForm() {
                 <span className="text-muted-foreground">Miembro desde:</span>
                 <span className="font-medium">{joinDate}</span>
               </div>
-              {profile?.identity_number && (
-                <div className="flex items-center gap-2 text-sm">
-                  <IdCard className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-muted-foreground">Documento:</span>
-                  <span className="font-medium">
-                    ****{profile.identity_number.slice(-4)}
-                  </span>
-                </div>
-              )}
             </div>
           </div>
 
@@ -194,6 +189,31 @@ export function ProfileForm() {
                   </FormControl>
                   <FormDescription>
                     Tu número de teléfono de contacto.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="identityNumber"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Número de documento</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <IdCard className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        placeholder="Ej: BO-1234567"
+                        className="pl-9"
+                        {...field}
+                        value={field.value ?? ""}
+                      />
+                    </div>
+                  </FormControl>
+                  <FormDescription>
+                    Documento de identidad asociado a tu cuenta.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>

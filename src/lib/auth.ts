@@ -1,10 +1,14 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { type Session } from "@supabase/supabase-js";
+import { type User } from "@supabase/supabase-js";
 import { cache } from "react";
 
-export const getAuthSession = cache(async (): Promise<Session | null> => {
+export type AuthSession = {
+  user: User;
+};
+
+export const getAuthSession = cache(async (): Promise<AuthSession | null> => {
   try {
     const cookieStore = await cookies();
 
@@ -37,16 +41,16 @@ export const getAuthSession = cache(async (): Promise<Session | null> => {
     );
 
     const {
-      data: { session },
+      data: { user },
       error,
-    } = await supabase.auth.getSession();
+    } = await supabase.auth.getUser();
 
     if (error) {
-      console.error("Error getting session:", error);
+      console.error("Error getting user:", error);
       return null;
     }
 
-    return session;
+    return user ? { user } : null;
   } catch (error) {
     console.error("Error in getAuthSession:", error);
     return null;
