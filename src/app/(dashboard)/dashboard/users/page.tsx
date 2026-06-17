@@ -45,7 +45,9 @@ export default async function ManageUsersPage() {
   // Fetch all user profiles if the user is an admin
   const { data: users, error } = await supabase
     .from("profiles")
-    .select("id, name, email, role, status, created_at, phone")
+    .select(
+      "id, name, email, role, status, created_at, phone, active_campaigns_count",
+    )
     .not("email", "like", `${CAMPAIGN_ANONYMOUS_EMAIL_PREFIX}%@minka.org`)
     .order("created_at", { ascending: false });
 
@@ -61,10 +63,24 @@ export default async function ManageUsersPage() {
 
   // Ensure users data is typed correctly, filtering out null if necessary
   const validUsers = (users || []).filter(Boolean) as ProfileData[];
+  const activeUsers = validUsers.filter((user) => user.status !== "inactive");
+  const inactiveUsers = validUsers.length - activeUsers.length;
+  const adminUsers = validUsers.filter((user) => user.role === "admin");
+  const usersWithActiveCampaign = validUsers.filter(
+    (user) => Number(user.active_campaigns_count ?? 0) > 0,
+  );
 
   return (
     <div className="space-y-6 p-4 md:p-6">
-      <h1 className="text-3xl font-bold text-gray-800">Manage Users</h1>
+      <div>
+        <h1 className="text-3xl font-bold text-gray-800">Manage Users</h1>
+        <p className="mt-1 text-sm text-gray-600">
+          {validUsers.length} usuarios registrados | {inactiveUsers}{" "}
+          {inactiveUsers === 1 ? "inactivo" : "inactivos"} |{" "}
+          {adminUsers.length} admin | {usersWithActiveCampaign.length} con
+          campaña activa
+        </p>
+      </div>
       <div className="bg-card rounded-lg p-4 md:p-6 border">
         {/* Render the table component with fetched users */}
         <AdminUserTable users={validUsers} />

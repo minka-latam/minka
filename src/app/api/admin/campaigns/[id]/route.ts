@@ -1,15 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { CampaignStatus } from "@prisma/client";
-
 import {
   adminAuthErrorResponse,
   createAdminAuditLog,
   requireAdminProfile,
 } from "@/lib/admin-auth";
-import {
-  isCountedCampaignStatus,
-  refreshOrganizerActiveCampaignsCount,
-} from "@/lib/campaigns/active-count";
+import { refreshOrganizerActiveCampaignsCount } from "@/lib/campaigns/active-count";
 import { prisma } from "@/lib/prisma";
 
 export async function DELETE(
@@ -42,9 +37,7 @@ export async function DELETE(
         where: { id: campaignId },
       });
 
-      if (isCountedCampaignStatus(campaign.campaignStatus)) {
-        await refreshOrganizerActiveCampaignsCount(tx, campaign.organizerId);
-      }
+      await refreshOrganizerActiveCampaignsCount(tx, campaign.organizerId);
     });
 
     await createAdminAuditLog({

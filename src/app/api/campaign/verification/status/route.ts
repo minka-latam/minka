@@ -6,6 +6,7 @@ import {
   createAdminAuditLog,
   requireAdminProfile,
 } from "@/lib/admin-auth";
+import { notifyVerificationResult } from "@/lib/verification-result-email";
 
 // Schema for verification status update
 const updateStatusSchema = z.object({
@@ -71,6 +72,12 @@ export async function PUT(req: NextRequest) {
         id: true,
         title: true,
         verificationStatus: true,
+        organizer: {
+          select: {
+            name: true,
+            email: true,
+          },
+        },
         verificationRequests: {
           select: {
             verificationStatus: true,
@@ -129,6 +136,17 @@ export async function PUT(req: NextRequest) {
         notes: notes ?? null,
       },
     });
+
+    if (status === "approved" || status === "rejected") {
+      await notifyVerificationResult({
+        campaignId,
+        campaignTitle: campaign.title,
+        organizerName: campaign.organizer.name || "Creador de campaña",
+        organizerEmail: campaign.organizer.email || "",
+        status,
+        notes: notes ?? null,
+      });
+    }
 
     return NextResponse.json({
       message: `Verification status updated to ${status}`,

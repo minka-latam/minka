@@ -692,12 +692,10 @@ export async function DELETE(
         },
       });
 
-      if (isCountedCampaignStatus(existingCampaign.campaignStatus)) {
-        await refreshOrganizerActiveCampaignsCount(
-          tx,
-          existingCampaign.organizerId,
-        );
-      }
+      await refreshOrganizerActiveCampaignsCount(
+        tx,
+        existingCampaign.organizerId,
+      );
     });
 
     return NextResponse.json(

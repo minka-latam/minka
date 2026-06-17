@@ -1059,22 +1059,14 @@ export default function CampaignVerificationPage() {
                     <CardHeader className="pb-3">
                       <CardTitle className="text-2xl font-medium">
                         Historia de la campaña
-                      </CardTitle>
-                      <p className="text-gray-600">
-                        Descripción de cómo se van a emplear los fondos
-                        recaudados, por qué esta campaña es importante, cómo se
-                        planea llevar a cabo y quién es el responsable.
-                      </p>
+                      </CardTitle>                      
                     </CardHeader>
                     <CardContent>
                       <div className="bg-white rounded-xl border border-black p-8">
                         <div className="space-y-6">
-                          <div>
-                            <label className="block text-lg font-medium mb-2">
-                              Historia proporcionada
-                            </label>
+                          <div>                            
                             <div className="relative">
-                              <div className="w-full rounded-lg border border-black bg-gray-50 p-4 min-h-[120px]">
+                              <div className="w-full rounded-lg border  bg-gray-50 p-4 min-h-[120px]">
                                 <p className="text-gray-700 whitespace-pre-line">
                                   {selectedRequest.campaignStory}
                                 </p>
