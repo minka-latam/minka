@@ -132,8 +132,7 @@ function formatCampaignData(campaign: any) {
     (campaign.legal_entity
       ? 'persona_juridica'
       : campaign.beneficiary_name ||
-          campaign.beneficiary_relationship ||
-          beneficiaries
+          campaign.beneficiary_relationship
         ? 'otra_persona'
         : null)
 
@@ -209,7 +208,6 @@ function CustomCampaignDetails({
       beneficiaryRelationship.slice(1)
     : ''
   const hasBeneficiaryInfo =
-    recipientType === 'tu_mismo' ||
     (recipientType === 'otra_persona' &&
       (Boolean(beneficiaryName) ||
         Boolean(relationship) ||
