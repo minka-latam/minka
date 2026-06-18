@@ -19,6 +19,26 @@ import {
   toAbsoluteShareUrl,
 } from "@/lib/campaign-share";
 
+function getSocialImageType(url: string) {
+  const cleanUrl = url.split("?")[0]?.toLowerCase() || "";
+
+  if (cleanUrl.endsWith(".png")) return "image/png";
+  if (cleanUrl.endsWith(".webp")) return "image/webp";
+  if (cleanUrl.endsWith(".gif")) return "image/gif";
+
+  return "image/jpeg";
+}
+
+function getSocialImage(url: string, alt: string, isFallback = false) {
+  return {
+    url,
+    width: isFallback ? 512 : 1200,
+    height: isFallback ? 512 : 630,
+    alt,
+    type: getSocialImageType(url),
+  };
+}
+
 export async function generateMetadata({
   params,
 }: {
@@ -68,19 +88,14 @@ export async function generateMetadata({
         alternates: {
           canonical: campaignUrl,
         },
-        openGraph: {
+      openGraph: {
           title: "Campaña en Minka",
           description:
             "Conoce campañas solidarias y causas sociales en Minka.",
           url: campaignUrl,
           siteName: "Minka",
           type: "website",
-          images: [
-            {
-              url: fallbackImage,
-              alt: "Minka",
-            },
-          ],
+          images: [getSocialImage(fallbackImage, "Minka", true)],
         },
         twitter: {
           card: "summary_large_image",
@@ -98,6 +113,7 @@ export async function generateMetadata({
       campaign.media[0]?.mediaUrl || MINKA_FALLBACK_SHARE_IMAGE,
       baseUrl,
     );
+    const hasCampaignImage = Boolean(campaign.media[0]?.mediaUrl);
 
     return {
       title,
@@ -112,12 +128,7 @@ export async function generateMetadata({
         siteName: "Minka",
         locale: "es_BO",
         type: "website",
-        images: [
-          {
-            url: primaryImage,
-            alt: title,
-          },
-        ],
+        images: [getSocialImage(primaryImage, title, !hasCampaignImage)],
       },
       twitter: {
         card: "summary_large_image",
@@ -136,19 +147,14 @@ export async function generateMetadata({
       alternates: {
         canonical: campaignUrl,
       },
-      openGraph: {
+        openGraph: {
         title: "Campaña en Minka",
         description:
           "Conoce campañas solidarias y causas sociales en Minka.",
         url: campaignUrl,
         siteName: "Minka",
         type: "website",
-        images: [
-          {
-            url: fallbackImage,
-            alt: "Minka",
-          },
-        ],
+        images: [getSocialImage(fallbackImage, "Minka", true)],
       },
       twitter: {
         card: "summary_large_image",

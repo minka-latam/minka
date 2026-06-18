@@ -11,7 +11,7 @@ import { GlobalActivityToast } from "@/components/notifications/GlobalActivityTo
 const APP_NAME = "MINKA - Impulsa sueños, transforma vidas";
 const APP_DESCRIPTION =
   "Plataforma de donaciones para causas sociales en Bolivia";
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://minka-comunidad.org";
 
 const quicksand = Quicksand({
   variable: "--font-quicksand",
