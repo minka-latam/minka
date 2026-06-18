@@ -25,7 +25,7 @@ function CampaignVerificationPageContent() {
       <Header />
 
       {/* Spacer div to account for the fixed header height */}
-      <div className="h-20 md:h-28"></div>
+      <div className="h-20 lg:h-28"></div>
 
       <div className="w-full h-[100px] md:h-[200px] lg:h-[300px] relative border-t border-[#2c6e49]/5">
         <Image
@@ -58,7 +58,7 @@ function CampaignVerificationPageSkeleton() {
       <Header />
 
       {/* Spacer div to account for the fixed header height */}
-      <div className="h-20 md:h-28"></div>
+      <div className="h-20 lg:h-28"></div>
 
       <div className="w-full h-[100px] md:h-[200px] lg:h-[300px] relative border-t border-[#2c6e49]/5">
         <div className="absolute inset-0 flex items-center justify-center">

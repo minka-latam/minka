@@ -132,15 +132,15 @@ export function Header() {
     <>
       {/* Desktop Header */}
       <header
-        className={`hidden md:flex fixed top-0 left-0 right-0 w-full z-50 transition-all duration-300 ${
+        className={`hidden lg:flex fixed top-0 left-0 right-0 w-full z-50 transition-all duration-300 ${
           isScrolled ? "bg-[#2c6e49] shadow-md h-20" : "h-28"
         }`}
       >
-        <div className="container mx-auto h-full px-4 flex items-center">
+        <div className="container mx-auto h-full px-4 flex items-center min-w-0">
           <Link
             href="/"
             onClick={handleLogoClick}
-            className="flex items-center mr-12"
+            className="flex shrink-0 items-center mr-8 xl:mr-12"
           >
             <Image
               src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/logo-2S5vgSiFRwu8gClKBuwTXkOi5H46aN.svg"
@@ -150,12 +150,12 @@ export function Header() {
               className={`h-12 w-auto transition-all duration-300 ${isScrolled ? "brightness-0 invert" : ""}`}
             />
           </Link>
-          <nav className="flex items-center space-x-8">
+          <nav className="flex min-w-0 items-center gap-5 xl:gap-8">
             {menuItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
-                className={`font-medium text-lg transition-colors ${
+                className={`whitespace-nowrap font-medium text-base xl:text-lg transition-colors ${
                   isScrolled
                     ? "text-white hover:text-gray-200"
                     : "text-[#2c6e49] hover:text-[#1e4d33]"
@@ -165,15 +165,19 @@ export function Header() {
               </Link>
             ))}
           </nav>
-          <div className="flex items-center gap-4 ml-auto">
+          <div className="flex shrink-0 items-center gap-2 xl:gap-4 ml-auto pl-4">
             {canShowAccountAccess ? (
               <>
-                <Link href="/dashboard" className="flex items-center gap-2">
+                <Link
+                  href="/dashboard"
+                  className="flex min-w-0 items-center gap-2"
+                  title={profileName || "Usuario"}
+                >
                   <User
-                    className={`h-5 w-5 ${isScrolled ? "text-white" : "text-[#2c6e49]"}`}
+                    className={`h-5 w-5 shrink-0 ${isScrolled ? "text-white" : "text-[#2c6e49]"}`}
                   />
                   <span
-                    className={`font-medium ${isScrolled ? "text-white" : "text-[#2c6e49]"}`}
+                    className={`max-w-[108px] truncate font-medium xl:max-w-[170px] ${isScrolled ? "text-white" : "text-[#2c6e49]"}`}
                   >
                     {profileName || "Usuario"}
                   </span>
@@ -193,7 +197,7 @@ export function Header() {
                   ) : (
                     <LogOut className="h-5 w-5" />
                   )}
-                  <span className="font-medium">
+                  <span className="hidden font-medium xl:inline">
                     {isSigningOut ? "Cerrando sesión..." : "Salir"}
                   </span>
                 </Button>
@@ -218,7 +222,7 @@ export function Header() {
 
       {/* Mobile Header */}
       <header
-        className={`md:hidden flex justify-between items-center px-4 py-3 fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        className={`lg:hidden flex justify-between items-center px-4 py-3 fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
           isScrolled ? "bg-[#2c6e49] shadow-md" : "bg-transparent"
         }`}
       >
@@ -247,7 +251,7 @@ export function Header() {
 
       {/* Mobile Menu Overlay */}
       {isMenuOpen && (
-        <div className="md:hidden fixed inset-0 bg-white z-50 flex flex-col">
+        <div className="lg:hidden fixed inset-0 bg-white z-50 flex flex-col">
           {/* Mobile Menu Header */}
           <div className="flex justify-between items-center px-4 py-3 border-b">
             <button

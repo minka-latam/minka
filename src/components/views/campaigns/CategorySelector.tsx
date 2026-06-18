@@ -1,10 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { cn } from "@/lib/utils";
 import { Loader2 } from "lucide-react";
 import Image from "next/image";
-import React from "react";
+import { getCampaignCategoryIcon } from "@/lib/campaign-categories";
 
 export interface CategoryItem {
   name: string;
@@ -51,84 +50,6 @@ export function CategorySelector({
   // Use provided categories or defaults if empty
   const displayCategories =
     categories.length > 0 ? categories : defaultCategories;
-
-  // Helper function to get the correct icon for a category
-  const getCategoryIcon = (categoryName: string) => {
-    switch (categoryName) {
-      case "Medio ambiente":
-        return (
-          <Image
-            src="/icons/nature.svg"
-            alt="Medio ambiente"
-            width={24}
-            height={24}
-          />
-        );
-      case "Educación":
-        return (
-          <Image
-            src="/icons/book_2.svg"
-            alt="Educación"
-            width={24}
-            height={24}
-          />
-        );
-      case "Salud":
-        return (
-          <Image
-            src="/icons/health_metrics.svg"
-            alt="Salud"
-            width={24}
-            height={24}
-          />
-        );
-      case "Igualdad":
-        return (
-          <Image
-            src="/icons/diversity_4.svg"
-            alt="Igualdad"
-            width={24}
-            height={24}
-          />
-        );
-      case "Cultura y arte":
-        return (
-          <Image
-            src="/icons/palette.svg"
-            alt="Cultura y arte"
-            width={24}
-            height={24}
-          />
-        );
-      case "Emergencia":
-        return (
-          <Image
-            src="/icons/e911_emergency.svg"
-            alt="Emergencia"
-            width={24}
-            height={24}
-          />
-        );
-      case "Otros":
-        return (
-          <Image
-            src="/icons/handshake.svg"
-            alt="Otro"
-            width={24}
-            height={24}
-          />
-        );
-      default:
-        return (
-          <Image
-            src="/icons/view_cozy.svg"
-            alt="Categoría"
-            width={24}
-            height={24}
-          />
-        );
-    }
-  };
 
   return (
     <div className="mt-16">
@@ -194,9 +115,13 @@ export function CategorySelector({
                 >
                   <div className="flex items-center gap-1">
                     <div className="w-4 h-4">
-                      {React.cloneElement(getCategoryIcon(category.name), {
-                        draggable: false,
-                      })}
+                      <Image
+                        src={getCampaignCategoryIcon(category.name)}
+                        alt={category.name}
+                        width={16}
+                        height={16}
+                        draggable={false}
+                      />
                     </div>
                     <span>{category.name}</span>
                   </div>
@@ -304,7 +229,12 @@ export function CategorySelector({
                           : ""
                       }
                     >
-                      {getCategoryIcon(category.name)}
+                      <Image
+                        src={getCampaignCategoryIcon(category.name)}
+                        alt={category.name}
+                        width={24}
+                        height={24}
+                      />
                     </div>
                     <div className="flex items-center gap-2 mt-3 mb-1">
                       <span className="font-medium">{category.name}</span>

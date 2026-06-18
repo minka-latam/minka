@@ -12,7 +12,7 @@ export default function AboutPage() {
     <div className="min-h-screen bg-gradient-to-r from-white to-[#f5f7e9] flex flex-col">
       <Header />
       {/* Spacer div to account for the fixed header height */}
-      <div className="h-20 md:h-28"></div>
+      <div className="h-20 lg:h-28"></div>
       <main className="container mx-auto px-4 py-16 flex-grow">
         {/* Hero Section */}
         <div className="text-center mb-32">

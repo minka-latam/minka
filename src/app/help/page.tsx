@@ -14,7 +14,7 @@ export default function HelpPage() {
     <div className="min-h-screen bg-gradient-to-r from-white to-[#f5f7e9] flex flex-col">
       <Header />
       {/* Spacer div to account for the fixed header height */}
-      <div className="h-20 md:h-28"></div>
+      <div className="h-20 lg:h-28"></div>
       <main className="container mx-auto px-4 py-16 flex-grow">
         <div className="max-w-5xl mx-auto">
           <h1 className="text-4xl md:text-5xl font-bold text-[#2c6e49] mb-8">

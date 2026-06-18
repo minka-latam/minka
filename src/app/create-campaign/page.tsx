@@ -23,7 +23,7 @@ function CreateCampaignPageContent() {
       <Header />
 
       {/* Spacer div to account for the fixed header height */}
-      <div className="h-20 md:h-28"></div>
+      <div className="h-20 lg:h-28"></div>
 
       {/* Page header - Hide when step >= 2 */}
       {currentStep === 1 && (
