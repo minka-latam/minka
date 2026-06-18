@@ -37,7 +37,7 @@ const platformLabels: Record<CampaignSharePlatform, string> = {
 
 function isMobileDevice() {
   if (typeof navigator === "undefined") return false;
-  return /Mobi|Android/i.test(navigator.userAgent);
+  return /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 }
 
 export function CampaignShareMenu({
@@ -88,13 +88,27 @@ export function CampaignShareMenu({
     }
   };
 
-  const openShareUrl = (url: string, platform: CampaignSharePlatform) => {
-    window.open(url, "_blank", "noopener,noreferrer,width=640,height=560");
+  const openShareUrl = (
+    url: string,
+    platform: CampaignSharePlatform,
+    options: { showToast?: boolean } = {},
+  ) => {
+    const showToast = options.showToast ?? true;
+
+    if (isMobileDevice()) {
+      window.location.href = url;
+    } else {
+      window.open(url, "_blank", "noopener,noreferrer,width=640,height=560");
+    }
+
     closeMenu();
-    toast({
-      title: "Compartir campaña",
-      description: `Se abrió ${platformLabels[platform]} para compartir.`,
-    });
+
+    if (showToast) {
+      toast({
+        title: "Compartir campaña",
+        description: `Se abrió ${platformLabels[platform]} para compartir.`,
+      });
+    }
   };
 
   const handleShareClick = () => {
@@ -124,13 +138,12 @@ export function CampaignShareMenu({
     }
 
     if (platform === "facebook" || platform === "linkedin") {
-      tryCopyToClipboard(sharePayload.caption).then((copied) => {
-        window.open(
-          sharePayload.links[platform],
-          "_blank",
-          "noopener,noreferrer,width=640,height=560",
-        );
-        closeMenu();
+      const copyPromise = tryCopyToClipboard(sharePayload.caption);
+      openShareUrl(sharePayload.links[platform], platform, {
+        showToast: false,
+      });
+
+      copyPromise.then((copied) => {
         toast({
           title: "Texto copiado",
           description: copied
