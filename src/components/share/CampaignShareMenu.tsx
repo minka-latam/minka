@@ -40,23 +40,6 @@ function isMobileDevice() {
   return /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 }
 
-function getMobileShareUrl(
-  platform: CampaignSharePlatform,
-  shareUrl: string,
-  campaignUrl: string,
-  text: string,
-) {
-  if (platform === "facebook") {
-    return `https://m.facebook.com/sharer.php?u=${encodeURIComponent(campaignUrl)}`;
-  }
-
-  if (platform === "twitter") {
-    return `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(campaignUrl)}`;
-  }
-
-  return shareUrl;
-}
-
 export function CampaignShareMenu({
   campaign,
   intent = "support",
@@ -108,19 +91,12 @@ export function CampaignShareMenu({
   const openShareUrl = (
     url: string,
     platform: CampaignSharePlatform,
-    options: { showToast?: boolean; mobileDelayMs?: number } = {},
+    options: { showToast?: boolean } = {},
   ) => {
     const showToast = options.showToast ?? true;
 
     if (isMobileDevice()) {
-      window.setTimeout(() => {
-        window.location.href = getMobileShareUrl(
-          platform,
-          url,
-          sharePayload.url,
-          sharePayload.text,
-        );
-      }, options.mobileDelayMs ?? 0);
+      window.location.href = url;
     } else {
       window.open(url, "_blank", "noopener,noreferrer,width=640,height=560");
     }
@@ -135,8 +111,40 @@ export function CampaignShareMenu({
     }
   };
 
+  const canUseNativeShare = () =>
+    typeof navigator !== "undefined" && typeof navigator.share === "function";
+
+  const shareWithDeviceSheet = async (platform: "facebook" | "linkedin") => {
+    closeMenu();
+
+    try {
+      await navigator.share({
+        title: sharePayload.title,
+        text: sharePayload.text,
+        url: sharePayload.url,
+      });
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") {
+        return;
+      }
+
+      const copied = await tryCopyToClipboard(sharePayload.caption);
+      toast({
+        title: copied ? "Texto copiado" : "No se pudo abrir compartir",
+        description: copied
+          ? `Pega el texto copiado en ${platformLabels[platform]} para acompañar el enlace.`
+          : `Abre ${platformLabels[platform]} y comparte el enlace manualmente.`,
+        variant: copied ? "default" : "destructive",
+      });
+
+      openShareUrl(sharePayload.links[platform], platform, {
+        showToast: false,
+      });
+    }
+  };
+
   const handleShareClick = () => {
-    if (useNativeShare && isMobileDevice() && navigator.share) {
+    if (useNativeShare && isMobileDevice() && canUseNativeShare()) {
       navigator
         .share({
           title: sharePayload.title,
@@ -162,6 +170,11 @@ export function CampaignShareMenu({
     }
 
     if (platform === "facebook" || platform === "linkedin") {
+      if (isMobileDevice() && canUseNativeShare()) {
+        shareWithDeviceSheet(platform);
+        return;
+      }
+
       const isMobileShare = isMobileDevice();
       const copyPromise = tryCopyToClipboard(sharePayload.caption);
 
@@ -174,7 +187,6 @@ export function CampaignShareMenu({
 
       openShareUrl(sharePayload.links[platform], platform, {
         showToast: false,
-        mobileDelayMs: 2200,
       });
 
       copyPromise.then((copied) => {
