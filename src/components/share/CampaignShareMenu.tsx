@@ -40,6 +40,23 @@ function isMobileDevice() {
   return /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 }
 
+function getMobileShareUrl(
+  platform: CampaignSharePlatform,
+  shareUrl: string,
+  campaignUrl: string,
+  text: string,
+) {
+  if (platform === "facebook") {
+    return `https://m.facebook.com/sharer.php?u=${encodeURIComponent(campaignUrl)}`;
+  }
+
+  if (platform === "twitter") {
+    return `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(campaignUrl)}`;
+  }
+
+  return shareUrl;
+}
+
 export function CampaignShareMenu({
   campaign,
   intent = "support",
@@ -91,12 +108,19 @@ export function CampaignShareMenu({
   const openShareUrl = (
     url: string,
     platform: CampaignSharePlatform,
-    options: { showToast?: boolean } = {},
+    options: { showToast?: boolean; mobileDelayMs?: number } = {},
   ) => {
     const showToast = options.showToast ?? true;
 
     if (isMobileDevice()) {
-      window.location.href = url;
+      window.setTimeout(() => {
+        window.location.href = getMobileShareUrl(
+          platform,
+          url,
+          sharePayload.url,
+          sharePayload.text,
+        );
+      }, options.mobileDelayMs ?? 0);
     } else {
       window.open(url, "_blank", "noopener,noreferrer,width=640,height=560");
     }
@@ -138,12 +162,24 @@ export function CampaignShareMenu({
     }
 
     if (platform === "facebook" || platform === "linkedin") {
+      const isMobileShare = isMobileDevice();
       const copyPromise = tryCopyToClipboard(sharePayload.caption);
+
+      if (isMobileShare) {
+        toast({
+          title: "Texto copiado",
+          description: `En unos segundos se abrirá ${platformLabels[platform]}. Pega el texto copiado en la publicación.`,
+        });
+      }
+
       openShareUrl(sharePayload.links[platform], platform, {
         showToast: false,
+        mobileDelayMs: 2200,
       });
 
       copyPromise.then((copied) => {
+        if (isMobileShare) return;
+
         toast({
           title: "Texto copiado",
           description: copied
