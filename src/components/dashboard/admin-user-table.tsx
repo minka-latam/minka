@@ -12,7 +12,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns"; // For formatting dates
-import { Pencil, Trash2, UserCheck } from "lucide-react"; // Icons for actions
+import { Info, Pencil, Trash2, UserCheck } from "lucide-react"; // Icons for actions
 import { useMemo, useState } from "react";
 import { toast } from "@/components/ui/use-toast";
 import { useRouter } from "next/navigation";
@@ -41,6 +41,7 @@ export function AdminUserTable({ users }: AdminUserTableProps) {
   const router = useRouter();
   const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
   const [editingUser, setEditingUser] = useState<ProfileData | null>(null);
+  const [viewingUser, setViewingUser] = useState<ProfileData | null>(null);
   const [selectedRole, setSelectedRole] = useState<"admin" | "user">("user");
   const [updatingRoleId, setUpdatingRoleId] = useState<string | null>(null);
   const [activatingUserId, setActivatingUserId] = useState<string | null>(null);
@@ -175,6 +176,35 @@ export function AdminUserTable({ users }: AdminUserTableProps) {
     }
   };
 
+  const formatDate = (value: unknown, includeTime = false) => {
+    if (!value || typeof value !== "string") return "-";
+
+    try {
+      return format(new Date(value), includeTime ? "PPP p" : "PPP");
+    } catch {
+      return value;
+    }
+  };
+
+  const profilePicture =
+    viewingUser?.profile_picture || viewingUser?.profilePicture || null;
+
+  const detailRows = viewingUser
+    ? [
+        ["ID", viewingUser.id],
+        ["Nombre", viewingUser.name],
+        ["Email", viewingUser.email],
+        ["Teléfono", viewingUser.phone],
+        ["Documento", viewingUser.identity_number || viewingUser.identityNumber],
+        ["Fecha de nacimiento", formatDate(viewingUser.birth_date || viewingUser.birthDate)],
+        ["Ubicación", viewingUser.location],
+        ["Campañas activas", viewingUser.active_campaigns_count ?? 0],
+        ["Miembro desde", formatDate(viewingUser.join_date)],
+        ["Creado", formatDate(viewingUser.created_at, true)],
+        ["Actualizado", formatDate(viewingUser.updated_at, true)],
+      ]
+    : [];
+
   return (
     <>
       <div className="mb-4 flex items-center gap-2">
@@ -196,8 +226,6 @@ export function AdminUserTable({ users }: AdminUserTableProps) {
           <TableRow>
             <TableHead>Name</TableHead>
             <TableHead>Email</TableHead>
-            <TableHead>Role</TableHead>
-            <TableHead>Status</TableHead>
             <TableHead>Joined Date</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
@@ -206,7 +234,7 @@ export function AdminUserTable({ users }: AdminUserTableProps) {
           {visibleUsers.length === 0 ? (
             <TableRow>
               <TableCell
-                colSpan={6}
+                colSpan={4}
                 className="text-center text-muted-foreground"
               >
                 No users found.
@@ -220,32 +248,18 @@ export function AdminUserTable({ users }: AdminUserTableProps) {
                 </TableCell>
                 <TableCell>{user.email || "-"}</TableCell>
                 <TableCell>
-                  <Badge
-                    variant={
-                      user.role === "admin" ? "destructive" : "secondary"
-                    }
-                  >
-                    {user.role || "user"}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <Badge
-                    variant={user.status === "inactive" ? "outline" : "secondary"}
-                    className={
-                      user.status === "inactive"
-                        ? "border-gray-400 text-gray-600"
-                        : "bg-[#e8f0e9] text-[#2c6e49] hover:bg-[#e8f0e9]"
-                    }
-                  >
-                    {user.status === "inactive" ? "Inactive" : "Active"}
-                  </Badge>
-                </TableCell>
-                <TableCell>
                   {user.created_at
                     ? format(new Date(user.created_at), "PPP") // Format date nicely
                     : "-"}
                 </TableCell>
                 <TableCell className="text-right space-x-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setViewingUser(user)}
+                  >
+                    <Info className="mr-1 h-4 w-4" /> Info
+                  </Button>
                   <Button
                     variant="ghost"
                     size="sm"
@@ -341,6 +355,100 @@ export function AdminUserTable({ users }: AdminUserTableProps) {
                 : "Guardar rol"}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={Boolean(viewingUser)} onOpenChange={() => setViewingUser(null)}>
+        <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Perfil de usuario</DialogTitle>
+            <DialogDescription>
+              Información registrada en el perfil de Minka.
+            </DialogDescription>
+          </DialogHeader>
+
+          {viewingUser && (
+            <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
+              <div className="space-y-4">
+                <div className="overflow-hidden rounded-2xl border bg-[#f5f7e9]">
+                  {profilePicture ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={String(profilePicture)}
+                      alt={viewingUser.name || "Imagen de perfil"}
+                      className="aspect-square w-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex aspect-square w-full items-center justify-center bg-[#e8f0e9] text-7xl font-semibold text-[#2c6e49]">
+                      {(viewingUser.name || viewingUser.email || "U")
+                        .charAt(0)
+                        .toUpperCase()}
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-2 rounded-2xl border bg-white p-4">
+                  <div className="flex flex-wrap gap-2">
+                    <Badge
+                      variant={
+                        viewingUser.role === "admin"
+                          ? "destructive"
+                          : "secondary"
+                      }
+                    >
+                      {viewingUser.role || "user"}
+                    </Badge>
+                    <Badge
+                      variant={
+                        viewingUser.status === "inactive"
+                          ? "outline"
+                          : "secondary"
+                      }
+                      className={
+                        viewingUser.status === "inactive"
+                          ? "border-gray-400 text-gray-600"
+                          : "bg-[#e8f0e9] text-[#2c6e49] hover:bg-[#e8f0e9]"
+                      }
+                    >
+                      {viewingUser.status === "inactive" ? "Inactive" : "Active"}
+                    </Badge>
+                  </div>
+                  <p className="break-words text-lg font-semibold text-gray-900">
+                    {viewingUser.name || "-"}
+                  </p>
+                  <p className="break-words text-sm text-gray-600">
+                    {viewingUser.email || "-"}
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-5">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {detailRows.map(([label, value]) => (
+                    <div key={String(label)} className="rounded-xl border p-3">
+                      <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+                        {label}
+                      </p>
+                      <p className="mt-1 break-words text-sm font-medium text-gray-900">
+                        {value === null || value === undefined || value === ""
+                          ? "-"
+                          : String(value)}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="rounded-xl border p-4">
+                  <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+                    Biografía
+                  </p>
+                  <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-gray-700">
+                    {viewingUser.bio || "Sin biografía registrada."}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </>

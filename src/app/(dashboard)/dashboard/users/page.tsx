@@ -46,7 +46,7 @@ export default async function ManageUsersPage() {
   const { data: users, error } = await supabase
     .from("profiles")
     .select(
-      "id, name, email, role, status, created_at, phone, active_campaigns_count",
+      "id, name, email, role, status, created_at, updated_at, join_date, phone, identity_number, birth_date, profile_picture, location, bio, active_campaigns_count",
     )
     .not("email", "like", `${CAMPAIGN_ANONYMOUS_EMAIL_PREFIX}%@minka.org`)
     .order("created_at", { ascending: false });
