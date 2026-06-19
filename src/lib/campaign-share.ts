@@ -115,10 +115,9 @@ export function buildCampaignSharePayload(
       ? `Acabo de donar a "${title}" en Minka. Entra al enlace para conocer la campaña y aportar directamente.`
       : `Apoya la campaña "${title}". Entra al enlace para conocer la historia y donar directamente en Minka.`;
   const caption = `${text}\n${url}`;
-  const facebookAppId = process.env.NEXT_PUBLIC_FACEBOOK_APP_ID;
-  const facebookShareUrl = facebookAppId
-    ? `https://www.facebook.com/dialog/share?app_id=${encodeURIComponent(facebookAppId)}&display=popup&href=${encodeURIComponent(url)}&redirect_uri=${encodeURIComponent(url)}&quote=${encodeURIComponent(text)}`
-    : `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}&quote=${encodeURIComponent(text)}`;
+  // Future Meta Share Dialog option:
+  // const facebookAppId = process.env.NEXT_PUBLIC_FACEBOOK_APP_ID;
+  const facebookShareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}&quote=${encodeURIComponent(text)}`;
 
   return {
     url,

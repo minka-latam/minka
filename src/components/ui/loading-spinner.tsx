@@ -16,6 +16,7 @@ export function LoadingSpinner({
   className,
   ...props
 }: LoadingSpinnerProps) {
+  const spinnerScale = size === "xs" ? "scale(1)" : "scale(1.3)";
   const sizeClasses = {
     xs: "w-5 h-5",
     sm: "w-16 h-16",
@@ -34,7 +35,7 @@ export function LoadingSpinner({
         <div
           className="absolute inset-0 flex items-center justify-center"
           style={{
-            transform: "scale(1.3)",
+            transform: spinnerScale,
           }}
         >
           <div
@@ -74,7 +75,11 @@ export function LoadingSpinner({
         </div>
       </div>
 
-      {showText && <p className="pt-4 mt-4 text-[#356945] font-medium">{text}</p>}
+      {showText && (
+        <p className="pt-4 mt-4 text-base md:text-lg text-[#356945] font-medium">
+          {text}
+        </p>
+      )}
     </div>
   );
 }
