@@ -91,12 +91,14 @@ export function CampaignShareMenu({
   const openShareUrl = (
     url: string,
     platform: CampaignSharePlatform,
-    options: { showToast?: boolean } = {},
+    options: { showToast?: boolean; mobileDelayMs?: number } = {},
   ) => {
     const showToast = options.showToast ?? true;
 
     if (isMobileDevice()) {
-      window.location.href = url;
+      window.setTimeout(() => {
+        window.location.href = url;
+      }, options.mobileDelayMs ?? 0);
     } else {
       window.open(url, "_blank", "noopener,noreferrer,width=640,height=560");
     }
@@ -113,35 +115,6 @@ export function CampaignShareMenu({
 
   const canUseNativeShare = () =>
     typeof navigator !== "undefined" && typeof navigator.share === "function";
-
-  const shareWithDeviceSheet = async (platform: "facebook" | "linkedin") => {
-    closeMenu();
-
-    try {
-      await navigator.share({
-        title: sharePayload.title,
-        text: sharePayload.text,
-        url: sharePayload.url,
-      });
-    } catch (error) {
-      if (error instanceof DOMException && error.name === "AbortError") {
-        return;
-      }
-
-      const copied = await tryCopyToClipboard(sharePayload.caption);
-      toast({
-        title: copied ? "Texto copiado" : "No se pudo abrir compartir",
-        description: copied
-          ? `Pega el texto copiado en ${platformLabels[platform]} para acompañar el enlace.`
-          : `Abre ${platformLabels[platform]} y comparte el enlace manualmente.`,
-        variant: copied ? "default" : "destructive",
-      });
-
-      openShareUrl(sharePayload.links[platform], platform, {
-        showToast: false,
-      });
-    }
-  };
 
   const handleShareClick = () => {
     if (useNativeShare && isMobileDevice() && canUseNativeShare()) {
@@ -170,11 +143,6 @@ export function CampaignShareMenu({
     }
 
     if (platform === "facebook" || platform === "linkedin") {
-      if (isMobileDevice() && canUseNativeShare()) {
-        shareWithDeviceSheet(platform);
-        return;
-      }
-
       const isMobileShare = isMobileDevice();
       const copyPromise = tryCopyToClipboard(sharePayload.caption);
 
@@ -187,6 +155,7 @@ export function CampaignShareMenu({
 
       openShareUrl(sharePayload.links[platform], platform, {
         showToast: false,
+        mobileDelayMs: isMobileShare ? 1200 : 0,
       });
 
       copyPromise.then((copied) => {

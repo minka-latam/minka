@@ -398,9 +398,14 @@ export function CampaignForm() {
 
   // State for "Otra persona" modal form
   const [otraPersonaForm, setOtraPersonaForm] = useState({
+    beneficiaryType: "person" as "person" | "institution",
     beneficiaryName: "",
     relationship: "",
     beneficiariesDescription: "",
+    institutionNit: "",
+    institutionEmail: "",
+    institutionWebsite: "",
+    institutionPhone: "",
   });
 
   // State for "Persona Jurídica" modal form
@@ -468,7 +473,10 @@ export function CampaignForm() {
     setIsStep2Valid(true);
   }, [formData.recipient]);
 
-  const handleSelectRecipient = async (recipient: string) => {
+  const handleSelectRecipient = async (
+    recipient: string,
+    beneficiaryFormOverride?: typeof otraPersonaForm,
+  ) => {
     try {
       setIsSubmitting(true);
 
@@ -477,20 +485,32 @@ export function CampaignForm() {
         recipientType: recipient,
       };
 
+      if (recipient === "tu_mismo") {
+        updateData.legalEntityId = null;
+        updateData.beneficiaryName = null;
+        updateData.beneficiaryRelationship = null;
+        updateData.beneficiariesDescription = "";
+      }
+
       // If selecting persona_juridica, include the legal entity ID
       if (
         recipient === "persona_juridica" &&
         personaJuridicaForm.selectedEntityId
       ) {
         updateData.legalEntityId = personaJuridicaForm.selectedEntityId;
+        updateData.beneficiaryName = null;
+        updateData.beneficiaryRelationship = null;
+        updateData.beneficiariesDescription = "";
       }
 
       // If selecting otra_persona, include the beneficiary information
       if (recipient === "otra_persona") {
-        updateData.beneficiaryName = otraPersonaForm.beneficiaryName;
-        updateData.beneficiaryRelationship = otraPersonaForm.relationship;
+        const beneficiaryForm = beneficiaryFormOverride || otraPersonaForm;
+        updateData.legalEntityId = null;
+        updateData.beneficiaryName = beneficiaryForm.beneficiaryName;
+        updateData.beneficiaryRelationship = beneficiaryForm.relationship;
         updateData.beneficiariesDescription =
-          otraPersonaForm.beneficiariesDescription;
+          beneficiaryForm.beneficiariesDescription;
       }
 
       // Update form data with the selected recipient and related fields
@@ -510,7 +530,7 @@ export function CampaignForm() {
         beneficiariesDescription:
           recipient === "otra_persona"
             ? updateData.beneficiariesDescription
-            : prev.beneficiariesDescription,
+            : "",
       }));
 
       // If we already have a campaignId, update it instead of creating a new one
@@ -634,9 +654,14 @@ export function CampaignForm() {
     setShowOtraPersonaModal(false);
     // Reset form when closing modal
     setOtraPersonaForm({
+      beneficiaryType: "person",
       beneficiaryName: "",
       relationship: "",
       beneficiariesDescription: "",
+      institutionNit: "",
+      institutionEmail: "",
+      institutionWebsite: "",
+      institutionPhone: "",
     });
   };
 
@@ -1079,15 +1104,45 @@ export function CampaignForm() {
     await loadLegalEntities();
   };
 
+  const buildInstitutionBeneficiaryDescription = () => {
+    const lines = [
+      "Tipo de beneficiario: Institución/fundación no registrada en Minka",
+      otraPersonaForm.beneficiariesDescription.trim(),
+      otraPersonaForm.institutionNit.trim()
+        ? `NIT: ${otraPersonaForm.institutionNit.trim()}`
+        : "",
+      otraPersonaForm.institutionEmail.trim()
+        ? `Email: ${otraPersonaForm.institutionEmail.trim()}`
+        : "",
+      otraPersonaForm.institutionWebsite.trim()
+        ? `Web: ${otraPersonaForm.institutionWebsite.trim()}`
+        : "",
+      otraPersonaForm.institutionPhone.trim()
+        ? `Teléfono: ${otraPersonaForm.institutionPhone.trim()}`
+        : "",
+    ];
+
+    return lines.filter(Boolean).join("\n");
+  };
+
   const handleOtraPersonaSubmit = async () => {
     // Validate form data
-    const { beneficiaryName, relationship, beneficiariesDescription } =
-      otraPersonaForm;
+    const {
+      beneficiaryType,
+      beneficiaryName,
+      relationship,
+      beneficiariesDescription,
+      institutionEmail,
+      institutionWebsite,
+    } = otraPersonaForm;
 
     if (!beneficiaryName || !relationship) {
       toast({
         title: "Error",
-        description: "Por favor completa nombre y relación del beneficiario.",
+        description:
+          beneficiaryType === "institution"
+            ? "Por favor completa el nombre de la institución y tu relación con ella."
+            : "Por favor completa nombre y relación del beneficiario.",
         variant: "destructive",
       });
       return;
@@ -1102,7 +1157,10 @@ export function CampaignForm() {
       return;
     }
 
-    if (beneficiariesDescription.trim().length < 10) {
+    if (
+      beneficiaryType === "person" &&
+      beneficiariesDescription.trim().length < 10
+    ) {
       toast({
         title: "Error",
         description:
@@ -1112,15 +1170,82 @@ export function CampaignForm() {
       return;
     }
 
-    try {
+    if (
+      beneficiaryType === "institution" &&
+      beneficiariesDescription.trim().length < 5
+    ) {
       toast({
-        title: "Beneficiario agregado",
+        title: "Frase breve requerida",
         description:
-          "Los datos del beneficiario se han guardado correctamente.",
+          "Agrega una frase corta que describa a la institución. Ejemplo: Veterinaria canina en El Alto.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (
+      institutionEmail.trim() &&
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(institutionEmail.trim())
+    ) {
+      toast({
+        title: "Correo inválido",
+        description: "Ingresa un correo válido para la institución.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (
+      institutionWebsite.trim() &&
+      !/^https?:\/\/[^\s]+\.[^\s]+/i.test(institutionWebsite.trim())
+    ) {
+      toast({
+        title: "Sitio web inválido",
+        description: "Ingresa la web completa, por ejemplo https://ejemplo.org.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const nextDescription =
+      beneficiaryType === "institution"
+        ? buildInstitutionBeneficiaryDescription()
+        : beneficiariesDescription.trim();
+
+    if (nextDescription.length > 600) {
+      toast({
+        title: "Información demasiado larga",
+        description:
+          "Reduce la descripción o los datos opcionales para no superar el límite permitido.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setOtraPersonaForm((prev) => ({
+        ...prev,
+        beneficiariesDescription: nextDescription,
+      }));
+      const nextBeneficiaryForm = {
+        ...otraPersonaForm,
+        beneficiariesDescription: nextDescription,
+      };
+
+      toast({
+        title:
+          beneficiaryType === "institution"
+            ? "Institución agregada"
+            : "Beneficiario agregado",
+        description:
+          beneficiaryType === "institution"
+            ? "Los datos de la institución se han guardado correctamente."
+            : "Los datos del beneficiario se han guardado correctamente.",
       });
 
+      setShowOtraPersonaModal(false);
+      await handleSelectRecipient("otra_persona", nextBeneficiaryForm);
       closeOtraPersonaModal();
-      await handleSelectRecipient("otra_persona");
     } catch (error) {
       console.error("Error saving beneficiary data:", error);
       toast({
@@ -2284,15 +2409,18 @@ export function CampaignForm() {
                   <div className="flex items-center space-x-4">
                     <Image
                       src="/views/create-campaign/other-person.svg"
-                      alt="Otra persona"
+                      alt="Otra persona o institución"
                       width={75}
                       height={75}
                     />
                     <div>
-                      <div className="font-medium text-lg">Otra persona</div>
+                      <div className="font-medium text-lg">
+                        Otra persona o una institución/fundación
+                      </div>
                       <div className="text-base text-gray-600">
-                        Designa a la persona que recibirá los fondos recaudados
-                        en tu campaña.
+                        Para apoyar a alguien que no puede crear su campaña, o
+                        a una institución o fundación que aún no está en la base
+                        de Minka.
                       </div>
                     </div>
                   </div>
@@ -2520,24 +2648,112 @@ export function CampaignForm() {
         open={showOtraPersonaModal}
         onOpenChange={setShowOtraPersonaModal}
       >
-        <DialogContent className="max-w-xl">
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Información del beneficiario</DialogTitle>
             <DialogDescription>
-              Cuéntanos sobre la persona que recibirá los fondos de esta campaña
+              Indica si la campaña será para una persona o para una institución
+              o fundación que no está en la lista de Minka.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-6 py-4">
-            {/* Beneficiary Name */}
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <label
+                className={`cursor-pointer rounded-lg border p-4 transition-colors ${
+                  otraPersonaForm.beneficiaryType === "person"
+                    ? "border-[#2c6e49] bg-[#edf6ef]"
+                    : "border-gray-200 bg-white hover:border-[#2c6e49]/60"
+                }`}
+              >
+                <div className="flex items-start gap-3">
+                  <input
+                    type="radio"
+                    name="beneficiaryType"
+                    value="person"
+                    checked={otraPersonaForm.beneficiaryType === "person"}
+                    onChange={() =>
+                      setOtraPersonaForm({
+                        ...otraPersonaForm,
+                        beneficiaryType: "person",
+                        beneficiaryName: "",
+                        relationship: "",
+                        beneficiariesDescription: "",
+                        institutionNit: "",
+                        institutionEmail: "",
+                        institutionWebsite: "",
+                        institutionPhone: "",
+                      })
+                    }
+                    className="mt-1 accent-[#2c6e49]"
+                  />
+                  <span>
+                    <span className="block font-semibold text-gray-900">
+                      Persona
+                    </span>
+                    <span className="mt-1 block text-sm text-gray-600">
+                      Alguien que necesita apoyo y no puede gestionar su propia
+                      campaña.
+                    </span>
+                  </span>
+                </div>
+              </label>
+
+              <label
+                className={`cursor-pointer rounded-lg border p-4 transition-colors ${
+                  otraPersonaForm.beneficiaryType === "institution"
+                    ? "border-[#2c6e49] bg-[#edf6ef]"
+                    : "border-gray-200 bg-white hover:border-[#2c6e49]/60"
+                }`}
+              >
+                <div className="flex items-start gap-3">
+                  <input
+                    type="radio"
+                    name="beneficiaryType"
+                    value="institution"
+                    checked={otraPersonaForm.beneficiaryType === "institution"}
+                    onChange={() =>
+                      setOtraPersonaForm({
+                        ...otraPersonaForm,
+                        beneficiaryType: "institution",
+                        beneficiaryName: "",
+                        relationship: "",
+                        beneficiariesDescription: "",
+                        institutionNit: "",
+                        institutionEmail: "",
+                        institutionWebsite: "",
+                        institutionPhone: "",
+                      })
+                    }
+                    className="mt-1 accent-[#2c6e49]"
+                  />
+                  <span>
+                    <span className="block font-semibold text-gray-900">
+                      Institución o fundación
+                    </span>
+                    <span className="mt-1 block text-sm text-gray-600">
+                      Una organización que recibirá el apoyo pero aún no está
+                      registrada como persona jurídica aprobada por Minka.
+                    </span>
+                  </span>
+                </div>
+              </label>
+            </div>
+
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700">
-                Nombre de la persona *
+                {otraPersonaForm.beneficiaryType === "institution"
+                  ? "Nombre de la institución o fundación *"
+                  : "Nombre de la persona *"}
               </label>
               <Input
                 type="text"
                 className="w-full h-11 border-gray-300 focus:border-[#478C5C] focus:ring-[#478C5C]"
-                placeholder="Nombre completo del beneficiario"
+                placeholder={
+                  otraPersonaForm.beneficiaryType === "institution"
+                    ? "Nombre de la institución o fundación"
+                    : "Nombre completo del beneficiario"
+                }
                 value={otraPersonaForm.beneficiaryName}
                 onChange={(e) =>
                   setOtraPersonaForm({
@@ -2548,39 +2764,60 @@ export function CampaignForm() {
               />
             </div>
 
-            {/* Relationship */}
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700">
-                ¿Cuál es tu relación con esta persona? *
+                {otraPersonaForm.beneficiaryType === "institution"
+                  ? "¿Cuál es tu relación con la institución? *"
+                  : "¿Cuál es tu relación con esta persona? *"}
               </label>
-              <select
-                className="w-full h-11 px-3 border border-gray-300 rounded-md focus:border-[#478C5C] focus:ring-[#478C5C] focus:outline-none"
-                value={otraPersonaForm.relationship}
-                onChange={(e) =>
-                  setOtraPersonaForm({
-                    ...otraPersonaForm,
-                    relationship: e.target.value,
-                  })
-                }
-              >
-                <option value="">Selecciona una opción</option>
-                <option value="familiar">Familiar</option>
-                <option value="amigo">Amigo/a</option>
-                <option value="conocido">Conocido/a</option>
-                <option value="vecino">Vecino/a</option>
-                <option value="colega">Colega de trabajo</option>
-                <option value="otro">Otro</option>
-              </select>
+              {otraPersonaForm.beneficiaryType === "institution" ? (
+                <Input
+                  type="text"
+                  className="w-full h-11 border-gray-300 focus:border-[#478C5C] focus:ring-[#478C5C]"
+                  placeholder="Ej. voluntario, miembro, fundador, colaborador"
+                  value={otraPersonaForm.relationship}
+                  onChange={(e) =>
+                    setOtraPersonaForm({
+                      ...otraPersonaForm,
+                      relationship: e.target.value,
+                    })
+                  }
+                />
+              ) : (
+                <select
+                  className="w-full h-11 px-3 border border-gray-300 rounded-md focus:border-[#478C5C] focus:ring-[#478C5C] focus:outline-none"
+                  value={otraPersonaForm.relationship}
+                  onChange={(e) =>
+                    setOtraPersonaForm({
+                      ...otraPersonaForm,
+                      relationship: e.target.value,
+                    })
+                  }
+                >
+                  <option value="">Selecciona una opción</option>
+                  <option value="familiar">Familiar</option>
+                  <option value="amigo">Amigo/a</option>
+                  <option value="conocido">Conocido/a</option>
+                  <option value="vecino">Vecino/a</option>
+                  <option value="colega">Colega de trabajo</option>
+                  <option value="otro">Otro</option>
+                </select>
+              )}
             </div>
 
-            {/* Beneficiary description */}
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700">
-                Cuéntanos brevemente sobre el beneficiario *
+                {otraPersonaForm.beneficiaryType === "institution"
+                  ? "Frase breve sobre la institución"
+                  : "Cuéntanos brevemente sobre el beneficiario *"}
               </label>
               <Textarea
-                className="w-full min-h-[100px] border-gray-300 focus:border-[#478C5C] focus:ring-[#478C5C]"
-                placeholder="Describe brevemente quién es la persona beneficiaria, su situación y por qué estás organizando la campaña por ella."
+                className="w-full min-h-[80px] border-gray-300 focus:border-[#478C5C] focus:ring-[#478C5C]"
+                placeholder={
+                  otraPersonaForm.beneficiaryType === "institution"
+                    ? "Ej. Una veterinaria nueva que está en El Alto"
+                    : "Describe brevemente quién es la persona beneficiaria, su situación y por qué estás organizando la campaña por ella."
+                }
                 value={otraPersonaForm.beneficiariesDescription}
                 onChange={(e) =>
                   setOtraPersonaForm({
@@ -2588,12 +2825,91 @@ export function CampaignForm() {
                     beneficiariesDescription: e.target.value,
                   })
                 }
-                maxLength={500}
+                maxLength={
+                  otraPersonaForm.beneficiaryType === "institution" ? 120 : 500
+                }
               />
               <div className="text-xs text-gray-500 text-right">
-                {otraPersonaForm.beneficiariesDescription.length}/500
+                {otraPersonaForm.beneficiariesDescription.length}/
+                {otraPersonaForm.beneficiaryType === "institution" ? 120 : 500}
               </div>
             </div>
+
+            {otraPersonaForm.beneficiaryType === "institution" && (
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700">
+                    NIT
+                  </label>
+                  <Input
+                    type="text"
+                    className="w-full h-11 border-gray-300 focus:border-[#478C5C] focus:ring-[#478C5C]"
+                    placeholder="Opcional"
+                    value={otraPersonaForm.institutionNit}
+                    onChange={(e) =>
+                      setOtraPersonaForm({
+                        ...otraPersonaForm,
+                        institutionNit: e.target.value,
+                      })
+                    }
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700">
+                    Correo de contacto
+                  </label>
+                  <Input
+                    type="email"
+                    className="w-full h-11 border-gray-300 focus:border-[#478C5C] focus:ring-[#478C5C]"
+                    placeholder="Opcional"
+                    value={otraPersonaForm.institutionEmail}
+                    onChange={(e) =>
+                      setOtraPersonaForm({
+                        ...otraPersonaForm,
+                        institutionEmail: e.target.value,
+                      })
+                    }
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700">
+                    Sitio web
+                  </label>
+                  <Input
+                    type="url"
+                    className="w-full h-11 border-gray-300 focus:border-[#478C5C] focus:ring-[#478C5C]"
+                    placeholder="https://..."
+                    value={otraPersonaForm.institutionWebsite}
+                    onChange={(e) =>
+                      setOtraPersonaForm({
+                        ...otraPersonaForm,
+                        institutionWebsite: e.target.value,
+                      })
+                    }
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700">
+                    Teléfono de contacto
+                  </label>
+                  <Input
+                    type="tel"
+                    className="w-full h-11 border-gray-300 focus:border-[#478C5C] focus:ring-[#478C5C]"
+                    placeholder="Opcional"
+                    value={otraPersonaForm.institutionPhone}
+                    onChange={(e) =>
+                      setOtraPersonaForm({
+                        ...otraPersonaForm,
+                        institutionPhone: e.target.value,
+                      })
+                    }
+                  />
+                </div>
+              </div>
+            )}
           </div>
 
           <DialogFooter className="flex justify-between gap-3">

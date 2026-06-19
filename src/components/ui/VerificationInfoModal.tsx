@@ -8,7 +8,7 @@ interface VerificationInfoModalProps {
   isOpen: boolean
   onClose: () => void
   title: string
-  content: string
+  content: React.ReactNode
 }
 
 export function VerificationInfoModal({
@@ -52,9 +52,15 @@ export function VerificationInfoModal({
 
         {/* Modal Content */}
         <div className='mt-4'>
-          <p className='text-base text-gray-700 whitespace-pre-wrap leading-relaxed'>
-            {content}
-          </p>
+          {typeof content === 'string' ? (
+            <p className='text-base text-gray-700 whitespace-pre-wrap leading-relaxed'>
+              {content}
+            </p>
+          ) : (
+            <div className='text-base text-gray-700 leading-relaxed'>
+              {content}
+            </div>
+          )}
         </div>
       </div>
     </div>

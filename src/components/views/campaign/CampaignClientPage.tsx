@@ -170,6 +170,7 @@ function CustomCampaignDetails({
   campaignLocation,
   campaignCategory,
   onOpenVerificationModal,
+  onOpenLegalEntityModal,
 }: {
   organizer: {
     name: string
@@ -199,7 +200,23 @@ function CustomCampaignDetails({
   campaignLocation: string
   campaignCategory: string
   onOpenVerificationModal: () => void
+  onOpenLegalEntityModal: () => void
 }) {
+  const unregisteredInstitutionMarker =
+    'Tipo de beneficiario: Institución/fundación no registrada en Minka'
+  const isUnregisteredInstitution =
+    recipientType === 'otra_persona' &&
+    beneficiaries.includes(unregisteredInstitutionMarker)
+  const publicBeneficiaries = beneficiaries
+    .split('\n')
+    .filter(
+      (line) => line.trim() !== unregisteredInstitutionMarker,
+    )
+    .map((line) =>
+      line.trim().replace(/^Descripción:\s*/i, ''),
+    )
+    .join('\n')
+    .trim()
   const campaignMeta = [campaignLocation, campaignCategory]
     .filter(Boolean) // Filter out any falsy values (like empty strings)
     .join(' | ') // Join with " | "
@@ -211,7 +228,7 @@ function CustomCampaignDetails({
     (recipientType === 'otra_persona' &&
       (Boolean(beneficiaryName) ||
         Boolean(relationship) ||
-        beneficiaries.trim().length > 0)) ||
+        publicBeneficiaries.trim().length > 0)) ||
     (recipientType === 'persona_juridica' &&
       Boolean(legalEntity))
   const createdCampaignsLabel =
@@ -274,18 +291,20 @@ function CustomCampaignDetails({
           </h2>
 
           {recipientType === 'otra_persona' && (
-            <div className='space-y-2 text-sm text-gray-700 leading-relaxed break-words'>
+            <div className='space-y-2 !text-[14px] text-gray-700 leading-relaxed break-words'>
               {beneficiaryName && (
-                <p>
-                  <span className='font-medium text-[#2c6e49]'>
-                    Beneficiario:
+                <p className='!text-[14px]'>
+                  <span className='!text-[14px] font-medium text-[#2c6e49]'>
+                    {isUnregisteredInstitution
+                      ? 'Institución/fundación beneficiaria:'
+                      : 'Beneficiario:'}
                   </span>{' '}
                   {beneficiaryName}
                 </p>
               )}
-              {relationship && (
-                <p>
-                  <span className='font-medium text-[#2c6e49]'>
+              {relationship && !isUnregisteredInstitution && (
+                <p className='!text-[14px]'>
+                  <span className='!text-[14px] font-medium text-[#2c6e49]'>
                     Relación:
                   </span>{' '}
                   {relationship}
@@ -295,40 +314,52 @@ function CustomCampaignDetails({
           )}
 
           {recipientType === 'persona_juridica' && (
-            <div className='space-y-2 text-sm text-gray-700 leading-relaxed break-words'>
-              <p>
-                <span className='font-medium text-[#2c6e49]'>
-                  Institución beneficiaria:
-                </span>{' '}
-                {legalEntity?.name ||
-                  'Institución seleccionada'}
-              </p>
-              {legalEntity?.description && (
-                <p className='whitespace-pre-wrap'>
-                  {legalEntity.description}
+            <div className='space-y-2 !text-[14px] text-gray-700 leading-relaxed break-words'>
+              <div>
+                <p className='!text-[14px]'>
+                  <span className='!text-[14px] font-medium text-[#2c6e49]'>
+                    Institución beneficiaria:
+                  </span>{' '}
+                  {legalEntity?.name ||
+                    'Institución seleccionada'}
+                </p>
+              </div>
+              {(legalEntity?.description || legalEntity?.website) && (
+                <p className='!text-[14px] whitespace-pre-wrap'>
+                  {legalEntity?.description}
+                  {legalEntity?.website && (
+                    <>
+                      {legalEntity?.description ? ' ' : ''}
+                      <a
+                        href={legalEntity.website}
+                        target='_blank'
+                        rel='noopener noreferrer'
+                        className='!text-[14px] text-[#2c6e49] underline underline-offset-4 hover:text-[#1e4d33]'
+                      >
+                        Sitio web
+                      </a>
+                    </>
+                  )}
                 </p>
               )}
-              {legalEntity?.website && (
-                <a
-                  href={legalEntity.website}
-                  target='_blank'
-                  rel='noopener noreferrer'
-                  className='inline-flex text-[#2c6e49] underline'
-                >
-                  Sitio web
-                </a>
-              )}
+              <button
+                type='button'
+                onClick={onOpenLegalEntityModal}
+                className='mt-2 block cursor-pointer text-left !text-[14px] font-medium text-[#2c6e49] underline underline-offset-4 hover:text-[#1e4d33] focus:outline-none focus:ring-2 focus:ring-[#2c6e49]/40'
+              >
+                Institución corroborada por Minka
+              </button>
             </div>
           )}
 
           {recipientType === 'otra_persona' &&
-            beneficiaries.trim().length > 0 && (
+            publicBeneficiaries.trim().length > 0 && (
               <div className='space-y-2'>
                 <h3 className='text-xl font-medium text-[#2c6e49]'>
                   Destino de los fondos
                 </h3>
-                <p className='text-sm text-gray-700 leading-relaxed break-words whitespace-pre-wrap'>
-                  {beneficiaries}
+                <p className='!text-[14px] text-gray-700 leading-relaxed break-words whitespace-pre-wrap'>
+                  {publicBeneficiaries}
                 </p>
               </div>
             )}
@@ -444,6 +475,10 @@ export default function CampaignClientPage({
   const [
     isVerificationModalOpen,
     setIsVerificationModalOpen,
+  ] = useState(false)
+  const [
+    isLegalEntityModalOpen,
+    setIsLegalEntityModalOpen,
   ] = useState(false)
   const autoSaveHandledRef = useRef(false)
   const { session, isLoading: authLoading } = useAuth()
@@ -746,6 +781,9 @@ export default function CampaignClientPage({
                   onOpenVerificationModal={() =>
                     setIsVerificationModalOpen(true)
                   }
+                  onOpenLegalEntityModal={() =>
+                    setIsLegalEntityModalOpen(true)
+                  }
                   campaignCategory={formattedData.category}
                 />
               )}
@@ -840,6 +878,42 @@ export default function CampaignClientPage({
         title='Sobre la verificación de campañas'
         content={
           'La verificación en Minka es un proceso voluntario que permite revisar la información y documentación presentada por el organizador para comprobar que sea consistente con la causa publicada.\n\nUna campaña verificada muestra un distintivo visible dentro de la plataforma, lo que ayuda a generar mayor confianza entre los donantes y puede aumentar sus posibilidades de recibir apoyo.\n\nMinka realiza esfuerzos razonables de autenticación, revisión documental y monitoreo para fortalecer la transparencia, aunque la verificación no constituye una garantía absoluta sobre toda la información presentada por terceros.\n\nLos datos compartidos para este proceso son tratados de forma confidencial y conforme a nuestras políticas de privacidad.'
+        }
+      />
+      <VerificationInfoModal
+        isOpen={isLegalEntityModalOpen}
+        onClose={() => setIsLegalEntityModalOpen(false)}
+        title='Sobre las instituciones corroboradas'
+        content={
+          <div className='space-y-4'>
+            <p>
+              Las instituciones corroboradas por Minka son organizaciones que
+              solicitaron formar parte de nuestra base de datos y compartieron
+              información para revisar su existencia y datos principales.
+            </p>
+            <p>
+              Este proceso ayuda a <strong>dar confianza</strong> a los
+              donantes cuando una campaña indica que los fondos serán recibidos
+              por una institución, fundación o asociación registrada en Minka.
+            </p>
+            <p>
+              Revisamos datos como <strong>identificación, contacto y presencia
+              institucional</strong>. No es una garantía absoluta sobre toda su
+              actividad futura, pero sí agrega <strong>trazabilidad</strong> y
+              una capa adicional de seguridad.
+            </p>
+            <p>
+              Si quieres que tu institución figure como corroborada, envía los
+              datos y documentos solicitados en el Registro de Instituciones a{' '}
+              <a
+                href='mailto:info@minkacomunidad.org?subject=Solicitud%20para%20instituci%C3%B3n%20corroborada%20por%20Minka&body=Hola%20Minka%2C%20quisiera%20solicitar%20que%20mi%20instituci%C3%B3n%20figure%20como%20corroborada%20por%20ustedes%20y%20adjunto%20los%20siguientes%20datos%2Fdocumentos%3A'
+                className='font-semibold text-[#2c6e49] underline underline-offset-4 hover:text-[#1e4d33]'
+              >
+                info@minkacomunidad.org
+              </a>
+              .
+            </p>
+          </div>
         }
       />
     </div>
