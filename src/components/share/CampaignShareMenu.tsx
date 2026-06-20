@@ -65,32 +65,76 @@ export function CampaignShareMenu({
 
   const closeMenu = () => setShowShareOptions(false);
 
-  const copyToClipboard = async (value: string, successDescription: string) => {
+  const writeTextToClipboard = async (value: string) => {
     try {
-      await navigator.clipboard.writeText(value);
-      closeMenu();
-      toast({
-        title: "Copiado",
-        description: successDescription,
-      });
-    } catch (error) {
-      console.error("Failed to copy share text:", error);
-      toast({
-        title: "Error",
-        description: "No se pudo copiar el enlace",
-        variant: "destructive",
-      });
-    }
-  };
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(value);
+        return true;
+      }
 
-  const tryCopyToClipboard = async (value: string) => {
-    try {
-      await navigator.clipboard.writeText(value);
-      return true;
+      const textarea = document.createElement("textarea");
+      textarea.value = value;
+      textarea.setAttribute("readonly", "");
+      textarea.style.position = "fixed";
+      textarea.style.top = "-9999px";
+      textarea.style.opacity = "0";
+      document.body.appendChild(textarea);
+      textarea.focus();
+      textarea.select();
+      const copied = document.execCommand("copy");
+      document.body.removeChild(textarea);
+      return copied;
     } catch (error) {
       console.error("Failed to copy share text:", error);
       return false;
     }
+  };
+
+  const copyToClipboard = async (value: string, successDescription: string) => {
+    const copied = await writeTextToClipboard(value);
+
+    closeMenu();
+
+    if (copied) {
+      toast({
+        title: "Copiado",
+        description: successDescription,
+      });
+      return;
+    }
+
+    toast({
+      title: "Error",
+      description: "No se pudo copiar el enlace",
+      variant: "destructive",
+    });
+  };
+
+  const tryCopyToClipboard = async (value: string) => {
+    return writeTextToClipboard(value);
+  };
+
+  const showPreparedTextToast = (platform: "facebook" | "linkedin") => {
+    toast({
+      title: "Texto y enlace copiados",
+      description: `Hemos copiado un texto y el enlace para que solo pongas "pegar" en tu publicación de ${platformLabels[platform]}.`,
+    });
+  };
+
+  const showPreparedTextResultToast = (
+    copied: boolean,
+    platform: "facebook" | "linkedin",
+  ) => {
+    if (copied) {
+      showPreparedTextToast(platform);
+      return;
+    }
+
+    toast({
+      title: "No se pudo copiar el texto",
+      description: `Abre ${platformLabels[platform]} y comparte el enlace manualmente.`,
+      variant: "destructive",
+    });
   };
 
   const openShareUrl = (
@@ -123,6 +167,7 @@ export function CampaignShareMenu({
 
   const shareWithDeviceSheet = async (platform: "facebook" | "linkedin") => {
     closeMenu();
+    const copyPromise = tryCopyToClipboard(sharePayload.caption);
 
     try {
       await navigator.share({
@@ -130,19 +175,15 @@ export function CampaignShareMenu({
         text: sharePayload.text,
         url: sharePayload.url,
       });
+      const copied = await copyPromise;
+      showPreparedTextResultToast(copied, platform);
     } catch (error) {
       if (error instanceof DOMException && error.name === "AbortError") {
         return;
       }
 
-      const copied = await tryCopyToClipboard(sharePayload.caption);
-      toast({
-        title: copied ? "Texto copiado" : "No se pudo abrir compartir",
-        description: copied
-          ? `Pega el texto copiado en ${platformLabels[platform]} para acompañar el enlace.`
-          : `Abre ${platformLabels[platform]} y comparte el enlace manualmente.`,
-        variant: copied ? "default" : "destructive",
-      });
+      const copied = await copyPromise;
+      showPreparedTextResultToast(copied, platform);
 
       openShareUrl(sharePayload.links[platform], platform, {
         showToast: false,
@@ -152,11 +193,15 @@ export function CampaignShareMenu({
 
   const handleShareClick = () => {
     if (useNativeShare && isMobileDevice() && canUseNativeShare()) {
+      const copyPromise = tryCopyToClipboard(sharePayload.caption);
       navigator
         .share({
           title: sharePayload.title,
           text: sharePayload.text,
           url: sharePayload.url,
+        })
+        .then(async () => {
+          await copyPromise;
         })
         .catch(() => {
           setShowShareOptions(true);
@@ -186,26 +231,18 @@ export function CampaignShareMenu({
       const copyPromise = tryCopyToClipboard(sharePayload.caption);
 
       if (isMobileShare) {
-        toast({
-          title: "Texto copiado",
-          description: `En unos segundos se abrirá ${platformLabels[platform]}. Pega el texto copiado en la publicación.`,
-        });
+        showPreparedTextToast(platform);
       }
 
       openShareUrl(sharePayload.links[platform], platform, {
         showToast: false,
-        mobileDelayMs: isMobileShare ? 1200 : 0,
+        mobileDelayMs: isMobileShare ? 1800 : 0,
       });
 
       copyPromise.then((copied) => {
         if (isMobileShare) return;
 
-        toast({
-          title: "Texto copiado",
-          description: copied
-            ? `Pega el texto copiado en ${platformLabels[platform]} para acompañar el enlace.`
-            : `${platformLabels[platform]} no permite rellenar el post automáticamente; copia el texto manualmente si lo necesitas.`,
-        });
+        showPreparedTextResultToast(copied, platform);
       });
       return;
     }
