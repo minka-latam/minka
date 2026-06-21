@@ -65,29 +65,65 @@ export function CampaignShareMenu({
 
   const closeMenu = () => setShowShareOptions(false);
 
+  const copyTextWithSelectionFallback = (value: string) => {
+    let textarea: HTMLTextAreaElement | null = null;
+    let selection: Selection | null = null;
+    let selectedRange: Range | null = null;
+
+    try {
+      textarea = document.createElement("textarea");
+      textarea.value = value;
+      textarea.setAttribute("readonly", "");
+      textarea.style.position = "fixed";
+      textarea.style.top = "0";
+      textarea.style.left = "-9999px";
+      textarea.style.width = "1px";
+      textarea.style.height = "1px";
+      textarea.style.opacity = "0";
+      textarea.style.fontSize = "16px";
+
+      selection = document.getSelection();
+      selectedRange =
+        selection && selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
+
+      document.body.appendChild(textarea);
+      textarea.focus();
+      textarea.setSelectionRange(0, textarea.value.length);
+
+      return document.execCommand("copy");
+    } catch (error) {
+      console.error("Failed to copy share text with fallback:", error);
+      return false;
+    } finally {
+      if (textarea?.parentNode) {
+        textarea.parentNode.removeChild(textarea);
+      }
+
+      if (selection) {
+        selection.removeAllRanges();
+        if (selectedRange) {
+          selection.addRange(selectedRange);
+        }
+      }
+    }
+  };
+
   const writeTextToClipboard = async (value: string) => {
     try {
+      const copiedWithSelection = copyTextWithSelectionFallback(value);
+      if (copiedWithSelection) {
+        return true;
+      }
+
       if (navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(value);
         return true;
       }
-
-      const textarea = document.createElement("textarea");
-      textarea.value = value;
-      textarea.setAttribute("readonly", "");
-      textarea.style.position = "fixed";
-      textarea.style.top = "-9999px";
-      textarea.style.opacity = "0";
-      document.body.appendChild(textarea);
-      textarea.focus();
-      textarea.select();
-      const copied = document.execCommand("copy");
-      document.body.removeChild(textarea);
-      return copied;
     } catch (error) {
       console.error("Failed to copy share text:", error);
-      return false;
     }
+
+    return false;
   };
 
   const copyToClipboard = async (value: string, successDescription: string) => {
@@ -166,8 +202,13 @@ export function CampaignShareMenu({
     typeof navigator !== "undefined" && typeof navigator.share === "function";
 
   const shareWithDeviceSheet = async (platform: "facebook" | "linkedin") => {
+    const copiedImmediately = copyTextWithSelectionFallback(
+      sharePayload.caption,
+    );
+    const copyPromise = copiedImmediately
+      ? Promise.resolve(true)
+      : tryCopyToClipboard(sharePayload.caption);
     closeMenu();
-    const copyPromise = tryCopyToClipboard(sharePayload.caption);
 
     try {
       await navigator.share({
@@ -193,7 +234,12 @@ export function CampaignShareMenu({
 
   const handleShareClick = () => {
     if (useNativeShare && isMobileDevice() && canUseNativeShare()) {
-      const copyPromise = tryCopyToClipboard(sharePayload.caption);
+      const copiedImmediately = copyTextWithSelectionFallback(
+        sharePayload.caption,
+      );
+      const copyPromise = copiedImmediately
+        ? Promise.resolve(true)
+        : tryCopyToClipboard(sharePayload.caption);
       navigator
         .share({
           title: sharePayload.title,
