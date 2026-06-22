@@ -44,21 +44,6 @@ export const sidebarData: SidebarData = {
           icon: Megaphone,
         },
         {
-          title: "Guardadas para mí",
-          url: "/dashboard/saved",
-          icon: Bookmark,
-        },
-        {
-          title: "Explorar",
-          url: "/all-campaigns",
-          icon: Compass,
-        },
-        {
-          title: "Crear Campaña",
-          url: "/create-campaign",
-          icon: PlusCircle,
-        },
-        {
           title: "Verificaciones",
           url: "/dashboard/verification",
           icon: ShieldCheck,
@@ -67,11 +52,6 @@ export const sidebarData: SidebarData = {
           title: "Donaciones",
           url: "/dashboard/donations",
           icon: HandCoins,
-        },
-        {
-          title: "Notificaciones",
-          url: "/dashboard/notifications/admin",
-          icon: Bell,
         },
         {
           title: "Usuarios",
@@ -84,6 +64,11 @@ export const sidebarData: SidebarData = {
           icon: Building2,
         },
         {
+          title: "Notificaciones",
+          url: "/dashboard/notifications/admin",
+          icon: Bell,
+        },
+        {
           title: "Estadísticas",
           url: "/dashboard/analytics",
           icon: AreaChart,
@@ -92,6 +77,21 @@ export const sidebarData: SidebarData = {
           title: "Auditoría",
           url: "/dashboard/audit-logs",
           icon: FileClock,
+        },
+        {
+          title: "Explorar",
+          url: "/all-campaigns",
+          icon: Compass,
+        },
+        {
+          title: "Crear Campaña",
+          url: "/create-campaign",
+          icon: PlusCircle,
+        },
+        {
+          title: "Guardadas para mí",
+          url: "/dashboard/saved",
+          icon: Bookmark,
         },
         {
           title: "Configuración",

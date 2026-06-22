@@ -2,116 +2,164 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-  Users,
+  Activity,
+  Bell,
+  CheckCheck,
   HeartHandshake,
   Library,
-  CheckCheck,
-  Activity,
   TrendingUp,
-  Mail,
+  Users,
 } from "lucide-react";
-import { ProfileData } from "@/types";
-import { useDb } from "@/hooks/use-db";
-import { useAuth } from "@/providers/auth-provider";
-import { LoadingSpinner } from "@/components/ui/loading-spinner";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import type { LucideIcon } from "lucide-react";
 import {
-  LineChart,
-  Line,
-  BarChart,
   Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  Legend,
+  Line,
+  LineChart,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
   XAxis,
   YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
 } from "recharts";
 
-// Helper to format currency
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useDb } from "@/hooks/use-db";
+import type { AdminAnalyticsData, AnalyticsPeriod } from "@/hooks/use-db";
+import { useAuth } from "@/providers/auth-provider";
+import { ProfileData } from "@/types";
+
+const chartColors = [
+  "#2c6e49",
+  "#2563eb",
+  "#f59e0b",
+  "#dc2626",
+  "#7c3aed",
+  "#0891b2",
+];
+
+const periodOptions: Array<{ value: AnalyticsPeriod; label: string }> = [
+  { value: "week", label: "Semana" },
+  { value: "month", label: "Mes" },
+  { value: "year", label: "Año" },
+];
+
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat("es-BO", {
     style: "currency",
     currency: "BOB",
+    maximumFractionDigits: 2,
   }).format(amount);
 };
 
-// Sample data for charts (replace with actual data from API)
-const donationData = [
-  { name: "Ene", amount: 24000 },
-  { name: "Feb", amount: 38000 },
-  { name: "Mar", amount: 27000 },
-  { name: "Abr", amount: 42000 },
-  { name: "May", amount: 35000 },
-  { name: "Jun", amount: 49000 },
-];
+const formatNumber = (value: number) => {
+  return new Intl.NumberFormat("es-BO").format(value);
+};
 
-const userActivityData = [
-  { name: "Ene", newUsers: 120, activeUsers: 230 },
-  { name: "Feb", newUsers: 150, activeUsers: 280 },
-  { name: "Mar", newUsers: 190, activeUsers: 340 },
-  { name: "Abr", newUsers: 210, activeUsers: 390 },
-  { name: "May", newUsers: 250, activeUsers: 450 },
-  { name: "Jun", newUsers: 290, activeUsers: 520 },
-];
+const formatPercent = (value: number) => {
+  const sign = value > 0 ? "+" : "";
+  return `${sign}${value.toFixed(1)}%`;
+};
 
-const campaignCategoryData = [
-  { name: "Salud", value: 35 },
-  { name: "Educación", value: 25 },
-  { name: "Medio ambiente", value: 20 },
-  { name: "Cultura y Arte", value: 10 },
-  { name: "Emergencia", value: 5 },
-  { name: "Igualdad", value: 5 },
-];
+const formatDate = (value: string) => {
+  if (!value) return "";
 
-const COLORS = [
-  "#0088FE",
-  "#00C49F",
-  "#FFBB28",
-  "#FF8042",
-  "#8884d8",
-  "#82ca9d",
-];
+  return new Intl.DateTimeFormat("es-BO", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  }).format(new Date(value));
+};
+
+function hasChartData(data: Array<Record<string, unknown>>) {
+  return data.some((item) =>
+    Object.entries(item).some(
+      ([key, value]) =>
+        key !== "name" &&
+        typeof value === "number" &&
+        Number.isFinite(value) &&
+        value > 0
+    )
+  );
+}
+
+function EmptyChart({ label = "Sin datos para este periodo" }: { label?: string }) {
+  return (
+    <div className="flex h-72 items-center justify-center rounded-lg border border-dashed bg-muted/20 px-4 text-center text-sm text-muted-foreground">
+      {label}
+    </div>
+  );
+}
+
+function MetricCard({
+  title,
+  value,
+  description,
+  icon: Icon,
+}: {
+  title: string;
+  value: string;
+  description: string;
+  icon: LucideIcon;
+}) {
+  return (
+    <Card className="rounded-lg shadow-sm">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium text-gray-700">
+          {title}
+        </CardTitle>
+        <Icon className="h-4 w-4 text-muted-foreground" />
+      </CardHeader>
+      <CardContent>
+        <div className="text-2xl font-bold tracking-tight text-gray-900">
+          {value}
+        </div>
+        <p className="mt-1 text-xs leading-5 text-muted-foreground">
+          {description}
+        </p>
+      </CardContent>
+    </Card>
+  );
+}
 
 export default function AnalyticsPage() {
   const router = useRouter();
   const { user } = useAuth();
   const { getProfile, getAnalytics, loading } = useDb();
   const [profile, setProfile] = useState<ProfileData | null>(null);
-  const [adminData, setAdminData] = useState({
-    totalUsers: 0,
-    totalCampaigns: 0,
-    totalDonations: 0,
-    pendingVerifications: 0,
-    totalInteractions: 0,
-    growthRate: 0,
-    totalNotificationsSent: 0,
-  });
+  const [analyticsData, setAnalyticsData] =
+    useState<AdminAnalyticsData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [timeframe, setTimeframe] = useState("month");
+  const [timeframe, setTimeframe] = useState<AnalyticsPeriod>("month");
 
   useEffect(() => {
+    let isActive = true;
+
     async function loadData() {
+      setIsLoading(true);
+
       if (!user) {
         router.push("/sign-in");
         return;
       }
 
-      // Fetch current user's profile to check role
       const prismaProfile = await getProfile(user.id);
+
+      if (!isActive) return;
 
       if (!prismaProfile) {
         router.push("/sign-in");
         return;
       }
 
-      // Convert to ProfileData
-      const getISOString = (dateVal: any): string => {
+      const getISOString = (dateVal: unknown): string => {
         if (typeof dateVal === "string") return dateVal;
         if (dateVal instanceof Date) return dateVal.toISOString();
         return new Date().toISOString();
@@ -128,34 +176,26 @@ export default function AnalyticsPage() {
 
       setProfile(profileData);
 
-      // --- Admin-Specific Data Fetching ---
       if (prismaProfile.role === "admin") {
-        const analyticsData = await getAnalytics();
-
-        // In development, add some extra metrics for demonstration
-        if (process.env.NODE_ENV === "development") {
-          analyticsData.totalInteractions = 1542;
-          analyticsData.growthRate = 12.5;
-          analyticsData.totalNotificationsSent = 654;
+        const data = await getAnalytics(timeframe);
+        if (isActive) {
+          setAnalyticsData(data);
         }
-
-        // Update the admin data with values from API, with fallbacks to 0 for optional fields
-        setAdminData({
-          totalUsers: analyticsData.totalUsers,
-          totalCampaigns: analyticsData.totalCampaigns,
-          totalDonations: analyticsData.totalDonations,
-          pendingVerifications: analyticsData.pendingVerifications,
-          totalInteractions: analyticsData.totalInteractions || 0,
-          growthRate: analyticsData.growthRate || 0,
-          totalNotificationsSent: analyticsData.totalNotificationsSent || 0,
-        });
+      } else {
+        setAnalyticsData(null);
       }
 
-      setIsLoading(false);
+      if (isActive) {
+        setIsLoading(false);
+      }
     }
 
     loadData();
-  }, [user, router, getProfile, getAnalytics]);
+
+    return () => {
+      isActive = false;
+    };
+  }, [user, router, getProfile, getAnalytics, timeframe]);
 
   if (isLoading || loading) {
     return (
@@ -165,382 +205,438 @@ export default function AnalyticsPage() {
     );
   }
 
-  // Redirect non-admins or show a limited view
   if (profile?.role !== "admin") {
     return (
-      <div className="space-y-6 p-4 md:p-6">
-        <h1 className="text-3xl font-bold text-gray-800">Analytics</h1>
-        <p>Analytics view is only available for administrators.</p>
+      <div className="space-y-3 p-4 md:p-6">
+        <h1 className="text-3xl font-bold text-gray-800">Estadísticas</h1>
+        <p className="text-sm text-muted-foreground">
+          Esta vista solo está disponible para administradores.
+        </p>
       </div>
     );
   }
 
+  if (!analyticsData) {
+    return (
+      <div className="space-y-3 p-4 md:p-6">
+        <h1 className="text-3xl font-bold text-gray-800">Estadísticas</h1>
+        <p className="text-sm text-muted-foreground">
+          No se pudieron cargar las estadísticas.
+        </p>
+      </div>
+    );
+  }
+
+  const { overview, charts, period } = analyticsData;
+  const dateRange = `${formatDate(period.currentStart)} - ${formatDate(
+    period.currentEnd
+  )}`;
+  const activityDescription = `${formatNumber(
+    overview.interactionBreakdown.comments
+  )} comentarios · ${formatNumber(
+    overview.interactionBreakdown.savedCampaigns
+  )} guardadas · ${formatNumber(
+    overview.interactionBreakdown.campaignUpdates
+  )} avances`;
+  const growthDescription =
+    overview.donationGrowthRate === null
+      ? "Sin donaciones completadas en el periodo anterior"
+      : `Vs. ${formatCurrency(
+          overview.previousCompletedDonationAmount
+        )} del periodo anterior`;
+
   return (
     <div className="space-y-6 p-4 md:p-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-gray-800">
-          Estadísticas de Minka
-        </h1>
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div className="space-y-1">
+          <h1 className="text-3xl font-bold tracking-tight text-gray-900">
+            Estadísticas de Minka
+          </h1>
+          <p className="max-w-3xl text-sm leading-6 text-muted-foreground">
+            {period.label} · {dateRange}. Los montos usan donaciones completadas;
+            la actividad cuenta comentarios, guardados y avances publicados.
+          </p>
+        </div>
 
-        <div className="flex items-center space-x-2 bg-white rounded-md border p-1">
-          <button
-            className={`px-3 py-1 text-sm rounded ${timeframe === "week" ? "bg-gray-100 font-medium" : ""}`}
-            onClick={() => setTimeframe("week")}
-          >
-            Semana
-          </button>
-          <button
-            className={`px-3 py-1 text-sm rounded ${timeframe === "month" ? "bg-gray-100 font-medium" : ""}`}
-            onClick={() => setTimeframe("month")}
-          >
-            Mes
-          </button>
-          <button
-            className={`px-3 py-1 text-sm rounded ${timeframe === "year" ? "bg-gray-100 font-medium" : ""}`}
-            onClick={() => setTimeframe("year")}
-          >
-            Año
-          </button>
+        <div className="inline-flex w-full rounded-lg border bg-white p-1 shadow-sm sm:w-auto">
+          {periodOptions.map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              aria-pressed={timeframe === option.value}
+              className={`min-h-9 flex-1 rounded-md px-3 text-sm font-medium transition-colors sm:flex-none ${
+                timeframe === option.value
+                  ? "bg-[#2c6e49] text-white"
+                  : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+              }`}
+              onClick={() => setTimeframe(option.value)}
+            >
+              {option.label}
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* Overview Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Total de Usuarios
-            </CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{adminData.totalUsers}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              +{adminData.growthRate}% desde el mes pasado
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Total de Campañas
-            </CardTitle>
-            <Library className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{adminData.totalCampaigns}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              +8% desde el mes pasado
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Total de Donaciones
-            </CardTitle>
-            <HeartHandshake className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {formatCurrency(adminData.totalDonations)}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              +15% desde el mes pasado
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Verificaciones Pendientes
-            </CardTitle>
-            <CheckCheck className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {adminData.pendingVerifications}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {adminData.pendingVerifications} campañas requieren revisión
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Additional Cards */}
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Interacciones</CardTitle>
-            <Activity className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {adminData.totalInteractions || 0}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Visitas, comentarios y compartidos
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Crecimiento</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {adminData.growthRate || 0}%
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Tasa de crecimiento mensual
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Notificaciones
-            </CardTitle>
-            <Mail className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {adminData.totalNotificationsSent || 0}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Notificaciones enviadas
-            </p>
-          </CardContent>
-        </Card>
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <MetricCard
+          title="Usuarios nuevos"
+          value={formatNumber(overview.newUsers)}
+          description={`${formatNumber(overview.totalUsers)} perfiles registrados · ${formatNumber(
+            overview.activeUsers
+          )} activos`}
+          icon={Users}
+        />
+        <MetricCard
+          title="Campañas creadas"
+          value={formatNumber(overview.newCampaigns)}
+          description={`${formatNumber(overview.totalCampaigns)} campañas totales · ${formatNumber(
+            overview.activeCampaigns
+          )} activas`}
+          icon={Library}
+        />
+        <MetricCard
+          title="Recaudación completada"
+          value={formatCurrency(overview.completedDonationAmount)}
+          description={`${formatNumber(
+            overview.completedDonationCount
+          )} donaciones completadas en el periodo`}
+          icon={HeartHandshake}
+        />
+        <MetricCard
+          title="Verificaciones pendientes"
+          value={formatNumber(overview.pendingVerifications)}
+          description="Solicitudes de verificación activas por revisar"
+          icon={CheckCheck}
+        />
+        <MetricCard
+          title="Actividad registrada"
+          value={formatNumber(overview.periodInteractions)}
+          description={activityDescription}
+          icon={Activity}
+        />
+        <MetricCard
+          title="Variación de recaudación"
+          value={
+            overview.donationGrowthRate === null
+              ? "Sin base"
+              : formatPercent(overview.donationGrowthRate)
+          }
+          description={growthDescription}
+          icon={TrendingUp}
+        />
+        <MetricCard
+          title="Notificaciones creadas"
+          value={formatNumber(overview.periodNotifications)}
+          description={`${formatNumber(
+            overview.totalNotifications
+          )} notificaciones activas en total`}
+          icon={Bell}
+        />
+        <MetricCard
+          title="Donación promedio"
+          value={formatCurrency(overview.averageDonationAmount)}
+          description={`${formatCurrency(
+            overview.totalCompletedDonationAmount
+          )} recaudado histórico completado`}
+          icon={HeartHandshake}
+        />
       </div>
 
       <Tabs defaultValue="campaigns" className="w-full">
-        <TabsList className="mb-4">
+        <TabsList className="mb-4 grid h-auto w-full grid-cols-2 gap-1 sm:inline-grid sm:w-auto sm:grid-cols-4">
           <TabsTrigger value="campaigns">Campañas</TabsTrigger>
           <TabsTrigger value="donations">Donaciones</TabsTrigger>
           <TabsTrigger value="users">Usuarios</TabsTrigger>
+          <TabsTrigger value="activity">Actividad</TabsTrigger>
         </TabsList>
 
         <TabsContent value="campaigns" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Distribución de Campañas por Categoría</CardTitle>
-            </CardHeader>
-            <CardContent className="pt-2">
-              <div className="h-80">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={campaignCategoryData}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      label={({ name, percent }) =>
-                        `${name}: ${(percent * 100).toFixed(0)}%`
-                      }
-                      outerRadius={80}
-                      fill="#8884d8"
-                      dataKey="value"
-                    >
-                      {campaignCategoryData.map((entry, index) => (
-                        <Cell
-                          key={`cell-${index}`}
-                          fill={COLORS[index % COLORS.length]}
-                        />
-                      ))}
-                    </Pie>
-                    <Tooltip formatter={(value) => `${value}%`} />
-                    <Legend />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
+          <div className="grid gap-4 lg:grid-cols-2">
+            <Card className="rounded-lg shadow-sm">
+              <CardHeader>
+                <CardTitle>Campañas por categoría</CardTitle>
+              </CardHeader>
+              <CardContent className="pt-2">
+                {hasChartData(charts.campaignCategories) ? (
+                  <div className="h-80">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={charts.campaignCategories}
+                          cx="50%"
+                          cy="50%"
+                          dataKey="value"
+                          label={({ name, percent }) =>
+                            `${name}: ${(percent * 100).toFixed(0)}%`
+                          }
+                          labelLine={false}
+                          outerRadius={88}
+                        >
+                          {charts.campaignCategories.map((entry, index) => (
+                            <Cell
+                              key={entry.name}
+                              fill={chartColors[index % chartColors.length]}
+                            />
+                          ))}
+                        </Pie>
+                        <Tooltip />
+                        <Legend />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                ) : (
+                  <EmptyChart label="No hay campañas creadas en este periodo" />
+                )}
+              </CardContent>
+            </Card>
 
-          <Card>
+            <Card className="rounded-lg shadow-sm">
+              <CardHeader>
+                <CardTitle>Estado actual de campañas</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {hasChartData(charts.campaignStatuses) ? (
+                  <div className="h-80">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={charts.campaignStatuses}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="name" />
+                        <YAxis allowDecimals={false} />
+                        <Tooltip />
+                        <Bar dataKey="value" name="Campañas" fill="#2c6e49" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                ) : (
+                  <EmptyChart label="No hay campañas registradas" />
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          <Card className="rounded-lg shadow-sm">
             <CardHeader>
-              <CardTitle>Estado de verificación de campañas</CardTitle>
+              <CardTitle>Estado actual de verificaciones</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="h-80">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={[
-                      {
-                        name: "Verificadas",
-                        value:
-                          adminData.totalCampaigns -
-                          adminData.pendingVerifications,
-                      },
-                      {
-                        name: "Pendientes",
-                        value: adminData.pendingVerifications,
-                      },
-                      { name: "Rechazadas", value: 3 },
-                    ]}
-                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis />
-                    <Tooltip />
-                    <Bar dataKey="value" fill="#2c6e49" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
+              {hasChartData(charts.verificationStatuses) ? (
+                <div className="h-72">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={charts.verificationStatuses}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" />
+                      <YAxis allowDecimals={false} />
+                      <Tooltip />
+                      <Bar
+                        dataKey="value"
+                        name="Solicitudes"
+                        fill="#2563eb"
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              ) : (
+                <EmptyChart label="No hay solicitudes de verificación" />
+              )}
             </CardContent>
           </Card>
         </TabsContent>
 
         <TabsContent value="donations" className="space-y-4">
-          <Card>
+          <Card className="rounded-lg shadow-sm">
             <CardHeader>
-              <CardTitle>Tendencia de Donaciones</CardTitle>
+              <CardTitle>Tendencia de donaciones completadas</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="h-80">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart
-                    data={donationData}
-                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis />
-                    <Tooltip
-                      formatter={(value) => formatCurrency(Number(value))}
-                    />
-                    <Legend />
-                    <Line
-                      type="monotone"
-                      dataKey="amount"
-                      stroke="#2c6e49"
-                      activeDot={{ r: 8 }}
-                      name="Monto recaudado"
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
+              {hasChartData(charts.donationTrend) ? (
+                <div className="h-80">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={charts.donationTrend}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" />
+                      <YAxis />
+                      <Tooltip
+                        formatter={(value, name) =>
+                          name === "Monto"
+                            ? formatCurrency(Number(value))
+                            : formatNumber(Number(value))
+                        }
+                      />
+                      <Legend />
+                      <Line
+                        type="monotone"
+                        dataKey="amount"
+                        name="Monto"
+                        stroke="#2c6e49"
+                        strokeWidth={2}
+                        activeDot={{ r: 6 }}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="donations"
+                        name="Donaciones"
+                        stroke="#2563eb"
+                        strokeWidth={2}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              ) : (
+                <EmptyChart label="No hay donaciones completadas en este periodo" />
+              )}
             </CardContent>
           </Card>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Donación Promedio</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-center p-6">
-                  {formatCurrency(adminData.totalDonations / 145)}
-                </div>
-                <p className="text-center text-muted-foreground">
-                  Por transacción
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Métodos de Pago</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="h-52">
+          <Card className="rounded-lg shadow-sm">
+            <CardHeader>
+              <CardTitle>Métodos de pago completados</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {hasChartData(charts.donationMethods) ? (
+                <div className="h-72">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
-                        data={[
-                          { name: "Tarjeta", value: 65 },
-                          { name: "QR", value: 30 },
-                          { name: "Transferencia", value: 5 },
-                        ]}
+                        data={charts.donationMethods}
                         cx="50%"
                         cy="50%"
-                        outerRadius={50}
-                        fill="#8884d8"
                         dataKey="value"
                         label={({ name, percent }) =>
                           `${name}: ${(percent * 100).toFixed(0)}%`
                         }
+                        outerRadius={80}
                       >
-                        {COLORS.map((color, index) => (
-                          <Cell key={`cell-${index}`} fill={color} />
+                        {charts.donationMethods.map((entry, index) => (
+                          <Cell
+                            key={entry.name}
+                            fill={chartColors[index % chartColors.length]}
+                          />
                         ))}
                       </Pie>
-                      <Tooltip />
+                      <Tooltip
+                        formatter={(value, name, props) => [
+                          `${formatNumber(Number(value))} donaciones · ${formatCurrency(
+                            Number(props.payload.amount)
+                          )}`,
+                          name,
+                        ]}
+                      />
+                      <Legend />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
+              ) : (
+                <EmptyChart label="No hay métodos de pago para mostrar" />
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="users" className="space-y-4">
-          <Card>
+          <Card className="rounded-lg shadow-sm">
             <CardHeader>
-              <CardTitle>Actividad de Usuarios</CardTitle>
+              <CardTitle>Usuarios nuevos</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="h-80">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={userActivityData}
-                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Bar
-                      dataKey="newUsers"
-                      fill="#8884d8"
-                      name="Nuevos usuarios"
-                    />
-                    <Bar
-                      dataKey="activeUsers"
-                      fill="#82ca9d"
-                      name="Usuarios activos"
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
+              {hasChartData(charts.userTrend) ? (
+                <div className="h-80">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={charts.userTrend}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" />
+                      <YAxis allowDecimals={false} />
+                      <Tooltip />
+                      <Bar
+                        dataKey="newUsers"
+                        fill="#2c6e49"
+                        name="Usuarios nuevos"
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              ) : (
+                <EmptyChart label="No hay usuarios nuevos en este periodo" />
+              )}
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="rounded-lg shadow-sm">
             <CardHeader>
-              <CardTitle>Distribución de Usuarios</CardTitle>
+              <CardTitle>Distribución actual de usuarios</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="h-80">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={[
-                        { name: "Donadores", value: 75 },
-                        { name: "Organizadores", value: 20 },
-                        { name: "Administradores", value: 5 },
-                      ]}
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={80}
-                      fill="#8884d8"
-                      dataKey="value"
-                      label={({ name, percent }) =>
-                        `${name}: ${(percent * 100).toFixed(0)}%`
-                      }
-                    >
-                      {COLORS.map((color, index) => (
-                        <Cell key={`cell-${index}`} fill={color} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
+              {hasChartData(charts.userSegments) ? (
+                <div className="h-72">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={charts.userSegments}
+                        cx="50%"
+                        cy="50%"
+                        dataKey="value"
+                        label={({ name, percent }) =>
+                          `${name}: ${(percent * 100).toFixed(0)}%`
+                        }
+                        outerRadius={80}
+                      >
+                        {charts.userSegments.map((entry, index) => (
+                          <Cell
+                            key={entry.name}
+                            fill={chartColors[index % chartColors.length]}
+                          />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                      <Legend />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              ) : (
+                <EmptyChart label="No hay usuarios registrados" />
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="activity" className="space-y-4">
+          <Card className="rounded-lg shadow-sm">
+            <CardHeader>
+              <CardTitle>Actividad registrada</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {hasChartData(charts.activityTrend) ? (
+                <div className="h-80">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={charts.activityTrend}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" />
+                      <YAxis allowDecimals={false} />
+                      <Tooltip />
+                      <Legend />
+                      <Bar
+                        dataKey="comments"
+                        stackId="activity"
+                        fill="#2563eb"
+                        name="Comentarios"
+                      />
+                      <Bar
+                        dataKey="savedCampaigns"
+                        stackId="activity"
+                        fill="#f59e0b"
+                        name="Guardadas"
+                      />
+                      <Bar
+                        dataKey="campaignUpdates"
+                        stackId="activity"
+                        fill="#2c6e49"
+                        name="Avances"
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              ) : (
+                <EmptyChart label="No hay actividad registrada en este periodo" />
+              )}
             </CardContent>
           </Card>
         </TabsContent>

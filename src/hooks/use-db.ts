@@ -57,6 +57,59 @@ export interface DonationSummary {
   totalDonations: number;
 }
 
+export type AnalyticsPeriod = "week" | "month" | "year";
+
+export interface AdminAnalyticsData {
+  period: {
+    key: AnalyticsPeriod;
+    label: string;
+    currentStart: string;
+    currentEnd: string;
+    previousStart: string;
+    previousEnd: string;
+  };
+  overview: {
+    totalUsers: number;
+    activeUsers: number;
+    newUsers: number;
+    totalCampaigns: number;
+    activeCampaigns: number;
+    newCampaigns: number;
+    completedDonationAmount: number;
+    completedDonationCount: number;
+    totalCompletedDonationAmount: number;
+    totalCompletedDonationCount: number;
+    averageDonationAmount: number;
+    pendingVerifications: number;
+    periodInteractions: number;
+    interactionBreakdown: {
+      comments: number;
+      savedCampaigns: number;
+      campaignUpdates: number;
+    };
+    donationGrowthRate: number | null;
+    previousCompletedDonationAmount: number;
+    periodNotifications: number;
+    totalNotifications: number;
+  };
+  charts: {
+    donationTrend: Array<{ name: string; amount: number; donations: number }>;
+    userTrend: Array<{ name: string; newUsers: number }>;
+    activityTrend: Array<{
+      name: string;
+      comments: number;
+      savedCampaigns: number;
+      campaignUpdates: number;
+      total: number;
+    }>;
+    campaignCategories: Array<{ name: string; value: number }>;
+    campaignStatuses: Array<{ name: string; value: number }>;
+    verificationStatuses: Array<{ name: string; value: number }>;
+    donationMethods: Array<{ name: string; value: number; amount: number }>;
+    userSegments: Array<{ name: string; value: number }>;
+  };
+}
+
 export interface Notification {
   id: string;
   type: string;
@@ -396,47 +449,85 @@ export function useDb() {
   );
 
   // Analytics operations
-  const getAnalytics = useCallback(async (): Promise<{
-    totalUsers: number;
-    totalCampaigns: number;
-    totalDonations: number;
-    pendingVerifications: number;
-    totalInteractions?: number;
-    growthRate?: number;
-    totalNotificationsSent?: number;
-  }> => {
-    const cacheKey = "analytics";
-    const cachedData = getCachedData(cacheKey);
+  const getAnalytics = useCallback(
+    async (period: AnalyticsPeriod = "month"): Promise<AdminAnalyticsData> => {
+      const cacheKey = `analytics:${period}`;
+      const cachedData = getCachedData(cacheKey);
 
-    if (cachedData) {
-      return cachedData;
-    }
-
-    setLoading(true);
-    try {
-      const response = await fetch("/api/admin/analytics", {
-        credentials: "include",
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch analytics");
+      if (cachedData) {
+        return cachedData;
       }
 
-      const data = await response.json();
-      setCacheData(cacheKey, data);
-      return data;
-    } catch (error) {
-      console.error("Error fetching analytics:", error);
-      return {
-        totalUsers: 0,
-        totalCampaigns: 0,
-        totalDonations: 0,
-        pendingVerifications: 0,
-      };
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      setLoading(true);
+      try {
+        const response = await fetch(`/api/admin/analytics?period=${period}`, {
+          credentials: "include",
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch analytics");
+        }
+
+        const data = await response.json();
+        setCacheData(cacheKey, data);
+        return data;
+      } catch (error) {
+        console.error("Error fetching analytics:", error);
+        return {
+          period: {
+            key: period,
+            label:
+              period === "week"
+                ? "Últimos 7 días"
+                : period === "year"
+                  ? "Últimos 12 meses"
+                  : "Últimos 30 días",
+            currentStart: "",
+            currentEnd: "",
+            previousStart: "",
+            previousEnd: "",
+          },
+          overview: {
+            totalUsers: 0,
+            activeUsers: 0,
+            newUsers: 0,
+            totalCampaigns: 0,
+            activeCampaigns: 0,
+            newCampaigns: 0,
+            completedDonationAmount: 0,
+            completedDonationCount: 0,
+            totalCompletedDonationAmount: 0,
+            totalCompletedDonationCount: 0,
+            averageDonationAmount: 0,
+            pendingVerifications: 0,
+            periodInteractions: 0,
+            interactionBreakdown: {
+              comments: 0,
+              savedCampaigns: 0,
+              campaignUpdates: 0,
+            },
+            donationGrowthRate: null,
+            previousCompletedDonationAmount: 0,
+            periodNotifications: 0,
+            totalNotifications: 0,
+          },
+          charts: {
+            donationTrend: [],
+            userTrend: [],
+            activityTrend: [],
+            campaignCategories: [],
+            campaignStatuses: [],
+            verificationStatuses: [],
+            donationMethods: [],
+            userSegments: [],
+          },
+        };
+      } finally {
+        setLoading(false);
+      }
+    },
+    []
+  );
 
   // Notification functions
   const getNotifications = useCallback(
