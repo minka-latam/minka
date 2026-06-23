@@ -207,7 +207,7 @@ export default function AnalyticsPage() {
 
   if (profile?.role !== "admin") {
     return (
-      <div className="space-y-3 p-4 md:p-6">
+      <div className="space-y-3">
         <h1 className="text-3xl font-bold text-gray-800">Estadísticas</h1>
         <p className="text-sm text-muted-foreground">
           Esta vista solo está disponible para administradores.
@@ -218,7 +218,7 @@ export default function AnalyticsPage() {
 
   if (!analyticsData) {
     return (
-      <div className="space-y-3 p-4 md:p-6">
+      <div className="space-y-3">
         <h1 className="text-3xl font-bold text-gray-800">Estadísticas</h1>
         <p className="text-sm text-muted-foreground">
           No se pudieron cargar las estadísticas.
@@ -246,7 +246,7 @@ export default function AnalyticsPage() {
         )} del periodo anterior`;
 
   return (
-    <div className="space-y-6 p-4 md:p-6">
+    <div className="space-y-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div className="space-y-1">
           <h1 className="text-3xl font-bold tracking-tight text-gray-900">

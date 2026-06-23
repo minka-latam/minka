@@ -28,7 +28,7 @@ export interface CampaignSharePayload {
 }
 
 export const MINKA_FALLBACK_SHARE_IMAGE =
-  "/favicon/android-chrome-512x512.png";
+  "/logo.svg";
 
 const PRODUCTION_APP_URL = "https://minka-comunidad.org";
 

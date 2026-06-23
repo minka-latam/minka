@@ -7,6 +7,7 @@ import { CampaignCard } from "@/components/views/campaigns/CampaignCard";
 import { Region } from "@/lib/region-utils";
 import { useState, useEffect } from "react";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { landingPrimaryButton } from "./landing-button-styles";
 
 type FeaturedCampaign = {
   id: string;
@@ -86,22 +87,22 @@ export function CausesSection() {
             No se pudieron cargar las campañas. Por favor, intenta de nuevo más
             tarde.
           </p>
-          <Link href="/all-campaigns" rel="noopener noreferrer">
-            <Button className="bg-[#2c6e49] text-white hover:bg-[#1e4d33] hover:text-white rounded-full">
+          <Button asChild className={landingPrimaryButton}>
+            <Link href="/all-campaigns" rel="noopener noreferrer">
               Explorar
-            </Button>
-          </Link>
+            </Link>
+          </Button>
         </div>
       ) : campaigns.length === 0 ? (
         <div className="text-center py-16">
           <p className="text-xl text-gray-600 mb-6">
             No hay campañas disponibles en este momento.
           </p>
-          <Link href="/create-campaign" rel="noopener noreferrer">
-            <Button className="bg-[#2c6e49] text-white hover:bg-[#1e4d33] hover:text-white rounded-full">
+          <Button asChild className={landingPrimaryButton}>
+            <Link href="/create-campaign" rel="noopener noreferrer">
               Crear
-            </Button>
-          </Link>
+            </Link>
+          </Button>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
@@ -127,14 +128,15 @@ export function CausesSection() {
 
       {!isLoading && !error && campaigns.length > 0 && (
         <div className="flex justify-center mt-12">
-          <Link href="/all-campaigns" rel="noopener noreferrer">
-            <Button
-              className="bg-[#2c6e49] text-white hover:bg-[#1e4d33] hover:text-white text-xl shadow-none border-0 rounded-full"
-              size="lg"
-            >
+          <Button
+            asChild
+            className={`${landingPrimaryButton} border-0 text-xl`}
+            size="lg"
+          >
+            <Link href="/all-campaigns" rel="noopener noreferrer">
               Ver más campañas <ArrowRight className="ml-2 h-5 w-5" />
-            </Button>
-          </Link>
+            </Link>
+          </Button>
         </div>
       )}
     </section>

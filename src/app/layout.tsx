@@ -44,20 +44,11 @@ export const metadata: Metadata = {
     siteName: APP_NAME,
     locale: "es_ES",
     type: "website",
-    images: [
-      {
-        url: "/favicon/android-chrome-512x512.png",
-        width: 512,
-        height: 512,
-        alt: APP_NAME,
-      },
-    ],
   },
   twitter: {
-    card: "summary_large_image",
+    card: "summary",
     title: APP_NAME,
     description: APP_DESCRIPTION,
-    images: ["/favicon/android-chrome-512x512.png"],
   },
   robots: {
     index: true,
@@ -70,33 +61,6 @@ export const metadata: Metadata = {
       "max-snippet": -1,
     },
   },
-  icons: {
-    icon: [
-      { url: "/favicon/favicon-16x16.png", sizes: "16x16", type: "image/png" },
-      { url: "/favicon/favicon-32x32.png", sizes: "32x32", type: "image/png" },
-    ],
-    shortcut: "/favicon/favicon.ico",
-    apple: [
-      {
-        url: "/favicon/apple-touch-icon.png",
-        sizes: "180x180",
-        type: "image/png",
-      },
-    ],
-    other: [
-      {
-        rel: "android-chrome",
-        url: "/favicon/android-chrome-192x192.png",
-        sizes: "192x192",
-      },
-      {
-        rel: "android-chrome",
-        url: "/favicon/android-chrome-512x512.png",
-        sizes: "512x512",
-      },
-    ],
-  },
-  manifest: "/favicon/site.webmanifest",
   keywords: [
     "donaciones",
     "causas sociales",
@@ -113,7 +77,8 @@ export const metadata: Metadata = {
   formatDetection: {
     email: false,
     address: false,
-    telephone: false  },
+    telephone: false,
+  },
 };
 
 export default function RootLayout({

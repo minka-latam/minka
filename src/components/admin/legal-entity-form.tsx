@@ -39,9 +39,11 @@ const legalEntitySchema = z.object({
   city: z.string().optional(),
   province: z.string().optional(),
   department: z.string().optional(),
+  contactName: z.string().optional(),
   phone: z.string().optional(),
   email: z.string().email("Email inválido").optional().or(z.literal("")),
   website: z.string().url("URL inválida").optional().or(z.literal("")),
+  socialLinks: z.string().optional(),
   description: z.string().optional(),
   status: z.enum(["active", "inactive"]).default("active"),
 });
@@ -76,9 +78,11 @@ export function LegalEntityForm({
       city: initialData?.city || "",
       province: initialData?.province || "",
       department: initialData?.department || "",
+      contactName: initialData?.contactName || "",
       phone: initialData?.phone || "",
       email: initialData?.email || "",
       website: initialData?.website || "",
+      socialLinks: initialData?.socialLinks || "",
       description: initialData?.description || "",
       status: initialData?.status || "active",
     },
@@ -237,6 +241,20 @@ export function LegalEntityForm({
         <div className="space-y-4">
           <h3 className="text-lg font-medium">Información de Contacto</h3>
 
+          <FormField
+            control={form.control}
+            name="contactName"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Nombre de la persona</FormLabel>
+                <FormControl>
+                  <Input placeholder="Ej: María López" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
           <div className="grid grid-cols-2 gap-4">
             <FormField
               control={form.control}
@@ -280,6 +298,24 @@ export function LegalEntityForm({
                 <FormControl>
                   <Input
                     placeholder="https://www.organizacion.com"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="socialLinks"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Redes Sociales</FormLabel>
+                <FormControl>
+                  <Textarea
+                    placeholder="Instagram, Facebook, LinkedIn o enlaces relevantes"
+                    rows={2}
                     {...field}
                   />
                 </FormControl>

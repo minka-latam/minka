@@ -402,6 +402,11 @@ export default function LegalEntitiesPage() {
 
                         <TableCell>
                           <div className="space-y-1">
+                            {entity.contactName && (
+                              <p className="text-sm font-medium">
+                                {entity.contactName}
+                              </p>
+                            )}
                             {entity.email && (
                               <p className="text-sm">{entity.email}</p>
                             )}
@@ -411,6 +416,11 @@ export default function LegalEntitiesPage() {
                             {entity.website && (
                               <p className="text-sm text-blue-600 truncate max-w-[120px]">
                                 {entity.website}
+                              </p>
+                            )}
+                            {entity.socialLinks && (
+                              <p className="text-sm text-gray-500 truncate max-w-[120px]">
+                                {entity.socialLinks}
                               </p>
                             )}
                           </div>

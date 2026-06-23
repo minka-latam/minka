@@ -22,6 +22,7 @@ export function DashboardLayoutClient({ children }: DashboardLayoutProps) {
           "peer-data-[state=expanded]:w-[calc(100%-var(--sidebar-width))]",
           "transition-[width] duration-200 ease-linear",
           "flex min-h-screen flex-col",
+          "p-4 md:p-6 lg:p-8",
           "group-data-[scroll-locked=1]/body:h-full",
           "group-data-[scroll-locked=1]/body:has-[main.fixed-main]:min-h-screen"
         )}

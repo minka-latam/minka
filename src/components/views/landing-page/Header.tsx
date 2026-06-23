@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { landingHeaderOutlineButton } from "./landing-button-styles";
 import { Menu, X, User, LogOut, Loader2 } from "lucide-react";
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/providers/auth-provider";
@@ -206,7 +207,7 @@ export function Header() {
               <Link href="/sign-in">
                 <Button
                   variant="outline"
-                  className={`rounded-full px-6 py-2 ${
+                  className={`w-fit rounded-full px-6 py-2 ${
                     isScrolled
                       ? "border-white bg-transparent text-white hover:bg-white hover:text-[#2c6e49]"
                       : "border-[#2c6e49] bg-transparent text-[#2c6e49] hover:bg-[#2c6e49] hover:text-white"
@@ -292,9 +293,9 @@ export function Header() {
           <div className="p-4 flex flex-col gap-3">
             {canShowAccountAccess ? (
               <>
-                <Link href="/dashboard" className="w-full">
+                <Link href="/dashboard" className="w-fit self-center">
                   <Button
-                    className="w-full flex items-center justify-center gap-2 bg-white border border-[#2c6e49] text-[#2c6e49] hover:bg-[#2c6e49] hover:text-white rounded-full"
+                    className={`${landingHeaderOutlineButton} flex items-center justify-center gap-2`}
                     onClick={toggleMenu}
                   >
                     <User className="h-5 w-5" />
@@ -302,7 +303,7 @@ export function Header() {
                   </Button>
                 </Link>
                 <Button
-                  className="w-full flex items-center justify-center gap-2 bg-[#f8f9fa] border border-red-500 text-red-500 hover:bg-red-500 hover:text-white rounded-full"
+                  className="flex w-fit items-center justify-center gap-2 self-center rounded-full border border-red-500 bg-[#f8f9fa] px-6 text-red-500 hover:bg-red-500 hover:text-white"
                   onClick={handleSignOut}
                   disabled={isSigningOut}
                 >
@@ -317,9 +318,9 @@ export function Header() {
                 </Button>
               </>
             ) : (
-              <Link href="/sign-in" className="w-full">
+              <Link href="/sign-in" className="w-fit self-center">
                 <Button
-                  className="w-full bg-transparent border border-[#2c6e49] text-[#2c6e49] hover:bg-[#2c6e49] hover:text-white rounded-full"
+                  className={landingHeaderOutlineButton}
                   onClick={toggleMenu}
                 >
                   Ingresar

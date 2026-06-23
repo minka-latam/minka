@@ -4,6 +4,10 @@ import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
+import {
+  landingPrimaryButton,
+  landingSecondaryButton,
+} from "./landing-button-styles";
 
 export function HeroSection() {
   return (
@@ -17,24 +21,26 @@ export function HeroSection() {
           hacer sueños realidad, a través de una plataforma segura que facilita
           las donaciones.
         </p>
-        <div className="flex flex-col sm:flex-row justify-center gap-6">
-          <Link href="/all-campaigns" rel="noopener noreferrer">
-            <Button
-              className="bg-[#2c6e49] hover:bg-[#1e4d33] text-white text-xl w-full sm:w-auto rounded-full"
-              size="lg"
-            >
+        <div className="flex flex-col items-center justify-center gap-4 sm:flex-row sm:gap-6">
+          <Button
+            asChild
+            className={`${landingPrimaryButton} text-xl`}
+            size="lg"
+          >
+            <Link href="/all-campaigns" rel="noopener noreferrer">
               Explorar <ArrowRight className="ml-2 h-5 w-5" />
-            </Button>
-          </Link>
-          <Link href="/create-campaign" rel="noopener noreferrer">
-            <Button
-              variant="outline"
-              className="bg-white border-[#2c6e49] text-[#2c6e49] hover:bg-[#f5f7e9] text-xl w-full sm:w-auto rounded-full"
-              size="lg"
-            >
+            </Link>
+          </Button>
+          <Button
+            asChild
+            variant="outline"
+            className={`${landingSecondaryButton} text-xl`}
+            size="lg"
+          >
+            <Link href="/create-campaign" rel="noopener noreferrer">
               Crear Campaña
-            </Button>
-          </Link>
+            </Link>
+          </Button>
         </div>
       </div>
       <div className="flex justify-center">

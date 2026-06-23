@@ -35,8 +35,10 @@ export async function GET(request: NextRequest) {
         legalForm: true,
         city: true,
         department: true,
+        contactName: true,
         email: true,
         phone: true,
+        socialLinks: true,
         description: true,
       },
     });

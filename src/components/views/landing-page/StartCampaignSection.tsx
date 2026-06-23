@@ -4,6 +4,11 @@ import Image from "next/image";
 import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { useState, useCallback, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  landingPrimaryButton,
+  landingSecondaryButton,
+} from "./landing-button-styles";
 
 export function StartCampaignSection() {
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -23,7 +28,7 @@ export function StartCampaignSection() {
       id: "verify",
       step: "02",
       icon: "/landing-page/step-2.png",
-      title: "Verifica tu campaña",
+      title: "Verificala",
       description:
         "Completa este proceso para garantizar confianza y transparencia.",
     },
@@ -31,7 +36,7 @@ export function StartCampaignSection() {
       id: "share",
       step: "03",
       icon: "/landing-page/step-3.svg",
-      title: "Comparte tu campaña",
+      title: "Comparte en tus redes",
       description: "Difunde tu causa y atrae el apoyo que necesitas.",
     },
     {
@@ -62,7 +67,7 @@ export function StartCampaignSection() {
     setCurrentSlide(index);
   }, [isAnimating, currentSlide]);
 
-  // Reset animation lock after transition
+  // Reset animation lock
   useEffect(() => {
     if (isAnimating) {
       const timer = setTimeout(() => setIsAnimating(false), 500);
@@ -70,131 +75,184 @@ export function StartCampaignSection() {
     }
   }, [isAnimating]);
 
-  // Auto-advance carousel every 5 seconds
+  // Auto-advance carousel on mobile every 6 seconds
   useEffect(() => {
     const interval = setInterval(() => {
       nextSlide();
-    }, 5000);
+    }, 6000);
     return () => clearInterval(interval);
   }, [nextSlide]);
 
   return (
-    <section className="relative w-full pt-16 md:pt-24 pb-72 md:pb-80 lg:pb-96 overflow-hidden">
-      {/* Background SVG */}
-      <div className="absolute bottom-0 left-0 right-0 z-0">
-        <Image
-          src="/auth/auth-bg.svg"
-          alt="Background with plants"
-          width={1440}
-          height={535}
-          priority
-          className="h-auto w-full"
-        />
-      </div>
-
+    <section className="relative container mx-auto px-4 pt-24 md:pb-0 lg:pb-40">
       <div className="container mx-auto px-4 md:px-8 lg:px-16 relative z-10">
-        {/* Intro header */}
-        <div className="text-center max-w-3xl mx-auto mb-12 md:mb-16">
-          <span className="text-[#2c6e49] text-xl md:text-2xl font-medium mb-4 block">
+        {/* Intro Header */}
+        <div className="text-center max-w-3xl mx-auto mb-16 lg:mb-20">
+          <span className="text-[#2c6e49] text-lg md:text-xl font-semibold uppercase tracking-wider mb-3 block">
             ¿Tienes una causa que necesita apoyo?
           </span>
-          <h2 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-[#333333] mb-6 leading-tight">
+          <h2 className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-[#333333] mb-6 leading-tight tracking-tight">
             ¡Inicia tu campaña!
           </h2>
-          <p className="text-lg sm:text-xl md:text-2xl text-[#555555] max-w-2xl mx-auto">
+          <p className="text-lg sm:text-xl text-[#555555] max-w-2xl mx-auto font-light">
             Sigue estos sencillos pasos y empieza a recibir la ayuda que tu
             proyecto merece.
           </p>
         </div>
 
-        {/* Carousel */}
-        <div className="relative max-w-3xl mx-auto">
-          {/* Navigation arrows */}
+        {/* DESKTOP VIEW: Beautiful static timeline grid (LG screens and up) */}
+        <div className="hidden lg:grid grid-cols-4 gap-6 max-w-7xl mx-auto relative mb-16">
+          {campaignSteps.map((step, idx) => (
+            <div
+              key={step.id}
+              className="relative flex flex-col items-center text-center p-8 bg-white/70 backdrop-blur-sm border border-gray-100 rounded-2xl shadow-sm hover:shadow-md hover:-translate-y-1.5 transition-all duration-300 group"
+            >
+              {/* Step indicator badge */}
+              <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-[#2c6e49] text-white font-bold text-sm px-3 py-1 rounded-full shadow-sm">
+                PASO {step.step}
+              </div>
+
+              {/* Icon Container with subtle animation */}
+              <div className="w-20 h-20 flex items-center justify-center bg-[#f0f7f4] rounded-full mb-6 mt-2 group-hover:scale-110 transition-transform duration-300">
+                <Image
+                  src={step.icon}
+                  alt={`Step ${step.step} icon`}
+                  width={50}
+                  height={50}
+                  className="object-contain"
+                />
+              </div>
+
+              {/* Step Title */}
+              <h3 className="text-xl font-bold text-[#333333] mb-3 group-hover:text-[#2c6e49] transition-colors">
+                {step.title}
+              </h3>
+
+              {/* Step Description */}
+              <p className="text-base text-[#555555] leading-relaxed">
+                {step.description}
+              </p>
+
+              {/* Visual connector lines between steps */}
+              {idx < 3 && (
+                <div className="hidden xl:block absolute top-[52px] -right-4 w-8 h-[2px] border-t-2 border-dashed border-gray-200 z-10" />
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* MOBILE & TABLET VIEW: Compact Swipeable Carousel (MD screens and down) */}
+        <div className="block lg:hidden relative max-w-lg mx-auto mb-12">
+          {/* Navigation Arrows */}
           <button
             onClick={prevSlide}
             disabled={isAnimating}
-            className="absolute -left-4 sm:-left-8 md:-left-20 lg:-left-24 top-1/2 -translate-y-1/2 z-20 w-10 h-10 md:w-12 md:h-12 flex items-center justify-center bg-white rounded-full shadow-lg text-[#2c6e49] hover:bg-[#2c6e49] hover:text-white transition-colors disabled:opacity-50"
+            className="absolute -left-3 sm:-left-6 top-1/2 -translate-y-1/2 z-20 w-10 h-10 flex items-center justify-center bg-white rounded-full shadow-md text-[#2c6e49] hover:bg-[#2c6e49] hover:text-white transition-colors disabled:opacity-40"
             aria-label="Previous step"
           >
-            <ChevronLeft className="w-5 h-5 md:w-6 md:h-6" />
+            <ChevronLeft className="w-5 h-5" />
           </button>
 
           <button
             onClick={nextSlide}
             disabled={isAnimating}
-            className="absolute -right-4 sm:-right-8 md:-right-20 lg:-right-24 top-1/2 -translate-y-1/2 z-20 w-10 h-10 md:w-12 md:h-12 flex items-center justify-center bg-white rounded-full shadow-lg text-[#2c6e49] hover:bg-[#2c6e49] hover:text-white transition-colors disabled:opacity-50"
+            className="absolute -right-3 sm:-right-6 top-1/2 -translate-y-1/2 z-20 w-10 h-10 flex items-center justify-center bg-white rounded-full shadow-md text-[#2c6e49] hover:bg-[#2c6e49] hover:text-white transition-colors disabled:opacity-40"
             aria-label="Next step"
           >
-            <ChevronRight className="w-5 h-5 md:w-6 md:h-6" />
+            <ChevronRight className="w-5 h-5" />
           </button>
 
-          {/* Slides container */}
-          <div className="overflow-hidden rounded-2xl">
+          {/* Slides Container */}
+          <div className="overflow-hidden rounded-2xl mx-6 sm:mx-8">
             <div
-              className="flex transition-transform duration-500 ease-in-out"
+              className="flex transition-transform duration-500 ease-out"
               style={{ transform: `translateX(-${currentSlide * 100}%)` }}
             >
               {campaignSteps.map((step) => (
-                <div
-                  key={step.id}
-                  className="w-full flex-shrink-0 px-2 md:px-4"
-                >
-                  <div className="text-center py-6 md:py-8">
-                    {/* Step icon */}
-                    <div className="mb-5">
-                      <Image
-                        src={step.icon}
-                        alt={`Step ${step.step} icon`}
-                        width={80}
-                        height={80}
-                        className="mx-auto"
-                      />
+                <div key={step.id} className="w-full flex-shrink-0 px-2">
+                  <div className="text-center py-8 px-6 bg-white border border-gray-100 rounded-2xl shadow-sm">
+                    {/* Step badge */}
+                    <span className="inline-block bg-[#f0f7f4] text-[#2c6e49] text-sm font-bold tracking-wider uppercase px-3 py-1 rounded-full mb-4">
+                      PASO {step.step}
+                    </span>
+
+                    {/* Icon */}
+                    <div className="mb-5 flex justify-center">
+                      <div className="w-20 h-20 flex items-center justify-center bg-[#f0f7f4] rounded-full">
+                        <Image
+                          src={step.icon}
+                          alt={`Step ${step.step} icon`}
+                          width={48}
+                          height={48}
+                          className="object-contain"
+                        />
+                      </div>
                     </div>
 
-                    {/* Step number */}
-                    <p className="text-[#2c6e49] text-base md:text-lg font-semibold mb-2 tracking-wider">
-                      PASO {step.step}
-                    </p>
-
-                    {/* Step title */}
-                    <h3 className="text-2xl sm:text-3xl md:text-4xl font-bold text-[#333333] mb-3 leading-tight">
+                    {/* Title */}
+                    <h3 className="text-2xl font-bold text-[#333333] mb-3">
                       {step.title}
                     </h3>
 
-                    {/* Step description */}
-                    <p className="text-base sm:text-lg md:text-xl text-[#555555] mb-6 max-w-xl mx-auto">
+                    {/* Description */}
+                    <p className="text-base text-[#555555] leading-relaxed max-w-sm mx-auto">
                       {step.description}
                     </p>
-
-                    <Link
-                      href="/create-campaign"
-                      className="inline-flex items-center justify-center bg-[#2c6e49] hover:bg-[#1e4d33] text-white text-base md:text-lg px-6 md:px-8 py-3 md:py-4 rounded-full transition-colors"
-                    >
-                      Crear
-                      <ArrowRight className="ml-2 h-4 w-4 md:h-5 md:w-5" />
-                    </Link>
                   </div>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Dots indicator */}
-          <div className="flex justify-center gap-2 mt-8">
+          {/* Pagination Indicators */}
+          <div className="flex justify-center gap-2 mt-6">
             {campaignSteps.map((step, index) => (
               <button
                 key={step.id}
                 onClick={() => goToSlide(index)}
                 disabled={isAnimating}
-                className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                className={`h-2 rounded-full transition-all duration-300 ${
                   index === currentSlide
-                    ? "bg-[#2c6e49] w-8"
-                    : "bg-gray-300 hover:bg-gray-400"
+                    ? "bg-[#2c6e49] w-6"
+                    : "bg-gray-200 hover:bg-gray-300 w-2"
                 }`}
                 aria-label={`Go to step ${index + 1}`}
               />
             ))}
           </div>
+        </div>
+
+        {/* Unified Call To Action Buttons */}
+        <div className="relative z-10 flex flex-col items-center justify-center gap-4 text-center sm:flex-row">
+          <Button
+            asChild
+            size="lg"
+            className={`${landingPrimaryButton} text-base md:text-lg`}
+          >
+            <Link href="/create-campaign">
+              Crear mi campaña
+              <ArrowRight className="h-5 w-5" />
+            </Link>
+          </Button>
+          <Button
+            asChild
+            variant="outline"
+            size="lg"
+            className={`${landingSecondaryButton} text-base md:text-lg`}
+          >
+            <Link href="/help">Ver Preguntas Frecuentes</Link>
+          </Button>
+        </div>
+
+        <div className="relative z-10 mx-auto mt-24 lg:mt-0 h-72 w-72 overflow-visible lg:absolute lg:-right-0 lg:top-[45rem] xl:h-[24rem] xl:w-[24rem]">
+          <Image
+            src="/landing-page/muleta.png"
+            alt=""
+            fill
+            sizes="(min-width: 1280px) 384px, (min-width: 1024px) 352px, 320px"
+            className="scale-[1.45] object-contain lg:scale-[1.55]"
+            aria-hidden="true"
+          />
         </div>
       </div>
     </section>

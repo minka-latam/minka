@@ -11,9 +11,11 @@ export interface LegalEntity {
   city?: string;
   province?: string;
   department?: string;
+  contactName?: string;
   phone?: string;
   email?: string;
   website?: string;
+  socialLinks?: string;
   description?: string;
   documentUrls: string[];
   status: "active" | "inactive";
@@ -33,9 +35,11 @@ export interface LegalEntityFormData {
   city?: string;
   province?: string;
   department?: string;
+  contactName?: string;
   phone?: string;
   email?: string;
   website?: string;
+  socialLinks?: string;
   description?: string;
   documentUrls?: string[];
   status?: "active" | "inactive";

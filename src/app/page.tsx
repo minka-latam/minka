@@ -1,6 +1,7 @@
 import { HeroSection } from "@/components/views/landing-page/HeroSection";
 import { CausesSection } from "@/components/views/landing-page/CausesSection";
 import { TrustSection } from "@/components/views/landing-page/TrustSection";
+import { InstitutionInviteSection } from "@/components/views/landing-page/InstitutionInviteSection";
 import { StartCampaignSection } from "@/components/views/landing-page/StartCampaignSection";
 import { TestimonialsSection } from "@/components/views/landing-page/TestimonialsSection";
 // import { PartnersSection } from "@/components/views/landing-page/PartnersSection";
@@ -51,9 +52,8 @@ export default function Home() {
         <HeroSection />
         <CausesSection />
         <TrustSection />
-        <div className="bg-gradient-to-r from-white to-[#ECF1DC]">
-          <StartCampaignSection />
-        </div>
+        <InstitutionInviteSection />
+        <StartCampaignSection />
         <TestimonialsSection />
         {/* <PartnersSection /> */}
       </main>

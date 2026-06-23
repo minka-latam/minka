@@ -352,9 +352,11 @@ model LegalEntity {
   city               String?
   province           Province?
   department         Region?
+  contactName        String?    @map("contact_name")
   phone              String?
   email              String?
   website            String?
+  socialLinks        String?    @map("social_links")
   description        String?
   documentUrls       String[]   @default([]) @map("document_urls")
   status             Status     @default(active)
