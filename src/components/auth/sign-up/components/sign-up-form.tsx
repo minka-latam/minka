@@ -633,7 +633,7 @@ export function SignUpForm() {
           disabled={!!socialLoading || isLoading || isSubmitting}
         >
           <Image
-            src="/social-icons/Google.svg"
+            src="/icons/google.svg"
             alt="Google"
             width={20}
             height={20}

@@ -365,14 +365,27 @@ export async function PATCH(
       );
     }
 
-    // Find the organizer profile by email
-    const organizer = await db.profile.findUnique({
-      where: { email: session.user.email },
-    });
+    const profileWhere: Array<{ id: string } | { email: string }> = [];
+    if (session.user.id) profileWhere.push({ id: session.user.id });
+    if (session.user.email) profileWhere.push({ email: session.user.email });
 
-    if (!organizer) {
+    const currentProfile =
+      profileWhere.length > 0
+        ? await db.profile.findFirst({
+            where: { OR: profileWhere },
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              role: true,
+              status: true,
+            },
+          })
+        : null;
+
+    if (!currentProfile) {
       return NextResponse.json(
-        { error: "Organizer profile not found" },
+        { error: "User profile not found" },
         { status: 404 },
       );
     }
@@ -381,6 +394,14 @@ export async function PATCH(
     const existingCampaign = await db.campaign.findUnique({
       where: {
         id: campaignId,
+      },
+      include: {
+        organizer: {
+          select: {
+            name: true,
+            email: true,
+          },
+        },
       },
     });
 
@@ -391,8 +412,11 @@ export async function PATCH(
       );
     }
 
-    // Ensure the user owns the campaign
-    if (existingCampaign.organizerId !== organizer.id) {
+    const isOwner = existingCampaign.organizerId === currentProfile.id;
+    const isActiveAdmin =
+      currentProfile.role === "admin" && currentProfile.status === "active";
+
+    if (!isOwner && !isActiveAdmin) {
       return NextResponse.json(
         {
           error: "You don't have permission to update this campaign",
@@ -537,8 +561,8 @@ export async function PATCH(
       await notifyCampaignPublishedForReview({
         campaignId,
         campaignTitle: existingCampaign.title,
-        organizerName: organizer.name,
-        organizerEmail: organizer.email,
+        organizerName: existingCampaign.organizer.name,
+        organizerEmail: existingCampaign.organizer.email,
         submittedAt: publishedForReviewAt,
       });
     }

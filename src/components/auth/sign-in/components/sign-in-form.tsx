@@ -191,7 +191,7 @@ export function SignInForm() {
           disabled={!!socialLoading}
         >
           <Image
-            src="/social-icons/Google.svg"
+            src="/icons/google.svg"
             alt="Google"
             width={20}
             height={20}
