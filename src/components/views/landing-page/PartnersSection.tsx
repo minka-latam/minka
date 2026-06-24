@@ -9,24 +9,6 @@ export function PartnersSection() {
 
   const allies = [
     {
-      id: 1,
-      name: "Rainforest Alliance",
-      logo: "/allies/rainforest-alliance.png",
-      href: "https://www.rainforest-alliance.org/",
-    },
-    {
-      id: 2,
-      name: "Forbes",
-      logo: "/allies/forbes.png",
-      href: "https://www.forbes.com/",
-    },
-    {
-      id: 3,
-      name: "GlobalGiving",
-      logo: "/allies/globalgiving.png",
-      href: "https://www.globalgiving.org/",
-    },
-    {
       id: 4,
       name: "UNIL HUB",
       logo: "/allies/unil-hub.png",
@@ -34,9 +16,8 @@ export function PartnersSection() {
     },
     {
       id: 5,
-      name: "PayPal",
-      logo: "/allies/paypal.png",
-      href: "https://www.paypal.com/",
+      name: "UCreate",
+      logo: "/allies/UCreate.png",
     },
   ];
 
@@ -95,25 +76,15 @@ export function PartnersSection() {
 
         {/* Desktop view - grid */}
         {!isMobile && (
-          <div className="hidden md:grid grid-cols-3 lg:grid-cols-5 gap-12 items-center max-w-6xl mx-auto">
+          <div className="hidden md:grid grid-cols-2 gap-12 items-center max-w-xl mx-auto">
             {allies.map((ally) => (
-              <a
+              <div
                 key={ally.id}
-                href={ally.href}
-                rel="noopener noreferrer"
                 className="group flex items-center justify-center h-24"
-                title={`Visitar ${ally.name}`}
+                title={ally.href ? `Visitar ${ally.name}` : ally.name}
               >
-                <div className="relative w-full h-full flex items-center justify-center px-4">
-                  <Image
-                    src={ally.logo}
-                    alt={`Logo de ${ally.name}`}
-                    fill
-                    className="object-contain partner-logo group-hover:scale-105"
-                    sizes="(max-width: 768px) 40vw, (max-width: 1024px) 25vw, 20vw"
-                  />
-                </div>
-              </a>
+                <PartnerLogo ally={ally} />
+              </div>
             ))}
           </div>
         )}
@@ -128,49 +99,67 @@ export function PartnersSection() {
             >
               {/* First set of allies */}
               {allies.map((ally) => (
-                <a
+                <div
                   key={`first-${ally.id}`}
-                  href={ally.href}
-                  rel="noopener noreferrer"
                   className="flex-shrink-0 w-32 h-20 flex items-center justify-center"
-                  title={`Visitar ${ally.name}`}
+                  title={ally.href ? `Visitar ${ally.name}` : ally.name}
                 >
-                  <div className="relative w-full h-full">
-                    <Image
-                      src={ally.logo}
-                      alt={`Logo de ${ally.name}`}
-                      fill
-                      className="object-contain"
-                      sizes="128px"
-                    />
-                  </div>
-                </a>
+                  <PartnerLogo ally={ally} sizes="128px" />
+                </div>
               ))}
 
               {/* Duplicate set for infinite scroll effect */}
               {allies.map((ally) => (
-                <a
+                <div
                   key={`second-${ally.id}`}
-                  href={ally.href}
-                  rel="noopener noreferrer"
                   className="flex-shrink-0 w-32 h-20 flex items-center justify-center"
-                  title={`Visitar ${ally.name}`}
+                  title={ally.href ? `Visitar ${ally.name}` : ally.name}
                 >
-                  <div className="relative w-full h-full">
-                    <Image
-                      src={ally.logo}
-                      alt={`Logo de ${ally.name}`}
-                      fill
-                      className="object-contain"
-                      sizes="128px"
-                    />
-                  </div>
-                </a>
+                  <PartnerLogo ally={ally} sizes="128px" />
+                </div>
               ))}
             </div>
           </div>
         )}
       </div>
     </section>
+  );
+}
+
+function PartnerLogo({
+  ally,
+  sizes = "(max-width: 768px) 40vw, (max-width: 1024px) 25vw, 20vw",
+}: {
+  ally: {
+    name: string;
+    logo: string;
+    href?: string;
+  };
+  sizes?: string;
+}) {
+  const content = (
+    <div className="relative w-full h-full flex items-center justify-center px-4">
+      <Image
+        src={ally.logo}
+        alt={`Logo de ${ally.name}`}
+        fill
+        className="object-contain partner-logo group-hover:scale-105"
+        sizes={sizes}
+      />
+    </div>
+  );
+
+  if (!ally.href) {
+    return content;
+  }
+
+  return (
+    <a
+      href={ally.href}
+      rel="noopener noreferrer"
+      className="relative block h-full w-full"
+    >
+      {content}
+    </a>
   );
 }

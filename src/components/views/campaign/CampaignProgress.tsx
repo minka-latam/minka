@@ -16,6 +16,12 @@ import {
   SAVE_CAMPAIGN_INTENT_UPDATED_EVENT,
 } from '@/constants/saved-campaign'
 import { CampaignShareMenu } from '@/components/share/CampaignShareMenu'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 
 interface CampaignProgressProps {
   isVerified: boolean
@@ -29,6 +35,7 @@ interface CampaignProgressProps {
   campaignImageUrl?: string
   campaignOrganizer?: string
   campaignLocation?: string
+  campaignStatus?: string
   campaignId?: string
   latestDonors?: Array<{
     id: string
@@ -75,6 +82,7 @@ export function CampaignProgress({
   campaignImageUrl = '',
   campaignOrganizer = '',
   campaignLocation = '',
+  campaignStatus = '',
   campaignId = '',
   latestDonors = [],
 }: CampaignProgressProps) {
@@ -103,6 +111,8 @@ export function CampaignProgress({
   const router = useRouter()
 
   const isLoggedIn = !!session
+  const isDraftCampaign = campaignStatus === 'draft'
+  const draftTooltip = "Tu campaña sigue en 'borrador'"
   const isSaved = isCampaignSaved(campaignId)
   const effectiveIsSaved =
     isSaved || cachedIsSaved || hasPendingSaveIntent
@@ -388,11 +398,31 @@ export function CampaignProgress({
       <hr className='h-px w-full bg-gray-200 my-4' />
 
       <div className='space-y-3'>
-        <Link href={`/donate/${campaignId}`}>
-          <Button className='w-full bg-[#2c6e49] hover:bg-[#1e4d33] text-white rounded-full py-6'>
-            Donar ahora
-          </Button>
-        </Link>
+        {isDraftCampaign ? (
+          <TooltipProvider delayDuration={100}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className='block cursor-not-allowed'>
+                  <Button
+                    disabled
+                    className='w-full cursor-not-allowed rounded-full bg-gray-200 py-6 text-gray-500 hover:bg-gray-200'
+                  >
+                    Donar ahora
+                  </Button>
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>
+                {draftTooltip}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        ) : (
+          <Link href={`/donate/${campaignId}`}>
+            <Button className='w-full bg-[#2c6e49] hover:bg-[#1e4d33] text-white rounded-full py-6'>
+              Donar ahora
+            </Button>
+          </Link>
+        )}
 
         <div className='flex w-full'>
           <CampaignShareMenu
@@ -403,6 +433,8 @@ export function CampaignProgress({
               description: campaignDescription,
               imageUrl: campaignImageUrl,
             }}
+            disabled={isDraftCampaign}
+            disabledReason={draftTooltip}
             triggerClassName='w-full border-[#2c6e49] hover:bg-gray-50 rounded-full py-6 text-[#2c6e49]'
             dropdownClassName='left-0 right-0'
           />

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useCallback, useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
 
 export interface LegalEntity {
@@ -70,7 +70,7 @@ export function useLegalEntities() {
   const [deleting, setDeleting] = useState(false);
 
   // Fetch legal entities with filters
-  const fetchLegalEntities = async (
+  const fetchLegalEntities = useCallback(async (
     filters: LegalEntityFilters = {}
   ): Promise<LegalEntitiesResponse | null> => {
     try {
@@ -104,7 +104,7 @@ export function useLegalEntities() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
 
   // Create legal entity
   const createLegalEntity = async (
@@ -234,7 +234,7 @@ export function useLegalEntities() {
   };
 
   // Fetch active legal entities for campaign form
-  const fetchActiveLegalEntities = async (
+  const fetchActiveLegalEntities = useCallback(async (
     search?: string
   ): Promise<LegalEntity[]> => {
     try {
@@ -256,7 +256,7 @@ export function useLegalEntities() {
       console.error("Error fetching active legal entities:", error);
       return [];
     }
-  };
+  }, []);
 
   return {
     loading,

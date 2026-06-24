@@ -34,11 +34,22 @@ import { uploadMedia } from "@/lib/supabase/upload-media";
 import { ImproveTextButton } from "@/components/ui/improve-text-button";
 import { CAMPAIGN_CATEGORIES } from "@/lib/campaign-categories";
 import { CampaignShareMenu } from "@/components/share/CampaignShareMenu";
+import { LegalEntity, useLegalEntities } from "@/hooks/use-legal-entities";
 import {
   CAMPAIGN_IMAGE_MAX_COUNT,
   getCampaignImageFiles,
   validateCampaignImageFile,
 } from "@/lib/uploads/image-upload-validation";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function CampaignDetailPage() {
   const MAX_GOAL_AMOUNT = 1000000;
@@ -76,6 +87,11 @@ export default function CampaignDetailPage() {
   const [newYoutubeUrl, setNewYoutubeUrl] = useState("");
   const [isPublishing, setIsPublishing] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showPublishDialog, setShowPublishDialog] = useState(false);
+  const [legalEntities, setLegalEntities] = useState<LegalEntity[]>([]);
+  const [legalEntitiesSearch, setLegalEntitiesSearch] = useState("");
+  const [isLoadingLegalEntities, setIsLoadingLegalEntities] = useState(false);
+  const { fetchActiveLegalEntities } = useLegalEntities();
 
   // Track original campaign state for reset functionality
   const [originalCampaign, setOriginalCampaign] = useState<Record<string, any>>(
@@ -442,6 +458,8 @@ export default function CampaignDetailPage() {
   // Function to handle saving changes
   const handleSaveChanges = async () => {
     try {
+      if (!validateRecipientSelection()) return;
+
       if (
         (!campaign.media || campaign.media.length === 0) &&
         mediaFiles.length === 0
@@ -476,6 +494,10 @@ export default function CampaignDetailPage() {
           isPrimary: boolean;
           orderIndex: number;
         }>;
+        recipientType: any;
+        beneficiaryName: any;
+        beneficiaryRelationship: any;
+        legalEntityId: any;
       } = {
         title: campaign.title,
         subtitle: campaign.subtitle,
@@ -487,6 +509,10 @@ export default function CampaignDetailPage() {
         beneficiariesDescription: campaign.beneficiaries_description,
         youtubeUrl: campaign.youtube_url,
         youtubeUrls: campaign.youtube_urls,
+        recipientType: campaign.recipient_type,
+        beneficiaryName: campaign.beneficiary_name,
+        beneficiaryRelationship: campaign.beneficiary_relationship,
+        legalEntityId: campaign.legal_entity_id,
       };
 
       if (finalMedia.length > 0) {
@@ -563,8 +589,94 @@ export default function CampaignDetailPage() {
     campaign?.campaignStatus === "draft" ||
     campaign?.campaign_status === "active" ||
     campaign?.campaignStatus === "active";
+  const recipientType = campaign?.recipient_type || campaign?.recipientType;
+  const recipientSummary = (() => {
+    if (recipientType === "tu_mismo") {
+      return {
+        label: "Tú mismo",
+        detail: "La campaña indica que tú recibirás el apoyo recaudado.",
+      };
+    }
+
+    if (recipientType === "persona_juridica") {
+      return {
+        label: "Organización corroborada por Minka",
+        detail: campaign?.legal_entity?.name
+          ? `Organización seleccionada: ${campaign.legal_entity.name}.`
+          : "La campaña está vinculada a una organización corroborada.",
+      };
+    }
+
+    if (recipientType === "otra_persona") {
+      const beneficiaryName =
+        campaign?.beneficiary_name || campaign?.beneficiaryName;
+      const beneficiaryRelationship =
+        campaign?.beneficiary_relationship ||
+        campaign?.beneficiaryRelationship;
+
+      return {
+        label: "Otra persona o institución/fundación",
+        detail: [
+          beneficiaryName ? `Beneficiario: ${beneficiaryName}.` : null,
+          beneficiaryRelationship
+            ? `Relación: ${beneficiaryRelationship}.`
+            : null,
+        ]
+          .filter(Boolean)
+          .join(" ") || "La campaña indica un beneficiario externo.",
+      };
+    }
+
+    return {
+      label: "No indicado",
+      detail:
+        "Revisa en Editar campaña quién recibirá el apoyo antes de publicar.",
+      };
+  })();
+  const validateRecipientSelection = () => {
+    if (!recipientType) {
+      toast({
+        title: "Falta indicar quién recibirá el apoyo",
+        description:
+          "Selecciona si la campaña es para ti, otra persona/institución o una organización corroborada.",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    if (
+      recipientType === "otra_persona" &&
+      !String(campaign?.beneficiary_name || "").trim()
+    ) {
+      toast({
+        title: "Falta el beneficiario",
+        description:
+          "Ingresa el nombre de la persona, institución o fundación que recibirá el apoyo.",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    if (
+      recipientType === "persona_juridica" &&
+      !campaign?.legal_entity_id &&
+      !campaign?.legalEntityId
+    ) {
+      toast({
+        title: "Falta seleccionar organización",
+        description:
+          "Selecciona una organización corroborada por Minka antes de publicar.",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    return true;
+  };
 
   const handlePublishCampaign = async () => {
+    if (!validateRecipientSelection()) return;
+
     try {
       setIsPublishing(true);
       const response = await fetch(`/api/campaign/${params.id}`, {
@@ -811,6 +923,25 @@ export default function CampaignDetailPage() {
     getCampaignDetails();
   }, [params.id, router, supabase]);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadLegalEntities() {
+      setIsLoadingLegalEntities(true);
+      const entities = await fetchActiveLegalEntities(legalEntitiesSearch);
+      if (!cancelled) {
+        setLegalEntities(entities);
+        setIsLoadingLegalEntities(false);
+      }
+    }
+
+    loadLegalEntities();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [fetchActiveLegalEntities, legalEntitiesSearch]);
+
   // Clean up preview URLs when component unmounts
   useEffect(() => {
     return () => {
@@ -885,6 +1016,8 @@ export default function CampaignDetailPage() {
                   }}
                   buttonLabel="Compartir"
                   triggerVariant="ghost"
+                  disabled={isDraftCampaign}
+                  disabledReason="Tu campaña sigue en 'borrador'"
                   triggerClassName="inline-flex h-auto items-center rounded-none p-0 text-[#1a5535] gap-2 text-sm font-medium hover:underline hover:bg-transparent"
                   dropdownPlacement="bottom"
                   dropdownClassName="left-0 w-64"
@@ -903,7 +1036,7 @@ export default function CampaignDetailPage() {
                 {isDraftCampaign && !isPendingReview && (
                   <Button
                     type="button"
-                    onClick={handlePublishCampaign}
+                    onClick={() => setShowPublishDialog(true)}
                     disabled={isPublishing || isDeleting}
                     className="h-8 px-4 rounded-full bg-[#2c6e49] hover:bg-[#1e4d33] text-white"
                   >
@@ -1861,103 +1994,232 @@ export default function CampaignDetailPage() {
                     </div>
 
                     {/* Información del beneficiario */}
-                    {campaign.recipient_type && (
-                      <div className="space-y-4 border-t border-gray-200 pt-6">
+                    <div className="space-y-4 border-t border-gray-200 pt-6">
+                      <div>
                         <label className="text-lg font-bold text-gray-800">
-                          Información del beneficiario
+                          Quién recibirá el apoyo
                         </label>
-                        <div className="bg-gray-50 rounded-lg p-4 space-y-3">
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-medium text-gray-600">
-                              Tipo de destinatario:
-                            </span>
-                            <span className="text-sm text-gray-800 capitalize">
-                              {campaign.recipient_type === "tu_mismo" &&
-                                "Tú mismo"}
-                              {campaign.recipient_type === "otra_persona" &&
-                                "Otra persona"}
-                              {campaign.recipient_type === "persona_juridica" &&
-                                "Persona Jurídica"}
-                            </span>
+                        <p className="mt-1 text-sm text-gray-600">
+                          Confirma si la campaña es para ti, para otra persona o
+                          institución, o para una organización corroborada por
+                          Minka.
+                        </p>
+                      </div>
+
+                      <div className="grid gap-3 md:grid-cols-3">
+                        {[
+                          {
+                            value: "tu_mismo",
+                            title: "Tú mismo",
+                            description: "Tú recibirás los fondos recaudados.",
+                          },
+                          {
+                            value: "otra_persona",
+                            title: "Otra persona o institución",
+                            description:
+                              "La campaña apoya a una persona, institución o fundación externa.",
+                          },
+                          {
+                            value: "persona_juridica",
+                            title: "Organización corroborada",
+                            description:
+                              "Una organización ya registrada en Minka recibirá los fondos.",
+                          },
+                        ].map((option) => {
+                          const selected =
+                            (campaign.recipient_type || "") === option.value;
+
+                          return (
+                            <button
+                              key={option.value}
+                              type="button"
+                              onClick={() => {
+                                const nextCampaign = {
+                                  ...campaign,
+                                  recipient_type: option.value,
+                                  ...(option.value === "tu_mismo"
+                                    ? {
+                                        beneficiary_name: "",
+                                        beneficiary_relationship: "",
+                                        beneficiaries_description: "",
+                                        legal_entity_id: null,
+                                        legal_entity: null,
+                                      }
+                                    : {}),
+                                  ...(option.value === "persona_juridica"
+                                    ? {
+                                        beneficiary_name: "",
+                                        beneficiary_relationship: "",
+                                        beneficiaries_description: "",
+                                      }
+                                    : {}),
+                                  ...(option.value === "otra_persona"
+                                    ? {
+                                        legal_entity_id: null,
+                                        legal_entity: null,
+                                      }
+                                    : {}),
+                                };
+                                setCampaign(nextCampaign);
+                                handleFormChange();
+                              }}
+                              className={`rounded-xl border p-4 text-left transition ${
+                                selected
+                                  ? "border-[#2c6e49] bg-[#f2f8f5] ring-1 ring-[#2c6e49]"
+                                  : "border-gray-200 bg-white hover:border-[#2c6e49]/50"
+                              }`}
+                            >
+                              <span className="block text-sm font-semibold text-gray-900">
+                                {option.title}
+                              </span>
+                              <span className="mt-1 block text-sm leading-relaxed text-gray-600">
+                                {option.description}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      {campaign.recipient_type === "otra_persona" && (
+                        <div className="space-y-4 rounded-xl border border-gray-200 bg-gray-50 p-4">
+                          <div className="grid gap-4 md:grid-cols-2">
+                            <div className="space-y-2">
+                              <label className="text-sm font-medium text-gray-700">
+                                Nombre de la persona o institución
+                              </label>
+                              <input
+                                type="text"
+                                value={campaign.beneficiary_name || ""}
+                                onChange={(e) => {
+                                  setCampaign({
+                                    ...campaign,
+                                    beneficiary_name: e.target.value,
+                                  });
+                                  handleFormChange();
+                                }}
+                                className="h-11 w-full rounded-md border border-gray-300 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#2c6e49]"
+                                placeholder="Ej: Fundación Nueva Esperanza"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <label className="text-sm font-medium text-gray-700">
+                                Tu relación con el beneficiario
+                              </label>
+                              <input
+                                type="text"
+                                value={campaign.beneficiary_relationship || ""}
+                                onChange={(e) => {
+                                  setCampaign({
+                                    ...campaign,
+                                    beneficiary_relationship: e.target.value,
+                                  });
+                                  handleFormChange();
+                                }}
+                                className="h-11 w-full rounded-md border border-gray-300 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#2c6e49]"
+                                placeholder="Ej: voluntario, familiar, representante"
+                              />
+                            </div>
                           </div>
 
-                          {campaign.recipient_type === "otra_persona" && (
-                            <>
-                              {campaign.beneficiary_name && (
-                                <div className="flex items-center gap-2">
-                                  <span className="text-sm font-medium text-gray-600">
-                                    Nombre del beneficiario:
-                                  </span>
-                                  <span className="text-sm text-gray-800">
-                                    {campaign.beneficiary_name}
-                                  </span>
-                                </div>
-                              )}
-                              {campaign.beneficiary_relationship && (
-                                <div className="flex items-center gap-2">
-                                  <span className="text-sm font-medium text-gray-600">
-                                    Relación:
-                                  </span>
-                                  <span className="text-sm text-gray-800 capitalize">
-                                    {campaign.beneficiary_relationship}
-                                  </span>
-                                </div>
-                              )}
-                              <div className="space-y-2">
-                                <label
-                                  htmlFor="beneficiaries-description"
-                                  className="block text-sm font-medium text-gray-600"
-                                >
-                                  Destino de los fondos
-                                </label>
-                                <textarea
-                                  id="beneficiaries-description"
-                                  value={
-                                    campaign.beneficiaries_description || ""
-                                  }
-                                  onChange={(e) => {
-                                    setCampaign({
-                                      ...campaign,
-                                      beneficiaries_description: e.target.value,
-                                    });
-                                    handleFormChange();
-                                  }}
-                                  maxLength={600}
-                                  placeholder="Describe brevemente quién recibirá el apoyo, su situación y por qué estás organizando la campaña."
-                                  className="min-h-[100px] w-full rounded-md border border-gray-300 bg-white p-3 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#2c6e49]"
-                                />
-                                <p className="text-right text-xs text-gray-500">
-                                  {
-                                    (campaign.beneficiaries_description || "")
-                                      .length
-                                  }
-                                  /600
-                                </p>
-                              </div>
-                            </>
-                          )}
-
-                          {campaign.recipient_type === "persona_juridica" &&
-                            (campaign.legal_entity ||
-                              campaign.legal_entity_id) && (
-                              <div className="space-y-1">
-                                <span className="text-sm font-medium text-gray-600">
-                                  Organización asociada:
-                                </span>
-                                <p className="text-sm text-gray-800">
-                                  {campaign.legal_entity?.name ||
-                                    campaign.legal_entity_id}
-                                </p>
-                                {campaign.legal_entity?.description && (
-                                  <p className="text-sm text-gray-700">
-                                    {campaign.legal_entity.description}
-                                  </p>
-                                )}
-                              </div>
-                            )}
+                          <div className="space-y-2">
+                            <label
+                              htmlFor="beneficiaries-description"
+                              className="block text-sm font-medium text-gray-700"
+                            >
+                              Destino de los fondos
+                            </label>
+                            <textarea
+                              id="beneficiaries-description"
+                              value={campaign.beneficiaries_description || ""}
+                              onChange={(e) => {
+                                setCampaign({
+                                  ...campaign,
+                                  beneficiaries_description: e.target.value,
+                                });
+                                handleFormChange();
+                              }}
+                              maxLength={600}
+                              placeholder="Resume brevemente quién recibirá el apoyo y para qué se usarán los fondos."
+                              className="min-h-[100px] w-full rounded-md border border-gray-300 bg-white p-3 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#2c6e49]"
+                            />
+                            <p className="text-right text-xs text-gray-500">
+                              {(campaign.beneficiaries_description || "").length}
+                              /600
+                            </p>
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      )}
+
+                      {campaign.recipient_type === "persona_juridica" && (
+                        <div className="space-y-4 rounded-xl border border-gray-200 bg-gray-50 p-4">
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium text-gray-700">
+                              Buscar organización corroborada
+                            </label>
+                            <input
+                              type="search"
+                              value={legalEntitiesSearch}
+                              onChange={(e) =>
+                                setLegalEntitiesSearch(e.target.value)
+                              }
+                              className="h-11 w-full rounded-md border border-gray-300 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#2c6e49]"
+                              placeholder="Buscar por nombre, NIT, ciudad..."
+                            />
+                          </div>
+
+                          <div className="max-h-64 space-y-2 overflow-y-auto">
+                            {isLoadingLegalEntities ? (
+                              <div className="rounded-lg border border-gray-200 bg-white p-4 text-sm text-gray-600">
+                                Cargando organizaciones...
+                              </div>
+                            ) : legalEntities.length === 0 ? (
+                              <div className="rounded-lg border border-gray-200 bg-white p-4 text-sm text-gray-600">
+                                No se encontraron organizaciones activas.
+                              </div>
+                            ) : (
+                              legalEntities.map((entity) => {
+                                const selected =
+                                  campaign.legal_entity_id === entity.id;
+
+                                return (
+                                  <button
+                                    key={entity.id}
+                                    type="button"
+                                    onClick={() => {
+                                      setCampaign({
+                                        ...campaign,
+                                        legal_entity_id: entity.id,
+                                        legal_entity: entity,
+                                      });
+                                      handleFormChange();
+                                    }}
+                                    className={`w-full rounded-lg border p-3 text-left transition ${
+                                      selected
+                                        ? "border-[#2c6e49] bg-[#f2f8f5]"
+                                        : "border-gray-200 bg-white hover:border-[#2c6e49]/50"
+                                    }`}
+                                  >
+                                    <span className="block text-sm font-semibold text-gray-900">
+                                      {entity.name}
+                                    </span>
+                                    <span className="mt-1 block text-xs text-gray-600">
+                                      {[entity.taxId && `NIT: ${entity.taxId}`, entity.city]
+                                        .filter(Boolean)
+                                        .join(" | ")}
+                                    </span>
+                                    {entity.description && (
+                                      <span className="mt-1 line-clamp-2 block text-xs text-gray-500">
+                                        {entity.description}
+                                      </span>
+                                    )}
+                                  </button>
+                                );
+                              })
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </form>
                 </div>
               </div>
@@ -2049,6 +2311,49 @@ export default function CampaignDetailPage() {
           isLoading={isUploading}
         />
       )}
+
+      <AlertDialog open={showPublishDialog} onOpenChange={setShowPublishDialog}>
+        <AlertDialogContent className="max-w-lg">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar publicación</AlertDialogTitle>
+            <AlertDialogDescription className="space-y-4 text-left">
+              <span className="block">
+                Antes de publicar, confirma quién recibirá el apoyo de esta
+                campaña.
+              </span>
+              <span className="block rounded-xl border border-[#2c6e49]/20 bg-[#f2f8f5] p-4 text-gray-700">
+                <span className="block text-sm font-semibold text-[#2c6e49]">
+                  {recipientSummary.label}
+                </span>
+                <span className="mt-1 block text-sm">
+                  {recipientSummary.detail}
+                </span>
+              </span>
+              <span className="block">
+                Si este dato no es correcto, cancela y ajústalo en la sección de
+                beneficiario antes de publicar.
+              </span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isPublishing}>
+              Volver a editar
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={isPublishing || recipientSummary.label === "No indicado"}
+              onClick={(event) => {
+                event.preventDefault();
+                void handlePublishCampaign().then(() => {
+                  setShowPublishDialog(false);
+                });
+              }}
+              className="bg-[#2c6e49] text-white hover:bg-[#1e4d33]"
+            >
+              {isPublishing ? "Publicando..." : "Confirmar y publicar"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

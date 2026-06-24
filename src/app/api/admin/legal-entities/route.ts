@@ -1,13 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
-import { Status } from "@prisma/client";
+import { Province, Region, Status } from "@prisma/client";
 import {
   adminAuthErrorResponse,
   createAdminAuditLog,
   requireAdminProfile,
 } from "@/lib/admin-auth";
 
+
+const nullableEnum = <T extends Record<string, string>>(enumObject: T) =>
+  z.preprocess(
+    (value) => (value === "" ? null : value),
+    z.nativeEnum(enumObject).nullable().optional(),
+  );
 
 // Validation schema for legal entity
 const legalEntitySchema = z.object({
@@ -17,8 +23,8 @@ const legalEntitySchema = z.object({
   legalForm: z.string().optional(),
   address: z.string().optional(),
   city: z.string().optional(),
-  province: z.string().optional(),
-  department: z.string().optional(),
+  province: nullableEnum(Province),
+  department: nullableEnum(Region),
   contactName: z.string().optional(),
   phone: z.string().optional(),
   email: z.string().email().optional().or(z.literal("")),
@@ -126,10 +132,10 @@ export async function POST(request: NextRequest) {
     };
 
     // Only add enum fields if they are provided and valid
-    if (validatedData.province) {
+    if (validatedData.province != null) {
       createData.province = validatedData.province;
     }
-    if (validatedData.department) {
+    if (validatedData.department != null) {
       createData.department = validatedData.department;
     }
 

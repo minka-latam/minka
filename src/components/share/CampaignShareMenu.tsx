@@ -14,6 +14,12 @@ import { Button, type ButtonProps } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { cn } from "@/lib/utils";
 import { InstagramStoryShareDialog } from "@/components/share/InstagramStoryShareDialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface CampaignShareMenuProps {
   campaign: CampaignShareData;
@@ -24,6 +30,8 @@ interface CampaignShareMenuProps {
   dropdownClassName?: string;
   dropdownPlacement?: "top" | "bottom";
   useNativeShare?: boolean;
+  disabled?: boolean;
+  disabledReason?: string;
 }
 
 const platformLabels: Record<CampaignSharePlatform, string> = {
@@ -54,6 +62,8 @@ export function CampaignShareMenu({
   dropdownClassName,
   dropdownPlacement = "top",
   useNativeShare = false,
+  disabled = false,
+  disabledReason,
 }: CampaignShareMenuProps) {
   const [showShareOptions, setShowShareOptions] = useState(false);
   const [showInstagramStoryDialog, setShowInstagramStoryDialog] =
@@ -233,6 +243,8 @@ export function CampaignShareMenu({
   };
 
   const handleShareClick = () => {
+    if (disabled) return;
+
     if (useNativeShare && isMobileDevice() && canUseNativeShare()) {
       const copiedImmediately = copyTextWithSelectionFallback(
         sharePayload.caption,
@@ -304,6 +316,18 @@ export function CampaignShareMenu({
 
   const placementClass =
     dropdownPlacement === "bottom" ? "top-full mt-2" : "bottom-full mb-2";
+  const triggerButton = (
+    <Button
+      type="button"
+      variant={triggerVariant}
+      className={triggerClassName}
+      disabled={disabled}
+      onClick={handleShareClick}
+    >
+      {buttonLabel}
+      <Share2 className="h-4 w-4" />
+    </Button>
+  );
 
   return (
     <div
@@ -312,15 +336,25 @@ export function CampaignShareMenu({
         triggerClassName?.includes("w-full") && "w-full",
       )}
     >
-      <Button
-        type="button"
-        variant={triggerVariant}
-        className={triggerClassName}
-        onClick={handleShareClick}
-      >
-        {buttonLabel}
-        <Share2 className="h-4 w-4" />
-      </Button>
+      {disabled && disabledReason ? (
+        <TooltipProvider delayDuration={100}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span
+                className={cn(
+                  "inline-flex cursor-not-allowed",
+                  triggerClassName?.includes("w-full") && "w-full",
+                )}
+              >
+                {triggerButton}
+              </span>
+            </TooltipTrigger>
+            <TooltipContent>{disabledReason}</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      ) : (
+        triggerButton
+      )}
 
       {showShareOptions && (
         <>

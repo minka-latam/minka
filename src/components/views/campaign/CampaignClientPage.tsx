@@ -701,6 +701,9 @@ export default function CampaignClientPage({
                   campaignImageUrl={
                     primaryCampaignImageUrl
                   }
+                  campaignStatus={
+                    campaign.campaign_status
+                  }
                   campaignId={id}
                   latestDonors={latestDonors}
                 />
@@ -827,6 +830,9 @@ export default function CampaignClientPage({
                 }
                 campaignImageUrl={
                   primaryCampaignImageUrl
+                }
+                campaignStatus={
+                  campaign.campaign_status
                 }
                 campaignId={id}
                 latestDonors={latestDonors}
