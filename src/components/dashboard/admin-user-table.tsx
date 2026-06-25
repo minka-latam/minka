@@ -12,7 +12,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns"; // For formatting dates
-import { Info, Pencil, Trash2, UserCheck } from "lucide-react"; // Icons for actions
+import { Info, Pencil, Search, Trash2, UserCheck } from "lucide-react"; // Icons for actions
 import { useMemo, useState } from "react";
 import { toast } from "@/components/ui/use-toast";
 import { useRouter } from "next/navigation";
@@ -46,13 +46,21 @@ export function AdminUserTable({ users }: AdminUserTableProps) {
   const [updatingRoleId, setUpdatingRoleId] = useState<string | null>(null);
   const [activatingUserId, setActivatingUserId] = useState<string | null>(null);
   const [showInactiveUsers, setShowInactiveUsers] = useState(false);
+  const [userSearch, setUserSearch] = useState("");
 
   const visibleUsers = useMemo(() => {
+    const normalizedSearch = userSearch.trim().toLowerCase();
     const filteredUsers = showInactiveUsers
       ? users
       : users.filter((user) => user.status !== "inactive");
 
-    return [...filteredUsers].sort((a, b) => {
+    const searchedUsers = normalizedSearch
+      ? filteredUsers.filter((user) =>
+          (user.name || "").toLowerCase().includes(normalizedSearch)
+        )
+      : filteredUsers;
+
+    return [...searchedUsers].sort((a, b) => {
       if (showInactiveUsers && a.status !== b.status) {
         if (a.status === "inactive") return -1;
         if (b.status === "inactive") return 1;
@@ -63,7 +71,7 @@ export function AdminUserTable({ users }: AdminUserTableProps) {
         new Date(a.created_at || 0).getTime()
       );
     });
-  }, [showInactiveUsers, users]);
+  }, [showInactiveUsers, userSearch, users]);
 
   const handleDeleteUser = async (userId: string, userEmail: string | null) => {
     // Optional: Add a confirmation dialog here
@@ -207,18 +215,31 @@ export function AdminUserTable({ users }: AdminUserTableProps) {
 
   return (
     <>
-      <div className="mb-4 flex items-center gap-2">
-        <Checkbox
-          id="show-inactive-users"
-          checked={showInactiveUsers}
-          onCheckedChange={(checked) => setShowInactiveUsers(checked === true)}
-        />
-        <label
-          htmlFor="show-inactive-users"
-          className="cursor-pointer text-sm font-medium text-gray-700"
-        >
-          mostrar usuarios inactivos
-        </label>
+      <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div className="relative w-full md:max-w-sm">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+          <input
+            type="search"
+            value={userSearch}
+            onChange={(event) => setUserSearch(event.target.value)}
+            placeholder="Buscar por nombre"
+            className="h-10 w-full rounded-md border border-gray-300 bg-white pl-10 pr-3 text-sm outline-none transition focus:border-[#2c6e49] focus:ring-2 focus:ring-[#2c6e49]/20"
+          />
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Checkbox
+            id="show-inactive-users"
+            checked={showInactiveUsers}
+            onCheckedChange={(checked) => setShowInactiveUsers(checked === true)}
+          />
+          <label
+            htmlFor="show-inactive-users"
+            className="cursor-pointer text-sm font-medium text-gray-700"
+          >
+            mostrar usuarios inactivos
+          </label>
+        </div>
       </div>
 
       <Table>

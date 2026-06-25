@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { getRegionDisplayName, Region } from "@/lib/region-utils";
+import { VerifiedBadge } from "@/components/ui/VerifiedBadge";
 
 interface CampaignCardProps {
   id?: string | number;
@@ -59,12 +60,10 @@ export function CampaignCard({
         <div className="absolute left-4 top-4 opacity-0 group-hover:opacity-100 group-hover:top-32 group-hover:-translate-y-1/2 transition-all duration-500 ease-in-out z-10">
           {verified && (
             <div className="w-12 h-12 rounded-full bg-[#2c6e49] flex items-center justify-center transition-all duration-500 ease-in-out shadow-sm">
-              <Image
-                src="/landing-page/step-2.png"
-                alt="Verified"
-                width={32}
-                height={32}
-                className="brightness-0 invert transition-all duration-500 ease-in-out"
+              <VerifiedBadge
+                size={32}
+                className="h-8 w-8"
+                iconClassName="brightness-0 invert transition-all duration-500 ease-in-out"
               />
             </div>
           )}
@@ -75,12 +74,10 @@ export function CampaignCard({
           <div className="flex flex-col mb-1 flex-shrink-0">
             <div className="mb-1 flex-shrink-0 h-8 group-hover:opacity-0 transition-opacity">
               {verified ? (
-                <Image
-                  src="/landing-page/step-2.png"
-                  alt="Verified"
-                  width={32}
-                  height={32}
-                  className="text-[#2c6e49] transition-opacity "
+                <VerifiedBadge
+                  size={32}
+                  className="h-8 w-8"
+                  iconClassName="transition-opacity"
                 />
               ) : (
                 <div className="w-8 h-8" />

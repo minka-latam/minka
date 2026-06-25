@@ -44,6 +44,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { InlineSpinner } from "@/components/ui/inline-spinner";
 import { getProvincesForDepartment } from "@/constants/bolivia-provinces";
 import { CampaignDescriptionInput } from "./CampaignDescriptionInput";
+import { InstitutionReviewDialog } from "@/components/views/landing-page/InstitutionReviewDialog";
 import { Input } from "@/components/ui/input";
 import {
   Dialog,
@@ -408,7 +409,7 @@ export function CampaignForm() {
     institutionPhone: "",
   });
 
-  // State for "Persona Jurídica" modal form
+  // State for verified institution modal form
   const [personaJuridicaForm, setPersonaJuridicaForm] = useState({
     entityName: "", // Company/organization name
     selectedEntityId: "", // Selected legal entity ID
@@ -1285,7 +1286,7 @@ export function CampaignForm() {
       }
 
       toast({
-        title: "Persona Jurídica seleccionada",
+        title: "Institución corroborada seleccionada",
         description: `Se ha seleccionado "${selectedEntity.name}" como destinatario de los fondos.`,
       });
 
@@ -1296,7 +1297,7 @@ export function CampaignForm() {
       toast({
         title: "Error",
         description:
-          "No se pudo guardar la información de la persona jurídica.",
+          "No se pudo guardar la información de la institución corroborada.",
         variant: "destructive",
       });
     }
@@ -2433,17 +2434,17 @@ export function CampaignForm() {
                   <div className="flex items-center space-x-4">
                     <Image
                       src="/views/create-campaign/organization.svg"
-                      alt="Persona Jurídica"
+                      alt="Instituciones corroboradas por Minka"
                       width={75}
                       height={75}
                     />
                     <div>
                       <div className="font-medium text-lg">
-                        Persona Jurídica
+                        Instituciones corroboradas por Minka
                       </div>
                       <div className="text-base text-gray-600">
-                        Designa a la persona jurídica que recibirá los fondos
-                        recaudados.
+                        Designa a una institución registrada y corroborada por
+                        Minka para recibir los fondos recaudados.
                       </div>
                     </div>
                   </div>
@@ -2733,7 +2734,7 @@ export function CampaignForm() {
                     </span>
                     <span className="mt-1 block text-sm text-gray-600">
                       Una organización que recibirá el apoyo pero aún no está
-                      registrada como persona jurídica aprobada por Minka.
+                      registrada como institución corroborada por Minka.
                     </span>
                   </span>
                 </div>
@@ -2934,14 +2935,14 @@ export function CampaignForm() {
         </DialogContent>
       </Dialog>
 
-      {/* Persona Jurídica Modal */}
+      {/* Instituciones corroboradas Modal */}
       <Dialog
         open={showPersonaJuridicaModal}
         onOpenChange={setShowPersonaJuridicaModal}
       >
         <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Seleccionar Persona Jurídica</DialogTitle>
+            <DialogTitle>Seleccionar institución corroborada por Minka</DialogTitle>
             <DialogDescription>
               Selecciona la organización que recibirá los fondos recaudados en
               tu campaña
@@ -2949,11 +2950,22 @@ export function CampaignForm() {
           </DialogHeader>
 
           <div className="space-y-6 py-4">
-            <p className="rounded-md border border-[#478C5C]/20 bg-[#478C5C]/5 px-4 py-3 text-sm text-gray-700">
-              Si quieres sugerir tu empresa, asociación o agrupación, ponte en
-              contacto con nosotros para solicitarlo enviando los documentos
-              respectivos.
-            </p>
+            <div className="rounded-md border border-[#478C5C]/20 bg-[#478C5C]/5 px-4 py-3 text-sm text-gray-700">
+              <p>
+                Estas instituciones ya fueron registradas y corroboradas por
+                Minka para dar más confianza a los donantes.
+              </p>
+              <InstitutionReviewDialog
+                trigger={
+                  <button
+                    type="button"
+                    className="mt-2 text-left font-medium text-[#2c6e49] underline underline-offset-4 hover:text-[#1e4d33]"
+                  >
+                    ¿Quieres que figure tu institución?
+                  </button>
+                }
+              />
+            </div>
 
             {/* Search Input */}
             <div className="space-y-2">

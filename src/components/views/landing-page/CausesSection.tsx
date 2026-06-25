@@ -5,7 +5,7 @@ import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { CampaignCard } from "@/components/views/campaigns/CampaignCard";
 import { Region } from "@/lib/region-utils";
-import { useState, useEffect } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { landingPrimaryButton } from "./landing-button-styles";
 
@@ -27,15 +27,16 @@ export function CausesSection() {
   const [campaigns, setCampaigns] = useState<FeaturedCampaign[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [visibleGroup, setVisibleGroup] = useState(0);
+  const [isFading, setIsFading] = useState(false);
 
-  // Fetch top 3 featured campaigns on component mount
+  // Fetch verified campaigns on component mount
   useEffect(() => {
     const fetchFeaturedCampaigns = async () => {
       setIsLoading(true);
       try {
-        // Fetch campaigns with limit=3 and sort by most popular
         const url = new URL("/api/campaign/list", window.location.origin);
-        url.searchParams.append("limit", "3");
+        url.searchParams.append("limit", "30");
         url.searchParams.append("sortBy", "popular");
         url.searchParams.append("verified", "true");
 
@@ -64,6 +65,42 @@ export function CausesSection() {
 
     fetchFeaturedCampaigns();
   }, []);
+
+  useEffect(() => {
+    if (campaigns.length <= 3) {
+      setVisibleGroup(0);
+      setIsFading(false);
+      return;
+    }
+
+    let timeoutId: number | null = null;
+
+    const intervalId = window.setInterval(() => {
+      setIsFading(true);
+
+      timeoutId = window.setTimeout(() => {
+        setVisibleGroup((currentGroup) => {
+          const nextStart = (currentGroup + 1) * 3;
+          return nextStart >= campaigns.length ? 0 : currentGroup + 1;
+        });
+        setIsFading(false);
+      }, 260);
+    }, 7000);
+
+    return () => {
+      window.clearInterval(intervalId);
+      if (timeoutId) window.clearTimeout(timeoutId);
+    };
+  }, [campaigns.length]);
+
+  const visibleCampaigns = useMemo(() => {
+    if (campaigns.length <= 3) return campaigns;
+
+    const start = visibleGroup * 3;
+    const doubledCampaigns = [...campaigns, ...campaigns];
+
+    return doubledCampaigns.slice(start, start + 3);
+  }, [campaigns, visibleGroup]);
 
   return (
     <section className="container mx-auto px-4 py-24">
@@ -105,8 +142,12 @@ export function CausesSection() {
           </Button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
-          {campaigns.map((campaign) => (
+        <div
+          className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16 transition-opacity duration-300 ${
+            isFading ? "opacity-0" : "opacity-100"
+          }`}
+        >
+          {visibleCampaigns.map((campaign) => (
             <CampaignCard
               key={campaign.id}
               id={campaign.id}

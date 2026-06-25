@@ -74,6 +74,7 @@ export async function GET(
       message: donation.message,
       createdAt: donation.createdAt,
       paymentStatus: donation.paymentStatus,
+      isAnonymous: donation.isAnonymous,
       donor: donation.isAnonymous
         ? {
             id: null,

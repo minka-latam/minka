@@ -25,10 +25,12 @@ import { formatRegionDisplayName } from '@/lib/region-utils'
 import { formatCampaignCategory } from '@/lib/campaign-categories'
 
 import { VerificationInfoModal } from '@/components/ui/VerificationInfoModal'
+import { VerifiedBadge } from '@/components/ui/VerifiedBadge'
 type LatestDonor = {
   id: string
   name: string
   amount: number
+  isAnonymous?: boolean
 }
 
 type GalleryItem = {
@@ -242,12 +244,9 @@ function CustomCampaignDetails({
       {isVerified && (
         <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-gray-200'>
           <div className='flex items-center gap-2'>
-            <Image
-              src='/landing-page/step-2.png'
-              alt='Verified'
-              width={32}
-              height={32}
-              className='text-[#2c6e49] flex-shrink-0'
+            <VerifiedBadge
+              size={32}
+              className='h-8 w-8'
             />
             <span className='text-[#2c6e49] text-xl font-medium break-words'>
               Campaña verificada por Minka
@@ -512,7 +511,6 @@ export default function CampaignClientPage({
         const response = await fetch(
           `/api/campaign/${id}/donations?limit=20`,
           {
-            // Fetch up to 3 named donors
             headers: {
               'Cache-Control': 'no-cache',
             },
@@ -530,24 +528,13 @@ export default function CampaignClientPage({
               name:
                 donation.donor?.name || 'Donante anónimo',
               amount: Number(donation.amount || 0),
+              isAnonymous: Boolean(donation.isAnonymous),
             }))
           : []
 
         if (!isMounted) return
 
-        setLatestDonors(
-          namedDonors.filter((donor) => {
-            const n = donor.name.toLowerCase().trim()
-            // Filter out any variation of anonymous or the specific Supabase string
-            return (
-              n !== 'donante anónimo' &&
-              n !== 'anonymous' &&
-              n !== 'anónimo' &&
-              !n.includes('anonym') &&
-              !n.includes('anónim')
-            )
-          }),
-        ) // Store only named donors
+        setLatestDonors(namedDonors)
       } catch (donationsError) {
         console.error(
           'Error fetching latest donors:',

@@ -1,8 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
-import { format } from 'date-fns'
-import { es } from 'date-fns/locale'
 import {
   PaymentMethod,
   PaymentStatus,
@@ -101,6 +99,31 @@ function statusBadgeVariant(status: PaymentStatus) {
 
 function toNumber(value: unknown) {
   return Number(value || 0)
+}
+
+function formatBoliviaDateTime(value: Date | string) {
+  const date = new Date(value)
+
+  if (Number.isNaN(date.getTime())) {
+    return '-'
+  }
+
+  const parts = new Intl.DateTimeFormat('es-BO', {
+    timeZone: 'America/La_Paz',
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+    hourCycle: 'h23',
+  }).formatToParts(date)
+
+  const partMap = Object.fromEntries(
+    parts.map((part) => [part.type, part.value]),
+  )
+
+  return `${partMap.day}/${partMap.month}/${partMap.year} ${partMap.hour}:${partMap.minute}`
 }
 
 function addTotals(
@@ -579,12 +602,8 @@ export default async function DonationsPage({
                   donations.map((donation) => (
                     <TableRow key={donation.id}>
                       <TableCell className='whitespace-nowrap font-medium'>
-                        {format(
+                        {formatBoliviaDateTime(
                           donation.createdAt,
-                          'dd/MM/yyyy HH:mm',
-                          {
-                            locale: es,
-                          },
                         )}
                       </TableCell>
                       <TableCell>

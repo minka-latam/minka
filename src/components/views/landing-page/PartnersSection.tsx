@@ -9,6 +9,22 @@ export function PartnersSection() {
 
   const allies = [
     {
+      id: 1,
+      name: "Banco BISA",
+      logo: "/allies/logo bisa fblanco.png",
+      surfaceClassName: "rounded-xl bg-[#2c6e49] px-5 py-4",
+    },
+    {
+      id: 2,
+      name: "Tripto",
+      logo: "/allies/tripto.png",
+    },
+    {
+      id: 3,
+      name: "Giro54",
+      logo: "/allies/giro54.png",
+    },
+    {
       id: 4,
       name: "UNIL HUB",
       logo: "/allies/unil-hub.png",
@@ -18,6 +34,16 @@ export function PartnersSection() {
       id: 5,
       name: "UCreate",
       logo: "/allies/UCreate.png",
+    },
+    {
+      id: 6,
+      name: "SAR",
+      logo: "/allies/sar.png",
+    },
+    {
+      id: 7,
+      name: "Fundacor",
+      logo: "/allies/fundacor.png",
     },
   ];
 
@@ -76,7 +102,7 @@ export function PartnersSection() {
 
         {/* Desktop view - grid */}
         {!isMobile && (
-          <div className="hidden md:grid grid-cols-2 gap-12 items-center max-w-xl mx-auto">
+          <div className="mx-auto hidden max-w-5xl grid-cols-3 items-center gap-10 lg:grid-cols-4 md:grid">
             {allies.map((ally) => (
               <div
                 key={ally.id}
@@ -134,11 +160,14 @@ function PartnerLogo({
     name: string;
     logo: string;
     href?: string;
+    surfaceClassName?: string;
   };
   sizes?: string;
 }) {
   const content = (
-    <div className="relative w-full h-full flex items-center justify-center px-4">
+    <div
+      className={`relative w-full h-full flex items-center justify-center px-4 ${ally.surfaceClassName || ""}`}
+    >
       <Image
         src={ally.logo}
         alt={`Logo de ${ally.name}`}

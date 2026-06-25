@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Loader2 } from "lucide-react";
-import Image from "next/image";
-import { getCampaignCategoryIcon } from "@/lib/campaign-categories";
+import { CategoryIcon } from "@/components/views/campaigns/CategoryIcon";
 
 export interface CategoryItem {
   name: string;
@@ -75,18 +74,11 @@ export function CategorySelector({
               }}
             >
               <div className="flex items-center gap-1">
-                <div className="w-4 h-4">
-                  <Image
-                    src="/icons/view_cozy.svg"
-                    alt="Todas"
-                    width={16}
-                    height={16}
-                    className={
-                      activeCategory === undefined ? "brightness-0 invert" : ""
-                    }
-                    draggable={false}
-                  />
-                </div>
+                <CategoryIcon
+                  className={`h-4 w-4 ${
+                    activeCategory === undefined ? "bg-white" : "bg-[#2c6e49]"
+                  }`}
+                />
                 <span>Todos</span>
               </div>
             </button>
@@ -114,15 +106,14 @@ export function CategorySelector({
                   }}
                 >
                   <div className="flex items-center gap-1">
-                    <div className="w-4 h-4">
-                      <Image
-                        src={getCampaignCategoryIcon(category.name)}
-                        alt={category.name}
-                        width={16}
-                        height={16}
-                        draggable={false}
-                      />
-                    </div>
+                    <CategoryIcon
+                      category={category.name}
+                      className={`h-4 w-4 ${
+                        activeCategory === category.name
+                          ? "bg-white"
+                          : "bg-[#2c6e49]"
+                      }`}
+                    />
                     <span>{category.name}</span>
                   </div>
                 </button>
@@ -193,12 +184,10 @@ export function CategorySelector({
                 }`}
                 disabled={isLoading}
               >
-                <Image
-                  src="/icons/view_cozy.svg"
-                  alt="Todas las categorías"
-                  width={24}
-                  height={24}
-                  className={`mb-3 ${activeCategory === undefined ? "brightness-0 invert" : ""}`}
+                <CategoryIcon
+                  className={`mb-3 h-6 w-6 ${
+                    activeCategory === undefined ? "bg-white" : "bg-[#2c6e49]"
+                  }`}
                 />
                 <span className="font-medium">Todas las categorías</span>
               </button>
@@ -222,20 +211,14 @@ export function CategorySelector({
                     }`}
                     disabled={isLoading}
                   >
-                    <div
-                      className={
+                    <CategoryIcon
+                      category={category.name}
+                      className={`h-6 w-6 ${
                         activeCategory === category.name
-                          ? "brightness-0 invert"
-                          : ""
-                      }
-                    >
-                      <Image
-                        src={getCampaignCategoryIcon(category.name)}
-                        alt={category.name}
-                        width={24}
-                        height={24}
-                      />
-                    </div>
+                          ? "bg-white"
+                          : "bg-[#2c6e49]"
+                      }`}
+                    />
                     <div className="flex items-center gap-2 mt-3 mb-1">
                       <span className="font-medium">{category.name}</span>
                       <span

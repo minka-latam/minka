@@ -16,6 +16,7 @@ import {
   SAVE_CAMPAIGN_INTENT_UPDATED_EVENT,
 } from '@/constants/saved-campaign'
 import { CampaignShareMenu } from '@/components/share/CampaignShareMenu'
+import { VerifiedBadge } from '@/components/ui/VerifiedBadge'
 import {
   Tooltip,
   TooltipContent,
@@ -41,6 +42,7 @@ interface CampaignProgressProps {
     id: string
     name: string
     amount: number
+    isAnonymous?: boolean
   }>
 }
 
@@ -289,35 +291,89 @@ export function CampaignProgress({
     amount: number
   }> = []
 
-  // 1. Get unique real names (to avoid showing the same person twice if they donated twice)
-  const uniqueNamedDonors = Array.from(
-    new Map(
-      (latestDonors || []).map((d) => [d.name, d]),
-    ).values(),
-  )
+  const isAnonymousDonor = (
+    donor: (typeof latestDonors)[number],
+  ) => {
+    const normalizedName = donor.name.toLowerCase().trim()
 
-  // 2. Add up to 3 named donors
-  const numNamedToDisplay = Math.min(
-    uniqueNamedDonors.length,
-    3,
-  )
-  for (let i = 0; i < numNamedToDisplay; i++) {
-    displayedDonors.push(uniqueNamedDonors[i])
+    return (
+      donor.isAnonymous ||
+      normalizedName === 'donante anónimo' ||
+      normalizedName === 'anonymous' ||
+      normalizedName === 'anónimo' ||
+      normalizedName.includes('anonym') ||
+      normalizedName.includes('anónim')
+    )
   }
 
-  // 3. Calculate total slots to fill (max 5, or total donors if less than 5)
-  const totalItemsToDisplay = Math.min(donorsCount, 5)
+  const uniqueNamedDonors: typeof latestDonors = []
+  const seenNames = new Set<string>()
 
-  // 4. Fill remaining slots with anonymous placeholders
-  const anonymousPlaceholdersNeeded =
-    totalItemsToDisplay - displayedDonors.length
+  latestDonors.forEach((donor) => {
+    if (isAnonymousDonor(donor)) return
 
-  for (let i = 0; i < anonymousPlaceholdersNeeded; i++) {
+    const normalizedName = donor.name.trim().toLowerCase()
+    if (!normalizedName || seenNames.has(normalizedName)) return
+
+    seenNames.add(normalizedName)
+    uniqueNamedDonors.push(donor)
+  })
+
+  const anonymousDonationsSeen = latestDonors.filter(
+    isAnonymousDonor,
+  ).length
+  const anonymousAvailable = Math.max(
+    anonymousDonationsSeen,
+    donorsCount - uniqueNamedDonors.length,
+  )
+  let anonymousUsed = 0
+  let nextNamedIndex = 0
+
+  const pushNamed = () => {
+    const donor = uniqueNamedDonors[nextNamedIndex]
+    if (!donor) return
+
+    displayedDonors.push(donor)
+    nextNamedIndex += 1
+  }
+
+  const pushAnonymous = () => {
+    if (anonymousUsed >= anonymousAvailable) return
+
     displayedDonors.push({
-      id: `anonymous-${i}`,
+      id: `anonymous-${anonymousUsed}`,
       name: 'Donante anónimo',
       amount: 0,
     })
+    anonymousUsed += 1
+  }
+
+  const totalItemsToDisplay = Math.min(donorsCount, 5)
+
+  pushNamed()
+  if (displayedDonors.length < totalItemsToDisplay) pushAnonymous()
+
+  while (
+    nextNamedIndex < uniqueNamedDonors.length &&
+    displayedDonors.length < Math.min(totalItemsToDisplay, 4)
+  ) {
+    pushNamed()
+  }
+
+  if (displayedDonors.length < totalItemsToDisplay) pushAnonymous()
+
+  while (
+    nextNamedIndex < uniqueNamedDonors.length &&
+    displayedDonors.length < totalItemsToDisplay
+  ) {
+    pushNamed()
+  }
+
+  while (
+    displayedDonors.length < totalItemsToDisplay &&
+    anonymousUsed < anonymousAvailable
+  ) {
+    pushAnonymous()
   }
 
   return (
@@ -334,11 +390,9 @@ export function CampaignProgress({
       <div className='flex justify-between items-center mb-4'>
         {isVerified && (
           <div className='flex items-center gap-2'>
-            <Image
-              src='/icons/verified.svg'
-              alt='Verified'
-              width={24}
-              height={24}
+            <VerifiedBadge
+              size={24}
+              className='h-6 w-6'
             />
             <span className='text-sm'>
               Campaña verificada

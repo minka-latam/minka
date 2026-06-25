@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
     const legalEntities = await prisma.legalEntity.findMany({
       where,
       take: limit,
-      orderBy: { name: "asc" },
+      orderBy: { createdAt: "desc" },
       select: {
         id: true,
         name: true,
