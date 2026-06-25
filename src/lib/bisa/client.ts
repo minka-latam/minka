@@ -14,6 +14,7 @@ export interface GenerateQRParams {
   currency: string;
   description: string;
   expirationDate: string; // dd/MM/yyyy
+  callbackUrl: string;
   singleUse?: boolean;
 }
 
@@ -126,7 +127,7 @@ export class BisaClient {
 
       const payload = {
         alias: params.alias,
-        callback: "000",
+        callback: params.callbackUrl,
         detalleGlosa: params.description,
         monto: params.amount.toFixed(2),
         moneda: params.currency,

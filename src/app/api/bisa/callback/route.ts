@@ -93,7 +93,10 @@ export async function POST(request: NextRequest) {
       numeroOrdenOriginante,
       monto,
       moneda,
+      idQr,
       fechaproceso, // Postman uses lowercase 'fechaproceso'
+      fechaProceso,
+      fechaProcesamiento,
       cuentaCliente,
       nombreCliente,
       documentoCliente
@@ -141,17 +144,24 @@ export async function POST(request: NextRequest) {
     const confirmedProviderAmount = providerAmount as number;
 
     let completionNotification;
+    const processedAt =
+      fechaproceso || fechaProceso || fechaProcesamiento
+        ? new Date(fechaproceso || fechaProceso || fechaProcesamiento)
+        : new Date();
+    const transactionId =
+      numeroOrdenOriginante || donation.bisaTransactionId || idQr || donation.bisaQrId;
 
     // Update DB
     await prisma.$transaction(async (tx) => {
       const completion = await completeDonationAccounting(tx, {
         donationId: donation.id,
         donationUpdate: {
-          bisaTransactionId: numeroOrdenOriginante,
+          bisaTransactionId: transactionId,
+          bisaQrId: idQr || donation.bisaQrId,
           bisaPayerName: nombreCliente,
           bisaPayerAccount: cuentaCliente,
           bisaPayerDocument: documentoCliente,
-          bisaProcessedAt: fechaproceso ? new Date(fechaproceso) : new Date(),
+          bisaProcessedAt: Number.isNaN(processedAt.getTime()) ? new Date() : processedAt,
         },
       });
 
@@ -165,15 +175,15 @@ export async function POST(request: NextRequest) {
       await createCompletedPaymentLogIfMissing(tx, {
         paymentprovider: "bisa",
         paymentmethod: "qr",
-        paymentid: numeroOrdenOriginante || donation.bisaQrId || alias,
+        paymentid: transactionId || alias,
         amount: confirmedProviderAmount,
         tipamount: Number(donation.tip_amount || 0),
         currency: moneda || "BOB",
         metadata: JSON.stringify({
           alias,
           donationId: donation.id,
-          bisaQrId: donation.bisaQrId,
-          processedAt: fechaproceso,
+          bisaQrId: idQr || donation.bisaQrId,
+          processedAt: fechaproceso || fechaProceso || fechaProcesamiento,
         }),
         campaignid: donation.campaignId,
         donorid: donation.donorId,

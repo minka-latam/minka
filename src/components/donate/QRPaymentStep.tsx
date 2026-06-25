@@ -50,6 +50,7 @@ export function QRPaymentStep({
   const initializationRef = useRef(false);
   const isGeneratingRef = useRef(false);
   const isPaidRef = useRef(false);
+  const autoCheckInFlightRef = useRef(false);
 
   // Load existing QR or generate new one on mount
   useEffect(() => {
@@ -87,6 +88,17 @@ export function QRPaymentStep({
     localStorage.removeItem(QR_STORAGE_KEY);
   };
 
+  const markPaymentAsPaid = () => {
+    if (isPaidRef.current) return;
+
+    isPaidRef.current = true;
+    setStatus("PAID");
+    clearStoredQR();
+    setTimeout(() => {
+      onPaymentConfirmed();
+    }, 1500);
+  };
+
   const loadOrGenerateQR = async () => {
     setLoading(true);
     setError(null);
@@ -102,6 +114,13 @@ export function QRPaymentStep({
       const isNotExpiredLocally = (now - createdAt) < MAX_AGE;
 
       if (isNotExpiredLocally) {
+        const isStillUsable = await verifyStoredQR(storedQR);
+        if (!isStillUsable) {
+          clearStoredQR();
+          await generateQR();
+          return;
+        }
+
         setQrData({
           qrImage: storedQR.qrImage,
           alias: storedQR.alias,
@@ -136,10 +155,7 @@ export function QRPaymentStep({
 
       // If already paid, trigger confirmation
       if (qrStatus === "PAGADO") {
-        isPaidRef.current = true;
-        setStatus("PAID");
-        clearStoredQR();
-        setTimeout(() => onPaymentConfirmed(), 1500);
+        markPaymentAsPaid();
         return true;
       }
 
@@ -201,7 +217,10 @@ export function QRPaymentStep({
     }
   };
 
-  const checkStatus = async (alias: string): Promise<boolean | "needs_regeneration"> => {
+  const checkStatus = async (
+    alias: string,
+    options: { silent?: boolean } = {},
+  ): Promise<boolean | "needs_regeneration"> => {
     // Don't check if already marked as paid
     if (isPaidRef.current) {
       return true;
@@ -214,18 +233,15 @@ export function QRPaymentStep({
       // Handle BISA API errors - show error but DON'T clear the QR
       // The error might be temporary, let user retry or regenerate manually
       if (!data.success && data.needsRegeneration) {
-        setError(data.error || "Error al consultar estado del QR. Intenta de nuevo.");
+        if (!options.silent) {
+          setError(data.error || "Error al consultar estado del QR. Intenta de nuevo.");
+        }
         // Don't clear QR or change status - let user retry
         return false;
       }
 
       if (data.success && data.data?.status === "PAGADO") {
-        isPaidRef.current = true;
-        setStatus("PAID");
-        clearStoredQR(); // Clear from localStorage on successful payment
-        setTimeout(() => {
-          onPaymentConfirmed();
-        }, 1500);
+        markPaymentAsPaid();
         return true;
       } else if (data.data?.status === "EXPIRADO") {
         setStatus("EXPIRED");
@@ -239,10 +255,45 @@ export function QRPaymentStep({
       }
       return false;
     } catch (err) {
-      console.error("Error checking status:", err);
+      if (!options.silent) {
+        console.error("Error checking status:", err);
+      }
       return false;
     }
   };
+
+  useEffect(() => {
+    if (!qrData?.alias || status !== "PENDING") return;
+
+    let stopped = false;
+
+    const runAutomaticCheck = async () => {
+      if (
+        stopped ||
+        autoCheckInFlightRef.current ||
+        isPaidRef.current
+      ) {
+        return;
+      }
+
+      autoCheckInFlightRef.current = true;
+      try {
+        await checkStatus(qrData.alias, { silent: true });
+      } finally {
+        autoCheckInFlightRef.current = false;
+      }
+    };
+
+    const initialTimeoutId = window.setTimeout(runAutomaticCheck, 2500);
+    const intervalId = window.setInterval(runAutomaticCheck, 7000);
+
+    return () => {
+      stopped = true;
+      window.clearTimeout(initialTimeoutId);
+      window.clearInterval(intervalId);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [qrData?.alias, status]);
 
   const handleManualCheck = async () => {
     if (!qrData?.alias) return;
@@ -255,10 +306,7 @@ export function QRPaymentStep({
       const data = await response.json();
 
       if (data.success && data.data?.status === "PAGADO") {
-        isPaidRef.current = true;
-        setStatus("PAID");
-        clearStoredQR();
-        setTimeout(() => onPaymentConfirmed(), 1500);
+        markPaymentAsPaid();
       } else if (data.data?.status === "PENDIENTE") {
         setError("El pago aún no ha sido confirmado. Por favor, completa el pago con tu banco y vuelve a intentar.");
         setTimeout(() => setError(null), 5000);
@@ -460,6 +508,9 @@ export function QRPaymentStep({
             <li>Escanea el código mostrado arriba</li>
             <li>Confirma el pago en tu celular</li>
           </ol>
+          <p className="mt-3 font-medium">
+            Confirmaremos el pago automáticamente cuando el banco lo notifique.
+          </p>
         </div>
 
         {/* Temporary error/info message */}
@@ -480,7 +531,7 @@ export function QRPaymentStep({
               Verificando pago...
             </>
           ) : (
-            "Ya realicé el pago"
+            "Verificar ahora"
           )}
         </Button>
 

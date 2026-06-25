@@ -10,12 +10,26 @@ import {
 
 function formatExpirationDate(date: Date) {
   return date.toLocaleString("es-BO", {
+    timeZone: "America/La_Paz",
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
   });
+}
+
+function getBisaCallbackUrl(request: NextRequest) {
+  const appUrl =
+    process.env.MINKA_APP_URL ||
+    process.env.NEXT_PUBLIC_APP_URL ||
+    process.env.NEXT_PUBLIC_BASE_URL ||
+    request.nextUrl.origin;
+  const normalizedAppUrl = /^https?:\/\//i.test(appUrl)
+    ? appUrl
+    : `https://${appUrl}`;
+
+  return new URL("/api/bisa/callback", normalizedAppUrl).toString();
 }
 
 export async function POST(request: NextRequest) {
@@ -118,6 +132,7 @@ export async function POST(request: NextRequest) {
       currency: "BOB",
       description: `Donacion Minka`,
       expirationDate: expirationString,
+      callbackUrl: getBisaCallbackUrl(request),
       singleUse: true
     });
 
