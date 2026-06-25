@@ -195,7 +195,7 @@ export default async function DonationsPage({
       params.donorSearch,
     ).trim()
     const method = paramValue(params.method)
-    const status =
+    const statusParam =
       paramValue(params.status) || PaymentStatus.completed
     const sort =
       paramValue(params.sort) === 'asc' ? 'asc' : 'desc'
@@ -205,11 +205,14 @@ export default async function DonationsPage({
     ).includes(method as PaymentMethod)
       ? (method as PaymentMethod)
       : null
-    const validStatus = Object.values(
-      PaymentStatus,
-    ).includes(status as PaymentStatus)
-      ? (status as PaymentStatus)
-      : PaymentStatus.completed
+    const validStatus =
+      statusParam === 'all'
+        ? 'all'
+        : Object.values(PaymentStatus).includes(
+              statusParam as PaymentStatus,
+            )
+          ? (statusParam as PaymentStatus)
+          : PaymentStatus.completed
 
     const campaignFilter: Prisma.DonationWhereInput =
       campaignId
@@ -259,7 +262,9 @@ export default async function DonationsPage({
 
     const tableWhere: Prisma.DonationWhereInput = {
       ...baseWhere,
-      paymentStatus: validStatus,
+      ...(validStatus !== 'all'
+        ? { paymentStatus: validStatus }
+        : {}),
     }
 
     const completedWhere: Prisma.DonationWhereInput = {
@@ -444,6 +449,7 @@ export default async function DonationsPage({
                   defaultValue={validStatus}
                   className='h-10 w-full rounded-md border border-gray-300 bg-white px-3 text-sm'
                 >
+                  <option value='all'>Todas</option>
                   {Object.values(PaymentStatus).map(
                     (paymentStatus) => (
                       <option

@@ -1,18 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
-import {
-  completeDonationAccounting,
-  sendCompletedDonationNotification,
-} from "@/lib/donations/accounting";
-import {
-  BISA_PAYMENT_CURRENCY,
-  expectedDonationTotal,
-  normalizeCurrency,
-  parseProviderAmount,
-  validateProviderPayment,
-} from "@/lib/payments/provider-validation";
-import { createCompletedPaymentLogIfMissing } from "@/lib/payments/payment-log";
+import { completeBisaDonationPayment } from "@/lib/bisa/payment-completion";
 
 function hasCredentialValue(value: string | undefined): value is string {
   return typeof value === "string" && value.length > 0;
@@ -119,78 +108,25 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ codigo: "0000", mensaje: "Already processed" });
     }
 
-    const expectedAmount = expectedDonationTotal(donation);
-    const providerAmount = parseProviderAmount(monto);
-    const providerCurrency = normalizeCurrency(moneda);
-    const validation = validateProviderPayment({
-      expectedAmount,
-      providerAmount,
-      expectedCurrency: BISA_PAYMENT_CURRENCY,
-      providerCurrency,
-      amountTolerance: 0,
-    });
-
-    if (!validation.ok) {
-      console.error("[BISA][CALLBACK_VALIDATION]", {
+    const completion = await completeBisaDonationPayment({
+      donation,
+      confirmation: {
         alias,
-        reason: validation.reason,
-        expectedAmount,
-        providerAmount,
-        expectedCurrency: BISA_PAYMENT_CURRENCY,
-        providerCurrency,
-      });
-      return NextResponse.json({ codigo: "9999", mensaje: validation.message });
-    }
-    const confirmedProviderAmount = providerAmount as number;
-
-    let completionNotification;
-    const processedAt =
-      fechaproceso || fechaProceso || fechaProcesamiento
-        ? new Date(fechaproceso || fechaProceso || fechaProcesamiento)
-        : new Date();
-    const transactionId =
-      numeroOrdenOriginante || donation.bisaTransactionId || idQr || donation.bisaQrId;
-
-    // Update DB
-    await prisma.$transaction(async (tx) => {
-      const completion = await completeDonationAccounting(tx, {
-        donationId: donation.id,
-        donationUpdate: {
-          bisaTransactionId: transactionId,
-          bisaQrId: idQr || donation.bisaQrId,
-          bisaPayerName: nombreCliente,
-          bisaPayerAccount: cuentaCliente,
-          bisaPayerDocument: documentoCliente,
-          bisaProcessedAt: Number.isNaN(processedAt.getTime()) ? new Date() : processedAt,
-        },
-      });
-
-      completionNotification = completion.notification;
-
-      if (!completion.completedNow) {
-        return;
-      }
-
-      // Create payment log for completed payment
-      await createCompletedPaymentLogIfMissing(tx, {
-        paymentprovider: "bisa",
-        paymentmethod: "qr",
-        paymentid: transactionId || alias,
-        amount: confirmedProviderAmount,
-        tipamount: Number(donation.tip_amount || 0),
-        currency: moneda || "BOB",
-        metadata: JSON.stringify({
-          alias,
-          donationId: donation.id,
-          bisaQrId: idQr || donation.bisaQrId,
-          processedAt: fechaproceso || fechaProceso || fechaProcesamiento,
-        }),
-        campaignid: donation.campaignId,
-        donorid: donation.donorId,
-      });
+        amount: monto,
+        currency: moneda,
+        transactionId: numeroOrdenOriginante,
+        qrId: idQr,
+        payerName: nombreCliente,
+        payerAccount: cuentaCliente,
+        payerDocument: documentoCliente,
+        processedAt: fechaproceso || fechaProceso || fechaProcesamiento,
+        source: "callback",
+      },
     });
 
-    await sendCompletedDonationNotification(completionNotification);
+    if (completion.error) {
+      return NextResponse.json({ codigo: "9999", mensaje: completion.error });
+    }
 
     return NextResponse.json({ codigo: "0000", mensaje: "Success" });
 

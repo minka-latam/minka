@@ -1,18 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { bisaClient } from '@/lib/bisa/client'
-import {
-  completeDonationAccounting,
-  sendCompletedDonationNotification,
-} from '@/lib/donations/accounting'
-import {
-  BISA_PAYMENT_CURRENCY,
-  expectedDonationTotal,
-  normalizeCurrency,
-  parseProviderAmount,
-  validateProviderPayment,
-} from '@/lib/payments/provider-validation'
-import { createCompletedPaymentLogIfMissing } from '@/lib/payments/payment-log'
+import { completeBisaDonationPayment } from '@/lib/bisa/payment-completion'
 
 export async function GET(
   request: NextRequest,
@@ -67,96 +56,31 @@ export async function GET(
 
     // If paid, update DB (paymentStatus is already known to not be "completed" from early return above)
     if (status === 'PAGADO') {
-      const expectedAmount = expectedDonationTotal(donation)
-      const providerAmount = parseProviderAmount(
-        response.data.amount,
-      )
-      const providerCurrency = normalizeCurrency(
-        response.data.currency,
-      )
-      const validation = validateProviderPayment({
-        expectedAmount,
-        providerAmount,
-        expectedCurrency: BISA_PAYMENT_CURRENCY,
-        providerCurrency,
-        amountTolerance: 0,
+      const completion = await completeBisaDonationPayment({
+        donation,
+        confirmation: {
+          alias,
+          amount: response.data.amount,
+          currency: response.data.currency,
+          transactionId: response.data.transactionId,
+          qrId: response.data.qrId,
+          payerName: response.data.payerName,
+          payerAccount: response.data.payerAccount,
+          payerDocument: response.data.payerDocument,
+          processedAt: response.data.processedAt,
+          source: "status",
+        },
       })
 
-      if (!validation.ok) {
-        console.error('[BISA][STATUS_VALIDATION]', {
-          alias,
-          reason: validation.reason,
-          expectedAmount,
-          providerAmount,
-          expectedCurrency: BISA_PAYMENT_CURRENCY,
-          providerCurrency,
-        })
-
+      if (completion.error) {
         return NextResponse.json(
           {
             success: false,
-            error: validation.message,
+            error: completion.error,
           },
           { status: 409 },
         )
       }
-
-      let completionNotification
-      const confirmedProviderAmount =
-        providerAmount as number
-
-      // Transaction to ensure consistency
-      await prisma.$transaction(async (tx) => {
-        const completion = await completeDonationAccounting(
-          tx,
-          {
-            donationId: donation.id,
-            donationUpdate: {
-              bisaTransactionId:
-                response.data?.transactionId,
-              bisaPayerName: response.data?.payerName,
-              bisaPayerAccount: response.data?.payerAccount,
-              bisaPayerDocument:
-                response.data?.payerDocument,
-              bisaProcessedAt: response.data?.processedAt
-                ? new Date(response.data.processedAt)
-                : new Date(),
-            },
-          },
-        )
-
-        completionNotification = completion.notification
-
-        if (completion.completedNow) {
-          const tipAmount = Number(donation.tip_amount || 0)
-          const paymentId =
-            response.data?.transactionId ||
-            donation.bisaQrId ||
-            alias
-
-          await createCompletedPaymentLogIfMissing(tx, {
-            paymentprovider: 'bisa',
-            paymentmethod: 'qr',
-            paymentid: paymentId,
-            amount: confirmedProviderAmount,
-            tipamount: tipAmount,
-            currency: response.data?.currency || 'BOB',
-            metadata: JSON.stringify({
-              alias,
-              donationId: donation.id,
-              bisaQrId:
-                response.data?.qrId || donation.bisaQrId,
-              processedAt: response.data?.processedAt,
-            }),
-            campaignid: donation.campaignId,
-            donorid: donation.donorId,
-          })
-        }
-      })
-
-      await sendCompletedDonationNotification(
-        completionNotification,
-      )
     }
 
     return NextResponse.json({
