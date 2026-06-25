@@ -679,6 +679,9 @@ export function DonatePageContent({
             body: JSON.stringify({
               campaignId,
               donorId: user?.id ?? null,
+              clientAuthState: user?.id
+                ? 'authenticated'
+                : 'anonymous',
               amount: donationAmount,
               tipAmount: platformFee,
               message: '',
@@ -742,6 +745,9 @@ export function DonatePageContent({
       // Create donation through our API
       const donationData = {
         campaignId: campaignId,
+        clientAuthState: user?.id
+          ? 'authenticated'
+          : 'anonymous',
         amount: donationAmount,
         tipAmount: platformFee,
         paymentMethod: selectedMethod,

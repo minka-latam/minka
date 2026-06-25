@@ -49,9 +49,11 @@ function parseProcessedAt(value: string | Date | null | undefined) {
 export async function completeBisaDonationPayment({
   donation,
   confirmation,
+  awaitNotifications = true,
 }: {
   donation: Donation;
   confirmation: BisaPaymentConfirmation;
+  awaitNotifications?: boolean;
 }) {
   if (donation.paymentStatus === "completed") {
     return { completedNow: false, alreadyCompleted: true };
@@ -142,7 +144,19 @@ export async function completeBisaDonationPayment({
     });
   });
 
-  await sendCompletedDonationNotification(completionNotification);
+  const notificationPromise =
+    sendCompletedDonationNotification(completionNotification);
+
+  if (awaitNotifications) {
+    await notificationPromise;
+  } else {
+    void notificationPromise.catch((error) => {
+      console.error(
+        "[BISA][PAYMENT_NOTIFICATION_ERROR]",
+        error,
+      );
+    });
+  }
 
   return {
     completedNow,

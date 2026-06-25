@@ -1,6 +1,12 @@
 "use client";
 
-import { Clock, Megaphone } from "lucide-react";
+import { useState } from "react";
+import { Clock, Expand, Megaphone } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export interface CampaignUpdateType {
   id: string;
@@ -16,6 +22,11 @@ interface CampaignUpdatesProps {
 }
 
 export function CampaignUpdates({ updates }: CampaignUpdatesProps) {
+  const [selectedImage, setSelectedImage] = useState<{
+    url: string;
+    title: string;
+  } | null>(null);
+
   if (!updates || updates.length === 0) {
     return (
       <div className="space-y-6">
@@ -85,12 +96,22 @@ export function CampaignUpdates({ updates }: CampaignUpdatesProps) {
               </p>
 
               {update.imageUrl && (
-                <div className="mt-4 mb-4 rounded-lg overflow-hidden">
-                  <div className="relative h-60 w-full">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setSelectedImage({
+                      url: update.imageUrl!,
+                      title: update.title,
+                    })
+                  }
+                  className="group mt-4 mb-4 flex w-full max-w-sm items-center gap-4 rounded-lg border border-gray-200 bg-[#f9faf6] p-2 text-left transition hover:border-[#2c6e49]/40 hover:bg-[#f5f8ef] focus:outline-none focus:ring-2 focus:ring-[#2c6e49]/30 sm:max-w-md"
+                  aria-label={`Ampliar imagen de ${update.title}`}
+                >
+                  <span className="relative block h-24 w-32 shrink-0 overflow-hidden rounded-md bg-gray-100 sm:h-28 sm:w-40">
                     <img
                       src={update.imageUrl}
                       alt={update.title}
-                      className="object-cover w-full h-full rounded-lg"
+                      className="h-full w-full object-cover transition duration-200 group-hover:scale-105"
                       onError={(e) => {
                         console.error(
                           `Failed to load image: ${update.imageUrl}`
@@ -98,8 +119,17 @@ export function CampaignUpdates({ updates }: CampaignUpdatesProps) {
                         e.currentTarget.style.display = "none";
                       }}
                     />
-                  </div>
-                </div>
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-semibold text-[#2c6e49]">
+                      Ver imagen
+                    </span>
+                    <span className="mt-1 block text-sm text-gray-600">
+                      Haz click para ampliar esta actualización.
+                    </span>
+                  </span>
+                  <Expand className="h-5 w-5 shrink-0 text-[#2c6e49]" />
+                </button>
               )}
 
               {update.youtubeUrl && youtubeId && (
@@ -120,6 +150,25 @@ export function CampaignUpdates({ updates }: CampaignUpdatesProps) {
           );
         })}
       </div>
+      <Dialog
+        open={Boolean(selectedImage)}
+        onOpenChange={(open) => {
+          if (!open) setSelectedImage(null);
+        }}
+      >
+        <DialogContent className="max-h-[92vh] max-w-5xl overflow-hidden rounded-xl bg-white p-3 sm:p-4">
+          <DialogTitle className="sr-only">
+            {selectedImage?.title || "Imagen de actualización"}
+          </DialogTitle>
+          {selectedImage && (
+            <img
+              src={selectedImage.url}
+              alt={selectedImage.title}
+              className="max-h-[82vh] w-full rounded-lg object-contain"
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

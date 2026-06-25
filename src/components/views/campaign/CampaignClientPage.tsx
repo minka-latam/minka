@@ -509,7 +509,7 @@ export default function CampaignClientPage({
     const fetchLatestDonors = async () => {
       try {
         const response = await fetch(
-          `/api/campaign/${id}/donations?limit=20`,
+          `/api/campaign/${id}/donations?limit=20&prioritizeNamed=true`,
           {
             headers: {
               'Cache-Control': 'no-cache',

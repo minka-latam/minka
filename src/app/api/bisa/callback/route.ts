@@ -122,6 +122,7 @@ export async function POST(request: NextRequest) {
         processedAt: fechaproceso || fechaProceso || fechaProcesamiento,
         source: "callback",
       },
+      awaitNotifications: false,
     });
 
     if (completion.error) {

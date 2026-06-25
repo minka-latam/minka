@@ -26,6 +26,7 @@ export async function POST(req: Request) {
       amount,
       tipAmount = 0,
       message = '',
+      clientAuthState,
       isAnonymous = false,
       notificationEnabled = false,
       paymentMethod = 'card',
@@ -87,9 +88,28 @@ export async function POST(req: Request) {
 
     const session = await getAuthSession()
     const userId = session?.user?.id ?? null
+    const clientClaimsAuthenticated =
+      clientAuthState === 'authenticated'
+    const effectiveUserId = clientClaimsAuthenticated
+      ? userId
+      : null
+    const effectiveIsAnonymous =
+      !effectiveUserId || isAnonymous
+
+    if (clientClaimsAuthenticated && !effectiveUserId) {
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            'Missing donorId for non-anonymous donation',
+        },
+        { status: 401 },
+      )
+    }
+
     const donorProfileId =
-      userId ??
-      (isAnonymous
+      effectiveUserId ??
+      (effectiveIsAnonymous
         ? await getOrCreateCampaignAnonymousProfileId(campaignId)
         : donorId)
 
@@ -144,7 +164,7 @@ export async function POST(req: Request) {
       tipAmountBob,
     )
     const claimToken =
-      isAnonymous && !userId ? generateDonationClaimToken() : null
+      !effectiveUserId ? generateDonationClaimToken() : null
     const claimTokenHash = claimToken
       ? hashDonationClaimToken(claimToken)
       : null
@@ -161,7 +181,7 @@ export async function POST(req: Request) {
           paymentStatus: 'pending',
           paymentProvider: 'tripto',
           paymentMethod: 'credit_card' as any,
-          isAnonymous: !!isAnonymous,
+          isAnonymous: effectiveIsAnonymous,
           notificationEnabled: !!notificationEnabled,
           message: message || null,
         },
@@ -206,7 +226,7 @@ export async function POST(req: Request) {
       storedTipAmountBob: String(tipAmountBob),
       storedTotalAmountBob: String(totalAmountBob),
       message,
-      isAnonymous: isAnonymous ? 'true' : 'false',
+      isAnonymous: effectiveIsAnonymous ? 'true' : 'false',
       notificationEnabled: notificationEnabled
         ? 'true'
         : 'false',

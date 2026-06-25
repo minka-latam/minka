@@ -49,6 +49,7 @@ export async function POST(request: NextRequest) {
       tipAmount = 0,
       paymentMethod,
       currency,
+      clientAuthState,
       message,
       isAnonymous = false,
       notificationEnabled = false,
@@ -85,9 +86,14 @@ export async function POST(request: NextRequest) {
           ? "qr"
           : "bank_transfer";
 
-    // Only require authentication for non-anonymous donations.
-    // Authenticated users can still mark a donation as publicly anonymous.
-    if (!isAnonymous && !userId) {
+    const clientClaimsAuthenticated = clientAuthState === "authenticated";
+    const effectiveUserId = clientClaimsAuthenticated ? userId : null;
+    const effectiveIsAnonymous = !effectiveUserId || isAnonymous;
+
+    // Only require authentication when the client is explicitly making an
+    // authenticated donation. If the user logged out but a stale cookie remains,
+    // we treat the donation as anonymous instead of attributing it to that user.
+    if (clientClaimsAuthenticated && !effectiveUserId) {
       return NextResponse.json(
         { error: "User must be logged in for non-anonymous donations" },
         { status: 401 }
@@ -118,8 +124,8 @@ export async function POST(request: NextRequest) {
     }
 
     const donorProfileId =
-      userId ??
-      (isAnonymous
+      effectiveUserId ??
+      (effectiveIsAnonymous
         ? await getOrCreateCampaignAnonymousProfileId(campaignId)
         : null);
 
@@ -148,7 +154,7 @@ export async function POST(request: NextRequest) {
       : donationTipAmount;
     const storedTotalAmount = addMoney(storedDonationAmount, storedTipAmount);
     const claimToken =
-      isAnonymous && !userId ? generateDonationClaimToken() : null;
+      !effectiveUserId ? generateDonationClaimToken() : null;
     const claimTokenHash = claimToken
       ? hashDonationClaimToken(claimToken)
       : null;
@@ -168,7 +174,7 @@ export async function POST(request: NextRequest) {
           paymentProvider:
             paymentMethod === 'card' ? 'tripto' : 'bisa',
           message: message || null,
-          isAnonymous,
+          isAnonymous: effectiveIsAnonymous,
           notificationEnabled,
           predefinedAmount: !customAmount,
         },

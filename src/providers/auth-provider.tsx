@@ -67,6 +67,9 @@ const AuthContext = createContext<AuthContextType>({
 })
 
 const INACTIVE_ACCOUNT_ERROR = 'inactive_account'
+const PENDING_DONATION_KEY = 'minka_pending_donation'
+const PENDING_CARD_CHECKOUT_KEY =
+  'minka_pending_card_checkout'
 
 export function AuthProvider({
   children,
@@ -477,8 +480,10 @@ export function AuthProvider({
   const signOut = async () => {
     try {
       setIsLoading(true)
+      await supabase.auth.signOut().catch(() => null)
       const response = await fetch('/api/auth/logout', {
         method: 'POST',
+        credentials: 'include',
       })
 
       if (!response.ok) {
@@ -500,6 +505,10 @@ export function AuthProvider({
       setUser(null)
       setSession(null)
       setProfile(null)
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem(PENDING_DONATION_KEY)
+        sessionStorage.removeItem(PENDING_CARD_CHECKOUT_KEY)
+      }
       toast({
         title: 'Éxito',
         description: 'Has cerrado sesión correctamente.',

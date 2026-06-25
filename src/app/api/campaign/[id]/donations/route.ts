@@ -26,6 +26,8 @@ export async function GET(
     const offset = searchParams.get("offset");
     const skip = offset ? parseInt(offset) : (page - 1) * limit;
     const currentPage = Math.floor(skip / limit) + 1;
+    const prioritizeNamed =
+      searchParams.get("prioritizeNamed") === "true";
 
     // Get total count for pagination
     const totalCount = await prisma.donation.count({
@@ -35,16 +37,7 @@ export async function GET(
       },
     });
 
-    // Fetch donations with pagination
-    const donations = await prisma.donation.findMany({
-      where: {
-        campaignId,
-        paymentStatus: PaymentStatus.completed,
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-      select: {
+    const donationSelect = {
         id: true,
         amount: true,
         tip_amount: true,
@@ -60,10 +53,47 @@ export async function GET(
             profilePicture: true,
           },
         },
-      },
-      skip,
-      take: limit,
-    });
+      } as const;
+
+    const donations = prioritizeNamed
+      ? [
+          ...(await prisma.donation.findMany({
+            where: {
+              campaignId,
+              paymentStatus: PaymentStatus.completed,
+              isAnonymous: false,
+            },
+            orderBy: {
+              createdAt: "desc",
+            },
+            select: donationSelect,
+            take: limit,
+          })),
+          ...(await prisma.donation.findMany({
+            where: {
+              campaignId,
+              paymentStatus: PaymentStatus.completed,
+              isAnonymous: true,
+            },
+            orderBy: {
+              createdAt: "desc",
+            },
+            select: donationSelect,
+            take: limit,
+          })),
+        ]
+      : await prisma.donation.findMany({
+          where: {
+            campaignId,
+            paymentStatus: PaymentStatus.completed,
+          },
+          orderBy: {
+            createdAt: "desc",
+          },
+          select: donationSelect,
+          skip,
+          take: limit,
+        });
 
     // Map the donations to respect anonymity
     const formattedDonations = donations.map((donation) => ({

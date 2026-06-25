@@ -5,6 +5,7 @@ type DonationRequestBody = Record<string, unknown>;
 export type DonationCreateInput = {
   campaignId?: string;
   donorId?: string;
+  clientAuthState?: "authenticated" | "anonymous";
   amount?: unknown;
   tipAmount: unknown;
   paymentMethod?: unknown;
@@ -46,6 +47,12 @@ function booleanValue(value: unknown) {
   return typeof value === "boolean" ? value : undefined;
 }
 
+function clientAuthStateValue(value: unknown) {
+  return value === "authenticated" || value === "anonymous"
+    ? value
+    : undefined;
+}
+
 export function parseDonationCreateBody(
   body: unknown
 ): DonationCreateInput {
@@ -54,6 +61,9 @@ export function parseDonationCreateBody(
   return {
     campaignId: stringValue(read(data, "campaignId", "campaign_id")),
     donorId: stringValue(read(data, "donorId", "donor_id")),
+    clientAuthState: clientAuthStateValue(
+      read(data, "clientAuthState", "client_auth_state")
+    ),
     amount: data.amount,
     tipAmount: read(data, "tipAmount", "tip_amount") ?? 0,
     paymentMethod: read(data, "paymentMethod", "payment_method"),
