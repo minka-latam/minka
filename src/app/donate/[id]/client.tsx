@@ -23,6 +23,12 @@ import { toast } from '@/components/ui/use-toast'
 import { formatRegionDisplayName } from '@/lib/region-utils'
 import { CampaignShareMenu } from '@/components/share/CampaignShareMenu'
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
+import {
   DONATION_CLAIM_INTENT_KEY,
   type DonationClaimIntent,
 } from '@/constants/donation-claim'
@@ -32,6 +38,9 @@ import { addMoney, roundMoney } from '@/lib/money'
 const PENDING_DONATION_KEY = 'minka_pending_donation'
 const PENDING_CARD_CHECKOUT_KEY =
   'minka_pending_card_checkout'
+const DISABLED_PAYMENT_METHODS = new Set(['card'])
+const CARD_DISABLED_MESSAGE =
+  'Esta opción se habilitará la próxima semana, disculpa las molestias.'
 
 const DONATION_AMOUNTS_BS = [
   { value: 50 },
@@ -634,6 +643,8 @@ export function DonatePageContent({
 
   // Handle payment method selection
   const handlePaymentMethodSelect = (method: string) => {
+    if (DISABLED_PAYMENT_METHODS.has(method)) return
+
     setPaymentMethod(method)
     setErrorMessage(null)
     setInfoMessage(null)
@@ -1085,54 +1096,102 @@ export function DonatePageContent({
                     Método de pago
                   </h3>
                   <div className='grid gap-4 md:grid-cols-2'>
-                    {PAYMENT_METHODS.map((method) => (
-                      <button
-                        key={method.id}
-                        type='button'
-                        className={`text-left rounded-lg p-5 border transition-colors ${
-                          paymentMethod === method.id
-                            ? 'border-[#2c6e49] bg-[#f5f7e9]'
-                            : 'border-black hover:border-[#2c6e49] hover:bg-gray-50'
-                        }`}
-                        onClick={() =>
-                          handlePaymentMethodSelect(
-                            method.id,
-                          )
-                        }
-                      >
-                        <div className='flex items-start gap-4'>
-                          <div className='mt-1 h-6 w-6 rounded-full border border-gray-300 flex items-center justify-center flex-shrink-0'>
-                            {paymentMethod === method.id ? (
-                              <div className='h-3 w-3 rounded-full bg-[#2c6e49]' />
-                            ) : null}
-                          </div>
-                          <div className='flex-shrink-0 text-[#2c6e49]'>
-                            {method.id === 'card' ? (
-                              <CreditCard className='h-8 w-8' />
-                            ) : (
-                              <QrCode className='h-8 w-8 text-[#2c6e49]' />
-                            )}
-                          </div>
-                          <div>
-                            <p className='font-medium text-gray-900'>
-                              {method.id === 'card' ? (
-                                <>
-                                  Tarjeta de crédito/débito{' '}
-                                  <strong>
-                                    Internacional*
-                                  </strong>
-                                </>
-                              ) : (
-                                method.title
-                              )}
-                            </p>
-                            <p className='text-sm text-gray-600 mt-1'>
-                              {method.description}
-                            </p>
-                          </div>
-                        </div>
-                      </button>
-                    ))}
+                    <TooltipProvider delayDuration={100}>
+                      {PAYMENT_METHODS.map((method) => {
+                        const isDisabled =
+                          DISABLED_PAYMENT_METHODS.has(method.id)
+                        const methodButton = (
+                          <button
+                            key={method.id}
+                            type='button'
+                            aria-disabled={isDisabled}
+                            className={`text-left rounded-lg p-5 border transition-colors ${
+                              isDisabled
+                                ? 'cursor-not-allowed border-gray-300 bg-gray-50 opacity-60 grayscale'
+                                : paymentMethod === method.id
+                                  ? 'border-[#2c6e49] bg-[#f5f7e9]'
+                                  : 'border-black hover:border-[#2c6e49] hover:bg-gray-50'
+                            }`}
+                            onClick={() =>
+                              handlePaymentMethodSelect(
+                                method.id,
+                              )
+                            }
+                          >
+                            <div className='flex items-start gap-4'>
+                              <div
+                                className={`mt-1 h-6 w-6 rounded-full border flex items-center justify-center flex-shrink-0 ${
+                                  isDisabled
+                                    ? 'border-gray-300 bg-gray-100'
+                                    : 'border-gray-300'
+                                }`}
+                              >
+                                {paymentMethod ===
+                                method.id ? (
+                                  <div className='h-3 w-3 rounded-full bg-[#2c6e49]' />
+                                ) : null}
+                              </div>
+                              <div
+                                className={`flex-shrink-0 ${
+                                  isDisabled
+                                    ? 'text-gray-400'
+                                    : 'text-[#2c6e49]'
+                                }`}
+                              >
+                                {method.id === 'card' ? (
+                                  <CreditCard className='h-8 w-8' />
+                                ) : (
+                                  <QrCode className='h-8 w-8 text-[#2c6e49]' />
+                                )}
+                              </div>
+                              <div>
+                                <p
+                                  className={`font-medium ${
+                                    isDisabled
+                                      ? 'text-gray-500'
+                                      : 'text-gray-900'
+                                  }`}
+                                >
+                                  {method.id === 'card' ? (
+                                    <>
+                                      Tarjeta de
+                                      crédito/débito{' '}
+                                      <strong>
+                                        Internacional*
+                                      </strong>
+                                    </>
+                                  ) : (
+                                    method.title
+                                  )}
+                                </p>
+                                <p
+                                  className={`text-sm mt-1 ${
+                                    isDisabled
+                                      ? 'text-gray-500'
+                                      : 'text-gray-600'
+                                  }`}
+                                >
+                                  {method.description}
+                                </p>
+                              </div>
+                            </div>
+                          </button>
+                        )
+
+                        return isDisabled ? (
+                          <Tooltip key={method.id}>
+                            <TooltipTrigger asChild>
+                              {methodButton}
+                            </TooltipTrigger>
+                            <TooltipContent className='max-w-xs text-sm leading-relaxed'>
+                              {CARD_DISABLED_MESSAGE}
+                            </TooltipContent>
+                          </Tooltip>
+                        ) : (
+                          methodButton
+                        )
+                      })}
+                    </TooltipProvider>
                   </div>
                 </section>
 
