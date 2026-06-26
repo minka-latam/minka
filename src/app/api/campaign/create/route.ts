@@ -3,6 +3,10 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { prisma as db } from "@/lib/prisma";
 import { z } from "zod";
+import {
+  calculateCampaignDaysRemaining,
+  campaignDateKeyToDbDate,
+} from "@/lib/campaign-dates";
 
 const campaignCreateSchema = z.object({
   title: z.string().min(3).max(80),
@@ -33,7 +37,7 @@ const campaignCreateSchema = z.object({
     "beni",
     "pando",
   ]),
-  endDate: z.string().transform((str) => new Date(str)),
+  endDate: z.string().transform(campaignDateKeyToDbDate),
   youtubeUrl: z.string().url().optional().or(z.literal("")),
   youtubeUrls: z.array(z.string().url()).optional(),
   media: z
@@ -95,10 +99,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Calculate days remaining
-    const daysRemaining = Math.ceil(
-      (validatedData.endDate.getTime() - new Date().getTime()) /
-        (1000 * 60 * 60 * 24)
-    );
+    const daysRemaining = calculateCampaignDaysRemaining(validatedData.endDate);
 
     // Create the campaign
     const campaign = await db.campaign.create({

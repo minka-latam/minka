@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma as db } from "@/lib/prisma";
+import { calculateCampaignDaysRemaining } from "@/lib/campaign-dates";
 
 export async function GET(req: NextRequest) {
   try {
@@ -95,7 +96,7 @@ export async function GET(req: NextRequest) {
         description: campaign.subtitle || campaign.description,
         donorCount: campaign.donorCount,
         amountRaised: `Bs. ${campaign.collectedAmount.toFixed(2)}`,
-        daysRemaining: campaign.daysRemaining,
+        daysRemaining: calculateCampaignDaysRemaining(campaign.endDate),
       };
     });
 

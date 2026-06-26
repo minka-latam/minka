@@ -9,6 +9,7 @@ import { InlineSpinner } from "@/components/ui/inline-spinner";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { formatCampaignCategory } from "@/lib/campaign-categories";
+import { campaignDateKeyToLocalDate } from "@/lib/campaign-dates";
 
 export function Step3Preview() {
   const { state, prevStep, submitCampaign } = useCampaignForm();
@@ -84,7 +85,11 @@ export function Step3Preview() {
                   Fecha de finalización:{" "}
                   <span className="font-medium">
                     {state.endDate
-                      ? format(new Date(state.endDate), "PPP", { locale: es })
+                      ? format(
+                          campaignDateKeyToLocalDate(state.endDate) as Date,
+                          "PPP",
+                          { locale: es },
+                        )
                       : "No especificada"}
                   </span>
                 </li>
@@ -176,7 +181,11 @@ export function Step3Preview() {
                   <p className="text-sm text-gray-500">Fecha de finalización</p>
                   <p className="font-medium">
                     {state.endDate
-                      ? format(new Date(state.endDate), "PPP", { locale: es })
+                      ? format(
+                          campaignDateKeyToLocalDate(state.endDate) as Date,
+                          "PPP",
+                          { locale: es },
+                        )
                       : "No especificada"}
                   </p>
                 </div>

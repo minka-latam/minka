@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma as db } from "@/lib/prisma";
+import { calculateCampaignDaysRemaining } from "@/lib/campaign-dates";
 
 // Fallback campaign data for development
 const mockCampaigns = [
@@ -321,7 +322,7 @@ export async function GET(request: Request) {
         collectedAmount: Number(campaign.collectedAmount),
         donorCount: campaign.donorCount,
         percentageFunded: campaign.percentageFunded,
-        daysRemaining: campaign.daysRemaining,
+        daysRemaining: calculateCampaignDaysRemaining(campaign.endDate),
         verified: campaign.verificationStatus,
         organizer: organizerData,
         primaryImage: primaryMedia ? primaryMedia.mediaUrl : null,

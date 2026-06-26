@@ -21,6 +21,7 @@ import { ButtonSpinner } from "@/components/ui/inline-spinner";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { toast } from "@/components/ui/use-toast";
 import { MIN_TRANSFER_AMOUNT } from "@/lib/campaign-finance";
+import { calculateCampaignDaysRemaining } from "@/lib/campaign-dates";
 
 interface TransferFundsTabProps {
   campaign: Record<string, any>;
@@ -245,9 +246,7 @@ export function TransferFundsTab({ campaign }: TransferFundsTabProps) {
     const endDateValue = campaign.end_date || campaign.endDate;
     if (!endDateValue) return false;
 
-    const todayKey = new Date().toISOString().slice(0, 10);
-    const endDateKey = new Date(endDateValue).toISOString().slice(0, 10);
-    return endDateKey <= todayKey;
+    return calculateCampaignDaysRemaining(endDateValue) === 0;
   };
 
   const getMinimumTransferAmount = () => {

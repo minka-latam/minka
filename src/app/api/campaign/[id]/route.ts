@@ -10,6 +10,11 @@ import {
 import { isPublicCampaign } from "@/lib/campaigns/visibility";
 import { notifyCampaignPublishedForReview } from "@/lib/campaign-review-email";
 import { CampaignStatus } from "@prisma/client";
+import {
+  calculateCampaignDaysRemaining,
+  campaignDateKeyToDbDate,
+  toCampaignDateKey,
+} from "@/lib/campaign-dates";
 
 // Define interfaces to help with typing
 interface OrganizerProfile {
@@ -76,6 +81,7 @@ interface Campaign {
   youtube_urls?: string[];
   verification_status?: boolean;
   created_at?: string;
+  end_date?: string;
   campaign_status?: string;
   submitted_for_review_at?: string | null;
   reviewed_at?: string | null;
@@ -259,7 +265,8 @@ export async function GET(
       collected_amount: campaign.collected_amount,
       donor_count: campaign.donor_count,
       percentage_funded: campaign.percentage_funded,
-      days_remaining: campaign.days_remaining,
+      days_remaining: calculateCampaignDaysRemaining(campaign.end_date),
+      end_date: toCampaignDateKey(campaign.end_date),
       youtube_url: campaign.youtube_url,
       youtube_urls: campaign.youtube_urls,
       verification_status: campaign.verification_status,
@@ -486,7 +493,10 @@ export async function PATCH(
     if (categoryId !== undefined) updateData.categoryId = categoryId;
     if (goalAmount !== undefined) updateData.goalAmount = goalAmount;
     if (location !== undefined) updateData.location = location;
-    if (endDate !== undefined) updateData.endDate = new Date(endDate);
+    if (endDate !== undefined) {
+      updateData.endDate = campaignDateKeyToDbDate(endDate);
+      updateData.daysRemaining = calculateCampaignDaysRemaining(endDate);
+    }
     if (youtubeUrl !== undefined) updateData.youtubeUrl = youtubeUrl;
     if (youtubeUrls !== undefined) updateData.youtubeUrls = youtubeUrls;
 

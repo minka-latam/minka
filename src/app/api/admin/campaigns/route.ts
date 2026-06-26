@@ -3,6 +3,7 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { prisma as db } from "@/lib/prisma";
 import { calculateCampaignFinancials } from "@/lib/campaign-finance";
+import { calculateCampaignDaysRemaining } from "@/lib/campaign-dates";
 
 export async function GET(req: NextRequest) {
   try {
@@ -92,9 +93,7 @@ export async function GET(req: NextRequest) {
     // Format the response data
     const formattedCampaigns = campaigns.map((campaign) => {
       // Calculate days remaining
-      const endDate = new Date(campaign.endDate);
-      const now = new Date();
-      const daysRemaining = Math.max(0, Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
+      const daysRemaining = calculateCampaignDaysRemaining(campaign.endDate);
       const financialBreakdown = calculateCampaignFinancials({
         collectedAmount: campaign.collectedAmount,
         tipAmount: campaign.tipCollected,

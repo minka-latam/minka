@@ -104,6 +104,7 @@ function formatCampaignData(campaign: any) {
     currentAmount: campaign.collected_amount || 0,
     targetAmount: campaign.goal_amount || 0,
     donorsCount: campaign.donor_count || 0,
+    daysRemaining: campaign.days_remaining ?? 0,
   }
 
   // Create default organizer data structure
@@ -810,6 +811,9 @@ export default function CampaignClientPage({
                   formattedData.progress.isVerified
                 }
                 createdAt={formattedData.progress.createdAt}
+                daysRemaining={
+                  formattedData.progress.daysRemaining
+                }
                 campaignTitle={formattedData.title}
                 campaignSubtitle={formattedData.subtitle}
                 campaignDescription={

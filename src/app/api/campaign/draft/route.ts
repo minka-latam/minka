@@ -4,6 +4,10 @@ import { cookies } from "next/headers";
 import { prisma as db } from "@/lib/prisma";
 import { z } from "zod";
 import { Region } from "@prisma/client";
+import {
+  calculateCampaignDaysRemaining,
+  campaignDateKeyToDbDate,
+} from "@/lib/campaign-dates";
 
 const campaignDraftSchema = z.object({
   campaignId: z.string().uuid().optional(),
@@ -21,7 +25,7 @@ const campaignDraftSchema = z.object({
     .max(1000000, "La meta no debe superar Bs. 1.000.000")
     .optional(),
   location: z.nativeEnum(Region).optional(),
-  endDate: z.string().transform((str) => new Date(str)).optional(),
+  endDate: z.string().transform(campaignDateKeyToDbDate).optional(),
   youtubeUrl: z.string().url().optional().or(z.literal("")),
   youtubeUrls: z.array(z.string().url()).optional(),
   media: z.array(z.object({
@@ -88,7 +92,7 @@ export async function POST(req: NextRequest) {
       }
 
       const daysRemaining = validatedData.endDate
-        ? Math.ceil((validatedData.endDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
+        ? calculateCampaignDaysRemaining(validatedData.endDate)
         : undefined;
 
       campaign = await db.campaign.update({
@@ -137,7 +141,7 @@ export async function POST(req: NextRequest) {
           collectedAmount: 0,
           percentageFunded: 0,
           daysRemaining: validatedData.endDate
-            ? Math.ceil((validatedData.endDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
+            ? calculateCampaignDaysRemaining(validatedData.endDate)
             : 30,
           location: validatedData.location || "la_paz",
           endDate: validatedData.endDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),

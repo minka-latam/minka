@@ -3,6 +3,7 @@ import { Status } from "@prisma/client";
 
 import { getAuthSession } from "@/lib/auth";
 import { createAdminAuditLog } from "@/lib/admin-auth";
+import { calculateCampaignDaysRemaining } from "@/lib/campaign-dates";
 import { prisma } from "@/lib/prisma";
 import {
   formatAdminProfileForApi,
@@ -97,7 +98,14 @@ async function getRelatedProfileData(userId: string) {
     }),
   ]);
 
-  return { campaigns, donations, savedCampaigns };
+  return {
+    campaigns: campaigns.map((campaign) => ({
+      ...campaign,
+      daysRemaining: calculateCampaignDaysRemaining(campaign.endDate),
+    })),
+    donations,
+    savedCampaigns,
+  };
 }
 
 export async function GET(

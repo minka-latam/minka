@@ -30,6 +30,7 @@ interface CampaignProgressProps {
   currentAmount: number
   targetAmount: number
   donorsCount: number
+  daysRemaining?: number
   campaignTitle?: string
   campaignSubtitle?: string
   campaignDescription?: string
@@ -78,6 +79,7 @@ export function CampaignProgress({
   currentAmount,
   targetAmount,
   donorsCount,
+  daysRemaining = 0,
   campaignTitle = '',
   campaignSubtitle = '',
   campaignDescription = '',
@@ -444,6 +446,14 @@ export function CampaignProgress({
           </span>
           <span className='text-[#2c6e49] font-medium'>
             Bs. {(targetAmount || 0).toLocaleString()}
+          </span>
+        </div>
+        <div className='flex justify-between text-sm'>
+          <span className='text-[#2c6e49] font-medium'>
+            Días restantes
+          </span>
+          <span className='text-[#2c6e49] font-medium'>
+            {Math.max(0, daysRemaining)}
           </span>
         </div>
       </div>

@@ -36,6 +36,11 @@ import { CAMPAIGN_CATEGORIES } from "@/lib/campaign-categories";
 import { CampaignShareMenu } from "@/components/share/CampaignShareMenu";
 import { LegalEntity, useLegalEntities } from "@/hooks/use-legal-entities";
 import {
+  calculateCampaignDaysRemaining,
+  campaignDateKeyToLocalDate,
+  toCampaignDateKey,
+} from "@/lib/campaign-dates";
+import {
   CAMPAIGN_IMAGE_MAX_COUNT,
   getCampaignImageFiles,
   validateCampaignImageFile,
@@ -110,7 +115,7 @@ export default function CampaignDetailPage() {
     setSelectedLocation(originalCampaign.location || null);
     setSelectedEndDate(
       originalCampaign.end_date
-        ? new Date(originalCampaign.end_date)
+        ? campaignDateKeyToLocalDate(originalCampaign.end_date)
         : undefined,
     );
     setYoutubeUrls(originalCampaign.youtube_urls || []);
@@ -869,7 +874,9 @@ export default function CampaignDetailPage() {
         }
 
         if (enhancedCampaignData?.end_date) {
-          setSelectedEndDate(new Date(enhancedCampaignData.end_date));
+          setSelectedEndDate(
+            campaignDateKeyToLocalDate(enhancedCampaignData.end_date),
+          );
         }
 
         // Initialize YouTube URLs from campaign data
@@ -1085,7 +1092,8 @@ export default function CampaignDetailPage() {
                 <div className="mx-6 w-1 h-1 bg-gray-400 rounded-full"></div>
                 <div className="text-sm">
                   <p className="font-medium text-gray-800">
-                    Quedan {campaign.days_remaining || "0"} días
+                    Quedan {calculateCampaignDaysRemaining(campaign.end_date)}{" "}
+                    días
                   </p>
                 </div>
               </div>
@@ -1894,7 +1902,9 @@ export default function CampaignDetailPage() {
                                   })
                                 : campaign.end_date
                                   ? format(
-                                      new Date(campaign.end_date),
+                                      campaignDateKeyToLocalDate(
+                                        campaign.end_date,
+                                      ) as Date,
                                       "dd/MM/yyyy",
                                       { locale: es },
                                     )
@@ -1910,7 +1920,9 @@ export default function CampaignDetailPage() {
                               selected={
                                 selectedEndDate ||
                                 (campaign.end_date
-                                  ? new Date(campaign.end_date)
+                                  ? campaignDateKeyToLocalDate(
+                                      campaign.end_date,
+                                    )
                                   : undefined)
                               }
                               onSelect={(date) => {
@@ -1919,7 +1931,7 @@ export default function CampaignDetailPage() {
                                   // Update campaign object
                                   setCampaign({
                                     ...campaign,
-                                    end_date: date.toISOString().split("T")[0],
+                                    end_date: toCampaignDateKey(date),
                                   });
                                   handleFormChange();
                                 }
