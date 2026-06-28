@@ -12,7 +12,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns"; // For formatting dates
-import { Info, Pencil, Search, Trash2, UserCheck } from "lucide-react"; // Icons for actions
+import { Download, Info, Pencil, Search, Trash2, UserCheck } from "lucide-react"; // Icons for actions
 import { useMemo, useState } from "react";
 import { toast } from "@/components/ui/use-toast";
 import { useRouter } from "next/navigation";
@@ -32,6 +32,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { buildCsv, downloadCsv } from "@/lib/csv-export";
 
 interface AdminUserTableProps {
   users: ProfileData[];
@@ -197,6 +198,42 @@ export function AdminUserTable({ users }: AdminUserTableProps) {
   const profilePicture =
     viewingUser?.profile_picture || viewingUser?.profilePicture || null;
 
+  const handleExportUsers = () => {
+    const csv = buildCsv(
+      [
+        "ID",
+        "Nombre",
+        "Email",
+        "Teléfono",
+        "Rol",
+        "Estado",
+        "Documento",
+        "Fecha de nacimiento",
+        "Ubicación",
+        "Campañas activas",
+        "Creado",
+      ],
+      visibleUsers.map((user) => [
+        user.id,
+        user.name,
+        user.email,
+        user.phone,
+        user.role,
+        user.status || "active",
+        user.identity_number || user.identityNumber,
+        user.birth_date || user.birthDate,
+        user.location,
+        user.active_campaigns_count ?? 0,
+        user.created_at,
+      ]),
+    );
+
+    downloadCsv(
+      `usuarios-export-${new Date().toISOString().slice(0, 10)}.csv`,
+      csv,
+    );
+  };
+
   const detailRows = viewingUser
     ? [
         ["ID", viewingUser.id],
@@ -227,18 +264,31 @@ export function AdminUserTable({ users }: AdminUserTableProps) {
           />
         </div>
 
-        <div className="flex items-center gap-2">
-          <Checkbox
-            id="show-inactive-users"
-            checked={showInactiveUsers}
-            onCheckedChange={(checked) => setShowInactiveUsers(checked === true)}
-          />
-          <label
-            htmlFor="show-inactive-users"
-            className="cursor-pointer text-sm font-medium text-gray-700"
+        <div className="flex flex-wrap items-center gap-3">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExportUsers}
+            className="rounded-full"
           >
-            mostrar usuarios inactivos
-          </label>
+            <Download className="mr-2 h-4 w-4" />
+            Exportar datos
+          </Button>
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="show-inactive-users"
+              checked={showInactiveUsers}
+              onCheckedChange={(checked) =>
+                setShowInactiveUsers(checked === true)
+              }
+            />
+            <label
+              htmlFor="show-inactive-users"
+              className="cursor-pointer text-sm font-medium text-gray-700"
+            >
+              mostrar usuarios inactivos
+            </label>
+          </div>
         </div>
       </div>
 

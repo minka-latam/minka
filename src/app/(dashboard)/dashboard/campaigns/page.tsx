@@ -446,7 +446,7 @@ export default function SuperAdminCampaignsPage() {
             className="flex items-center gap-2"
           >
             <Download size={16} />
-            Export Data
+            Exportar datos
           </Button>
           <Button
             className="bg-[#2c6e49] hover:bg-[#1e4d33] text-white flex items-center gap-2"

@@ -61,6 +61,7 @@ import {
   LegalEntityFilters,
 } from "@/hooks/use-legal-entities";
 import { LegalEntityForm } from "@/components/admin/legal-entity-form";
+import { buildCsv, downloadCsv } from "@/lib/csv-export";
 
 export default function LegalEntitiesPage() {
   const router = useRouter();
@@ -173,6 +174,50 @@ export default function LegalEntitiesPage() {
     }
   };
 
+  const handleExportLegalEntities = () => {
+    const csv = buildCsv(
+      [
+        "ID",
+        "Nombre",
+        "NIT",
+        "Forma legal",
+        "Registro",
+        "Contacto",
+        "Email",
+        "Teléfono",
+        "Sitio web",
+        "Ciudad",
+        "Departamento",
+        "Estado",
+        "Campañas",
+        "Descripción",
+        "Creado",
+      ],
+      legalEntities.map((entity) => [
+        entity.id,
+        entity.name,
+        entity.taxId,
+        entity.legalForm,
+        entity.registrationNumber,
+        entity.contactName,
+        entity.email,
+        entity.phone,
+        entity.website,
+        entity.city,
+        entity.department,
+        entity.status,
+        entity._count?.campaigns ?? 0,
+        entity.description,
+        entity.createdAt,
+      ]),
+    );
+
+    downloadCsv(
+      `instituciones-export-${new Date().toISOString().slice(0, 10)}.csv`,
+      csv,
+    );
+  };
+
   // Loading state
   if (!profile || profile.role !== "admin") {
     return (
@@ -197,13 +242,7 @@ export default function LegalEntitiesPage() {
         <div className="flex gap-2">
           <Button
             variant="outline"
-            onClick={() => {
-              // TODO: Implement export functionality
-              toast({
-                title: "Exportar datos",
-                description: "Funcionalidad de exportación en desarrollo",
-              });
-            }}
+            onClick={handleExportLegalEntities}
             className="flex items-center gap-2"
           >
             <Download size={16} />

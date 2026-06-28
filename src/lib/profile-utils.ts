@@ -26,8 +26,6 @@ export function profileNeedsCompletion(profile: {
 }) {
   return (
     !profile.phone ||
-    !profile.identityNumber ||
-    !profile.birthDate ||
     !profile.location
   );
 }

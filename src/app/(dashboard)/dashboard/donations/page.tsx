@@ -34,6 +34,7 @@ import {
 import { prisma } from '@/lib/prisma'
 import { ProfileData } from '@/types'
 import Link from 'next/link'
+import { Download } from 'lucide-react'
 
 type SearchParams = {
   campaignId?: string | string[]
@@ -346,17 +347,34 @@ export default async function DonationsPage({
     const qrTotals = addTotals(completedQrDonations)
     const cardTotals = addTotals(completedCardDonations)
     const platformFee = calculatePlatformFee(totals.amount)
+    const exportParams = new URLSearchParams()
+    if (campaignId) exportParams.set('campaignId', campaignId)
+    if (campaignSearch) exportParams.set('campaignSearch', campaignSearch)
+    if (donorSearch) exportParams.set('donorSearch', donorSearch)
+    if (validMethod) exportParams.set('method', validMethod)
+    exportParams.set('status', validStatus)
+    exportParams.set('sort', sort)
+    const exportHref = `/api/admin/donations/export?${exportParams.toString()}`
 
     return (
       <div className='space-y-6 p-4 md:p-6'>
-        <div>
-          <h1 className='text-2xl font-semibold text-gray-900'>
-            Donaciones
-          </h1>
-          <p className='mt-1 text-sm text-gray-600'>
-            Revisa totales por campaña y el listado de
-            donadores.
-          </p>
+        <div className='flex flex-col gap-3 md:flex-row md:items-start md:justify-between'>
+          <div>
+            <h1 className='text-2xl font-semibold text-gray-900'>
+              Donaciones
+            </h1>
+            <p className='mt-1 text-sm text-gray-600'>
+              Revisa totales por campaña y el listado de
+              donadores.
+            </p>
+          </div>
+          <Link
+            href={exportHref}
+            className='inline-flex h-10 items-center justify-center rounded-full border border-gray-300 bg-white px-5 text-sm font-medium text-gray-700 hover:bg-gray-50'
+          >
+            <Download className='mr-2 h-4 w-4' />
+            Exportar datos
+          </Link>
         </div>
 
         <Card className='rounded-lg'>

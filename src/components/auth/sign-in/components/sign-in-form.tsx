@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
 import Image from "next/image";
 import { useAuth } from "@/providers/auth-provider";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/use-toast";
 import { z } from "zod";
@@ -23,6 +24,7 @@ const signInFormSchema = z.object({
     .string()
     .min(1, "La contraseña es requerida")
     .min(6, "La contraseña debe tener al menos 6 caracteres"),
+  rememberUser: z.boolean().default(false),
 });
 
 type SignInFormData = z.infer<typeof signInFormSchema>;
@@ -37,14 +39,27 @@ export function SignInForm() {
     register,
     handleSubmit,
     formState: { errors },
-    setError,
+    setValue,
+    watch,
   } = useForm<SignInFormData>({
     resolver: zodResolver(signInFormSchema),
     defaultValues: {
       email: "",
       password: "",
+      rememberUser: false,
     },
   });
+  const rememberUser = watch("rememberUser");
+
+  useEffect(() => {
+    const rememberedEmail = localStorage.getItem("minka_remembered_email");
+    const shouldRememberUser =
+      localStorage.getItem("minka_remember_user") === "true";
+    if (rememberedEmail) {
+      setValue("email", rememberedEmail);
+    }
+    setValue("rememberUser", shouldRememberUser);
+  }, [setValue]);
 
   // Memoize the submit handler to prevent unnecessary re-renders
   const onSubmit = useCallback(
@@ -54,7 +69,13 @@ export function SignInForm() {
 
         // The loading screen will show immediately due to isLoading state
         // Start login process with no delay
-        await signIn(data.email, data.password);
+        await signIn(data.email, data.password, data.rememberUser);
+
+        if (data.rememberUser) {
+          localStorage.setItem("minka_remembered_email", data.email);
+        } else {
+          localStorage.removeItem("minka_remembered_email");
+        }
 
         // Navigation and toast will be handled in the auth provider
         // The loading screen will continue to show until redirect completes
@@ -166,6 +187,22 @@ export function SignInForm() {
             {errors.password.message}
           </p>
         )}
+      </div>
+
+      <div className="flex items-center gap-2">
+        <Checkbox
+          id="rememberUser"
+          checked={rememberUser}
+          onCheckedChange={(checked) =>
+            setValue("rememberUser", checked === true)
+          }
+        />
+        <label
+          htmlFor="rememberUser"
+          className="cursor-pointer text-sm font-medium text-gray-700"
+        >
+          Recordar usuario
+        </label>
       </div>
 
       <Button

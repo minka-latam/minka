@@ -6,9 +6,9 @@ import { prisma } from "@/lib/prisma";
 export async function POST(request: Request) {
   try {
     const requestData = await request.json();
-    const { email, password, firstName, lastName, documentId, birthDate, phone } = requestData;
+    const { email, password, firstName, lastName } = requestData;
 
-    if (!email || !password || !firstName || !lastName || !documentId || !birthDate || !phone) {
+    if (!email || !password || !firstName || !lastName) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
@@ -45,35 +45,16 @@ const supabaseAdmin = createServerClient(
   }
 );
 
-    let formattedBirthDate: Date;
-    try {
-      const [day, month, year] = birthDate.split("/");
-      formattedBirthDate = new Date(`${year}-${month}-${day}`);
-      if (isNaN(formattedBirthDate.getTime())) throw new Error("Invalid date format");
-    } catch (error) {
-      return NextResponse.json(
-        { error: "Invalid birth date format. Please use DD/MM/YYYY" },
-        { status: 400 }
-      );
-    }
-
     try {
       const existingProfile = await prisma.profile.findFirst({
-        where: { OR: [{ email }, { identityNumber: documentId }] },
+        where: { email },
       });
 
       if (existingProfile) {
-        if (existingProfile.email === email) {
-          return NextResponse.json(
-            { error: "User with this email already exists" },
-            { status: 400 }
-          );
-        } else {
-          return NextResponse.json(
-            { error: "User with this ID number already exists" },
-            { status: 400 }
-          );
-        }
+        return NextResponse.json(
+          { error: "User with this email already exists" },
+          { status: 400 }
+        );
       }
     } catch (dbError) {
       return NextResponse.json(
@@ -107,9 +88,6 @@ const supabaseAdmin = createServerClient(
       name: `${firstName} ${lastName}`,
       email,
       passwordHash: "",
-      identityNumber: documentId,
-      phone,
-      birthDate: formattedBirthDate,
       joinDate: new Date(),
       status: "active",
     },

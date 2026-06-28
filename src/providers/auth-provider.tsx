@@ -40,10 +40,6 @@ type SignUpData = {
   password: string
   firstName: string
   lastName: string
-  documentId: string
-  documentCountryCode: string
-  birthDate: string
-  phone: string
 }
 
 type AuthContextType = {
@@ -51,7 +47,11 @@ type AuthContextType = {
   session: Session | null
   profile: Profile | null
   isLoading: boolean
-  signIn: (email: string, password: string) => Promise<void>
+  signIn: (
+    email: string,
+    password: string,
+    rememberUser?: boolean,
+  ) => Promise<void>
   signUp: (data: SignUpData) => Promise<void>
   signOut: () => Promise<void>
 }
@@ -70,6 +70,41 @@ const INACTIVE_ACCOUNT_ERROR = 'inactive_account'
 const PENDING_DONATION_KEY = 'minka_pending_donation'
 const PENDING_CARD_CHECKOUT_KEY =
   'minka_pending_card_checkout'
+const REMEMBER_USER_KEY = 'minka_remember_user'
+
+function getRememberUserPreference() {
+  if (typeof window === 'undefined') return true
+  return localStorage.getItem(REMEMBER_USER_KEY) === 'true'
+}
+
+function getAuthStorage() {
+  return {
+    getItem: (key: string) => {
+      if (typeof window === 'undefined') return null
+      const storage = getRememberUserPreference()
+        ? localStorage
+        : sessionStorage
+      return storage.getItem(key)
+    },
+    setItem: (key: string, value: string) => {
+      if (typeof window === 'undefined') return
+      const primaryStorage = getRememberUserPreference()
+        ? localStorage
+        : sessionStorage
+      const secondaryStorage = getRememberUserPreference()
+        ? sessionStorage
+        : localStorage
+
+      primaryStorage.setItem(key, value)
+      secondaryStorage.removeItem(key)
+    },
+    removeItem: (key: string) => {
+      if (typeof window === 'undefined') return
+      localStorage.removeItem(key)
+      sessionStorage.removeItem(key)
+    },
+  }
+}
 
 export function AuthProvider({
   children,
@@ -92,6 +127,14 @@ export function AuthProvider({
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      auth: {
+        storage: getAuthStorage(),
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true,
+      },
+    },
   )
 
   const ensureProfile = async (): Promise<Profile | null> => {
@@ -358,9 +401,16 @@ export function AuthProvider({
   const signIn = async (
     email: string,
     password: string,
+    rememberUser = false,
   ) => {
     try {
       setIsLoading(true)
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(
+          REMEMBER_USER_KEY,
+          rememberUser ? 'true' : 'false',
+        )
+      }
       const { data, error } =
         await supabase.auth.signInWithPassword({
           email,

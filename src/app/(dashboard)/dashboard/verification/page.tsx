@@ -44,6 +44,7 @@ import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { useAuth } from "@/providers/auth-provider";
+import { buildCsv, downloadCsv } from "@/lib/csv-export";
 
 interface VerificationRequest {
   id: string;
@@ -371,6 +372,38 @@ export default function CampaignVerificationPage() {
     return true;
   });
 
+  const handleExportVerificationRequests = () => {
+    const csv = buildCsv(
+      [
+        "ID",
+        "Campaña",
+        "Organizador",
+        "Fecha de solicitud",
+        "Estado",
+        "Notas",
+        "Contacto referencia",
+        "Email referencia",
+        "Teléfono referencia",
+      ],
+      filteredRequests.map((request) => [
+        request.campaignId,
+        request.campaignTitle,
+        request.organizerName,
+        request.requestDate,
+        request.status,
+        request.notes,
+        request.referenceContactName,
+        request.referenceContactEmail,
+        request.referenceContactPhone,
+      ]),
+    );
+
+    downloadCsv(
+      `verificaciones-export-${new Date().toISOString().slice(0, 10)}.csv`,
+      csv,
+    );
+  };
+
   // Render loading state
   if (loading) {
     return (
@@ -472,38 +505,49 @@ export default function CampaignVerificationPage() {
 
         <TabsContent value={currentTab} className="space-y-4">
           {/* Search bar */}
-          <div className="relative w-full max-w-md">
-            <input
-              type="text"
-              placeholder="Buscar por nombre de campaña, organizador o ID..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full px-4 py-2 pl-10 rounded-md border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#2c6e49]"
-            />
-            <div className="absolute inset-y-0 left-0 flex items-center pl-3">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5 text-gray-400"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                />
-              </svg>
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div className="relative w-full max-w-md">
+              <input
+                type="text"
+                placeholder="Buscar por nombre de campaña, organizador o ID..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full px-4 py-2 pl-10 rounded-md border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#2c6e49]"
+              />
+              <div className="absolute inset-y-0 left-0 flex items-center pl-3">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-5 w-5 text-gray-400"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
+                </svg>
+              </div>
+              {searchTerm && (
+                <button
+                  onClick={() => setSearchTerm("")}
+                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600"
+                >
+                  <XCircle className="h-5 w-5" />
+                </button>
+              )}
             </div>
-            {searchTerm && (
-              <button
-                onClick={() => setSearchTerm("")}
-                className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600"
-              >
-                <XCircle className="h-5 w-5" />
-              </button>
-            )}
+
+            <Button
+              variant="outline"
+              onClick={handleExportVerificationRequests}
+              className="w-full rounded-full md:w-auto"
+            >
+              <Download className="mr-2 h-4 w-4" />
+              Exportar datos
+            </Button>
           </div>
 
           {filteredRequests.length > 0 ? (

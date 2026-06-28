@@ -46,6 +46,8 @@ import { getProvincesForDepartment } from "@/constants/bolivia-provinces";
 import { CampaignDescriptionInput } from "./CampaignDescriptionInput";
 import { InstitutionReviewDialog } from "@/components/views/landing-page/InstitutionReviewDialog";
 import { Input } from "@/components/ui/input";
+import { DocumentCountrySelector } from "@/components/ui/document-country-selector";
+import { CountryCodeSelector } from "@/components/ui/country-code-selector";
 import {
   Dialog,
   DialogContent,
@@ -62,9 +64,16 @@ import {
   getCampaignImageFiles,
   validateCampaignImageFile,
 } from "@/lib/uploads/image-upload-validation";
+import {
+  formatPhoneNumber,
+  getPhonePlaceholder,
+  validatePhoneNumber,
+} from "@/utils/phone-formatter";
+import { findCountryByCode } from "@/data/country-codes";
 
 const LOCAL_DONATION_FEE_RATE = 0.05;
 const INTERNATIONAL_DONATION_FEE_RATE = 0.11;
+const MAX_DOCUMENT_LENGTH = 32;
 
 function formatBobAmount(amount: number) {
   return `Bs. ${amount.toLocaleString("es-BO", {
@@ -340,6 +349,7 @@ const CampaignPreview = ({
 export function CampaignForm() {
   const router = useRouter();
   const { toast } = useToast();
+  const { profile } = useAuth();
   const { campaignId, saveCampaignDraft, updateCampaign } = useCampaign();
   const {
     isUploading,
@@ -388,6 +398,13 @@ export function CampaignForm() {
     beneficiariesDescription: "",
     legalEntityId: undefined, // Add legal entity ID field
   });
+  const [privateProfileData, setPrivateProfileData] = useState({
+    documentCountryCode: "BO",
+    documentId: "",
+    birthDate: "",
+    countryCode: "BO",
+    phone: "",
+  });
   const [showOtraPersonaModal, setShowOtraPersonaModal] = useState(false);
   const [showPersonaJuridicaModal, setShowPersonaJuridicaModal] =
     useState(false);
@@ -433,6 +450,33 @@ export function CampaignForm() {
   const [pendingImageFiles, setPendingImageFiles] = useState<File[]>([]);
 
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    const identityNumber = String(
+      profile?.identity_number || profile?.identityNumber || "",
+    );
+    const [countryCode, ...documentParts] = identityNumber.includes("-")
+      ? identityNumber.split("-")
+      : ["BO", identityNumber];
+    const rawBirthDate = profile?.birth_date || profile?.birthDate || "";
+    const normalizedBirthDate = rawBirthDate
+      ? String(rawBirthDate).slice(0, 10)
+      : "";
+
+    setPrivateProfileData({
+      documentCountryCode: countryCode || "BO",
+      documentId: documentParts.join("-"),
+      birthDate: normalizedBirthDate,
+      countryCode: "BO",
+      phone: profile?.phone ? String(profile.phone).replace(/^\+?591/, "") : "",
+    });
+  }, [
+    profile?.birthDate,
+    profile?.birth_date,
+    profile?.identityNumber,
+    profile?.identity_number,
+    profile?.phone,
+  ]);
 
   // Add this new state for preview
   const [showPreview, setShowPreview] = useState(false);
@@ -732,6 +776,13 @@ export function CampaignForm() {
 
       try {
         setIsSubmitting(true);
+        const profileSaved = await savePrivateProfileData();
+
+        if (!profileSaved) {
+          setIsSubmitting(false);
+          return;
+        }
+
         const mediaUrls = await ensureMediaIsUploaded();
 
         if (!mediaUrls) {
@@ -1338,6 +1389,108 @@ export function CampaignForm() {
     return "";
   };
 
+  const validatePrivateProfileData = (): boolean => {
+    const errors: Record<string, string> = {};
+
+    if (!privateProfileData.documentCountryCode) {
+      errors.privateDocumentId = "Selecciona el país del documento";
+    }
+
+    if (!privateProfileData.documentId.trim()) {
+      errors.privateDocumentId = "Ingresa tu documento de identidad";
+    }
+
+    if (!privateProfileData.countryCode) {
+      errors.privatePhone = "Selecciona un país para tu teléfono";
+    }
+
+    const phoneValidation = validatePhoneNumber(
+      privateProfileData.phone,
+      privateProfileData.countryCode,
+    );
+
+    if (!privateProfileData.phone.trim() || !phoneValidation.isValid) {
+      errors.privatePhone =
+        phoneValidation.errorMessage || "Ingresa un teléfono válido";
+    }
+
+    if (!privateProfileData.birthDate) {
+      errors.privateBirthDate = "Ingresa tu fecha de nacimiento";
+    } else {
+      const birthDate = new Date(`${privateProfileData.birthDate}T12:00:00`);
+      const today = new Date();
+      const hundredYearsAgo = new Date();
+      hundredYearsAgo.setFullYear(today.getFullYear() - 100);
+
+      if (
+        Number.isNaN(birthDate.getTime()) ||
+        birthDate > today ||
+        birthDate < hundredYearsAgo
+      ) {
+        errors.privateBirthDate = "Ingresa una fecha de nacimiento válida";
+      }
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setFormErrors((prev) => ({ ...prev, ...errors }));
+      toast({
+        title: "Información requerida",
+        description:
+          "Completa tus datos privados de registro antes de guardar el borrador.",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    setFormErrors((prev) => {
+      const next = { ...prev };
+      delete next.privateDocumentId;
+      delete next.privateBirthDate;
+      delete next.privatePhone;
+      return next;
+    });
+    return true;
+  };
+
+  const savePrivateProfileData = async (): Promise<boolean> => {
+    if (!validatePrivateProfileData()) return false;
+
+    if (!profile?.id) {
+      toast({
+        title: "Sesión no disponible",
+        description: "Vuelve a iniciar sesión para guardar tu campaña.",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    const response = await fetch(`/api/profile/${profile.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({
+        identityNumber: `${privateProfileData.documentCountryCode}-${privateProfileData.documentId.trim()}`,
+        birthDate: privateProfileData.birthDate,
+        phone: `${findCountryByCode(privateProfileData.countryCode)?.dialCode || ""}${privateProfileData.phone.replace(/\D/g, "")}`,
+      }),
+    });
+
+    const responseData = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      toast({
+        title: "No se guardó tu información",
+        description:
+          responseData.error ||
+          "Revisa tu documento y fecha de nacimiento antes de continuar.",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    return true;
+  };
+
   // Add validation function to check all required fields
   const validateForm = (): boolean => {
     const errors: Record<string, string> = {};
@@ -1458,6 +1611,12 @@ export function CampaignForm() {
       description:
         "Inspira a los demás compartiendo el propósito de tu proyecto. Sé claro y directo para que tu causa conecte de manera profunda con quienes pueden hacer la diferencia.",
     },
+    {
+      id: 8,
+      title: "Información privada de registro",
+      description:
+        "Antes de guardar tu borrador necesitamos unos datos básicos del responsable de la campaña.",
+    },
   ];
 
   // Add sub-step navigation functions
@@ -1543,6 +1702,17 @@ export function CampaignForm() {
         } else if (formData.description.length > 600) {
           errors.description =
             "La presentación de la campaña no puede tener más de 600 caracteres";
+        }
+        break;
+      case 8:
+        if (!privateProfileData.documentId.trim()) {
+          errors.privateDocumentId = "Ingresa tu documento de identidad";
+        }
+        if (!privateProfileData.phone.trim()) {
+          errors.privatePhone = "Ingresa tu teléfono";
+        }
+        if (!privateProfileData.birthDate) {
+          errors.privateBirthDate = "Ingresa tu fecha de nacimiento";
         }
         break;
     }
@@ -2230,6 +2400,115 @@ export function CampaignForm() {
                 </div>
               </div>
             )}
+
+            {/* Sub-step 8: Private registration data */}
+            {currentSubStep === 8 && (
+              <div className="w-full py-6 md:py-12">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16">
+                  <div className="pt-0 md:pt-4">
+                    <h2 className="text-3xl md:text-5xl font-bold mb-4 md:mb-6">
+                      {STEP_1_SUB_STEPS[7].title}
+                    </h2>
+                    <p className="text-lg md:text-xl text-gray-600 leading-relaxed">
+                      {STEP_1_SUB_STEPS[7].description}
+                    </p>
+                  </div>
+
+                  <div className="bg-white rounded-xl border border-black p-6 md:p-8 space-y-5">
+                    <div className="rounded-lg border border-[#2c6e49]/20 bg-[#f0f7f1] p-4 text-sm leading-6 text-gray-700">
+                      Estos datos no serán visibles en tu campaña. Los usamos
+                      solo para cuidar la seguridad del registro y ayudar a
+                      prevenir campañas problemáticas.
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-700">
+                        Documento de identidad *
+                      </label>
+                      <div className="flex">
+                        <DocumentCountrySelector
+                          value={privateProfileData.documentCountryCode}
+                          onValueChange={(value) => {
+                            setPrivateProfileData((prev) => ({
+                              ...prev,
+                              documentCountryCode: value,
+                            }));
+                            setFormErrors((prev) => ({
+                              ...prev,
+                              privateDocumentId: "",
+                            }));
+                          }}
+                          disabled={isSubmitting}
+                          className="flex-shrink-0"
+                        />
+                        <Input
+                          value={privateProfileData.documentId}
+                          onChange={(event) => {
+                            setPrivateProfileData((prev) => ({
+                              ...prev,
+                              documentId: event.target.value,
+                            }));
+                            setFormErrors((prev) => ({
+                              ...prev,
+                              privateDocumentId: "",
+                            }));
+                          }}
+                          placeholder="Número de documento"
+                          maxLength={MAX_DOCUMENT_LENGTH}
+                          className={`flex-1 rounded-l-none border-l-0 ${
+                            formErrors.privateDocumentId
+                              ? "border-red-500"
+                              : "border-black"
+                          }`}
+                          disabled={isSubmitting}
+                        />
+                      </div>
+                      {formErrors.privateDocumentId && (
+                        <p className="text-sm text-red-500">
+                          {formErrors.privateDocumentId}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <label
+                        htmlFor="privateBirthDate"
+                        className="text-sm font-medium text-gray-700"
+                      >
+                        Fecha de nacimiento *
+                      </label>
+                      <Input
+                        id="privateBirthDate"
+                        type="date"
+                        value={privateProfileData.birthDate}
+                        onChange={(event) => {
+                          setPrivateProfileData((prev) => ({
+                            ...prev,
+                            birthDate: event.target.value,
+                          }));
+                          setFormErrors((prev) => ({
+                            ...prev,
+                            privateBirthDate: "",
+                          }));
+                        }}
+                        max={new Date().toISOString().slice(0, 10)}
+                        className={
+                          formErrors.privateBirthDate
+                            ? "border-red-500"
+                            : "border-black"
+                        }
+                        disabled={isSubmitting}
+                      />
+                      {formErrors.privateBirthDate && (
+                        <p className="text-sm text-red-500">
+                          {formErrors.privateBirthDate}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Navigation Buttons */}
@@ -2258,6 +2537,11 @@ export function CampaignForm() {
                           alert(
                             "Por favor completa todos los campos requeridos antes de guardar.",
                           );
+                          return;
+                        }
+
+                        const profileSaved = await savePrivateProfileData();
+                        if (!profileSaved) {
                           return;
                         }
 
