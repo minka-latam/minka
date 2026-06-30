@@ -3,6 +3,11 @@ import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
 import { completeBisaDonationPayment } from "@/lib/bisa/payment-completion";
 
+const BISA_SUCCESS_RESPONSE = {
+  codigo: "0000",
+  mensaje: "Registro Exitoso",
+};
+
 function hasCredentialValue(value: string | undefined): value is string {
   return typeof value === "string" && value.length > 0;
 }
@@ -41,8 +46,34 @@ function parseBasicAuthCredentials(authHeader: string) {
   }
 }
 
+function hasValidCallbackCredentials(
+  authHeader: string | null,
+  expectedUsername: string,
+  expectedPassword: string,
+) {
+  if (!authHeader) return false;
+
+  const credentials = parseBasicAuthCredentials(authHeader);
+
+  return (
+    !!credentials &&
+    timingSafeEqualString(credentials.username, expectedUsername) &&
+    timingSafeEqualString(credentials.password, expectedPassword)
+  );
+}
+
+function providerAmountMatches(donation: { total_amount: unknown; amount: unknown }, amount: unknown) {
+  const providerAmount = Number(amount);
+  const expectedAmount = Number(donation.total_amount ?? donation.amount);
+
+  return (
+    Number.isFinite(providerAmount) &&
+    Number.isFinite(expectedAmount) &&
+    providerAmount.toFixed(2) === expectedAmount.toFixed(2)
+  );
+}
+
 export async function POST(request: NextRequest) {
-  // 1. Verify Basic Auth
   const expectedUsername = process.env.BISA_CALLBACK_USERNAME;
   const expectedPassword = process.env.BISA_CALLBACK_PASSWORD;
 
@@ -58,21 +89,6 @@ export async function POST(request: NextRequest) {
       { codigo: "9999", mensaje: "Callback credentials are not configured" },
       { status: 500 },
     );
-  }
-
-  const authHeader = request.headers.get("Authorization");
-  if (!authHeader) {
-    return NextResponse.json({ codigo: "9999", mensaje: "Unauthorized" }, { status: 401 });
-  }
-
-  const credentials = parseBasicAuthCredentials(authHeader);
-
-  if (
-    !credentials ||
-    !timingSafeEqualString(credentials.username, expectedUsername) ||
-    !timingSafeEqualString(credentials.password, expectedPassword)
-  ) {
-    return NextResponse.json({ codigo: "9999", mensaje: "Invalid credentials" }, { status: 401 });
   }
 
   try {
@@ -95,6 +111,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ codigo: "9999", mensaje: "Alias missing" });
     }
 
+    const authHeader = request.headers.get("Authorization");
+    const hasValidAuth = hasValidCallbackCredentials(
+      authHeader,
+      expectedUsername,
+      expectedPassword,
+    );
+
     const donation = await prisma.donation.findFirst({
       where: { bisaAlias: alias },
     });
@@ -103,9 +126,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ codigo: "9999", mensaje: "Donation not found" });
     }
 
+    if (!hasValidAuth) {
+      const matchesCompletedDonation =
+        donation.paymentStatus === "completed" &&
+        (!idQr || donation.bisaQrId === idQr) &&
+        providerAmountMatches(donation, monto);
+
+      if (matchesCompletedDonation) {
+        return NextResponse.json(BISA_SUCCESS_RESPONSE);
+      }
+
+      return NextResponse.json({ codigo: "9999", mensaje: "Unauthorized" }, { status: 401 });
+    }
+
     // Idempotency check
     if (donation.paymentStatus === "completed") {
-      return NextResponse.json({ codigo: "0000", mensaje: "Already processed" });
+      return NextResponse.json(BISA_SUCCESS_RESPONSE);
     }
 
     const completion = await completeBisaDonationPayment({
@@ -129,7 +165,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ codigo: "9999", mensaje: completion.error });
     }
 
-    return NextResponse.json({ codigo: "0000", mensaje: "Success" });
+    return NextResponse.json(BISA_SUCCESS_RESPONSE);
 
   } catch (error) {
     console.error("Error in callback:", error);

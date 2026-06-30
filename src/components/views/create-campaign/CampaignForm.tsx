@@ -2472,6 +2472,65 @@ export function CampaignForm() {
 
                     <div className="space-y-2">
                       <label
+                        htmlFor="privatePhone"
+                        className="text-sm font-medium text-gray-700"
+                      >
+                        Teléfono *
+                      </label>
+                      <div className="flex">
+                        <CountryCodeSelector
+                          value={privateProfileData.countryCode}
+                          onValueChange={(value) => {
+                            setPrivateProfileData((prev) => ({
+                              ...prev,
+                              countryCode: value,
+                              phone: "",
+                            }));
+                            setFormErrors((prev) => ({
+                              ...prev,
+                              privatePhone: "",
+                            }));
+                          }}
+                          disabled={isSubmitting}
+                          className="flex-shrink-0 w-[100px]"
+                        />
+                        <Input
+                          id="privatePhone"
+                          type="tel"
+                          value={privateProfileData.phone}
+                          onChange={(event) => {
+                            setPrivateProfileData((prev) => ({
+                              ...prev,
+                              phone: formatPhoneNumber(
+                                event.target.value,
+                                privateProfileData.countryCode,
+                              ),
+                            }));
+                            setFormErrors((prev) => ({
+                              ...prev,
+                              privatePhone: "",
+                            }));
+                          }}
+                          placeholder={getPhonePlaceholder(
+                            privateProfileData.countryCode,
+                          )}
+                          className={`flex-1 rounded-l-none border-l-0 ${
+                            formErrors.privatePhone
+                              ? "border-red-500"
+                              : "border-black"
+                          }`}
+                          disabled={isSubmitting}
+                        />
+                      </div>
+                      {formErrors.privatePhone && (
+                        <p className="text-sm text-red-500">
+                          {formErrors.privatePhone}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <label
                         htmlFor="privateBirthDate"
                         className="text-sm font-medium text-gray-700"
                       >

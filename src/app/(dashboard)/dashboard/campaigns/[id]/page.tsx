@@ -35,6 +35,7 @@ import { ImproveTextButton } from "@/components/ui/improve-text-button";
 import { CAMPAIGN_CATEGORIES } from "@/lib/campaign-categories";
 import { CampaignShareMenu } from "@/components/share/CampaignShareMenu";
 import { LegalEntity, useLegalEntities } from "@/hooks/use-legal-entities";
+import { useCancelCampaign } from "@/hooks/use-cancel-campaign";
 import {
   calculateCampaignDaysRemaining,
   campaignDateKeyToLocalDate,
@@ -91,12 +92,15 @@ export default function CampaignDetailPage() {
   const [isDraggingImage, setIsDraggingImage] = useState(false);
   const [newYoutubeUrl, setNewYoutubeUrl] = useState("");
   const [isPublishing, setIsPublishing] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
   const [showPublishDialog, setShowPublishDialog] = useState(false);
   const [legalEntities, setLegalEntities] = useState<LegalEntity[]>([]);
   const [legalEntitiesSearch, setLegalEntitiesSearch] = useState("");
   const [isLoadingLegalEntities, setIsLoadingLegalEntities] = useState(false);
   const { fetchActiveLegalEntities } = useLegalEntities();
+  const {
+    cancelCampaign,
+    isCancellingCampaign: isDeleting,
+  } = useCancelCampaign();
 
   // Track original campaign state for reset functionality
   const [originalCampaign, setOriginalCampaign] = useState<Record<string, any>>(
@@ -736,32 +740,16 @@ export default function CampaignDetailPage() {
     );
     if (!confirmed) return;
 
-    try {
-      setIsDeleting(true);
-      const response = await fetch(`/api/campaign/${params.id}`, {
-        method: "DELETE",
-      });
+    const result = await cancelCampaign(String(params.id), {
+      successTitle: "Campaña cancelada",
+      successDescription:
+        "La campaña ya no es pública y sus registros se conservaron.",
+      errorTitle: "Error",
+      errorDescription: "No se pudo cancelar la campaña.",
+    });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "No se pudo cancelar la campaña.");
-      }
-
-      toast({
-        title: "Campaña cancelada",
-        description:
-          "La campaña ya no es pública y sus registros se conservaron.",
-      });
+    if (result.success) {
       router.push("/dashboard/campaigns");
-    } catch (error) {
-      console.error("Error deleting campaign:", error);
-      toast({
-        title: "Error",
-        description: "No se pudo cancelar la campaña.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsDeleting(false);
     }
   };
 

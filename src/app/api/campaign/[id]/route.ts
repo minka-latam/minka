@@ -7,6 +7,10 @@ import {
   isCountedCampaignStatus,
   refreshOrganizerActiveCampaignsCount,
 } from "@/lib/campaigns/active-count";
+import {
+  cancelCampaignById,
+  CampaignCancellationError,
+} from "@/lib/campaigns/cancel-campaign";
 import { isPublicCampaign } from "@/lib/campaigns/visibility";
 import { notifyCampaignPublishedForReview } from "@/lib/campaign-review-email";
 import { CampaignStatus } from "@prisma/client";
@@ -432,13 +436,6 @@ export async function PATCH(
       );
     }
 
-    if (existingCampaign.campaignStatus === "cancelled") {
-      return NextResponse.json(
-        { error: "Cancelled campaigns cannot be updated" },
-        { status: 400 },
-      );
-    }
-
     // Prepare the update data, extracting all valid fields from the body
     const {
       title,
@@ -481,6 +478,16 @@ export async function PATCH(
       );
     }
 
+    if (
+      existingCampaign.campaignStatus === CampaignStatus.cancelled &&
+      campaignStatus !== CampaignStatus.cancelled
+    ) {
+      return NextResponse.json(
+        { error: "Cancelled campaigns cannot be updated" },
+        { status: 400 },
+      );
+    }
+
     // Build the data object dynamically with only the fields that were provided
     const updateData: any = {};
 
@@ -508,6 +515,26 @@ export async function PATCH(
       isPublishingCampaign && !existingCampaign.submittedForReviewAt;
 
     if (campaignStatus !== undefined) {
+      if (campaignStatus === CampaignStatus.cancelled) {
+        try {
+          await cancelCampaignById(db, campaignId);
+        } catch (error) {
+          if (error instanceof CampaignCancellationError) {
+            return NextResponse.json(
+              { error: error.message },
+              { status: error.status },
+            );
+          }
+
+          throw error;
+        }
+
+        return NextResponse.json(
+          { message: "Campaign cancelled successfully" },
+          { status: 200 },
+        );
+      }
+
       if (campaignStatus === CampaignStatus.active) {
         if (existingCampaign.campaignStatus === CampaignStatus.draft) {
           updateData.campaignStatus = CampaignStatus.active;
@@ -689,54 +716,20 @@ export async function DELETE(
       );
     }
 
-    if (existingCampaign.campaignStatus === "cancelled") {
-      return NextResponse.json(
-        { message: "Campaign is already cancelled" },
-        { status: 200 },
-      );
-    }
-
-    if (existingCampaign.campaignStatus === "completed") {
-      return NextResponse.json(
-        {
-          error: "Completed campaigns cannot be cancelled from this endpoint",
-        },
-        { status: 400 },
-      );
-    }
-
-    if (
-      existingCampaign.campaignStatus !== "draft" &&
-      existingCampaign.campaignStatus !== "active"
-    ) {
-      return NextResponse.json(
-        {
-          error:
-            "Only draft or active campaigns can be cancelled from this endpoint",
-        },
-        { status: 400 },
-      );
-    }
-
-    await db.$transaction(async (tx) => {
-      await tx.campaign.update({
-        where: { id: campaignId },
-        data: {
-          campaignStatus: "cancelled",
-        },
-      });
-
-      await refreshOrganizerActiveCampaignsCount(
-        tx,
-        existingCampaign.organizerId,
-      );
-    });
+    await cancelCampaignById(db, campaignId);
 
     return NextResponse.json(
       { message: "Campaign cancelled successfully" },
       { status: 200 },
     );
   } catch (error) {
+    if (error instanceof CampaignCancellationError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.status },
+      );
+    }
+
     console.error("Error deleting campaign:", error);
     return NextResponse.json(
       { error: "Internal server error" },
