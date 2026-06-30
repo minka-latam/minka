@@ -40,7 +40,7 @@ const PENDING_CARD_CHECKOUT_KEY =
   'minka_pending_card_checkout'
 const DISABLED_PAYMENT_METHODS = new Set(['card'])
 const CARD_DISABLED_MESSAGE =
-  'Esta opción se habilitará la próxima semana, disculpa las molestias.'
+  'Por los cambios en el contexto económico del país, temporalmente las donaciones internacionales quedan suspendidas hasta adaptar nuestra infraestructura de pagos, disculpa las molestias.'
 
 const DONATION_AMOUNTS_BS = [
   { value: 50 },
