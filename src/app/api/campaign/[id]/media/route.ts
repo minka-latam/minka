@@ -4,10 +4,12 @@ import { cookies } from "next/headers";
 import { prisma as db } from "@/lib/prisma";
 import { MediaType } from "@prisma/client";
 import { z } from "zod";
+import { deleteStorageObjectsForMedia } from "@/lib/storage/delete-objects";
 
 // Schema for media creation
 const mediaCreateSchema = z.object({
   mediaUrl: z.string().url(),
+  previewUrl: z.string().url().optional().nullable(),
   type: z.enum(["image", "video"]),
   isPrimary: z.boolean().optional().default(false),
   orderIndex: z.number().int().min(0).optional(),
@@ -18,6 +20,7 @@ const mediaBulkSchema = z.array(
   z.object({
     id: z.string().optional(), // Optional for new items
     mediaUrl: z.string().url(),
+    previewUrl: z.string().url().optional().nullable(),
     type: z.enum(["image", "video"]),
     isPrimary: z.boolean(),
     orderIndex: z.number().int().min(0),
@@ -186,6 +189,7 @@ export async function POST(
       data: {
         campaignId: (await params).id,
         mediaUrl: validatedData.mediaUrl,
+        previewUrl: validatedData.previewUrl || null,
         type: validatedData.type as MediaType,
         isPrimary: isPrimary,
         orderIndex: orderIndex,
@@ -282,6 +286,23 @@ export async function PUT(
     const body = await req.json();
     const validatedData = mediaBulkSchema.parse(body);
 
+    const nextMediaUrls = new Set(
+      validatedData
+        .flatMap((item) => [item.mediaUrl, item.previewUrl])
+        .filter(Boolean),
+    );
+    const currentMedia = await db.campaignMedia.findMany({
+      where: { campaignId: (await params).id },
+      select: { mediaUrl: true, previewUrl: true },
+    });
+    const removedMedia = currentMedia.filter(
+      (item) =>
+        !nextMediaUrls.has(item.mediaUrl) &&
+        (!item.previewUrl || !nextMediaUrls.has(item.previewUrl)),
+    );
+
+    await deleteStorageObjectsForMedia(removedMedia);
+
     // Delete all existing media for this campaign
     await db.campaignMedia.deleteMany({
       where: {
@@ -295,6 +316,7 @@ export async function PUT(
         data: {
           campaignId: (await params).id,
           mediaUrl: item.mediaUrl,
+          previewUrl: item.previewUrl || null,
           type: item.type as MediaType,
           isPrimary: item.isPrimary,
           orderIndex: item.orderIndex,
@@ -550,6 +572,13 @@ export async function DELETE(
 
     // Check if this is a primary image
     const isPrimary = mediaRecord.isPrimary;
+
+    await deleteStorageObjectsForMedia([
+      {
+        mediaUrl: mediaRecord.mediaUrl,
+        previewUrl: mediaRecord.previewUrl,
+      },
+    ]);
 
     // Delete the media
     const deleteResult = await db.campaignMedia.deleteMany({

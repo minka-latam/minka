@@ -70,6 +70,7 @@ export async function GET(request: Request) {
         verification_status,
         organizer_id,
         media:campaign_media(
+          preview_url,
           media_url,
           is_primary
         )
@@ -102,7 +103,9 @@ export async function GET(request: Request) {
 
     // Find the primary image or the first image in the media array
     const primaryImage =
+      campaign.media?.find((m: any) => m.is_primary)?.preview_url ||
       campaign.media?.find((m: any) => m.is_primary)?.media_url ||
+      campaign.media?.[0]?.preview_url ||
       campaign.media?.[0]?.media_url ||
       "/amboro-main.jpg"; // Default fallback image
 

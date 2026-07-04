@@ -58,6 +58,7 @@ export async function GET(request: Request) {
       ...campaign,
       media: campaign.media.map((media) => ({
         mediaUrl: media.mediaUrl,
+        previewUrl: media.previewUrl,
         isPrimary: media.isPrimary,
         type: media.type,
         orderIndex: media.orderIndex,
@@ -77,4 +78,3 @@ export async function GET(request: Request) {
     );
   }
 }
-

@@ -325,7 +325,9 @@ export async function GET(request: Request) {
         daysRemaining: calculateCampaignDaysRemaining(campaign.endDate),
         verified: campaign.verificationStatus,
         organizer: organizerData,
-        primaryImage: primaryMedia ? primaryMedia.mediaUrl : null,
+        primaryImage: primaryMedia
+          ? primaryMedia.previewUrl || primaryMedia.mediaUrl
+          : null,
       };
     });
 

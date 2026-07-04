@@ -25,7 +25,9 @@ export async function GET() {
     const formattedCampaigns = featuredCampaigns.map((campaign) => {
       // Find the primary image or use a default
       const primaryImage =
-        campaign.media[0]?.mediaUrl || "/campaign/default-campaign.jpg";
+        campaign.media[0]?.previewUrl ||
+        campaign.media[0]?.mediaUrl ||
+        "/campaign/default-campaign.jpg";
 
       return {
         id: campaign.id,

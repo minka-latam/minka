@@ -109,6 +109,7 @@ model CampaignMedia {
   id         String    @id @default(uuid()) @db.Uuid
   campaignId String    @map("campaign_id") @db.Uuid
   mediaUrl   String    @map("media_url")
+  previewUrl String?   @map("preview_url")
   type       MediaType
   isPrimary  Boolean   @default(false) @map("is_primary")
   orderIndex Int       @map("order_index")

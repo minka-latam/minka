@@ -29,11 +29,15 @@ import { useToast } from "@/components/ui/use-toast";
 function getPrimaryCampaignImage(
   media?: Array<{
     media_url: string;
+    preview_url?: string | null;
     is_primary: boolean;
   }>,
 ) {
+  const primary = media?.find((item) => item.is_primary);
   return (
-    media?.find((item) => item.is_primary)?.media_url ||
+    primary?.preview_url ||
+    primary?.media_url ||
+    media?.[0]?.preview_url ||
     media?.[0]?.media_url ||
     null
   );

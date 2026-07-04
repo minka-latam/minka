@@ -44,6 +44,7 @@ const campaignCreateSchema = z.object({
     .array(
       z.object({
         mediaUrl: z.string().url(),
+        previewUrl: z.string().url().optional().nullable(),
         type: z.enum(["image", "video"]),
         isPrimary: z.boolean().default(false),
         orderIndex: z.number().int().min(0),
@@ -130,6 +131,7 @@ export async function POST(req: NextRequest) {
         data: {
           campaignId: campaign.id,
           mediaUrl: item.mediaUrl,
+          previewUrl: item.previewUrl || null,
           type: item.type,
           isPrimary: item.isPrimary,
           orderIndex: item.orderIndex,

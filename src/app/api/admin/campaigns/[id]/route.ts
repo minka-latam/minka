@@ -6,6 +6,7 @@ import {
 } from "@/lib/admin-auth";
 import { refreshOrganizerActiveCampaignsCount } from "@/lib/campaigns/active-count";
 import { prisma } from "@/lib/prisma";
+import { deleteStorageObjectsForMedia } from "@/lib/storage/delete-objects";
 
 export async function DELETE(
   _request: NextRequest,
@@ -22,6 +23,17 @@ export async function DELETE(
         title: true,
         organizerId: true,
         campaignStatus: true,
+        media: {
+          select: {
+            mediaUrl: true,
+            previewUrl: true,
+          },
+        },
+        updates: {
+          select: {
+            imageUrl: true,
+          },
+        },
       },
     });
 
@@ -32,13 +44,43 @@ export async function DELETE(
       );
     }
 
+    const [donationCount, transferCount] = await Promise.all([
+      prisma.donation.count({ where: { campaignId } }),
+      prisma.fundTransfer.count({ where: { campaignId } }),
+    ]);
+
+    if (donationCount > 0 || transferCount > 0) {
+      return NextResponse.json(
+        {
+          error:
+            "No se puede eliminar permanentemente una campaña con donaciones o transferencias. Cancélala para conservar el historial.",
+        },
+        { status: 400 },
+      );
+    }
+
     await prisma.$transaction(async (tx) => {
+      await tx.notification.deleteMany({ where: { campaignId } });
+      await tx.savedCampaign.deleteMany({ where: { campaignId } });
+      await tx.comment.deleteMany({ where: { campaignId } });
+      await tx.campaignUpdate.deleteMany({ where: { campaignId } });
+      await tx.campaignVerification.deleteMany({ where: { campaignId } });
+      await tx.campaignMedia.deleteMany({ where: { campaignId } });
+      await tx.campaignBankAccount.deleteMany({ where: { campaignId } });
       await tx.campaign.delete({
         where: { id: campaignId },
       });
 
       await refreshOrganizerActiveCampaignsCount(tx, campaign.organizerId);
     });
+
+    const storageDeletion = await deleteStorageObjectsForMedia([
+      ...campaign.media,
+      ...campaign.updates.map((update) => ({
+        mediaUrl: update.imageUrl,
+        previewUrl: null,
+      })),
+    ]);
 
     await createAdminAuditLog({
       adminId: admin.id,
@@ -48,7 +90,8 @@ export async function DELETE(
       metadata: {
         title: campaign.title,
         previousStatus: campaign.campaignStatus,
-        deletionMode: "campaign_only_database_cascade",
+        deletionMode: "campaign_hard_delete_without_financial_activity",
+        deletedStoragePaths: storageDeletion.deletedPaths,
       },
     });
 

@@ -36,9 +36,9 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/components/ui/use-toast";
-import axios from "axios";
 import { ImproveTextButton } from "@/components/ui/improve-text-button";
 import { CAMPAIGN_CATEGORIES } from "@/lib/campaign-categories";
+import { uploadMedia } from "@/lib/supabase/upload-media";
 
 const formSchema = z.object({
   title: z
@@ -129,32 +129,18 @@ dispatch({ type: "SET_END_DATE", payload: endDate.toISOString() });
       try {
         setUploading(true);
 
-        // Create FormData object
-        const formData = new FormData();
-        formData.append("file", file);
+        setUploadProgress(20);
+        const result = await uploadMedia(file);
+        setUploadProgress(100);
 
-        // Upload file to the server
-        const response = await axios.post("/api/upload", formData, {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-          onUploadProgress: (progressEvent) => {
-            if (progressEvent.total) {
-              const percentCompleted = Math.round(
-                (progressEvent.loaded * 100) / progressEvent.total
-              );
-              setUploadProgress(percentCompleted);
-            }
-          },
-        });
-
-        if (response.data.success) {
+        if (result.success) {
           // Add the uploaded media to the state
           dispatch({
             type: "ADD_MEDIA",
             payload: {
-              mediaUrl: response.data.url,
-              type: response.data.type,
+              mediaUrl: result.displayUrl || result.url,
+              previewUrl: result.previewUrl,
+              type: "image",
               isPrimary: state.media.length === 0, // First media is primary by default
               orderIndex: state.media.length,
             },

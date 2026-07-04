@@ -4,6 +4,8 @@ import { uploadMedia } from "@/lib/supabase/upload-media";
 
 interface UploadResponse {
   url: string;
+  displayUrl: string;
+  previewUrl?: string;
   success: boolean;
 }
 
@@ -90,6 +92,7 @@ export function useUpload() {
 
       return {
         url: "",
+        displayUrl: "",
         success: false,
       };
     } finally {
@@ -100,25 +103,25 @@ export function useUpload() {
     }
   };
 
-  // Upload multiple files and return all URLs
+  // Upload multiple files and return all media responses
   const uploadFiles = async (
     files: File[],
     progressCallback?: ProgressCallback
-  ): Promise<string[]> => {
+  ): Promise<UploadResponse[]> => {
     if (!files.length) return [];
 
     setIsUploading(true);
-    const urls: string[] = [];
+    const uploadedMedia: UploadResponse[] = [];
 
     try {
       for (const file of files) {
         const result = await uploadFile(file, progressCallback);
         if (result.success) {
-          urls.push(result.url);
+          uploadedMedia.push(result);
         }
       }
 
-      return urls;
+      return uploadedMedia;
     } catch (error) {
       console.error("Error uploading files:", error);
       toast({
@@ -126,7 +129,7 @@ export function useUpload() {
         description: "Error al subir archivos. Intenta nuevamente.",
         variant: "destructive",
       });
-      return urls;
+      return uploadedMedia;
     } finally {
       setIsUploading(false);
     }

@@ -174,7 +174,8 @@ export default function CampaignDetailPage() {
           const updatedMedia = [...(campaign.media || [])];
           updatedMedia[editingImageIndex] = {
             ...updatedMedia[editingImageIndex],
-            media_url: result.url,
+            media_url: result.displayUrl || result.url,
+            preview_url: result.previewUrl,
           };
 
           setCampaign((prev) => ({
@@ -416,7 +417,8 @@ export default function CampaignDetailPage() {
         }
 
         uploadedMedia.push({
-          media_url: result.url,
+          media_url: result.displayUrl || result.url,
+          preview_url: result.previewUrl,
           type: "image",
           is_primary:
             (campaign.media?.length || 0) === 0 && uploadedMedia.length === 0,
@@ -499,6 +501,7 @@ export default function CampaignDetailPage() {
         youtubeUrls: any;
         media?: Array<{
           mediaUrl: string;
+          previewUrl?: string | null;
           type: string;
           isPrimary: boolean;
           orderIndex: number;
@@ -527,6 +530,7 @@ export default function CampaignDetailPage() {
       if (finalMedia.length > 0) {
         campaignData.media = finalMedia.map((item: any, index: number) => ({
           mediaUrl: item.media_url,
+          previewUrl: item.preview_url || null,
           type: item.type || "image",
           isPrimary: item.is_primary || index === 0,
           orderIndex: item.order_index ?? index,

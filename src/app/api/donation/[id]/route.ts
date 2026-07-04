@@ -157,7 +157,7 @@ export async function GET(
             title: true,
             media: {
               where: { isPrimary: true },
-              select: { mediaUrl: true },
+              select: { mediaUrl: true, previewUrl: true },
               take: 1,
             },
           },

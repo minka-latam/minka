@@ -207,8 +207,13 @@ export async function POST(req: Request) {
 
     const primaryImage = await db.campaignMedia.findFirst({
       where: { campaignId, isPrimary: true },
+      select: {
+        mediaUrl: true,
+        previewUrl: true,
+      },
     })
     const imageUrl =
+      primaryImage?.previewUrl ||
       primaryImage?.mediaUrl ||
       `${baseUrl}/assets/minka-logo.png`
 

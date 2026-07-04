@@ -93,6 +93,7 @@ export async function GET(req: NextRequest) {
           },
           select: {
             mediaUrl: true,
+            previewUrl: true,
           },
           take: 1,
         },
@@ -113,7 +114,10 @@ export async function GET(req: NextRequest) {
     // Format the response data
     const formattedCampaigns = campaigns.map((campaign) => {
       // Get the primary image or fallback to default
-      const imageUrl = campaign.media[0]?.mediaUrl || null;
+      const imageUrl =
+        campaign.media[0]?.previewUrl ||
+        campaign.media[0]?.mediaUrl ||
+        null;
 
       // Determine the actual verification status
       let status: string;

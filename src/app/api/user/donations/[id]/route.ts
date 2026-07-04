@@ -48,7 +48,7 @@ export async function GET(
           goal_amount,
           collected_amount,
           percentage_funded,
-          media:campaign_media(id, media_url, type, is_primary)
+          media:campaign_media(id, media_url, preview_url, type, is_primary)
         ),
         donor:profiles(id, name, email, profile_picture)
       `
@@ -79,11 +79,13 @@ export async function GET(
           donation.campaign?.media?.map(
             (item: {
               media_url: string;
+              preview_url?: string | null;
               id: string;
               type: string;
               is_primary: boolean;
             }) => ({
               mediaUrl: item.media_url,
+              previewUrl: item.preview_url,
               id: item.id,
               type: item.type,
               isPrimary: item.is_primary,

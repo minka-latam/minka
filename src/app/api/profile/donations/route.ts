@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
             title: true,
             media: {
               where: { isPrimary: true },
-              select: { mediaUrl: true },
+              select: { mediaUrl: true, previewUrl: true },
               take: 1,
             },
             organizer: {
@@ -65,7 +65,8 @@ export async function GET(request: NextRequest) {
         ...donation.campaign,
         mainImage:
           donation.campaign.media.length > 0
-            ? donation.campaign.media[0].mediaUrl
+            ? donation.campaign.media[0].previewUrl ||
+              donation.campaign.media[0].mediaUrl
             : null,
         media: undefined, // Remove the media array
       },

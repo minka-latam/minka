@@ -2,6 +2,7 @@
 
 type DonationMedia = {
   mediaUrl: string;
+  previewUrl?: string | null;
 };
 
 type DonationCampaign = {

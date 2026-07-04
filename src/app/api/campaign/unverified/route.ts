@@ -82,6 +82,7 @@ export async function GET() {
         media: {
           select: {
             mediaUrl: true,
+            previewUrl: true,
             isPrimary: true,
           },
           orderBy: {
@@ -96,7 +97,9 @@ export async function GET() {
 
     const transformedCampaigns = campaigns.map((campaign) => {
       const primaryImage =
+        campaign.media.find((media) => media.isPrimary)?.previewUrl ||
         campaign.media.find((media) => media.isPrimary)?.mediaUrl ||
+        campaign.media[0]?.previewUrl ||
         campaign.media[0]?.mediaUrl ||
         "/amboro-main.jpg";
 

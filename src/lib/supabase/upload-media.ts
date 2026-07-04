@@ -1,7 +1,9 @@
 import { createBrowserClient } from "@supabase/ssr";
 import { STORAGE_BUCKET, STORAGE_PREFIXES } from "@/lib/storage/config";
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const MAX_DOCUMENT_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const MAX_CAMPAIGN_IMAGE_FILE_SIZE = 2 * 1024 * 1024; // 2MB
+const LONG_CACHE_CONTROL = "31536000";
 const ACCEPTED_FILE_TYPES = [
   // Images
   "image/jpeg",
@@ -20,7 +22,104 @@ const ACCEPTED_FILE_TYPES = [
 
 export interface UploadResponse {
   url: string;
+  displayUrl: string;
+  previewUrl?: string;
   success: boolean;
+}
+
+type ImageVariant = {
+  blob: Blob;
+  suffix: "display" | "preview";
+};
+
+function isOptimizableImage(file: File) {
+  return file.type === "image/jpeg" || file.type === "image/jpg" || file.type === "image/png";
+}
+
+function loadImageFromFile(file: File) {
+  return new Promise<HTMLImageElement>((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const image = new Image();
+
+    image.onload = () => {
+      URL.revokeObjectURL(url);
+      resolve(image);
+    };
+
+    image.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error("No se pudo procesar la imagen."));
+    };
+
+    image.src = url;
+  });
+}
+
+function getScaledDimensions(width: number, height: number, maxDimension: number) {
+  const scale = Math.min(1, maxDimension / Math.max(width, height));
+
+  return {
+    width: Math.max(1, Math.round(width * scale)),
+    height: Math.max(1, Math.round(height * scale)),
+  };
+}
+
+function canvasToBlob(canvas: HTMLCanvasElement, quality: number) {
+  return new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob(
+      (blob) => {
+        if (blob) resolve(blob);
+        else reject(new Error("No se pudo comprimir la imagen."));
+      },
+      "image/jpeg",
+      quality,
+    );
+  });
+}
+
+async function renderImageVariant(
+  image: HTMLImageElement,
+  maxDimension: number,
+  targetBytes: number,
+) {
+  const { width, height } = getScaledDimensions(
+    image.naturalWidth || image.width,
+    image.naturalHeight || image.height,
+    maxDimension,
+  );
+  const canvas = document.createElement("canvas");
+  const context = canvas.getContext("2d");
+
+  if (!context) {
+    throw new Error("No se pudo preparar la compresión de imagen.");
+  }
+
+  canvas.width = width;
+  canvas.height = height;
+  context.drawImage(image, 0, 0, width, height);
+
+  const qualities = [0.82, 0.74, 0.66, 0.58, 0.5];
+  let bestBlob = await canvasToBlob(canvas, qualities[0]);
+
+  for (const quality of qualities.slice(1)) {
+    if (bestBlob.size <= targetBytes) break;
+    bestBlob = await canvasToBlob(canvas, quality);
+  }
+
+  return bestBlob;
+}
+
+async function createCampaignImageVariants(file: File): Promise<ImageVariant[]> {
+  const image = await loadImageFromFile(file);
+  const [displayBlob, previewBlob] = await Promise.all([
+    renderImageVariant(image, 1600, 400 * 1024),
+    renderImageVariant(image, 700, 160 * 1024),
+  ]);
+
+  return [
+    { blob: displayBlob, suffix: "display" },
+    { blob: previewBlob, suffix: "preview" },
+  ];
 }
 
 export async function uploadMedia(file: File): Promise<UploadResponse> {
@@ -31,9 +130,14 @@ export async function uploadMedia(file: File): Promise<UploadResponse> {
     );
   }
 
-  if (file.size > MAX_FILE_SIZE) {
+  const isImage = isOptimizableImage(file);
+  const maxFileSize = isImage ? MAX_CAMPAIGN_IMAGE_FILE_SIZE : MAX_DOCUMENT_FILE_SIZE;
+
+  if (file.size > maxFileSize) {
     throw new Error(
-      "Archivo demasiado grande. Por favor, sube un archivo menor a 10MB."
+      isImage
+        ? "La imagen no debe superar 2 MB."
+        : "Archivo demasiado grande. Por favor, sube un archivo menor a 10MB."
     );
   }
 
@@ -66,6 +170,47 @@ export async function uploadMedia(file: File): Promise<UploadResponse> {
       folder = STORAGE_PREFIXES.campaignDocuments;
     }
 
+    if (isImage) {
+      const variants = await createCampaignImageVariants(file);
+      const baseName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}`;
+      const uploadedUrls: Partial<Record<ImageVariant["suffix"], string>> = {};
+
+      for (const variant of variants) {
+        const filePath = `${folder}/${variant.suffix}/${baseName}.jpg`;
+        const { error: uploadError } = await supabase.storage
+          .from(STORAGE_BUCKET)
+          .upload(filePath, variant.blob, {
+            cacheControl: LONG_CACHE_CONTROL,
+            contentType: "image/jpeg",
+            upsert: false,
+          });
+
+        if (uploadError) {
+          console.error("Upload error:", uploadError);
+          throw uploadError;
+        }
+
+        const {
+          data: { publicUrl },
+        } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(filePath);
+
+        uploadedUrls[variant.suffix] = publicUrl;
+      }
+
+      const displayUrl = uploadedUrls.display;
+
+      if (!displayUrl) {
+        throw new Error("No se pudo subir la imagen.");
+      }
+
+      return {
+        url: displayUrl,
+        displayUrl,
+        previewUrl: uploadedUrls.preview,
+        success: true,
+      };
+    }
+
     // Create a unique filename
     const fileExt = file.name.split(".").pop();
     const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
@@ -75,7 +220,7 @@ export async function uploadMedia(file: File): Promise<UploadResponse> {
     const { error: uploadError } = await supabase.storage
       .from(STORAGE_BUCKET)
       .upload(filePath, file, {
-        cacheControl: "3600",
+        cacheControl: LONG_CACHE_CONTROL,
         upsert: false,
       });
 
@@ -106,6 +251,7 @@ export async function uploadMedia(file: File): Promise<UploadResponse> {
 
     return {
       url: publicUrl,
+      displayUrl: publicUrl,
       success: true,
     };
   } catch (error) {

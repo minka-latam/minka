@@ -75,7 +75,9 @@ export async function GET(req: NextRequest) {
     // Format campaigns for the frontend
     const formattedCampaigns = relatedCampaigns.map((campaign) => {
       const primaryImage =
-        campaign.media[0]?.mediaUrl || "/campaign/default-campaign.jpg";
+        campaign.media[0]?.previewUrl ||
+        campaign.media[0]?.mediaUrl ||
+        "/campaign/default-campaign.jpg";
 
       return {
         id: campaign.id,

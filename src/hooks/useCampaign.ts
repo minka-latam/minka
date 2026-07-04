@@ -14,6 +14,7 @@ export interface OrganizerProfile {
 export interface CampaignMedia {
   id: string;
   media_url: string;
+  preview_url?: string | null;
   is_primary: boolean;
   type: string;
   order_index: number | null;

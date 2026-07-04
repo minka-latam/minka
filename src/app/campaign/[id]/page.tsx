@@ -75,6 +75,7 @@ export async function generateMetadata({
           take: 1,
           select: {
             mediaUrl: true,
+            previewUrl: true,
           },
         },
       },
@@ -110,7 +111,9 @@ export async function generateMetadata({
     const title = getCampaignShareTitle(campaign);
     const description = getCampaignShareDescription(campaign);
     const primaryImage = toAbsoluteShareUrl(
-      campaign.media[0]?.mediaUrl || MINKA_FALLBACK_SHARE_IMAGE,
+      campaign.media[0]?.previewUrl ||
+        campaign.media[0]?.mediaUrl ||
+        MINKA_FALLBACK_SHARE_IMAGE,
       baseUrl,
     );
     const hasCampaignImage = Boolean(campaign.media[0]?.mediaUrl);

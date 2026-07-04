@@ -76,6 +76,7 @@ export async function GET() {
               },
               select: {
                 mediaUrl: true,
+                previewUrl: true,
               },
               take: 1,
             },
@@ -90,7 +91,10 @@ export async function GET() {
       savedId: saved.id,
       title: saved.campaign.title,
       description: saved.campaign.subtitle || saved.campaign.description,
-      imageUrl: saved.campaign.media[0]?.mediaUrl || "",
+      imageUrl:
+        saved.campaign.media[0]?.previewUrl ||
+        saved.campaign.media[0]?.mediaUrl ||
+        "",
       category: saved.campaign.category,
       location: saved.campaign.location,
       createdAt: saved.campaign.createdAt.toISOString(),

@@ -209,7 +209,10 @@ export default function DonationDetails({ id }: DonationDetailsProps) {
             <div className="relative h-48 w-full">
               {donation.campaign.media && donation.campaign.media.length > 0 ? (
                 <Image
-                  src={donation.campaign.media[0].mediaUrl}
+                  src={
+                    donation.campaign.media[0].previewUrl ||
+                    donation.campaign.media[0].mediaUrl
+                  }
                   alt={donation.campaign.title}
                   fill
                   className="object-cover"

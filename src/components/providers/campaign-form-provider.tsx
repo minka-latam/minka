@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 
 export type MediaItem = {
   mediaUrl: string;
+  previewUrl?: string | null;
   type: "image" | "video";
   isPrimary: boolean;
   orderIndex: number;
@@ -342,6 +343,7 @@ export const CampaignFormProvider = ({
           youtubeUrl: campaign.youtubeUrl || "",
           media: campaign.media.map((item: any) => ({
             mediaUrl: item.mediaUrl,
+            previewUrl: item.previewUrl,
             type: item.type,
             isPrimary: item.isPrimary,
             orderIndex: item.orderIndex,

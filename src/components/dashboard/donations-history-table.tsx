@@ -120,7 +120,10 @@ export function DonationsHistoryTable({
                       donation.campaign.media.length > 0 && (
                         <div className="relative w-12 h-12 rounded-md overflow-hidden">
                           <Image
-                            src={donation.campaign.media[0].mediaUrl}
+                            src={
+                              donation.campaign.media[0].previewUrl ||
+                              donation.campaign.media[0].mediaUrl
+                            }
                             alt={donation.campaign.title}
                             fill
                             className="object-cover"

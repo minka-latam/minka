@@ -13,6 +13,7 @@ import {
 } from "@/lib/campaigns/cancel-campaign";
 import { isPublicCampaign } from "@/lib/campaigns/visibility";
 import { notifyCampaignPublishedForReview } from "@/lib/campaign-review-email";
+import { deleteStorageObjectsForMedia } from "@/lib/storage/delete-objects";
 import { CampaignStatus } from "@prisma/client";
 import {
   calculateCampaignDaysRemaining,
@@ -34,6 +35,7 @@ interface OrganizerProfile {
 interface CampaignMedia {
   id: string;
   media_url: string;
+  preview_url?: string | null;
   is_primary: boolean;
   type: string;
   order_index: number | null;
@@ -165,7 +167,7 @@ export async function GET(
         organizer_id,
         organizer:profiles!organizer_id(id, name, location, profile_picture, join_date, active_campaigns_count, bio),
         legal_entity:legal_entities(id, name, description, website),
-        media:campaign_media(id, media_url, is_primary, type, order_index),
+        media:campaign_media(id, media_url, preview_url, is_primary, type, order_index),
         updates:campaign_updates(id, title, content, image_url, youtube_url, created_at),
         comments:comments(
           id,
@@ -301,6 +303,7 @@ export async function GET(
             .map((m: any) => ({
               id: m.id,
               media_url: m.media_url,
+              preview_url: m.preview_url,
               is_primary: m.is_primary,
               type: m.type,
               order_index: m.order_index,
@@ -606,6 +609,24 @@ export async function PATCH(
 
     // If media was provided, update the media records
     if (media && Array.isArray(media) && media.length > 0) {
+      const nextMediaUrls = new Set(
+        media.flatMap((item: any) => [item.mediaUrl, item.previewUrl]).filter(Boolean),
+      );
+      const existingMedia = await db.campaignMedia.findMany({
+        where: { campaignId },
+        select: {
+          mediaUrl: true,
+          previewUrl: true,
+        },
+      });
+      const removedMedia = existingMedia.filter(
+        (item) =>
+          !nextMediaUrls.has(item.mediaUrl) &&
+          (!item.previewUrl || !nextMediaUrls.has(item.previewUrl)),
+      );
+
+      await deleteStorageObjectsForMedia(removedMedia);
+
       // Delete existing media
       await db.campaignMedia.deleteMany({
         where: { campaignId },
@@ -618,6 +639,7 @@ export async function PATCH(
             data: {
               campaignId,
               mediaUrl: item.mediaUrl,
+              previewUrl: item.previewUrl || null,
               type: item.type,
               isPrimary: item.isPrimary,
               orderIndex: item.orderIndex,

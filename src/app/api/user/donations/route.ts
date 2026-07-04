@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
       .select(
         `
         *,
-        campaign:campaigns(id, title, category, media:campaign_media(media_url))
+        campaign:campaigns(id, title, category, media:campaign_media(media_url, preview_url))
       `,
         { count: "exact" }
       )
@@ -67,9 +67,12 @@ export async function GET(request: NextRequest) {
         campaign: {
           ...donation.campaign,
           media:
-            donation.campaign?.media?.map((item: { media_url: string }) => ({
-              mediaUrl: item.media_url,
-            })) || [],
+            donation.campaign?.media?.map(
+              (item: { media_url: string; preview_url?: string | null }) => ({
+                mediaUrl: item.media_url,
+                previewUrl: item.preview_url,
+              }),
+            ) || [],
         },
       };
     });
@@ -94,4 +97,3 @@ export async function GET(request: NextRequest) {
     );
   }
 }
-

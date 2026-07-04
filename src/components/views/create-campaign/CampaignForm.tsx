@@ -92,7 +92,9 @@ const CampaignPreview = ({
   onClose,
   uploadedUrls = [],
 }: {
-  campaign: CampaignFormData & { media?: { mediaUrl: string }[] };
+  campaign: CampaignFormData & {
+    media?: { mediaUrl: string; previewUrl?: string | null }[];
+  };
   onClose: () => void;
   uploadedUrls?: string[];
 }) => {
@@ -360,6 +362,9 @@ export function CampaignForm() {
   } = useUpload();
   const { fetchActiveLegalEntities } = useLegalEntities();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploadedMediaItems, setUploadedMediaItems] = useState<
+    Array<{ mediaUrl: string; previewUrl?: string }>
+  >([]);
 
   // Use the context to sync step changes with the parent page
   const { setCurrentStep: setContextStep } = useCurrentStep();
@@ -724,17 +729,28 @@ export function CampaignForm() {
   };
 
   // Utility function to help with image URL issues
-  const ensureMediaIsUploaded = async (): Promise<string[] | null> => {
-    if (uploadedUrls.length === mediaFiles.length && uploadedUrls.length > 0) {
-      return uploadedUrls;
+  const ensureMediaIsUploaded = async (): Promise<
+    Array<{ mediaUrl: string; previewUrl?: string }> | null
+  > => {
+    if (
+      uploadedMediaItems.length === mediaFiles.length &&
+      uploadedMediaItems.length > 0
+    ) {
+      return uploadedMediaItems;
     }
 
     if (mediaFiles.length > 0) {
       try {
-        const urls = await uploadFiles(mediaFiles);
-        if (urls.length === mediaFiles.length) {
-          setUploadedUrls(urls);
-          return urls;
+        const uploadedMedia = await uploadFiles(mediaFiles);
+        if (uploadedMedia.length === mediaFiles.length) {
+          const mediaItems = uploadedMedia.map((item) => ({
+            mediaUrl: item.displayUrl || item.url,
+            previewUrl: item.previewUrl,
+          }));
+
+          setUploadedMediaItems(mediaItems);
+          setUploadedUrls(mediaItems.map((item) => item.mediaUrl));
+          return mediaItems;
         }
 
         console.error("Failed to upload all media files");
@@ -803,8 +819,9 @@ export function CampaignForm() {
           // Convert goalAmount to number by removing separators
           goalAmount: removeNumberSeparators(String(formData.goalAmount)),
           // Include media information
-          media: mediaUrls.map((url, index) => ({
-            mediaUrl: url,
+          media: mediaUrls.map((item, index) => ({
+            mediaUrl: item.mediaUrl,
+            previewUrl: item.previewUrl,
             type: "image" as const,
             isPrimary: index === 0,
             orderIndex: index,
@@ -1136,6 +1153,10 @@ export function CampaignForm() {
     const newUploadedUrls = [...uploadedUrls];
     newUploadedUrls.splice(index, 1);
     setUploadedUrls(newUploadedUrls);
+
+    const newUploadedMediaItems = [...uploadedMediaItems];
+    newUploadedMediaItems.splice(index, 1);
+    setUploadedMediaItems(newUploadedMediaItems);
   };
 
   // Clean up preview URLs when component unmounts
@@ -2617,8 +2638,9 @@ export function CampaignForm() {
                           goalAmount: removeNumberSeparators(
                             String(formData.goalAmount),
                           ),
-                          media: mediaUrls.map((url, index) => ({
-                            mediaUrl: url,
+                          media: mediaUrls.map((item, index) => ({
+                            mediaUrl: item.mediaUrl,
+                            previewUrl: item.previewUrl,
                             type: "image" as const,
                             isPrimary: index === 0,
                             orderIndex: index,

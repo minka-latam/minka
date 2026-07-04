@@ -135,7 +135,7 @@ async function getReferencedStoragePaths(bucket: string, prefixes: string[]) {
   const referenced = new Set<string>();
 
   const [campaignMedia, campaignUpdates, profiles, verifications] = await Promise.all([
-    prisma.campaignMedia.findMany({ select: { mediaUrl: true } }),
+    prisma.campaignMedia.findMany({ select: { mediaUrl: true, previewUrl: true } }),
     prisma.campaignUpdate.findMany({ select: { imageUrl: true } }),
     prisma.profile.findMany({ select: { profilePicture: true } }),
     prisma.campaignVerification.findMany({
@@ -150,7 +150,10 @@ async function getReferencedStoragePaths(bucket: string, prefixes: string[]) {
     }
   };
 
-  campaignMedia.forEach((item) => add(item.mediaUrl));
+  campaignMedia.forEach((item) => {
+    add(item.mediaUrl);
+    add(item.previewUrl);
+  });
   campaignUpdates.forEach((item) => add(item.imageUrl));
   profiles.forEach((item) => add(item.profilePicture));
   verifications.forEach((item) => {

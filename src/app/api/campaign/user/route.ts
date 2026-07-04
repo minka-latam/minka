@@ -60,6 +60,7 @@ export async function GET() {
         verification_status,
         organizer_id,
         media:campaign_media(
+          preview_url,
           media_url,
           is_primary
         )
@@ -103,12 +104,18 @@ export async function GET() {
     const transformedCampaigns = campaigns?.map((campaign) => {
       const media =
         campaign.media as
-          | { is_primary?: boolean; media_url?: string | null }[]
+          | {
+              is_primary?: boolean;
+              media_url?: string | null;
+              preview_url?: string | null;
+            }[]
           | null
           | undefined;
       // Find the primary image or the first image in the media array
       const primaryImage =
+        media?.find((item) => item.is_primary)?.preview_url ||
         media?.find((item) => item.is_primary)?.media_url ||
+        media?.[0]?.preview_url ||
         media?.[0]?.media_url ||
         "/amboro-main.jpg"; // Default fallback image
 

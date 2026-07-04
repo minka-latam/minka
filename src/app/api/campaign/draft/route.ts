@@ -8,6 +8,7 @@ import {
   calculateCampaignDaysRemaining,
   campaignDateKeyToDbDate,
 } from "@/lib/campaign-dates";
+import { deleteStorageObjectsForMedia } from "@/lib/storage/delete-objects";
 
 const campaignDraftSchema = z.object({
   campaignId: z.string().uuid().optional(),
@@ -30,6 +31,7 @@ const campaignDraftSchema = z.object({
   youtubeUrls: z.array(z.string().url()).optional(),
   media: z.array(z.object({
     mediaUrl: z.string().url(),
+    previewUrl: z.string().url().optional().nullable(),
     type: z.enum(["image", "video"]),
     isPrimary: z.boolean().default(false),
     orderIndex: z.number().int().min(0),
@@ -113,6 +115,23 @@ export async function POST(req: NextRequest) {
       });
 
       if (validatedData.media && validatedData.media.length > 0) {
+        const nextMediaUrls = new Set(
+          validatedData.media
+            .flatMap((item) => [item.mediaUrl, item.previewUrl])
+            .filter(Boolean),
+        );
+        const existingMedia = await db.campaignMedia.findMany({
+          where: { campaignId: campaign.id },
+          select: { mediaUrl: true, previewUrl: true },
+        });
+        const removedMedia = existingMedia.filter(
+          (item) =>
+            !nextMediaUrls.has(item.mediaUrl) &&
+            (!item.previewUrl || !nextMediaUrls.has(item.previewUrl)),
+        );
+
+        await deleteStorageObjectsForMedia(removedMedia);
+
         await db.campaignMedia.deleteMany({ where: { campaignId: campaign.id } });
         await Promise.all(
           validatedData.media.map((item) =>
@@ -120,6 +139,7 @@ export async function POST(req: NextRequest) {
               data: {
                 campaignId: campaign.id,
                 mediaUrl: item.mediaUrl,
+                previewUrl: item.previewUrl || null,
                 type: item.type,
                 isPrimary: item.isPrimary,
                 orderIndex: item.orderIndex,
@@ -161,6 +181,7 @@ export async function POST(req: NextRequest) {
               data: {
                 campaignId: campaign.id,
                 mediaUrl: item.mediaUrl,
+                previewUrl: item.previewUrl || null,
                 type: item.type,
                 isPrimary: item.isPrimary,
                 orderIndex: item.orderIndex,

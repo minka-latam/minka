@@ -71,6 +71,7 @@ export async function GET(req: NextRequest) {
           },
           select: {
             mediaUrl: true,
+            previewUrl: true,
           },
           take: 1,
         },
@@ -120,7 +121,10 @@ export async function GET(req: NextRequest) {
         organizerName: campaign.organizer.name,
         organizerEmail: campaign.organizer.email,
         organizerId: campaign.organizer.id,
-        imageUrl: campaign.media[0]?.mediaUrl || null,
+        imageUrl:
+          campaign.media[0]?.previewUrl ||
+          campaign.media[0]?.mediaUrl ||
+          null,
         ...financialBreakdown,
       };
     });

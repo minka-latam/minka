@@ -962,7 +962,10 @@ export function DonatePageContent({
 
   const campaignImage =
     campaign?.media?.find((m: any) => m.is_primary)
+      ?.preview_url ||
+    campaign?.media?.find((m: any) => m.is_primary)
       ?.media_url ||
+    campaign?.media?.[0]?.preview_url ||
     campaign?.media?.[0]?.media_url ||
     '/placeholder.svg'
 
