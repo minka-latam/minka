@@ -5,7 +5,9 @@ export const STORAGE_BUCKET =
 
 export const STORAGE_PREFIXES = {
   campaignImages: "campaign-images",
+  campaignUpdates: "campaign-updates",
   campaignVideos: "campaign-videos",
   campaignDocuments: "campaign-documents",
+  verificationDocuments: "verification-documents",
   profilePictures: "profile-pictures",
 } as const;

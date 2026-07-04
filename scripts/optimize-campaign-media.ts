@@ -10,6 +10,7 @@ type Args = {
   write: boolean;
   limit: number;
   campaignId?: string;
+  campaignStatus: "active" | "all";
 };
 
 type OptimizedVariant = {
@@ -30,6 +31,7 @@ function parseArgs(): Args {
   const parsed: Args = {
     write: false,
     limit: 25,
+    campaignStatus: "active",
   };
 
   for (let i = 0; i < args.length; i += 1) {
@@ -62,6 +64,25 @@ function parseArgs(): Args {
       continue;
     }
 
+    if (arg === "--campaign-status") {
+      const value = args[i + 1];
+      if (value !== "active" && value !== "all") {
+        throw new Error("--campaign-status must be active or all");
+      }
+      parsed.campaignStatus = value;
+      i += 1;
+      continue;
+    }
+
+    if (arg.startsWith("--campaign-status=")) {
+      const value = arg.slice("--campaign-status=".length);
+      if (value !== "active" && value !== "all") {
+        throw new Error("--campaign-status must be active or all");
+      }
+      parsed.campaignStatus = value;
+      continue;
+    }
+
     if (arg === "--help" || arg === "-h") {
       printHelp();
       process.exit(0);
@@ -83,11 +104,13 @@ Usage:
   npm run storage:optimize-campaign-media
   npm run storage:optimize-campaign-media -- --write --limit 10
   npm run storage:optimize-campaign-media -- --campaign-id <uuid> --write
+  npm run storage:optimize-campaign-media -- --campaign-status all --write
 
 Options:
   --write                 Upload optimized variants and update campaign_media.
   --limit <number>        Max media records to process. Defaults to 25.
   --campaign-id <uuid>    Restrict optimization to one campaign.
+  --campaign-status        active or all. Defaults to active.
 `);
 }
 
@@ -188,9 +211,13 @@ async function main() {
       type: "image",
       status: "active",
       ...(args.campaignId ? { campaignId: args.campaignId } : {}),
-      campaign: {
-        campaignStatus: "active",
-      },
+      ...(args.campaignStatus === "active"
+        ? {
+            campaign: {
+              campaignStatus: "active",
+            },
+          }
+        : {}),
     },
     select: {
       id: true,

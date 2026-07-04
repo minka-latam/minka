@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
-import { uploadMedia } from "@/lib/supabase/upload-media";
+import { uploadMedia, type UploadMediaOptions } from "@/lib/supabase/upload-media";
 
 interface UploadResponse {
   url: string;
@@ -11,7 +11,7 @@ interface UploadResponse {
 
 type ProgressCallback = (progress: number) => void;
 
-export function useUpload() {
+export function useUpload(defaultUploadOptions: UploadMediaOptions = {}) {
   const [isUploading, setIsUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [uploadedUrls, setUploadedUrls] = useState<string[]>([]);
@@ -19,7 +19,8 @@ export function useUpload() {
 
   const uploadFile = async (
     file: File,
-    progressCallback?: ProgressCallback
+    progressCallback?: ProgressCallback,
+    uploadOptions: UploadMediaOptions = {},
   ): Promise<UploadResponse> => {
     setIsUploading(true);
     setProgress(0);
@@ -37,7 +38,10 @@ export function useUpload() {
         }, 300);
 
         // Upload file to Supabase storage
-        const result = await uploadMedia(file);
+        const result = await uploadMedia(file, {
+          ...defaultUploadOptions,
+          ...uploadOptions,
+        });
 
         // Clear the interval and set progress to 100
         clearInterval(interval);
@@ -52,7 +56,10 @@ export function useUpload() {
         return result;
       } else {
         // Upload without progress tracking
-        const result = await uploadMedia(file);
+        const result = await uploadMedia(file, {
+          ...defaultUploadOptions,
+          ...uploadOptions,
+        });
 
         // Add to uploaded URLs list
         if (result.success) {
@@ -106,7 +113,8 @@ export function useUpload() {
   // Upload multiple files and return all media responses
   const uploadFiles = async (
     files: File[],
-    progressCallback?: ProgressCallback
+    progressCallback?: ProgressCallback,
+    uploadOptions: UploadMediaOptions = {},
   ): Promise<UploadResponse[]> => {
     if (!files.length) return [];
 
@@ -115,7 +123,7 @@ export function useUpload() {
 
     try {
       for (const file of files) {
-        const result = await uploadFile(file, progressCallback);
+        const result = await uploadFile(file, progressCallback, uploadOptions);
         if (result.success) {
           uploadedMedia.push(result);
         }

@@ -24,6 +24,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { ImageEditor } from "@/components/views/create-campaign/ImageEditor";
 import { InlineSpinner } from "@/components/ui/inline-spinner";
 import { useUpload } from "@/hooks/use-upload";
+import { STORAGE_PREFIXES } from "@/lib/storage/config";
 import {
   Select,
   SelectContent,
@@ -59,7 +60,12 @@ export function CampaignVerificationView({
   const { toast } = useToast();
   const {
     uploadFile: hookUploadFile,
-  } = useUpload();
+  } = useUpload({
+    folder: STORAGE_PREFIXES.verificationDocuments,
+    imageMode: "single",
+    singleImageMaxDimension: 1400,
+    singleImageTargetBytes: 350 * 1024,
+  });
 
   // State for campaigns that can be verified
   const [unverifiedCampaigns, setUnverifiedCampaigns] = useState<Campaign[]>(

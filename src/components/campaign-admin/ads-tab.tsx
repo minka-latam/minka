@@ -24,8 +24,8 @@ import {
   AlertDialogCancel,
   AlertDialogAction,
 } from "@/components/ui/alert-dialog";
-import { createBrowserClient } from "@supabase/ssr";
-import { STORAGE_BUCKET, STORAGE_PREFIXES } from "@/lib/storage/config";
+import { STORAGE_PREFIXES } from "@/lib/storage/config";
+import { uploadMedia } from "@/lib/supabase/upload-media";
 import {
   getSingleImageDropFile,
   validateCampaignImageFile,
@@ -316,39 +316,20 @@ export function AdsTab({ campaign }: AdsTabProps) {
         type: "image/jpeg",
       });
 
-      // Upload to Supabase Storage
-      const supabase = createBrowserClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      );
-      const fileExt = "jpg";
-      const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
-      const filePath = `${STORAGE_PREFIXES.campaignImages}/${fileName}`;
-
-      const { data, error } = await supabase.storage
-        .from(STORAGE_BUCKET)
-        .upload(filePath, file, {
-          cacheControl: "3600",
-          upsert: false,
-        });
-
-      if (error) {
-        console.error("Supabase upload error:", error);
-        throw error;
-      }
-
-      // Get the public URL
-      const { data: urlData } = supabase.storage
-        .from(STORAGE_BUCKET)
-        .getPublicUrl(filePath);
+      const result = await uploadMedia(file, {
+        folder: STORAGE_PREFIXES.campaignUpdates,
+        imageMode: "single",
+        singleImageMaxDimension: 1200,
+        singleImageTargetBytes: 250 * 1024,
+      });
 
       // Store the URL in formData state to ensure it's tracked
       setFormData({
         ...formData,
-        imageUrl: urlData.publicUrl,
+        imageUrl: result.url,
       });
 
-      return urlData.publicUrl;
+      return result.url;
     } catch (error) {
       console.error("Error uploading image:", error);
       toast({

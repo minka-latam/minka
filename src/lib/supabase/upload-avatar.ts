@@ -3,14 +3,14 @@ const ACCEPTED_IMAGE_TYPES = [
   "image/jpeg",
   "image/jpg",
   "image/png",
-  "image/gif",
+  "image/webp",
 ];
 
 export async function uploadAvatar(file: File, _userId: string) {
   // Validate file before upload
   if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
     throw new Error(
-      "Invalid file type. Please upload a JPEG, PNG or GIF image."
+      "Invalid file type. Please upload a JPEG, PNG or WebP image."
     );
   }
 

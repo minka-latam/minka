@@ -1,15 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import sharp from "sharp";
 
 import { getAuthSession } from "@/lib/auth";
 import { STORAGE_BUCKET, STORAGE_PREFIXES } from "@/lib/storage/config";
 
 const MAX_FILE_SIZE = 2 * 1024 * 1024;
+const LONG_CACHE_CONTROL = "31536000";
 const ACCEPTED_IMAGE_TYPES = new Set([
   "image/jpeg",
   "image/jpg",
   "image/png",
-  "image/gif",
+  "image/webp",
 ]);
 
 function getStorageClient() {
@@ -25,23 +27,6 @@ function getStorageClient() {
       autoRefreshToken: false,
     },
   });
-}
-
-function extensionFromFile(file: File) {
-  const fromName = file.name.split(".").pop()?.toLowerCase();
-  if (fromName && /^[a-z0-9]+$/.test(fromName)) return fromName;
-
-  switch (file.type) {
-    case "image/jpeg":
-    case "image/jpg":
-      return "jpg";
-    case "image/png":
-      return "png";
-    case "image/gif":
-      return "gif";
-    default:
-      return "jpg";
-  }
 }
 
 export async function POST(request: NextRequest) {
@@ -64,7 +49,7 @@ export async function POST(request: NextRequest) {
 
     if (!ACCEPTED_IMAGE_TYPES.has(file.type)) {
       return NextResponse.json(
-        { error: "Formato inválido. Sube una imagen JPG, PNG o GIF." },
+        { error: "Formato inválido. Sube una imagen JPG, PNG o WebP." },
         { status: 400 }
       );
     }
@@ -77,13 +62,27 @@ export async function POST(request: NextRequest) {
     }
 
     const supabase = getStorageClient();
-    const filePath = `${STORAGE_PREFIXES.profilePictures}/${session.user.id}-${Date.now()}-${crypto.randomUUID()}.${extensionFromFile(file)}`;
+    const inputBuffer = Buffer.from(await file.arrayBuffer());
+    const optimizedBuffer = await sharp(inputBuffer, { failOn: "none" })
+      .rotate()
+      .resize({
+        width: 512,
+        height: 512,
+        fit: "cover",
+        withoutEnlargement: true,
+      })
+      .jpeg({
+        quality: 78,
+        mozjpeg: true,
+      })
+      .toBuffer();
+    const filePath = `${STORAGE_PREFIXES.profilePictures}/${session.user.id}-${Date.now()}-${crypto.randomUUID()}.jpg`;
 
     const { error } = await supabase.storage
       .from(STORAGE_BUCKET)
-      .upload(filePath, file, {
-        cacheControl: "3600",
-        contentType: file.type,
+      .upload(filePath, optimizedBuffer, {
+        cacheControl: LONG_CACHE_CONTROL,
+        contentType: "image/jpeg",
         upsert: false,
       });
 

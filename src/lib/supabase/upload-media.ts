@@ -27,13 +27,25 @@ export interface UploadResponse {
   success: boolean;
 }
 
+export type UploadMediaOptions = {
+  folder?: string;
+  imageMode?: "campaign" | "single";
+  singleImageMaxDimension?: number;
+  singleImageTargetBytes?: number;
+};
+
 type ImageVariant = {
   blob: Blob;
   suffix: "display" | "preview";
 };
 
 function isOptimizableImage(file: File) {
-  return file.type === "image/jpeg" || file.type === "image/jpg" || file.type === "image/png";
+  return (
+    file.type === "image/jpeg" ||
+    file.type === "image/jpg" ||
+    file.type === "image/png" ||
+    file.type === "image/webp"
+  );
 }
 
 function loadImageFromFile(file: File) {
@@ -122,7 +134,19 @@ async function createCampaignImageVariants(file: File): Promise<ImageVariant[]> 
   ];
 }
 
-export async function uploadMedia(file: File): Promise<UploadResponse> {
+async function createSingleImageVariant(
+  file: File,
+  maxDimension = 1200,
+  targetBytes = 250 * 1024,
+) {
+  const image = await loadImageFromFile(file);
+  return renderImageVariant(image, maxDimension, targetBytes);
+}
+
+export async function uploadMedia(
+  file: File,
+  options: UploadMediaOptions = {},
+): Promise<UploadResponse> {
   // Validate file before upload
   if (!ACCEPTED_FILE_TYPES.includes(file.type)) {
     throw new Error(
@@ -163,16 +187,49 @@ export async function uploadMedia(file: File): Promise<UploadResponse> {
     }
 
     // Determine folder based on file type
-    let folder: string = STORAGE_PREFIXES.campaignImages;
+    let folder: string = options.folder || STORAGE_PREFIXES.campaignImages;
     if (file.type === "application/pdf") {
-      folder = STORAGE_PREFIXES.campaignDocuments;
+      folder = options.folder || STORAGE_PREFIXES.campaignDocuments;
     } else if (file.type.startsWith("application/")) {
-      folder = STORAGE_PREFIXES.campaignDocuments;
+      folder = options.folder || STORAGE_PREFIXES.campaignDocuments;
     }
 
     if (isImage) {
-      const variants = await createCampaignImageVariants(file);
+      const imageMode = options.imageMode || "campaign";
       const baseName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}`;
+
+      if (imageMode === "single") {
+        const blob = await createSingleImageVariant(
+          file,
+          options.singleImageMaxDimension,
+          options.singleImageTargetBytes,
+        );
+        const filePath = `${folder}/${baseName}.jpg`;
+        const { error: uploadError } = await supabase.storage
+          .from(STORAGE_BUCKET)
+          .upload(filePath, blob, {
+            cacheControl: LONG_CACHE_CONTROL,
+            contentType: "image/jpeg",
+            upsert: false,
+          });
+
+        if (uploadError) {
+          console.error("Upload error:", uploadError);
+          throw uploadError;
+        }
+
+        const {
+          data: { publicUrl },
+        } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(filePath);
+
+        return {
+          url: publicUrl,
+          displayUrl: publicUrl,
+          success: true,
+        };
+      }
+
+      const variants = await createCampaignImageVariants(file);
       const uploadedUrls: Partial<Record<ImageVariant["suffix"], string>> = {};
 
       for (const variant of variants) {
