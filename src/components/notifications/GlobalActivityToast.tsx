@@ -37,11 +37,7 @@ export function GlobalActivityToast() {
       if (document.visibilityState === "hidden") return;
 
       try {
-        const response = await fetch("/api/public/activity", {
-          headers: {
-            "Cache-Control": "no-cache",
-          },
-        });
+        const response = await fetch("/api/public/activity");
 
         if (!response.ok) return;
 
@@ -76,7 +72,7 @@ export function GlobalActivityToast() {
     };
 
     void fetchActivity();
-    const intervalId = window.setInterval(fetchActivity, 20000);
+    const intervalId = window.setInterval(fetchActivity, 300000);
 
     return () => {
       isMounted = false;

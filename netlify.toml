@@ -5,4 +5,4 @@
   directory = "netlify/functions"
 
 [functions."bisa-reconcile"]
-  schedule = "* * * * *"
+  schedule = "*/5 * * * *"

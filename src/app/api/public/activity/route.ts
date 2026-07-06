@@ -125,7 +125,14 @@ export async function GET() {
       )
       .slice(0, 10);
 
-    return NextResponse.json({ activities });
+    return NextResponse.json(
+      { activities },
+      {
+        headers: {
+          "Cache-Control": "public, max-age=30, s-maxage=60, stale-while-revalidate=120",
+        },
+      },
+    );
   } catch (error) {
     console.error("Error fetching public activity:", error);
     return NextResponse.json(

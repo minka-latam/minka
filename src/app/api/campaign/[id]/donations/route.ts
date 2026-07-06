@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { PaymentStatus } from "@prisma/client";
+import { CampaignStatus, PaymentStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { findPublicOrOwnedCampaignById } from "@/lib/campaigns/visibility";
 
@@ -117,16 +117,28 @@ export async function GET(
     // Calculate the total pages
     const totalPages = Math.ceil(totalCount / limit);
 
-    return NextResponse.json({
-      data: formattedDonations,
-      meta: {
-        currentPage,
-        totalPages,
-        totalCount,
-        hasNextPage: currentPage < totalPages,
-        hasPrevPage: currentPage > 1,
+    const cacheControl =
+      campaign.campaignStatus === CampaignStatus.active
+        ? "public, max-age=30, s-maxage=60, stale-while-revalidate=120"
+        : "private, no-store";
+
+    return NextResponse.json(
+      {
+        data: formattedDonations,
+        meta: {
+          currentPage,
+          totalPages,
+          totalCount,
+          hasNextPage: currentPage < totalPages,
+          hasPrevPage: currentPage > 1,
+        },
       },
-    });
+      {
+        headers: {
+          "Cache-Control": cacheControl,
+        },
+      },
+    );
   } catch (error) {
     console.error("Error fetching campaign donations:", error);
     return NextResponse.json(

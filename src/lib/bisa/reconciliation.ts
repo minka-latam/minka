@@ -8,12 +8,22 @@ export async function reconcilePendingBisaQrDonations({
   limit?: number;
 } = {}) {
   const safeLimit = Math.min(Math.max(limit, 1), 50);
+  const now = new Date();
+  const expirationGraceCutoff = new Date(now.getTime() - 15 * 60 * 1000);
+  const recentNoExpirationCutoff = new Date(now.getTime() - 24 * 60 * 60 * 1000);
   const donations = await prisma.donation.findMany({
     where: {
       paymentStatus: "pending",
       paymentMethod: "qr",
       paymentProvider: "bisa",
       bisaAlias: { not: null },
+      OR: [
+        { bisaQrExpiresAt: { gte: expirationGraceCutoff } },
+        {
+          bisaQrExpiresAt: null,
+          createdAt: { gte: recentNoExpirationCutoff },
+        },
+      ],
     },
     orderBy: { createdAt: "asc" },
     take: safeLimit,

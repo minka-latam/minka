@@ -511,11 +511,6 @@ export default function CampaignClientPage({
       try {
         const response = await fetch(
           `/api/campaign/${id}/donations?limit=20&prioritizeNamed=true`,
-          {
-            headers: {
-              'Cache-Control': 'no-cache',
-            },
-          },
         )
 
         if (!response.ok) return
@@ -545,14 +540,9 @@ export default function CampaignClientPage({
     }
 
     void fetchLatestDonors()
-    const intervalId = window.setInterval(
-      fetchLatestDonors,
-      20000,
-    )
 
     return () => {
       isMounted = false
-      window.clearInterval(intervalId)
     }
   }, [id])
 
