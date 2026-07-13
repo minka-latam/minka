@@ -40,6 +40,4 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 build-output.txt
-
-# AI
-*.md
+.agents
