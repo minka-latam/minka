@@ -5,6 +5,8 @@ import {
   requireAdminProfile,
 } from "@/lib/admin-auth";
 import { prisma } from "@/lib/prisma";
+import { createSupabaseStorageAdminClient } from "@/lib/storage/admin-client";
+import { getVerificationDocumentLocation } from "@/lib/storage/verification-documents";
 
 type ZipEntry = {
   name: string;
@@ -40,8 +42,14 @@ function getDosDateTime(date = new Date()) {
   return { dosDate, dosTime };
 }
 
-function extensionFromUrl(url: string, contentType: string | null) {
-  const pathname = new URL(url).pathname.toLowerCase();
+function extensionFromValue(value: string, contentType: string | null) {
+  let pathname = value.toLowerCase();
+  try {
+    pathname = new URL(value).pathname.toLowerCase();
+  } catch {
+    pathname = value.toLowerCase();
+  }
+
   const match = pathname.match(/\.(pdf|jpg|jpeg|png|webp|heic|doc|docx)$/);
   if (match) return match[0];
 
@@ -116,14 +124,36 @@ function createZip(entries: ZipEntry[]) {
   return Buffer.concat([...localParts, centralDirectory, endRecord]);
 }
 
-async function fetchZipEntry(url: string, nameBase: string) {
-  const response = await fetch(url);
+async function fetchZipEntry(value: string, nameBase: string) {
+  const location = getVerificationDocumentLocation(value);
+
+  if (location?.isPrivate) {
+    const supabase = createSupabaseStorageAdminClient();
+    const { data, error } = await supabase.storage
+      .from(location.bucket)
+      .download(location.path);
+
+    if (error || !data) {
+      throw new Error(`Failed to download private document: ${value}`);
+    }
+
+    const dataBuffer = Buffer.from(await data.arrayBuffer());
+    const extension = extensionFromValue(value, data.type || null);
+
+    return {
+      name: `${nameBase}${extension}`,
+      data: dataBuffer,
+      crc: crc32(dataBuffer),
+    };
+  }
+
+  const response = await fetch(value);
   if (!response.ok) {
-    throw new Error(`Failed to fetch document: ${url}`);
+    throw new Error(`Failed to fetch document: ${value}`);
   }
 
   const data = Buffer.from(await response.arrayBuffer());
-  const extension = extensionFromUrl(url, response.headers.get("content-type"));
+  const extension = extensionFromValue(value, response.headers.get("content-type"));
 
   return {
     name: `${nameBase}${extension}`,

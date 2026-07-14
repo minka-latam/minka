@@ -23,8 +23,6 @@ import { useRouter } from "next/navigation";
 import { useToast } from "@/components/ui/use-toast";
 import { ImageEditor } from "@/components/views/create-campaign/ImageEditor";
 import { InlineSpinner } from "@/components/ui/inline-spinner";
-import { useUpload } from "@/hooks/use-upload";
-import { STORAGE_PREFIXES } from "@/lib/storage/config";
 import {
   Select,
   SelectContent,
@@ -53,19 +51,18 @@ interface CampaignVerificationViewProps {
   campaignId?: string;
 }
 
+type VerificationDocumentUploadResponse = {
+  success: boolean;
+  url: string;
+  reference?: string;
+  error?: string;
+};
+
 export function CampaignVerificationView({
   campaignId: initialCampaignId,
 }: CampaignVerificationViewProps = {}) {
   const router = useRouter();
   const { toast } = useToast();
-  const {
-    uploadFile: hookUploadFile,
-  } = useUpload({
-    folder: STORAGE_PREFIXES.verificationDocuments,
-    imageMode: "single",
-    singleImageMaxDimension: 1400,
-    singleImageTargetBytes: 350 * 1024,
-  });
 
   // State for campaigns that can be verified
   const [unverifiedCampaigns, setUnverifiedCampaigns] = useState<Campaign[]>(
@@ -533,6 +530,31 @@ export function CampaignVerificationView({
     return file.type.startsWith("image/") ? "image" : "document";
   };
 
+  const uploadVerificationDocument = async (
+    file: File,
+  ): Promise<VerificationDocumentUploadResponse> => {
+    if (!selectedCampaignId) {
+      throw new Error("No se encontró la campaña para subir el documento.");
+    }
+
+    const formData = new FormData();
+    formData.append("campaignId", selectedCampaignId);
+    formData.append("file", file);
+
+    const response = await fetch("/api/campaign/verification/documents", {
+      method: "POST",
+      body: formData,
+      credentials: "include",
+    });
+    const data = await response.json().catch(() => null);
+
+    if (!response.ok) {
+      throw new Error(data?.error || "No se pudo subir el documento.");
+    }
+
+    return data;
+  };
+
   // Update handleIdDocumentUpload to handle front and back sides
   const handleIdDocumentUpload = async (
     event: React.ChangeEvent<HTMLInputElement>,
@@ -560,7 +582,7 @@ export function CampaignVerificationView({
         }
 
         // Upload ID document using the hook
-        const result = await hookUploadFile(file);
+        const result = await uploadVerificationDocument(file);
         if (result.success) {
           if (side === "front") {
             setIdDocumentFrontUrl(result.url);
@@ -612,7 +634,7 @@ export function CampaignVerificationView({
         setIdDocumentBackFile(file);
       }
 
-      const result = await hookUploadFile(file);
+      const result = await uploadVerificationDocument(file);
 
       if (result.success) {
         if (side === "front") {
@@ -684,7 +706,7 @@ export function CampaignVerificationView({
 
         // Upload all non-image files one by one to show progress
         for (const file of nonImageFiles) {
-          const result = await hookUploadFile(file);
+          const result = await uploadVerificationDocument(file);
 
           if (!result.success) {
             throw new Error(`Failed to upload ${file.name}`);
@@ -771,7 +793,7 @@ export function CampaignVerificationView({
       // Start upload process
       setIsSubmitting(true);
 
-      const result = await hookUploadFile(file);
+      const result = await uploadVerificationDocument(file);
 
       if (result.success) {
         setSupportingDocsUrls((prev) => [...prev, result.url]);
@@ -906,20 +928,6 @@ export function CampaignVerificationView({
         title: "Documentos incompletos",
         description:
           "Por favor, sube ambos lados de tu documento de identidad.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Additional validation to ensure URLs are valid
-    if (
-      !idDocumentFrontUrl.startsWith("http") ||
-      !idDocumentBackUrl.startsWith("http")
-    ) {
-      toast({
-        title: "Error en documentos",
-        description:
-          "Los documentos no se han subido correctamente. Por favor, inténtalo de nuevo.",
         variant: "destructive",
       });
       return;

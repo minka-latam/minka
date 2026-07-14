@@ -18,6 +18,7 @@
     "prisma:seed": "tsx prisma/seed.ts",
     "storage:cleanup-campaign-media": "tsx scripts/cleanup-orphan-campaign-media.ts",
     "storage:cleanup-campaign-documents": "tsx scripts/cleanup-orphan-campaign-media.ts --prefix campaign-documents",
+    "storage:migrate-verification-documents": "tsx scripts/migrate-verification-documents-to-private.ts",
     "storage:optimize-campaign-media": "tsx scripts/optimize-campaign-media.ts",
     "storage:optimize-referenced-images": "tsx scripts/optimize-referenced-storage-images.ts"
   },

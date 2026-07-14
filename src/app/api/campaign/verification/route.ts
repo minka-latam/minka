@@ -4,13 +4,21 @@ import { cookies } from "next/headers";
 import { prisma as db } from "@/lib/prisma";
 import { z } from "zod";
 import { notifyVerificationRequestSubmitted } from "@/lib/verification-request-email";
+import { isValidVerificationDocumentReference } from "@/lib/storage/verification-documents";
 
 // Schema for campaign verification request
+const documentReferenceSchema = z
+  .string()
+  .min(1)
+  .refine(isValidVerificationDocumentReference, {
+    message: "Invalid verification document reference",
+  });
+
 const verificationRequestSchema = z.object({
   campaignId: z.string().uuid(),
-  idDocumentUrl: z.string().url().optional(),
-  idDocumentsUrls: z.array(z.string().url()).optional(),
-  supportingDocsUrls: z.array(z.string().url()).optional(),
+  idDocumentUrl: documentReferenceSchema.optional(),
+  idDocumentsUrls: z.array(documentReferenceSchema).optional(),
+  supportingDocsUrls: z.array(documentReferenceSchema).optional(),
   campaignStory: z.string().min(10).max(5000).optional(),
   referenceContactName: z.string().min(3).max(100).optional(),
   referenceContactEmail: z.string().email().optional(),
@@ -19,7 +27,7 @@ const verificationRequestSchema = z.object({
 
 const appendDocumentsSchema = z.object({
   campaignId: z.string().uuid(),
-  supportingDocsUrls: z.array(z.string().url()).min(1),
+  supportingDocsUrls: z.array(documentReferenceSchema).min(1),
 });
 
 // Route handler for POST request to submit verification

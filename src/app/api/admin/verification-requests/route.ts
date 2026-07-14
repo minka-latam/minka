@@ -2,6 +2,29 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { prisma as db } from "@/lib/prisma";
+import { createSupabaseStorageAdminClient } from "@/lib/storage/admin-client";
+import { getVerificationDocumentLocation } from "@/lib/storage/verification-documents";
+
+const SIGNED_URL_EXPIRES_IN_SECONDS = 10 * 60;
+
+async function getAdminDocumentUrl(value: string | null | undefined) {
+  if (!value) return value;
+
+  const location = getVerificationDocumentLocation(value);
+  if (!location?.isPrivate) return value;
+
+  const supabase = createSupabaseStorageAdminClient();
+  const { data, error } = await supabase.storage
+    .from(location.bucket)
+    .createSignedUrl(location.path, SIGNED_URL_EXPIRES_IN_SECONDS);
+
+  if (error) {
+    console.error("Could not create signed verification document URL:", error);
+    return null;
+  }
+
+  return data.signedUrl;
+}
 
 export async function GET(req: NextRequest) {
   try {
@@ -112,7 +135,7 @@ export async function GET(req: NextRequest) {
     });
 
     // Format the response data
-    const formattedCampaigns = campaigns.map((campaign) => {
+    const formattedCampaigns = await Promise.all(campaigns.map(async (campaign) => {
       // Get the primary image or fallback to default
       const imageUrl =
         campaign.media[0]?.previewUrl ||
@@ -129,6 +152,15 @@ export async function GET(req: NextRequest) {
         status = "unverified"; // No verification request
       }
 
+      const idDocumentUrl = await getAdminDocumentUrl(
+        campaign.verificationRequests?.idDocumentUrl,
+      );
+      const supportingDocsUrls = await Promise.all(
+        (campaign.verificationRequests?.supportingDocsUrls || []).map(
+          getAdminDocumentUrl,
+        ),
+      );
+
       return {
         id: campaign.id,
         campaignTitle: campaign.title,
@@ -142,8 +174,10 @@ export async function GET(req: NextRequest) {
           null,
         status: status,
         notes: campaign.verificationRequests?.notes,
-        idDocumentUrl: campaign.verificationRequests?.idDocumentUrl,
-        supportingDocsUrls: campaign.verificationRequests?.supportingDocsUrls,
+        idDocumentUrl,
+        supportingDocsUrls: supportingDocsUrls.filter(
+          (url): url is string => Boolean(url),
+        ),
         campaignStory:
           campaign.verificationRequests?.campaignStory || campaign.description,
         referenceContactName:
@@ -154,7 +188,7 @@ export async function GET(req: NextRequest) {
           campaign.verificationRequests?.referenceContactPhone,
         campaignImage: imageUrl,
       };
-    });
+    }));
 
     return NextResponse.json({
       campaigns: formattedCampaigns,
