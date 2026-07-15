@@ -22,6 +22,7 @@ import { AdsTab } from "@/components/campaign-admin/ads-tab";
 import { CommentsTab } from "@/components/campaign-admin/comments-tab";
 import { DonationsTab } from "@/components/campaign-admin/donations-tab";
 import { TransferFundsTab } from "@/components/campaign-admin/transfer-funds-tab";
+import { ConcludeCampaignModal } from "@/components/campaign-admin/conclude-campaign-modal";
 import { ImageEditor } from "@/components/views/create-campaign/ImageEditor";
 import {
   Popover,
@@ -93,6 +94,8 @@ export default function CampaignDetailPage() {
   const [newYoutubeUrl, setNewYoutubeUrl] = useState("");
   const [isPublishing, setIsPublishing] = useState(false);
   const [showPublishDialog, setShowPublishDialog] = useState(false);
+  const [showConcludeCampaignModal, setShowConcludeCampaignModal] =
+    useState(false);
   const [legalEntities, setLegalEntities] = useState<LegalEntity[]>([]);
   const [legalEntitiesSearch, setLegalEntitiesSearch] = useState("");
   const [isLoadingLegalEntities, setIsLoadingLegalEntities] = useState(false);
@@ -738,21 +741,17 @@ export default function CampaignDetailPage() {
     }
   };
 
-  const handleDeleteCampaign = async () => {
-    const confirmed = window.confirm(
-      "¿Cancelar esta campaña? Ya no será pública ni aceptará donaciones, pero sus registros se conservarán.",
-    );
-    if (!confirmed) return;
-
+  const handleConcludeCampaign = async () => {
     const result = await cancelCampaign(String(params.id), {
-      successTitle: "Campaña cancelada",
+      successTitle: "Campaña concluida",
       successDescription:
-        "La campaña ya no es pública y sus registros se conservaron.",
-      errorTitle: "Error",
-      errorDescription: "No se pudo cancelar la campaña.",
+        "La campaña ya no es pública, no recibirá donaciones y sus registros se conservaron.",
+      errorTitle: "No se pudo concluir la campaña",
+      errorDescription: "No se pudo concluir la campaña.",
     });
 
     if (result.success) {
+      setShowConcludeCampaignModal(false);
       router.push("/dashboard/campaigns");
     }
   };
@@ -1045,13 +1044,13 @@ export default function CampaignDetailPage() {
                 {canDeleteCampaign && (
                   <Button
                     type="button"
-                    onClick={handleDeleteCampaign}
+                    onClick={() => setShowConcludeCampaignModal(true)}
                     disabled={isDeleting || isPublishing}
                     variant="outline"
                     className="h-8 px-4 rounded-full border-red-600 text-red-600 hover:bg-red-50"
                   >
                     <Trash2 className="w-4 h-4 mr-2" />
-                    {isDeleting ? "Cancelando..." : "Cancelar"}
+                    {isDeleting ? "Terminando..." : "Terminarla"}
                   </Button>
                 )}
               </div>
@@ -2358,6 +2357,13 @@ export default function CampaignDetailPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <ConcludeCampaignModal
+        open={showConcludeCampaignModal}
+        isLoading={isDeleting}
+        onOpenChange={setShowConcludeCampaignModal}
+        onConfirm={handleConcludeCampaign}
+      />
     </div>
   );
 }

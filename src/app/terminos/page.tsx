@@ -1,148 +1,103 @@
-import { Header } from "@/components/views/landing-page/Header";
-import { Footer } from "@/components/views/landing-page/Footer";
-import type { Metadata } from "next";
+import { LegalDocumentContent } from '@/components/legal/LegalDocumentContent'
+import { Footer } from '@/components/views/landing-page/Footer'
+import { Header } from '@/components/views/landing-page/Header'
+import { legalDocuments } from '@/lib/legal/documents'
+import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: "Términos y Condiciones | MINKA",
-  description: "Términos y condiciones de uso de la plataforma MINKA.",
-};
+  title: 'Términos y Condiciones | MINKA',
+  description:
+    'Términos y condiciones, políticas de privacidad, desembolsos y verificación de campañas de MINKA.',
+}
+
+const documentDescriptions: Record<string, string> = {
+  terms:
+    'Condiciones generales de uso de la plataforma, campañas, donaciones y obligaciones de usuarios.',
+  privacy:
+    'Tratamiento de datos personales, privacidad, conservación de información y derechos de los usuarios.',
+  disbursements:
+    'Reglas aplicables a solicitudes, revisión y entrega de fondos recaudados.',
+  verification:
+    'Criterios, documentación y proceso de revisión de campañas en MINKA.',
+}
 
 export default function TerminosPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-r from-white to-[#ECF1DC] flex flex-col">
+    <div className='flex min-h-screen flex-col bg-gradient-to-r from-white to-[#ECF1DC]'>
       <Header />
-      <main className="container mx-auto px-4 py-32 max-w-4xl flex-grow">
-        <h1 className="text-4xl font-bold text-[#333333] mb-8">
-          Términos y Condiciones
-        </h1>
-        <p className="text-gray-500 mb-12">Última actualización: marzo 2026</p>
+      <main className='container mx-auto max-w-7xl flex-grow px-4 py-28 md:py-32'>
+        <div className='mb-10 max-w-4xl'>
+          <p className='mb-3 text-sm font-semibold uppercase tracking-[0.08em] text-[#2c6e49]'>
+            Documentos legales
+          </p>
+          <h1 className='mb-5 text-4xl font-bold leading-tight text-[#333333] md:text-5xl'>
+            Términos y Condiciones de Minka
+          </h1>
+          <p className='text-base leading-7 text-[#5f6673] md:text-lg'>
+            Aquí puedes revisar los documentos públicos que
+            regulan el uso de la plataforma, la privacidad,
+            la verificación de campañas y los desembolsos.
+          </p>
+        </div>
 
-        <section className="space-y-8 text-[#555555]">
-          <div>
-            <h2 className="text-2xl font-semibold text-[#333333] mb-4">
-              1. Aceptación de los términos
-            </h2>
-            <p className="leading-relaxed">
-              Al registrarte y usar MINKA, aceptas estos términos y condiciones
-              en su totalidad. Si no estás de acuerdo con alguna parte de estos
-              términos, no debes usar nuestra plataforma.
+        <div className='grid gap-8 lg:grid-cols-[280px_1fr] lg:items-start'>
+          <aside className='rounded-2xl border border-[#dbe5cf] bg-white/75 p-5 lg:sticky lg:top-24'>
+            <p className='mb-4 text-sm font-semibold text-[#333333]'>
+              En esta página
             </p>
-          </div>
+            <nav className='space-y-2'>
+              {legalDocuments.map((document) => (
+                <a
+                  key={document.id}
+                  href={`#${document.slug}`}
+                  className='block rounded-xl px-3 py-2 text-sm font-medium text-[#2c6e49] transition-colors hover:bg-[#ECF1DC]'
+                >
+                  {document.title}
+                </a>
+              ))}
+            </nav>
+          </aside>
 
-          <div>
-            <h2 className="text-2xl font-semibold text-[#333333] mb-4">
-              2. Descripción del servicio
-            </h2>
-            <p className="leading-relaxed">
-              MINKA es una plataforma de crowdfunding que permite a los usuarios
-              crear campañas de recaudación de fondos y realizar donaciones a
-              causas sociales en Bolivia y Latinoamérica. MINKA actúa como
-              intermediario entre donantes y organizadores de campañas.
-            </p>
-          </div>
+          <section className='space-y-5'>
+            {legalDocuments.map((document, index) => (
+              <details
+                key={document.id}
+                id={document.slug}
+                // open={index === 0}
+                className='group scroll-mt-28 rounded-2xl border border-[#dbe5cf] bg-white/85 p-5 shadow-sm md:p-7'
+              >
+                <summary className='cursor-pointer list-none'>
+                  <div className='flex flex-col gap-4 md:flex-row md:items-start md:justify-between'>
+                    <div className='max-w-[80%]'>
+                      <h2 className='text-2xl font-bold leading-tight text-[#333333]'>
+                        {document.title}
+                      </h2>
+                      {document.updated && (
+                        <p className='mt-2 text-sm font-medium text-[#6b7280]'>
+                          {document.updated}
+                        </p>
+                      )}
+                      <p className='mt-3 max-w-3xl text-sm leading-6 text-[#5f6673]'>
+                        {documentDescriptions[document.id]}
+                      </p>
+                    </div>
+                    <span className='rounded-full border border-[#2c6e49] px-4 py-2 text-sm font-semibold text-[#2c6e49] transition-colors group-open:bg-[#2c6e49] group-open:text-white'>
+                      Ver documento
+                    </span>
+                  </div>
+                </summary>
 
-          <div>
-            <h2 className="text-2xl font-semibold text-[#333333] mb-4">
-              3. Registro de cuenta
-            </h2>
-            <p className="leading-relaxed">
-              Para usar ciertos servicios de MINKA, debes crear una cuenta
-              proporcionando información precisa y actualizada. Eres responsable
-              de mantener la confidencialidad de tu contraseña y de todas las
-              actividades que ocurran bajo tu cuenta.
-            </p>
-          </div>
-
-          <div>
-            <h2 className="text-2xl font-semibold text-[#333333] mb-4">
-              4. Campañas y donaciones
-            </h2>
-            <p className="leading-relaxed">
-              Los organizadores de campañas son responsables de la veracidad de
-              la información publicada. MINKA se reserva el derecho de verificar
-              y suspender campañas que no cumplan con nuestras políticas. Las
-              donaciones realizadas a través de MINKA son procesadas por
-              proveedores de pago seguros y certificados.
-            </p>
-          </div>
-
-          <div>
-            <h2 className="text-2xl font-semibold text-[#333333] mb-4">
-              5. Comisiones y tarifas
-            </h2>
-            <p className="leading-relaxed">
-              MINKA puede cobrar una comisión por las donaciones procesadas a
-              través de la plataforma. Esta comisión se destina a mantener y
-              mejorar los servicios de la plataforma. Los detalles específicos
-              de las comisiones se comunican claramente durante el proceso de
-              donación.
-            </p>
-          </div>
-
-          <div>
-            <h2 className="text-2xl font-semibold text-[#333333] mb-4">
-              6. Conducta del usuario
-            </h2>
-            <p className="leading-relaxed">
-              Los usuarios se comprometen a no usar MINKA para actividades
-              ilegales, fraudulentas o que violen los derechos de terceros. MINKA
-              se reserva el derecho de suspender o eliminar cuentas que violen
-              estos términos.
-            </p>
-          </div>
-
-          <div>
-            <h2 className="text-2xl font-semibold text-[#333333] mb-4">
-              7. Propiedad intelectual
-            </h2>
-            <p className="leading-relaxed">
-              Todo el contenido de MINKA, incluyendo logos, diseños y textos,
-              es propiedad de MINKA y está protegido por las leyes de propiedad
-              intelectual. Los usuarios conservan los derechos sobre el contenido
-              que publican en la plataforma.
-            </p>
-          </div>
-
-          <div>
-            <h2 className="text-2xl font-semibold text-[#333333] mb-4">
-              8. Limitación de responsabilidad
-            </h2>
-            <p className="leading-relaxed">
-              MINKA no se hace responsable por daños indirectos, incidentales o
-              consecuentes que resulten del uso de la plataforma. Nuestra
-              responsabilidad máxima se limita al monto de las comisiones
-              cobradas en los últimos 12 meses.
-            </p>
-          </div>
-
-          <div>
-            <h2 className="text-2xl font-semibold text-[#333333] mb-4">
-              9. Modificaciones
-            </h2>
-            <p className="leading-relaxed">
-              MINKA se reserva el derecho de modificar estos términos en
-              cualquier momento. Los cambios significativos serán notificados
-              a los usuarios por correo electrónico o mediante un aviso en la
-              plataforma.
-            </p>
-          </div>
-
-          <div>
-            <h2 className="text-2xl font-semibold text-[#333333] mb-4">
-              10. Contacto
-            </h2>
-            <p className="leading-relaxed">
-              Si tienes preguntas sobre estos términos y condiciones, puedes
-              contactarnos a través de nuestro{" "}
-              <a href="/help" className="text-[#2c6e49] hover:underline font-medium">
-                centro de ayuda
-              </a>
-              .
-            </p>
-          </div>
-        </section>
+                <div className='mt-8 border-t border-[#e3ead8] pt-2'>
+                  <LegalDocumentContent
+                    document={document}
+                  />
+                </div>
+              </details>
+            ))}
+          </section>
+        </div>
       </main>
       <Footer />
     </div>
-  );
+  )
 }

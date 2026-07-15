@@ -3,16 +3,23 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 
+interface Partner {
+  id: number;
+  name: string;
+  logo: string;
+  href?: string;
+  logoClassName?: string;
+}
+
 export function PartnersSection() {
   const [isMobile, setIsMobile] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  const allies = [
+  const allies: Partner[] = [
     {
       id: 1,
       name: "Banco BISA",
       logo: "/allies/logo bisa fblanco.png",
-      surfaceClassName: "rounded-xl bg-[#2c6e49] px-5 py-4",
     },
     {
       id: 2,
@@ -22,13 +29,8 @@ export function PartnersSection() {
     {
       id: 3,
       name: "Giro54",
-      logo: "/allies/giro54.png",
-    },
-    {
-      id: 4,
-      name: "UNIL HUB",
-      logo: "/allies/unil-hub.png",
-      href: "https://www.unil.ch/",
+      logo: "/allies/giro54-yellow.png",
+      logoClassName: "scale-[0.65]",
     },
     {
       id: 5,
@@ -43,7 +45,8 @@ export function PartnersSection() {
     {
       id: 7,
       name: "Fundacor",
-      logo: "/allies/fundacor.png",
+      logo: "/allies/fundacor-transparent.png",
+      logoClassName: "scale-110",
     },
   ];
 
@@ -102,11 +105,15 @@ export function PartnersSection() {
 
         {/* Desktop view - grid */}
         {!isMobile && (
-          <div className="mx-auto hidden max-w-5xl grid-cols-3 items-center gap-10 lg:grid-cols-4 md:grid">
+          <div className="mx-auto hidden max-w-6xl flex-wrap items-center justify-center gap-x-8 gap-y-10 md:flex">
             {allies.map((ally) => (
               <div
                 key={ally.id}
-                className="group flex items-center justify-center h-24"
+                className={`group flex h-24 max-w-60 items-center justify-center ${
+                  allies.length >= 7
+                    ? "w-[calc(33.333%-1.5rem)] lg:w-[calc(25%-1.5rem)]"
+                    : "w-[calc(33.333%-1.5rem)]"
+                }`}
                 title={ally.href ? `Visitar ${ally.name}` : ally.name}
               >
                 <PartnerLogo ally={ally} />
@@ -156,25 +163,20 @@ function PartnerLogo({
   ally,
   sizes = "(max-width: 768px) 40vw, (max-width: 1024px) 25vw, 20vw",
 }: {
-  ally: {
-    name: string;
-    logo: string;
-    href?: string;
-    surfaceClassName?: string;
-  };
+  ally: Partner;
   sizes?: string;
 }) {
   const content = (
-    <div
-      className={`relative w-full h-full flex items-center justify-center px-4 ${ally.surfaceClassName || ""}`}
-    >
-      <Image
-        src={ally.logo}
-        alt={`Logo de ${ally.name}`}
-        fill
-        className="object-contain partner-logo group-hover:scale-105"
-        sizes={sizes}
-      />
+    <div className="relative flex h-full w-full items-center justify-center px-4">
+      <div className={`relative h-full w-full ${ally.logoClassName || ""}`}>
+        <Image
+          src={ally.logo}
+          alt={`Logo de ${ally.name}`}
+          fill
+          className="partner-logo object-contain"
+          sizes={sizes}
+        />
+      </div>
     </div>
   );
 

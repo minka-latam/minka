@@ -17,7 +17,9 @@ import {
   Info,
 } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/components/ui/use-toast";
 import { useCampaign, CampaignFormData } from "@/hooks/use-campaign";
 import { useUpload } from "@/hooks/use-upload";
@@ -370,6 +372,8 @@ export function CampaignForm() {
   const { setCurrentStep: setContextStep } = useCurrentStep();
 
   const [currentStep, setCurrentStep] = useState(1);
+  const [acceptedUnclaimedFundsTerms, setAcceptedUnclaimedFundsTerms] =
+    useState(false);
   // Add new state for sub-steps within step 1
   const [currentSubStep, setCurrentSubStep] = useState(1);
   const [isSubStepAnimating, setIsSubStepAnimating] = useState(false);
@@ -636,6 +640,16 @@ export function CampaignForm() {
         return;
       }
 
+      if (!acceptedUnclaimedFundsTerms) {
+        toast({
+          title: "Aceptación requerida",
+          description:
+            "Debes aceptar el régimen aplicable a los fondos no reclamados antes de publicar.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       // Publishing does not control verification; badge approval is admin-only.
       const success = await updateCampaign(
         {
@@ -668,6 +682,16 @@ export function CampaignForm() {
         toast({
           title: "Error",
           description: "No se encontró la campaña para verificar.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (!acceptedUnclaimedFundsTerms) {
+        toast({
+          title: "Aceptación requerida",
+          description:
+            "Debes aceptar el régimen aplicable a los fondos no reclamados antes de publicar.",
           variant: "destructive",
         });
         return;
@@ -2938,11 +2962,34 @@ export function CampaignForm() {
                       en orden.
                     </div>
                     <div className="w-full h-px bg-gray-200 my-6"></div>
+                    <label className="mb-5 flex items-start gap-3 rounded-xl border border-[#dbe5cf] bg-[#f8fbf4] p-4 text-left">
+                      <Checkbox
+                        checked={acceptedUnclaimedFundsTerms}
+                        onCheckedChange={(checked) =>
+                          setAcceptedUnclaimedFundsTerms(checked === true)
+                        }
+                        className="mt-1 border-[#478C5C] data-[state=checked]:bg-[#478C5C] data-[state=checked]:text-white"
+                      />
+                      <span className="text-sm leading-6 text-gray-700">
+                        Declaro conocer y aceptar expresamente el régimen
+                        aplicable a los fondos no reclamados previsto en el
+                        artículo 7.8 de los presentes{" "}
+                        <Link
+                          href="/terminos"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="font-semibold text-[#2c6e49] underline underline-offset-4"
+                        >
+                          Términos y Condiciones
+                        </Link>
+                        .
+                      </span>
+                    </label>
                     <div className="space-y-3">
                       <Button
                         onClick={handleRequestVerification}
                         className="w-full bg-[#478C5C] hover:bg-[#3a7049] text-white rounded-full py-4 flex items-center justify-center gap-2"
-                        disabled={isSubmitting}
+                        disabled={isSubmitting || !acceptedUnclaimedFundsTerms}
                       >
                         <span>Solicitar verificación</span>
                         <svg
@@ -2965,7 +3012,7 @@ export function CampaignForm() {
                         onClick={handlePublish}
                         className="w-full border border-[#478C5C] text-[#478C5C] hover:bg-[#f0f7f1] rounded-full py-4"
                         variant="outline"
-                        disabled={isSubmitting}
+                        disabled={isSubmitting || !acceptedUnclaimedFundsTerms}
                       >
                         Publicar sin verificar
                       </Button>

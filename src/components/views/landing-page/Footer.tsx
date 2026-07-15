@@ -116,16 +116,22 @@ export function Footer() {
 
           <div className="h-px bg-[#4a8c67] mb-2 lg:mb-10" />
 
-          <div className="flex flex-col md:flex-row justify-between items-center text-sm text-white/80">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-white/80">
             <p>© {new Date().getFullYear()} Minka. Todos los derechos reservados.</p>
-            <Link
-              href="/politicas-de-privacidad"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hover:text-white transition-colors underline underline-offset-4 mt-4 md:mt-0"
-            >
-              Políticas de privacidad
-            </Link>
+            <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
+              <Link
+                href="/terminos"
+                className="hover:text-white transition-colors underline underline-offset-4"
+              >
+                Términos y condiciones
+              </Link>
+              <Link
+                href="/politicas-de-privacidad"
+                className="hover:text-white transition-colors underline underline-offset-4"
+              >
+                Política de privacidad
+              </Link>
+            </div>
           </div>
         </div>
       </footer>

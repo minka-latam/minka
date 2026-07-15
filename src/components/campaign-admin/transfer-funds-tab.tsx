@@ -3,11 +3,9 @@
 import { type ChangeEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  AlertTriangle,
   ChevronLeft,
   ChevronRight,
   Edit,
-  Flag,
   ShieldCheck,
   X,
   XCircle,
@@ -23,6 +21,7 @@ import {
 import { useCancelCampaign } from "@/hooks/use-cancel-campaign";
 import { ButtonSpinner } from "@/components/ui/inline-spinner";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { ConcludeCampaignModal } from "@/components/campaign-admin/conclude-campaign-modal";
 import { toast } from "@/components/ui/use-toast";
 import { MIN_TRANSFER_AMOUNT } from "@/lib/campaign-finance";
 import { calculateCampaignDaysRemaining } from "@/lib/campaign-dates";
@@ -235,6 +234,7 @@ export function TransferFundsTab({ campaign }: TransferFundsTabProps) {
 
     if (result.success) {
       setShowTransferConfirmation(false);
+      setShowConcludeCampaignModal(true);
       setTransferAmount(0);
       if (result.availableAmount !== undefined) {
         setAvailableAmount(result.availableAmount);
@@ -518,84 +518,6 @@ export function TransferFundsTab({ campaign }: TransferFundsTabProps) {
     );
   };
 
-  const renderConcludeCampaignModal = () => {
-    if (!showConcludeCampaignModal) return null;
-
-    return (
-      <div className="fixed inset-0 z-50 flex items-end bg-black/60 sm:items-center sm:justify-center sm:p-4">
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="conclude-campaign-title"
-          className="max-h-[92vh] w-full overflow-y-auto rounded-t-3xl bg-white shadow-2xl sm:max-w-xl sm:rounded-2xl"
-        >
-          <div className="bg-[#FDF9ED] px-5 py-5 sm:px-8">
-            <div className="flex items-start gap-3">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-700">
-                <AlertTriangle className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">
-                  Concluir campaña
-                </p>
-                <h3
-                  id="conclude-campaign-title"
-                  className="mt-1 text-xl font-bold leading-tight text-[#1f2933] sm:text-2xl"
-                >
-                  ¿Quieres cerrar esta campaña ahora?
-                </h3>
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-4 px-5 py-5 text-sm leading-6 text-gray-700 sm:px-8">
-            <p>
-              Tu campaña puede permanecer abierta el tiempo que consideres
-              prudente. Si necesitas más tiempo, puedes editar la fecha de
-              finalización y ampliarla sin problema.
-            </p>
-            <p>
-              También puedes solicitar transferencias todas las veces que
-              necesites, siempre que cumplas los requisitos de saldo y no tengas
-              una solicitud en proceso.
-            </p>
-            <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-900">
-              Si eliges concluirla ahora, la campaña quedará marcada como{" "}
-              <span className="font-semibold">cancelada</span> y ya no podrá
-              recibir nuevas donaciones.
-            </div>
-          </div>
-
-          <div className="sticky bottom-0 flex flex-col gap-3 border-t border-gray-100 bg-white px-5 py-4 sm:flex-row sm:justify-end sm:px-8">
-            <button
-              type="button"
-              disabled={isConcludingCampaign}
-              onClick={() => setShowConcludeCampaignModal(false)}
-              className="order-2 rounded-full border border-gray-300 px-5 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60 sm:order-1"
-            >
-              Mantener abierta
-            </button>
-            <button
-              type="button"
-              disabled={isConcludingCampaign}
-              onClick={handleConcludeCampaign}
-              className="order-1 rounded-full bg-red-600 px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-red-700 disabled:opacity-60 sm:order-2"
-            >
-              {isConcludingCampaign ? (
-                <span className="flex items-center justify-center">
-                  <ButtonSpinner />
-                  <span>Concluyendo...</span>
-                </span>
-              ) : (
-                "Concluir campaña"
-              )}
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
   return (
     <div className="w-full px-6 md:px-8 lg:px-16 xl:px-24 py-6 flex flex-col min-h-[calc(100vh-200px)]">
       <div className="w-full flex-1 flex flex-col">
@@ -717,7 +639,7 @@ export function TransferFundsTab({ campaign }: TransferFundsTabProps) {
             type="button"
             disabled={!canRequestTransfer}
             onClick={handleRequestTransfer}
-            className="mt-5 bg-[#2c6e49] hover:bg-[#1e4d33] disabled:opacity-60 text-white py-3 px-8 rounded-3xl"
+            className="mt-5 bg-[#2c6e49] hover:bg-[#1e4d33] disabled:cursor-not-allowed disabled:opacity-60 text-white py-3 px-8 rounded-3xl"
           >
             {isCreatingTransfer ? (
               <span className="flex items-center justify-center">
@@ -731,32 +653,6 @@ export function TransferFundsTab({ campaign }: TransferFundsTabProps) {
         </div>
 
         <div className="border-t border-gray-200 my-8"></div>
-
-        <div className="mb-8 rounded-xl border border-amber-200 bg-amber-50 p-5">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-            <div className="flex gap-3">
-              <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-amber-700">
-                <Flag className="h-5 w-5" />
-              </div>
-              <div>
-                <h3 className="text-lg font-bold text-gray-900">
-                  ¿Ya quieres concluir tu campaña?
-                </h3>
-                <p className="mt-1 text-sm leading-6 text-gray-700">
-                  Puedes mantenerla abierta, ampliar su fecha de finalización y
-                  seguir solicitando transferencias cuando cumplas los requisitos, o concluirla ahora.
-                </p>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={() => setShowConcludeCampaignModal(true)}
-              className="shrink-0 rounded-full border border-amber-700 bg-white px-5 py-2.5 text-sm font-semibold text-amber-800 hover:bg-amber-100"
-            >
-              Concluir campaña
-            </button>
-          </div>
-        </div>
 
         <div className="mt-4">
           <h3 className="text-xl font-bold mb-6">
@@ -878,7 +774,12 @@ export function TransferFundsTab({ campaign }: TransferFundsTabProps) {
 
       {renderBankAccountModal()}
       {renderTransferConfirmationModal()}
-      {renderConcludeCampaignModal()}
+      <ConcludeCampaignModal
+        open={showConcludeCampaignModal}
+        isLoading={isConcludingCampaign}
+        onOpenChange={setShowConcludeCampaignModal}
+        onConfirm={handleConcludeCampaign}
+      />
     </div>
   );
 }
