@@ -3,7 +3,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { reconcilePendingBisaQrDonations } from "@/lib/bisa/reconciliation";
 
 function getExpectedSecret() {
-  return process.env.BISA_RECONCILE_SECRET || process.env.BISA_CALLBACK_PASSWORD;
+  return (
+    process.env.BISA_RECONCILE_SECRET || process.env.BISA_CALLBACK_PASSWORD
+  );
 }
 
 function getRequestSecret(request: NextRequest) {
@@ -32,7 +34,7 @@ export async function POST(request: NextRequest) {
 
   const body = await request.json().catch(() => ({}));
   const result = await reconcilePendingBisaQrDonations({
-    limit: Number(body?.limit) || 25,
+    limit: Number(body?.limit) || undefined,
   });
 
   return NextResponse.json({ success: true, result });

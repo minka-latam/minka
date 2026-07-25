@@ -2,15 +2,27 @@ import { bisaClient } from "@/lib/bisa/client";
 import { completeBisaDonationPayment } from "@/lib/bisa/payment-completion";
 import { prisma } from "@/lib/prisma";
 
+export const BISA_RECONCILIATION_BATCH_SIZE = 5;
+export const BISA_RECONCILIATION_CONCURRENCY = 2;
+export const BISA_EXPIRATION_GRACE_MINUTES = 30;
+
+export function getBisaReconciliationCutoffs(now = new Date()) {
+  return {
+    expirationGraceCutoff: new Date(
+      now.getTime() - BISA_EXPIRATION_GRACE_MINUTES * 60 * 1000,
+    ),
+    recentNoExpirationCutoff: new Date(now.getTime() - 24 * 60 * 60 * 1000),
+  };
+}
+
 export async function reconcilePendingBisaQrDonations({
-  limit = 25,
+  limit = BISA_RECONCILIATION_BATCH_SIZE,
 }: {
   limit?: number;
 } = {}) {
   const safeLimit = Math.min(Math.max(limit, 1), 50);
-  const now = new Date();
-  const expirationGraceCutoff = new Date(now.getTime() - 15 * 60 * 1000);
-  const recentNoExpirationCutoff = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+  const { expirationGraceCutoff, recentNoExpirationCutoff } =
+    getBisaReconciliationCutoffs();
   const donations = await prisma.donation.findMany({
     where: {
       paymentStatus: "pending",
@@ -37,12 +49,12 @@ export async function reconcilePendingBisaQrDonations({
     errors: [] as Array<{ donationId: string; alias: string; error: string }>,
   };
 
-  for (const donation of donations) {
+  const processDonation = async (donation: (typeof donations)[number]) => {
     const alias = donation.bisaAlias;
 
     if (!alias) {
       result.pending += 1;
-      continue;
+      return;
     }
 
     try {
@@ -55,12 +67,12 @@ export async function reconcilePendingBisaQrDonations({
           alias,
           error: statusResponse.error || "BISA status response is empty",
         });
-        continue;
+        return;
       }
 
       if (statusResponse.data.status !== "PAGADO") {
         result.pending += 1;
-        continue;
+        return;
       }
 
       const completion = await completeBisaDonationPayment({
@@ -97,7 +109,21 @@ export async function reconcilePendingBisaQrDonations({
         error: error instanceof Error ? error.message : "Unknown error",
       });
     }
-  }
+  };
+
+  const queue = [...donations];
+  const workerCount = Math.min(BISA_RECONCILIATION_CONCURRENCY, queue.length);
+
+  await Promise.all(
+    Array.from({ length: workerCount }, async () => {
+      while (queue.length > 0) {
+        const donation = queue.shift();
+        if (donation) {
+          await processDonation(donation);
+        }
+      }
+    }),
+  );
 
   return result;
 }

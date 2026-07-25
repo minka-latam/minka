@@ -1112,7 +1112,7 @@ export default function CampaignDetailPage() {
               isCancelledCampaign
                 ? "bg-gray-100 text-gray-500 cursor-not-allowed opacity-75"
                 : activeTab === "editar"
-                  ? "bg-white text-[#1a5535] after:absolute after:bottom-[-1px] after:left-0 after:right-0 after:h-[1px] after:bg-white after:z-10"
+                  ? "text-[#1a5535] after:absolute after:bottom-[-1px] after:left-0 after:right-0 after:h-[1px] after:bg-white after:z-10"
                   : "bg-[#f2f8f5] text-[#1a5535] hover:bg-[#e8f5ed]"
             }`}
           >
@@ -1207,7 +1207,7 @@ export default function CampaignDetailPage() {
         <div className="h-[1px] bg-[#2c6e49] w-full relative z-0"></div>
 
         {/* Tab Content */}
-        <div className="bg-white w-full min-h-[500px] mt-0 pt-0">
+        <div className="w-full min-h-[500px] mt-0 pt-0">
           {activeTab === "editar" && (
             <div className="w-full">
               <div className="px-6 md:px-8 lg:px-16 xl:px-24 py-6">
@@ -1222,7 +1222,11 @@ export default function CampaignDetailPage() {
                 <div className="border-b border-[#478C5C]/20 my-8"></div>
               </div>
               <div className="px-6 md:px-8 lg:px-16 xl:px-24">
-                <div className="max-w-4xl mx-auto bg-white rounded-lg border border-black p-8 mb-28">
+                <div
+                  className={`max-w-4xl mx-auto bg-white rounded-lg border border-black p-8 ${
+                    isDraftCampaign ? "" : "mb-28"
+                  }`}
+                >
                   <form className="space-y-8">
                     {/* Nombre de la campaña */}
                     <div className="space-y-2">
@@ -2225,6 +2229,19 @@ export default function CampaignDetailPage() {
                     </div>
                   </form>
                 </div>
+
+                {isDraftCampaign && (
+                  <div className="mx-auto my-28 flex max-w-4xl justify-center">
+                    <Button
+                      type="button"
+                      onClick={() => setShowPublishDialog(true)}
+                      disabled={isPublishing || isDeleting}
+                      className="h-8 rounded-full bg-[#2c6e49] px-4 text-white hover:bg-[#1e4d33]"
+                    >
+                      {isPublishing ? "Publicando..." : "Publicar"}
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
           )}

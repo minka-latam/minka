@@ -81,12 +81,7 @@ export function UserDashboardLayout({ children }: UserDashboardLayoutProps) {
         </div>
       </main>
 
-      {/* Added extra space before footer */}
-      {!isCampaignPage && <div className="py-16"></div>}
-
-      {/* Only show footer on non-campaign pages */}
-      {!isCampaignPage && <Footer />}
+      <Footer />
     </div>
   );
 }
-
