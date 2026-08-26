@@ -1,17 +1,17 @@
-import { NextResponse } from 'next/server'
-import { prisma as db } from '@/lib/prisma'
-import { formatDonationStatusDto } from '@/lib/api/donation-dto'
+import { NextResponse } from "next/server";
+import { prisma as db } from "@/lib/prisma";
+import { formatDonationStatusDto } from "@/lib/api/donation-dto";
 
 export async function GET(req: Request) {
   try {
-    const url = new URL(req.url)
-    const donationId = url.searchParams.get('donationId')
+    const url = new URL(req.url);
+    const donationId = url.searchParams.get("donationId");
 
     if (!donationId) {
       return NextResponse.json(
-        { success: false, error: 'Missing donationId' },
+        { success: false, error: "Missing donationId" },
         { status: 400 },
-      )
+      );
     }
 
     const donation = await db.donation.findUnique({
@@ -25,27 +25,31 @@ export async function GET(req: Request) {
         tip_amount: true,
         total_amount: true,
         currency: true,
+        providerAmount: true,
+        providerTipAmount: true,
+        providerTotalAmount: true,
+        providerCurrency: true,
         updatedAt: true,
-        triptoPaymentId: true,
+        providerPaymentId: true,
       },
-    })
+    });
 
     if (!donation) {
       return NextResponse.json(
-        { success: false, error: 'Donation not found' },
+        { success: false, error: "Donation not found" },
         { status: 404 },
-      )
+      );
     }
 
     return NextResponse.json({
       success: true,
       donation: formatDonationStatusDto(donation),
-    })
+    });
   } catch (err) {
-    console.error('[DONATION_STATUS][ERROR]', err)
+    console.error("[DONATION_STATUS][ERROR]", err);
     return NextResponse.json(
-      { success: false, error: 'Server error' },
+      { success: false, error: "Server error" },
       { status: 500 },
-    )
+    );
   }
 }

@@ -9,6 +9,7 @@ type CompletedDonationNotification = {
   organizerId: string;
   donorName: string;
   donorEmail?: string;
+  organizerAmount: number;
   amount: number;
   tipAmount: number;
   totalAmount: number;
@@ -24,10 +25,17 @@ export async function completeDonationAccounting(
     donationId,
     donationUpdate,
     tipAmount,
+    notificationValues,
   }: {
     donationId: string;
     donationUpdate?: Prisma.DonationUpdateManyMutationInput;
     tipAmount?: number | string | Prisma.Decimal | null;
+    notificationValues?: {
+      amount: number;
+      tipAmount: number;
+      totalAmount: number;
+      currency: string;
+    };
   },
 ): Promise<{
   completedNow: boolean;
@@ -69,9 +77,7 @@ export async function completeDonationAccounting(
     return { completedNow: false };
   }
 
-  const donationAmount = new Prisma.Decimal(
-    Number(donation.amount).toFixed(2),
-  );
+  const donationAmount = new Prisma.Decimal(Number(donation.amount).toFixed(2));
   const donationTipAmount = new Prisma.Decimal(
     Number(donation.tip_amount ?? tipAmount ?? 0).toFixed(2),
   );
@@ -117,10 +123,12 @@ export async function completeDonationAccounting(
       organizerId: donation.campaign.organizerId,
       donorName: donation.donor?.name || "Donante",
       donorEmail: donation.donor?.email || undefined,
-      amount: Number(donation.amount),
-      tipAmount: Number(donationTipAmount),
-      totalAmount: Number(donationTotalAmount),
-      currency: donation.currency,
+      organizerAmount: Number(donation.amount),
+      amount: notificationValues?.amount ?? Number(donation.amount),
+      tipAmount: notificationValues?.tipAmount ?? Number(donationTipAmount),
+      totalAmount:
+        notificationValues?.totalAmount ?? Number(donationTotalAmount),
+      currency: notificationValues?.currency ?? donation.currency,
       campaignTitle: donation.campaign.title,
       isAnonymous: donation.isAnonymous,
       completedAt: new Date(),
@@ -139,7 +147,7 @@ export async function sendCompletedDonationNotification(
       notification.campaignId,
       notification.organizerId,
       notification.donorName,
-      notification.amount,
+      notification.organizerAmount,
       notification.campaignTitle,
       notification.isAnonymous,
     );

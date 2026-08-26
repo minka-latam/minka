@@ -20,7 +20,10 @@
     "storage:cleanup-campaign-documents": "tsx scripts/cleanup-orphan-campaign-media.ts --prefix campaign-documents",
     "storage:migrate-verification-documents": "tsx scripts/migrate-verification-documents-to-private.ts",
     "storage:optimize-campaign-media": "tsx scripts/optimize-campaign-media.ts",
-    "storage:optimize-referenced-images": "tsx scripts/optimize-referenced-storage-images.ts"
+    "storage:optimize-referenced-images": "tsx scripts/optimize-referenced-storage-images.ts",
+    "transoft:check": "node --import tsx scripts/check-transoft-connection.ts",
+    "transoft:mock": "node --import tsx scripts/mock-transoft-server.ts",
+    "transoft:reconcile": "node --import tsx scripts/reconcile-transoft-donation.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^4.1.0",

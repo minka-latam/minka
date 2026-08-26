@@ -1,13 +1,11 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { ProfileData } from "@/types";
 import { useAuth } from "@/providers/auth-provider";
 import { toast } from "@/components/ui/use-toast";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   LogOut,
   CheckCircle,
@@ -17,8 +15,6 @@ import {
   LibraryBig,
   ArrowRight,
   Building2,
-  DollarSign,
-  Save,
   HandCoins,
   FileClock,
 } from "lucide-react";
@@ -30,184 +26,6 @@ interface AdminDashboardContentProps {
 export function AdminDashboardContent({ profile }: AdminDashboardContentProps) {
   const router = useRouter();
   const { signOut } = useAuth();
-  const [exchangeRate, setExchangeRate] = useState("");
-  const [automaticExchangeRate, setAutomaticExchangeRate] = useState<
-    number | null
-  >(null);
-  const [exchangeRateMode, setExchangeRateMode] = useState<
-    "automatic" | "manual"
-  >("automatic");
-  const [isManualExchangeRateEditing, setIsManualExchangeRateEditing] =
-    useState(false);
-  const [isLoadingExchangeRate, setIsLoadingExchangeRate] = useState(true);
-  const [isSavingExchangeRate, setIsSavingExchangeRate] = useState(false);
-
-  useEffect(() => {
-    let isMounted = true;
-
-    const loadExchangeRate = async () => {
-      try {
-        setIsLoadingExchangeRate(true);
-        const response = await fetch(
-          "/api/admin/platform-settings/exchange-rate",
-          { cache: "no-store" }
-        );
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(data?.error || "No se pudo cargar el tipo de cambio");
-        }
-
-        if (!isMounted) return;
-
-        const rate = Number(data.usdToBobExchangeRate);
-        const automaticRate =
-          data.automaticUsdToBobExchangeRate == null
-            ? null
-            : Number(data.automaticUsdToBobExchangeRate);
-        const mode = data.mode === "manual" ? "manual" : "automatic";
-
-        setAutomaticExchangeRate(
-          Number.isFinite(automaticRate) ? automaticRate : null
-        );
-        setExchangeRateMode(mode);
-        setIsManualExchangeRateEditing(false);
-        setExchangeRate(Number.isFinite(rate) ? String(rate) : "");
-      } catch (error) {
-        if (!isMounted) return;
-
-        toast({
-          title: "Error",
-          description:
-            error instanceof Error
-              ? error.message
-              : "No se pudo cargar el tipo de cambio",
-          variant: "destructive",
-        });
-      } finally {
-        if (isMounted) {
-          setIsLoadingExchangeRate(false);
-        }
-      }
-    };
-
-    loadExchangeRate();
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-
-  const handleExchangeRateSubmit = async (
-    event: React.FormEvent<HTMLFormElement>
-  ) => {
-    event.preventDefault();
-
-    if (!isManualExchangeRateEditing) {
-      setIsManualExchangeRateEditing(true);
-      return;
-    }
-
-    const rate = Number(exchangeRate);
-
-    if (!Number.isFinite(rate) || rate <= 0) {
-      toast({
-        title: "Tipo de cambio inválido",
-        description: "Ingresa un número mayor a cero.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      setIsSavingExchangeRate(true);
-      const response = await fetch(
-        "/api/admin/platform-settings/exchange-rate",
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ usdToBobExchangeRate: rate }),
-        }
-      );
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data?.error || "No se pudo guardar el tipo de cambio");
-      }
-
-      const savedRate = Number(data.usdToBobExchangeRate);
-      setExchangeRate(String(savedRate));
-      setExchangeRateMode("manual");
-      setIsManualExchangeRateEditing(false);
-
-      toast({
-        title: "Tipo de cambio actualizado",
-        description: `Valor manual: 1 USD = Bs. ${savedRate.toFixed(4)}`,
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description:
-          error instanceof Error
-            ? error.message
-            : "No se pudo guardar el tipo de cambio",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSavingExchangeRate(false);
-    }
-  };
-
-  const handleAutomaticExchangeRate = async () => {
-    try {
-      setIsSavingExchangeRate(true);
-      const response = await fetch(
-        "/api/admin/platform-settings/exchange-rate",
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ mode: "automatic" }),
-        }
-      );
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          data?.error || "No se pudo activar el tipo de cambio automático"
-        );
-      }
-
-      const rate = Number(data.usdToBobExchangeRate);
-      const automaticRate =
-        data.automaticUsdToBobExchangeRate == null
-          ? rate
-          : Number(data.automaticUsdToBobExchangeRate);
-
-      setExchangeRate(String(rate));
-      setAutomaticExchangeRate(
-        Number.isFinite(automaticRate) ? automaticRate : rate
-      );
-      setExchangeRateMode("automatic");
-      setIsManualExchangeRateEditing(false);
-
-      toast({
-        title: "Tipo de cambio automático activado",
-        description: `1 USD = Bs. ${rate.toFixed(4)}`,
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description:
-          error instanceof Error
-            ? error.message
-            : "No se pudo activar el tipo de cambio automático",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSavingExchangeRate(false);
-    }
-  };
-
   const handleSignOut = async () => {
     try {
       await signOut();
@@ -242,79 +60,6 @@ export function AdminDashboardContent({ profile }: AdminDashboardContentProps) {
           . Desde aquí puedes gestionar todas las campañas, usuarios y
           configuraciones de la plataforma.
         </p>
-      </div>
-
-      <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-100 w-fit max-w-full">
-        <div className="flex items-center mb-4">
-          <DollarSign className="h-6 w-6 mr-2 text-[#2c6e49]" />
-          <h3 className="text-xl font-semibold">Tipo de cambio</h3>
-        </div>
-        <form
-          className="grid gap-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-center"
-          onSubmit={handleExchangeRateSubmit}
-        >
-          <div>
-            <label
-              htmlFor="usd-to-bob-exchange-rate"
-              className="block text-sm font-medium text-gray-700 mb-2"
-            >
-              Tipo de cambio bs/$:
-            </label>
-            <Input
-              id="usd-to-bob-exchange-rate"
-              type="number"
-              min="0.0001"
-              step="0.0001"
-              inputMode="decimal"
-              value={exchangeRate}
-              onChange={(event) => setExchangeRate(event.target.value)}
-              disabled={
-                isLoadingExchangeRate ||
-                isSavingExchangeRate ||
-                !isManualExchangeRateEditing
-              }
-              placeholder="6.9600"
-            />
-            <p className="text-sm text-gray-500 mt-2">
-              Valor automático de dolarbluebolivia.click menos 10 centavos para
-              margen
-              {automaticExchangeRate
-                ? `: 1 USD = Bs. ${automaticExchangeRate.toFixed(4)}`
-                : "."}
-            </p>
-            {exchangeRateMode === "manual" && (
-              <p className="mt-1 text-sm text-amber-700">
-                Actualmente se está usando un cambio manual.
-              </p>
-            )}
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Button
-              type="submit"
-              disabled={isLoadingExchangeRate || isSavingExchangeRate}
-              className="bg-[#2c6e49] hover:bg-[#24583b] text-white"
-            >
-              {isManualExchangeRateEditing && (
-                <Save className="h-4 w-4 mr-2" />
-              )}
-              {isSavingExchangeRate
-                ? "Guardando..."
-                : isManualExchangeRateEditing
-                  ? "Guardar"
-                  : "Cambio manual"}
-            </Button>
-            {exchangeRateMode === "manual" && !isManualExchangeRateEditing && (
-              <Button
-                type="button"
-                variant="outline"
-                disabled={isLoadingExchangeRate || isSavingExchangeRate}
-                onClick={handleAutomaticExchangeRate}
-              >
-                Automático
-              </Button>
-            )}
-          </div>
-        </form>
       </div>
 
       <h3 className="text-xl font-semibold mb-4">Gestión de Plataforma</h3>

@@ -31,8 +31,12 @@ export type DonationStatusDto = {
   tipAmount: number | null;
   totalAmount: number | null;
   currency: string;
+  providerAmount: number | null;
+  providerTipAmount: number | null;
+  providerTotalAmount: number | null;
+  providerCurrency: string | null;
   updatedAt: Date;
-  triptoPaymentId: string | null;
+  providerPaymentId: string | null;
 };
 
 function read(body: DonationRequestBody, camelKey: string, snakeKey: string) {
@@ -48,29 +52,25 @@ function booleanValue(value: unknown) {
 }
 
 function clientAuthStateValue(value: unknown) {
-  return value === "authenticated" || value === "anonymous"
-    ? value
-    : undefined;
+  return value === "authenticated" || value === "anonymous" ? value : undefined;
 }
 
-export function parseDonationCreateBody(
-  body: unknown
-): DonationCreateInput {
+export function parseDonationCreateBody(body: unknown): DonationCreateInput {
   const data = (body ?? {}) as DonationRequestBody;
 
   return {
     campaignId: stringValue(read(data, "campaignId", "campaign_id")),
     donorId: stringValue(read(data, "donorId", "donor_id")),
     clientAuthState: clientAuthStateValue(
-      read(data, "clientAuthState", "client_auth_state")
+      read(data, "clientAuthState", "client_auth_state"),
     ),
     amount: data.amount,
     tipAmount: read(data, "tipAmount", "tip_amount") ?? 0,
     paymentMethod: read(data, "paymentMethod", "payment_method"),
-    currency:
-      read(data, "currency", "cardCurrency") ?? data.card_currency,
+    currency: read(data, "currency", "cardCurrency") ?? data.card_currency,
     message: stringValue(data.message),
-    isAnonymous: booleanValue(read(data, "isAnonymous", "is_anonymous")) ?? false,
+    isAnonymous:
+      booleanValue(read(data, "isAnonymous", "is_anonymous")) ?? false,
     notificationEnabled:
       booleanValue(read(data, "notificationEnabled", "notification_enabled")) ??
       false,
@@ -82,11 +82,9 @@ export function parseDonationPatchBody(body: unknown): DonationPatchInput {
   const data = (body ?? {}) as DonationRequestBody;
 
   return {
-    notificationEnabled: booleanValue(read(
-      data,
-      "notificationEnabled",
-      "notification_enabled"
-    )),
+    notificationEnabled: booleanValue(
+      read(data, "notificationEnabled", "notification_enabled"),
+    ),
     message: stringValue(data.message),
     paymentStatus: read(data, "paymentStatus", "payment_status"),
   };
@@ -101,8 +99,12 @@ export function formatDonationStatusDto(donation: {
   tip_amount: unknown;
   total_amount: unknown;
   currency: string;
+  providerAmount: unknown;
+  providerTipAmount: unknown;
+  providerTotalAmount: unknown;
+  providerCurrency: string | null;
   updatedAt: Date;
-  triptoPaymentId: string | null;
+  providerPaymentId: string | null;
 }): DonationStatusDto {
   return {
     id: donation.id,
@@ -110,12 +112,22 @@ export function formatDonationStatusDto(donation: {
     paymentProvider: donation.paymentProvider,
     paymentMethod: donation.paymentMethod,
     amount: Number(donation.amount),
-    tipAmount:
-      donation.tip_amount == null ? null : Number(donation.tip_amount),
+    tipAmount: donation.tip_amount == null ? null : Number(donation.tip_amount),
     totalAmount:
       donation.total_amount == null ? null : Number(donation.total_amount),
     currency: donation.currency,
+    providerAmount:
+      donation.providerAmount == null ? null : Number(donation.providerAmount),
+    providerTipAmount:
+      donation.providerTipAmount == null
+        ? null
+        : Number(donation.providerTipAmount),
+    providerTotalAmount:
+      donation.providerTotalAmount == null
+        ? null
+        : Number(donation.providerTotalAmount),
+    providerCurrency: donation.providerCurrency,
     updatedAt: donation.updatedAt,
-    triptoPaymentId: donation.triptoPaymentId,
+    providerPaymentId: donation.providerPaymentId,
   };
 }

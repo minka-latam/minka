@@ -22,11 +22,6 @@ export function PartnersSection() {
       logo: "/allies/logo bisa fblanco.png",
     },
     {
-      id: 2,
-      name: "Tripto",
-      logo: "/allies/tripto.png",
-    },
-    {
       id: 3,
       name: "Giro54",
       logo: "/allies/giro54-yellow.png",
