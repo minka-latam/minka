@@ -31,6 +31,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { SuperAdminCampaignTable } from "@/components/dashboard/super-admin-campaign-table";
 import { AdminCampaignApprovalsTable } from "@/components/dashboard/admin-campaign-approvals-table";
 import { AdminFundTransfersTable } from "@/components/dashboard/admin-fund-transfers-table";
+import { AdminEndedCampaignsTable } from "@/components/dashboard/admin-ended-campaigns-table";
 import { CampaignAnalytics } from "@/components/dashboard/campaign-analytics";
 import {
   CampaignCard,
@@ -75,6 +76,7 @@ interface CampaignStats {
   totalTipAmount: number;
   totalPlatformFeeAmount: number;
   totalProcessedAmount: number;
+  netAmount: number;
 }
 
 export default function SuperAdminCampaignsPage() {
@@ -186,6 +188,7 @@ export default function SuperAdminCampaignsPage() {
             tipAmount: 0,
             platformFeeAmount: 0,
             totalProcessedAmount: 0,
+            netAmount: 0,
           })
         );
 
@@ -217,6 +220,7 @@ export default function SuperAdminCampaignsPage() {
           totalTipAmount: 0,
           totalPlatformFeeAmount: 0,
           totalProcessedAmount: 0,
+          netAmount: 0,
         });
       }
     } catch (error) {
@@ -357,7 +361,7 @@ export default function SuperAdminCampaignsPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-16">
+      <div className="flex min-h-[calc(100vh-8rem)] items-center justify-center px-4 py-16">
         <LoadingSpinner size="lg" />
       </div>
     );
@@ -482,15 +486,32 @@ export default function SuperAdminCampaignsPage() {
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-gray-600 flex items-center">
                 <DollarSign className="h-4 w-4 mr-2" />
-                Total Raised
+                Net
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {formatCurrency(stats.totalRaised)}
+                {formatCurrency(stats.netAmount)}
               </div>
               <p className="text-sm text-gray-600">
-                Progress amount only
+                Completed donations less transfers
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-gray-600 flex items-center">
+                <DollarSign className="h-4 w-4 mr-2" />
+                Total Processed
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {formatCurrency(stats.totalProcessedAmount)}
+              </div>
+              <p className="text-sm text-gray-600">
+                Base plus stored tips
               </p>
             </CardContent>
           </Card>
@@ -516,15 +537,15 @@ export default function SuperAdminCampaignsPage() {
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-gray-600 flex items-center">
                 <DollarSign className="h-4 w-4 mr-2" />
-                Estimated 5% Fee
+                Total Raised
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {formatCurrency(stats.totalPlatformFeeAmount)}
+                {formatCurrency(stats.totalRaised)}
               </div>
               <p className="text-sm text-gray-600">
-                Calculated from base only
+                Progress amount only
               </p>
             </CardContent>
           </Card>
@@ -533,15 +554,15 @@ export default function SuperAdminCampaignsPage() {
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-gray-600 flex items-center">
                 <DollarSign className="h-4 w-4 mr-2" />
-                Total Processed
+                Fee
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {formatCurrency(stats.totalProcessedAmount)}
+                {formatCurrency(stats.totalPlatformFeeAmount)}
               </div>
               <p className="text-sm text-gray-600">
-                Base plus stored tips
+                Estimated 5% of base
               </p>
             </CardContent>
           </Card>
@@ -550,7 +571,7 @@ export default function SuperAdminCampaignsPage() {
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-gray-600 flex items-center">
                 <CheckCircle className="h-4 w-4 mr-2" />
-                Verified Campaigns
+                Verified
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -603,6 +624,9 @@ export default function SuperAdminCampaignsPage() {
 
         <TabsContent value="overview" className="space-y-6">
           <AdminCampaignApprovalsTable
+            onCampaignUpdate={() => fetchCampaignsData(isAdmin)}
+          />
+          <AdminEndedCampaignsTable
             onCampaignUpdate={() => fetchCampaignsData(isAdmin)}
           />
           <AdminFundTransfersTable hideWhenEmpty />

@@ -43,6 +43,8 @@ const actionLabels: Record<string, string> = {
   "legal_entity.deactivate": "Persona jurídica",
   "legal_entity.delete": "Persona jurídica",
   "campaign_bank_account.replace": "Cuenta bancaria",
+  "campaign.cancel": "Campaña",
+  "campaign.complete": "Campaña",
   "campaign.delete": "Campaña",
   update_exchange_rate: "Configuración",
   "campaign_verification.update": "Verificación",
@@ -93,6 +95,16 @@ function metadataList(metadata: Metadata, key: string) {
 function labelStatus(value: string | null) {
   if (!value) return "sin dato";
   return statusLabels[value] ?? value;
+}
+
+function metadataDate(metadata: Metadata, key: string) {
+  const value = metadataText(metadata, key);
+  if (!value) return null;
+
+  const date = new Date(value);
+  return Number.isNaN(date.getTime())
+    ? value
+    : format(date, "dd/MM/yyyy", { locale: es });
 }
 
 function displayName(metadata: Metadata) {
@@ -202,6 +214,20 @@ function describeAuditAction(action: string, metadata: Metadata) {
         metadataText(metadata, "bankName") ?? "sin dato"
       }.`;
 
+    case "campaign.cancel":
+      return `Terminó la campaña “${target}” sin eliminarla. Estado: ${labelStatus(
+        previousStatus,
+      )} → ${labelStatus(newStatus)}.`;
+
+    case "campaign.complete": {
+      const endDate = metadataDate(metadata, "endDate");
+      return `Marcó la campaña “${target}” como completada. Estado: ${labelStatus(
+        previousStatus,
+      )} → ${labelStatus(newStatus)}${
+        endDate ? `. Fecha de finalización: ${endDate}` : ""
+      }.`;
+    }
+
     case "campaign.delete":
       return `Eliminó permanentemente la campaña ${target}. Estado anterior: ${labelStatus(
         previousStatus,
@@ -222,7 +248,7 @@ function describeAuditAction(action: string, metadata: Metadata) {
       )}${notes ? `. Nota: ${notes}` : "."}`;
 
     default:
-      return `Acción ${action}: ${JSON.stringify(metadata)}`;
+      return `Registró la acción “${action.replaceAll(".", " ")}” sobre ${target}.`;
   }
 }
 

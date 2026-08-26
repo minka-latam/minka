@@ -3,6 +3,7 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { prisma as db } from "@/lib/prisma";
 import { calculatePlatformFee } from "@/lib/campaign-finance";
+import { PaymentStatus, TransferStatus } from "@prisma/client";
 
 export async function GET(req: NextRequest) {
   try {
@@ -56,6 +57,8 @@ export async function GET(req: NextRequest) {
       verifiedCampaigns,
       totalRaisedResult,
       totalTipsResult,
+      custodyDonationsResult,
+      completedTransfersResult,
     ] = await Promise.all([
       db.campaign.count(),
       db.campaign.count({ where: { campaignStatus: "active" } }),
@@ -71,6 +74,14 @@ export async function GET(req: NextRequest) {
           tipCollected: true,
         },
       }),
+      db.donation.aggregate({
+        where: { paymentStatus: PaymentStatus.completed },
+        _sum: { amount: true, tip_amount: true },
+      }),
+      db.fundTransfer.aggregate({
+        where: { status: TransferStatus.completed },
+        _sum: { amount: true },
+      }),
     ]);
 
     const totalRaised = Number(totalRaisedResult._sum?.collectedAmount || 0);
@@ -79,6 +90,13 @@ export async function GET(req: NextRequest) {
     const totalTipAmount = Number(totalTipsResult._sum?.tipCollected || 0);
     const totalPlatformFeeAmount = calculatePlatformFee(totalRaised);
     const totalProcessedAmount = totalRaised + totalTipAmount;
+    const custodyTotal =
+      Number(custodyDonationsResult._sum.amount || 0) +
+      Number(custodyDonationsResult._sum.tip_amount || 0);
+    const completedTransferAmount = Number(
+      completedTransfersResult._sum.amount || 0,
+    );
+    const netAmount = custodyTotal - completedTransferAmount;
 
     return NextResponse.json({
       totalCampaigns,
@@ -90,6 +108,7 @@ export async function GET(req: NextRequest) {
       totalTipAmount,
       totalPlatformFeeAmount,
       totalProcessedAmount,
+      netAmount,
     });
   } catch (error) {
     console.error("Error fetching campaign stats:", error);

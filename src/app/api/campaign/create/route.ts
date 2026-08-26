@@ -3,15 +3,20 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { prisma as db } from "@/lib/prisma";
 import { z } from "zod";
+import { campaignDateKeyToDbDate } from "@/lib/campaign-dates";
 import {
-  calculateCampaignDaysRemaining,
-  campaignDateKeyToDbDate,
-} from "@/lib/campaign-dates";
+  CAMPAIGN_DESCRIPTION_MAX_LENGTH,
+  CAMPAIGN_DESCRIPTION_MIN_LENGTH,
+} from "@/lib/campaign-validation";
 
 const campaignCreateSchema = z.object({
   title: z.string().min(3).max(80),
   subtitle: z.string().min(10).max(150),
-  description: z.string().min(10).max(600),
+  description: z
+    .string()
+    .trim()
+    .min(CAMPAIGN_DESCRIPTION_MIN_LENGTH)
+    .max(CAMPAIGN_DESCRIPTION_MAX_LENGTH),
   beneficiariesDescription: z.string().max(600).optional().default(""),
   category: z.enum([
     "cultura_arte",
@@ -99,9 +104,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Calculate days remaining
-    const daysRemaining = calculateCampaignDaysRemaining(validatedData.endDate);
-
     // Create the campaign
     const campaign = await db.campaign.create({
       data: {
@@ -113,7 +115,6 @@ export async function POST(req: NextRequest) {
         goalAmount: validatedData.goalAmount,
         collectedAmount: 0,
         percentageFunded: 0,
-        daysRemaining,
         location: validatedData.location,
         endDate: validatedData.endDate,
         youtubeUrl: validatedData.youtubeUrl || null,

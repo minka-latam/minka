@@ -198,7 +198,12 @@ export function EnhancedPagination({
                 aria-label={`Go to page ${pageNumber}`}
                 aria-current={isCurrentPage ? "page" : undefined}
               >
-                {isPendingPage ? <LoadingSpinner size="sm" /> : pageNumber}
+                {isPendingPage ? (
+                  <LoadingSpinner
+                    size="sm"
+                    tone={isCurrentPage ? "inverse" : "brand"}
+                  />
+                ) : pageNumber}
               </Button>
             );
           })}

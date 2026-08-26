@@ -31,11 +31,11 @@ export function InlineSpinner({ className }: InlineSpinnerProps) {
   );
 }
 
-// Add a smaller variant specifically for buttons
+// Compact enough for buttons, but still visible at normal UI scale.
 export function ButtonSpinner({ className }: InlineSpinnerProps) {
   return (
     <svg
-      className={`mr-1.5 h-3.5 w-3.5 shrink-0 animate-spin align-middle text-current ${className || ""}`}
+      className={`mr-2 h-[18px] w-[18px] shrink-0 animate-spin align-middle text-current ${className || ""}`}
       xmlns="http://www.w3.org/2000/svg"
       fill="none"
       viewBox="0 0 24 24"

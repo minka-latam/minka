@@ -226,7 +226,7 @@ export function CommentsTab({ campaign }: CommentsTabProps) {
                 disabled={!newComment.trim() || isPostingComment}
               >
                 {isPostingComment ? (
-                  <LoadingSpinner size="sm" className="mr-2" />
+                  <LoadingSpinner size="sm" tone="inverse" className="mr-2" />
                 ) : (
                   <Send size={14} className="mr-2" />
                 )}

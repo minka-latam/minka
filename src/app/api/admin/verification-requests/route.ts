@@ -4,6 +4,11 @@ import { cookies } from "next/headers";
 import { prisma as db } from "@/lib/prisma";
 import { createSupabaseStorageAdminClient } from "@/lib/storage/admin-client";
 import { getVerificationDocumentLocation } from "@/lib/storage/verification-documents";
+import { CampaignStatus } from "@prisma/client";
+import {
+  campaignDateKeyToDbDate,
+  getCurrentCampaignDateKey,
+} from "@/lib/campaign-dates";
 
 const SIGNED_URL_EXPIRES_IN_SECONDS = 10 * 60;
 
@@ -79,11 +84,17 @@ export async function GET(req: NextRequest) {
 
     // Define the where clause for campaigns based on verification status
     const where: any = {};
+    const today = campaignDateKeyToDbDate(getCurrentCampaignDateKey());
+    const pendingCampaignEligibility = {
+      campaignStatus: CampaignStatus.active,
+      endDate: { gt: today },
+    };
 
     if (status === "pending") {
       where.AND = [
         { verificationStatus: false },
         { verificationRequests: { verificationStatus: "pending" } },
+        pendingCampaignEligibility,
       ];
     } else if (status === "approved") {
       where.verificationStatus = true; // Campaigns that are actually verified
@@ -97,8 +108,28 @@ export async function GET(req: NextRequest) {
         { verificationStatus: false },
         { verificationRequests: null },
       ];
+    } else if (status === "all") {
+      // Preserve approved/rejected history, but do not keep stale pending
+      // requests for campaigns that can no longer be verified.
+      where.OR = [
+        { verificationRequests: null },
+        {
+          verificationRequests: {
+            verificationStatus: { not: "pending" },
+          },
+        },
+        {
+          AND: [
+            {
+              verificationRequests: {
+                verificationStatus: "pending",
+              },
+            },
+            pendingCampaignEligibility,
+          ],
+        },
+      ];
     }
-    // For "all", we don't filter - we want all campaigns
 
     // Fetch campaigns with their verification status
     const campaigns = await db.campaign.findMany({
@@ -164,6 +195,8 @@ export async function GET(req: NextRequest) {
       return {
         id: campaign.id,
         campaignTitle: campaign.title,
+        campaignStatus: campaign.campaignStatus,
+        endDate: campaign.endDate.toISOString(),
         organizerName: campaign.organizer.name || "Organizador desconocido",
         organizerId: campaign.organizer.id,
         requestDate:

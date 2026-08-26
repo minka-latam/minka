@@ -315,7 +315,7 @@ export function AdminCampaignTable({ campaigns }: AdminCampaignTableProps) {
             >
               {processingAction ? (
                 <>
-                  <LoadingSpinner className="mr-2" size="sm" />
+                  <LoadingSpinner className="mr-2" size="sm" tone="current" />
                   Procesando...
                 </>
               ) : (

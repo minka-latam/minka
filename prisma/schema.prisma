@@ -51,7 +51,6 @@ model Campaign {
   tipCollected             Decimal               @default(0) @map("tip_collected") @db.Decimal(12, 2)
   donorCount               Int                   @default(0) @map("donor_count")
   percentageFunded         Float                 @map("percentage_funded")
-  daysRemaining            Int                   @map("days_remaining")
   youtubeUrl               String?               @map("youtube_url")
   endDate                  DateTime              @map("end_date") @db.Date
   verificationStatus       Boolean               @default(false) @map("verification_status")

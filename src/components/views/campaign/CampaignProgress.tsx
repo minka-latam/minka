@@ -23,6 +23,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
+import { calculateCampaignDaysRemaining } from '@/lib/campaign-dates'
 
 interface CampaignProgressProps {
   isVerified: boolean
@@ -31,6 +32,7 @@ interface CampaignProgressProps {
   targetAmount: number
   donorsCount: number
   daysRemaining?: number
+  campaignEndDate?: string
   campaignTitle?: string
   campaignSubtitle?: string
   campaignDescription?: string
@@ -80,6 +82,7 @@ export function CampaignProgress({
   targetAmount,
   donorsCount,
   daysRemaining = 0,
+  campaignEndDate = '',
   campaignTitle = '',
   campaignSubtitle = '',
   campaignDescription = '',
@@ -208,6 +211,12 @@ export function CampaignProgress({
           100,
         )
       : 0
+  const displayedDaysRemaining = campaignEndDate
+    ? calculateCampaignDaysRemaining(campaignEndDate)
+    : Math.max(
+        0,
+        Number.isFinite(daysRemaining) ? daysRemaining : 0,
+      )
 
   const handleSaveToggle = async () => {
     // Don't proceed until auth is confirmed loaded
@@ -453,7 +462,7 @@ export function CampaignProgress({
             Días restantes
           </span>
           <span className='text-[#2c6e49] font-medium'>
-            {Math.max(0, daysRemaining)}
+            {displayedDaysRemaining}
           </span>
         </div>
       </div>

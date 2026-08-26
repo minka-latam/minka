@@ -226,7 +226,7 @@ export function AdminFundTransfersTable({
       <CardContent className="p-0">
         {loading ? (
           <div className="flex justify-center py-10">
-            <LoadingSpinner />
+            <LoadingSpinner size="md" />
           </div>
         ) : transfers.length === 0 ? (
           <div className="px-6 py-10 text-center text-sm text-gray-500">

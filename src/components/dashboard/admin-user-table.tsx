@@ -9,7 +9,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns"; // For formatting dates
 import { Download, Info, Pencil, Search, Trash2, UserCheck } from "lucide-react"; // Icons for actions
@@ -33,6 +32,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { buildCsv, downloadCsv } from "@/lib/csv-export";
+import { AdminUserProfileDialog } from "@/components/dashboard/admin-user-profile-dialog";
 
 interface AdminUserTableProps {
   users: ProfileData[];
@@ -185,19 +185,6 @@ export function AdminUserTable({ users }: AdminUserTableProps) {
     }
   };
 
-  const formatDate = (value: unknown, includeTime = false) => {
-    if (!value || typeof value !== "string") return "-";
-
-    try {
-      return format(new Date(value), includeTime ? "PPP p" : "PPP");
-    } catch {
-      return value;
-    }
-  };
-
-  const profilePicture =
-    viewingUser?.profile_picture || viewingUser?.profilePicture || null;
-
   const handleExportUsers = () => {
     const csv = buildCsv(
       [
@@ -233,22 +220,6 @@ export function AdminUserTable({ users }: AdminUserTableProps) {
       csv,
     );
   };
-
-  const detailRows = viewingUser
-    ? [
-        ["ID", viewingUser.id],
-        ["Nombre", viewingUser.name],
-        ["Email", viewingUser.email],
-        ["Teléfono", viewingUser.phone],
-        ["Documento", viewingUser.identity_number || viewingUser.identityNumber],
-        ["Fecha de nacimiento", formatDate(viewingUser.birth_date || viewingUser.birthDate)],
-        ["Ubicación", viewingUser.location],
-        ["Campañas activas", viewingUser.active_campaigns_count ?? 0],
-        ["Miembro desde", formatDate(viewingUser.join_date)],
-        ["Creado", formatDate(viewingUser.created_at, true)],
-        ["Actualizado", formatDate(viewingUser.updated_at, true)],
-      ]
-    : [];
 
   return (
     <>
@@ -429,99 +400,13 @@ export function AdminUserTable({ users }: AdminUserTableProps) {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={Boolean(viewingUser)} onOpenChange={() => setViewingUser(null)}>
-        <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Perfil de usuario</DialogTitle>
-            <DialogDescription>
-              Información registrada en el perfil de Minka.
-            </DialogDescription>
-          </DialogHeader>
-
-          {viewingUser && (
-            <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
-              <div className="space-y-4">
-                <div className="overflow-hidden rounded-2xl border bg-[#f5f7e9]">
-                  {profilePicture ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={String(profilePicture)}
-                      alt={viewingUser.name || "Imagen de perfil"}
-                      className="aspect-square w-full object-cover"
-                    />
-                  ) : (
-                    <div className="flex aspect-square w-full items-center justify-center bg-[#e8f0e9] text-7xl font-semibold text-[#2c6e49]">
-                      {(viewingUser.name || viewingUser.email || "U")
-                        .charAt(0)
-                        .toUpperCase()}
-                    </div>
-                  )}
-                </div>
-
-                <div className="space-y-2 rounded-2xl border bg-white p-4">
-                  <div className="flex flex-wrap gap-2">
-                    <Badge
-                      variant={
-                        viewingUser.role === "admin"
-                          ? "destructive"
-                          : "secondary"
-                      }
-                    >
-                      {viewingUser.role || "user"}
-                    </Badge>
-                    <Badge
-                      variant={
-                        viewingUser.status === "inactive"
-                          ? "outline"
-                          : "secondary"
-                      }
-                      className={
-                        viewingUser.status === "inactive"
-                          ? "border-gray-400 text-gray-600"
-                          : "bg-[#e8f0e9] text-[#2c6e49] hover:bg-[#e8f0e9]"
-                      }
-                    >
-                      {viewingUser.status === "inactive" ? "Inactive" : "Active"}
-                    </Badge>
-                  </div>
-                  <p className="break-words text-lg font-semibold text-gray-900">
-                    {viewingUser.name || "-"}
-                  </p>
-                  <p className="break-words text-sm text-gray-600">
-                    {viewingUser.email || "-"}
-                  </p>
-                </div>
-              </div>
-
-              <div className="space-y-5">
-                <div className="grid gap-3 sm:grid-cols-2">
-                  {detailRows.map(([label, value]) => (
-                    <div key={String(label)} className="rounded-xl border p-3">
-                      <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
-                        {label}
-                      </p>
-                      <p className="mt-1 break-words text-sm font-medium text-gray-900">
-                        {value === null || value === undefined || value === ""
-                          ? "-"
-                          : String(value)}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="rounded-xl border p-4">
-                  <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
-                    Biografía
-                  </p>
-                  <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-gray-700">
-                    {viewingUser.bio || "Sin biografía registrada."}
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      <AdminUserProfileDialog
+        user={viewingUser}
+        open={Boolean(viewingUser)}
+        onOpenChange={(open) => {
+          if (!open) setViewingUser(null);
+        }}
+      />
     </>
   );
 }

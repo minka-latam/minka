@@ -319,7 +319,6 @@ async function main() {
       console.log(`Creating campaign: "${campaign.title}"...`);
 
       const endDate = new Date(Date.now() + campaign.daysFromNow * 24 * 60 * 60 * 1000);
-      const daysRemaining = campaign.daysFromNow;
 
       const createdCampaign = await prisma.campaign.create({
         data: {
@@ -331,7 +330,6 @@ async function main() {
           goalAmount: campaign.goalAmount,
           collectedAmount: 0,
           percentageFunded: 0,
-          daysRemaining,
           location: campaign.location as any,
           endDate,
           campaignStatus: "active",

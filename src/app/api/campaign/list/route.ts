@@ -265,7 +265,7 @@ export async function GET(request: Request) {
         orderBy = { percentageFunded: "desc" };
         break;
       case "ending_soon":
-        orderBy = { daysRemaining: "asc" };
+        orderBy = { endDate: "asc" };
         break;
       case "popular":
       default:

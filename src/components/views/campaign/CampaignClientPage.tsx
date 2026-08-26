@@ -26,6 +26,7 @@ import { formatCampaignCategory } from '@/lib/campaign-categories'
 
 import { VerificationInfoModal } from '@/components/ui/VerificationInfoModal'
 import { VerifiedBadge } from '@/components/ui/VerifiedBadge'
+import { AdminUserProfileLink } from '@/components/dashboard/admin-user-profile-link'
 type LatestDonor = {
   id: string
   name: string
@@ -105,10 +106,12 @@ function formatCampaignData(campaign: any) {
     targetAmount: campaign.goal_amount || 0,
     donorsCount: campaign.donor_count || 0,
     daysRemaining: campaign.days_remaining ?? 0,
+    endDate: campaign.end_date || '',
   }
 
   // Create default organizer data structure
   const organizerData = {
+    id: campaign.organizer?.id || '',
     name: campaign.organizer?.name || 'Organizador',
     role: 'Organizador de campaña',
     location:
@@ -176,6 +179,7 @@ function CustomCampaignDetails({
   onOpenLegalEntityModal,
 }: {
   organizer: {
+    id: string
     name: string
     role: string
     location: string
@@ -388,7 +392,9 @@ function CustomCampaignDetails({
           </div>
           <div className='min-w-0 flex-1'>
             <h3 className='text-base font-medium text-[#2c6e49] break-words'>
-              {organizer.name}
+              <AdminUserProfileLink userId={organizer.id}>
+                {organizer.name}
+              </AdminUserProfileLink>
             </h3>
             <p className='text-base text-gray-600 break-words'>
               Gestor de campaña | {organizer.location}
@@ -671,6 +677,12 @@ export default function CampaignClientPage({
                   createdAt={
                     formattedData.progress.createdAt
                   }
+                  daysRemaining={
+                    formattedData.progress.daysRemaining
+                  }
+                  campaignEndDate={
+                    formattedData.progress.endDate
+                  }
                   campaignTitle={formattedData.title}
                   campaignSubtitle={formattedData.subtitle}
                   campaignDescription={
@@ -803,6 +815,9 @@ export default function CampaignClientPage({
                 createdAt={formattedData.progress.createdAt}
                 daysRemaining={
                   formattedData.progress.daysRemaining
+                }
+                campaignEndDate={
+                  formattedData.progress.endDate
                 }
                 campaignTitle={formattedData.title}
                 campaignSubtitle={formattedData.subtitle}

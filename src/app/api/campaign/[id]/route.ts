@@ -20,6 +20,10 @@ import {
   campaignDateKeyToDbDate,
   toCampaignDateKey,
 } from "@/lib/campaign-dates";
+import {
+  CAMPAIGN_DESCRIPTION_MAX_LENGTH,
+  CAMPAIGN_DESCRIPTION_MIN_LENGTH,
+} from "@/lib/campaign-validation";
 
 // Define interfaces to help with typing
 interface OrganizerProfile {
@@ -156,11 +160,11 @@ export async function GET(
         collected_amount,
         donor_count,
         percentage_funded,
-        days_remaining,
         youtube_url,
         youtube_urls,
         verification_status,
         created_at,
+        end_date,
         campaign_status,
         submitted_for_review_at,
         reviewed_at,
@@ -462,6 +466,29 @@ export async function PATCH(
       presentation,
     } = body;
 
+    const descriptionChanged =
+      typeof description === "string" &&
+      description.trim() !== existingCampaign.description.trim();
+    const shouldValidateDescription =
+      description !== undefined &&
+      (existingCampaign.campaignStatus === CampaignStatus.draft ||
+        descriptionChanged);
+
+    if (shouldValidateDescription) {
+      if (
+        typeof description !== "string" ||
+        description.trim().length < CAMPAIGN_DESCRIPTION_MIN_LENGTH ||
+        description.length > CAMPAIGN_DESCRIPTION_MAX_LENGTH
+      ) {
+        return NextResponse.json(
+          {
+            error: `La descripción debe tener entre ${CAMPAIGN_DESCRIPTION_MIN_LENGTH} y ${CAMPAIGN_DESCRIPTION_MAX_LENGTH} caracteres`,
+          },
+          { status: 400 },
+        );
+      }
+    }
+
     if (goalAmount !== undefined && Number(goalAmount) > 1000000) {
       return NextResponse.json(
         {
@@ -496,7 +523,7 @@ export async function PATCH(
 
     if (title !== undefined) updateData.title = title;
     if (subtitle !== undefined) updateData.subtitle = subtitle;
-    if (description !== undefined) updateData.description = description;
+    if (description !== undefined) updateData.description = description.trim();
     if (beneficiariesDescription !== undefined)
       updateData.beneficiariesDescription = beneficiariesDescription;
     if (category !== undefined) updateData.category = category;
@@ -505,7 +532,6 @@ export async function PATCH(
     if (location !== undefined) updateData.location = location;
     if (endDate !== undefined) {
       updateData.endDate = campaignDateKeyToDbDate(endDate);
-      updateData.daysRemaining = calculateCampaignDaysRemaining(endDate);
     }
     if (youtubeUrl !== undefined) updateData.youtubeUrl = youtubeUrl;
     if (youtubeUrls !== undefined) updateData.youtubeUrls = youtubeUrls;
@@ -514,6 +540,19 @@ export async function PATCH(
     const isPublishingCampaign =
       campaignStatus === CampaignStatus.active &&
       existingCampaign.campaignStatus === CampaignStatus.draft;
+
+    if (
+      isPublishingCampaign &&
+      String(description ?? existingCampaign.description).trim().length <
+        CAMPAIGN_DESCRIPTION_MIN_LENGTH
+    ) {
+      return NextResponse.json(
+        {
+          error: `La descripción debe tener al menos ${CAMPAIGN_DESCRIPTION_MIN_LENGTH} caracteres antes de publicar`,
+        },
+        { status: 400 },
+      );
+    }
     const shouldSendReviewEmail =
       isPublishingCampaign && !existingCampaign.submittedForReviewAt;
 
@@ -610,7 +649,9 @@ export async function PATCH(
     // If media was provided, update the media records
     if (media && Array.isArray(media) && media.length > 0) {
       const nextMediaUrls = new Set(
-        media.flatMap((item: any) => [item.mediaUrl, item.previewUrl]).filter(Boolean),
+        media
+          .flatMap((item: any) => [item.mediaUrl, item.previewUrl])
+          .filter(Boolean),
       );
       const existingMedia = await db.campaignMedia.findMany({
         where: { campaignId },

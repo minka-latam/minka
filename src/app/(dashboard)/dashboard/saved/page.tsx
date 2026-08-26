@@ -20,7 +20,7 @@ export default function SavedCampaignsPage() {
   // Show loading state while auth is being checked
   if (authLoading) {
     return (
-      <div className="flex justify-center items-center min-h-[400px]">
+      <div className="flex min-h-[calc(100vh-8rem)] items-center justify-center px-4 py-16">
         <LoadingSpinner size="lg" />
       </div>
     );

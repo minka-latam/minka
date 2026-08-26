@@ -661,7 +661,7 @@ export function TransferFundsTab({ campaign }: TransferFundsTabProps) {
 
           {isLoadingTransfers ? (
             <div className="flex justify-center py-12">
-              <LoadingSpinner size="lg" />
+              <LoadingSpinner size="md" />
             </div>
           ) : transferHistory.length > 0 ? (
             <div className="flex-1 flex flex-col overflow-x-auto">

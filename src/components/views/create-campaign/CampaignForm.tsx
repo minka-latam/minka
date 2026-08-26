@@ -72,6 +72,10 @@ import {
   validatePhoneNumber,
 } from "@/utils/phone-formatter";
 import { findCountryByCode } from "@/data/country-codes";
+import {
+  CAMPAIGN_DESCRIPTION_MAX_LENGTH,
+  CAMPAIGN_DESCRIPTION_MIN_LENGTH,
+} from "@/lib/campaign-validation";
 
 const LOCAL_DONATION_FEE_RATE = 0.05;
 const INTERNATIONAL_DONATION_FEE_RATE = 0.11;
@@ -355,13 +359,8 @@ export function CampaignForm() {
   const { toast } = useToast();
   const { profile } = useAuth();
   const { campaignId, saveCampaignDraft, updateCampaign } = useCampaign();
-  const {
-    isUploading,
-    progress,
-    uploadedUrls,
-    setUploadedUrls,
-    uploadFiles,
-  } = useUpload();
+  const { isUploading, progress, uploadedUrls, setUploadedUrls, uploadFiles } =
+    useUpload();
   const { fetchActiveLegalEntities } = useLegalEntities();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadedMediaItems, setUploadedMediaItems] = useState<
@@ -517,7 +516,7 @@ export function CampaignForm() {
       formData.title.length >= 3 &&
       formData.subtitle.length >= 10 &&
       formData.category !== "" &&
-      formData.description.length >= 10;
+      formData.description.trim().length >= CAMPAIGN_DESCRIPTION_MIN_LENGTH;
 
     setIsStep1Valid(isValid);
   }, [formData]);
@@ -753,9 +752,10 @@ export function CampaignForm() {
   };
 
   // Utility function to help with image URL issues
-  const ensureMediaIsUploaded = async (): Promise<
-    Array<{ mediaUrl: string; previewUrl?: string }> | null
-  > => {
+  const ensureMediaIsUploaded = async (): Promise<Array<{
+    mediaUrl: string;
+    previewUrl?: string;
+  }> | null> => {
     if (
       uploadedMediaItems.length === mediaFiles.length &&
       uploadedMediaItems.length > 0
@@ -1064,6 +1064,16 @@ export function CampaignForm() {
         type: "image/jpeg",
       });
 
+      const validation = validateCampaignImageFile(file);
+      if (!validation.valid) {
+        toast({
+          title: validation.title,
+          description: validation.description,
+          variant: "destructive",
+        });
+        return;
+      }
+
       // Create an object URL from the blob for preview
       const objectUrl = URL.createObjectURL(blob);
 
@@ -1298,7 +1308,8 @@ export function CampaignForm() {
     ) {
       toast({
         title: "Sitio web inválido",
-        description: "Ingresa la web completa, por ejemplo https://ejemplo.org.",
+        description:
+          "Ingresa la web completa, por ejemplo https://ejemplo.org.",
         variant: "destructive",
       });
       return;
@@ -1561,12 +1572,13 @@ export function CampaignForm() {
     }
 
     // Validate campaign description
-    if (!formData.description || formData.description.length < 10) {
-      errors.description =
-        "La presentación de la campaña debe tener al menos 10 caracteres";
-    } else if (formData.description.length > 600) {
-      errors.description =
-        "La presentación de la campaña no puede tener más de 600 caracteres";
+    if (
+      !formData.description ||
+      formData.description.trim().length < CAMPAIGN_DESCRIPTION_MIN_LENGTH
+    ) {
+      errors.description = `La presentación de la campaña debe tener al menos ${CAMPAIGN_DESCRIPTION_MIN_LENGTH} caracteres`;
+    } else if (formData.description.length > CAMPAIGN_DESCRIPTION_MAX_LENGTH) {
+      errors.description = `La presentación de la campaña no puede tener más de ${CAMPAIGN_DESCRIPTION_MAX_LENGTH} caracteres`;
     }
 
     // Validate at least one image and ensure it's been uploaded properly
@@ -1741,12 +1753,15 @@ export function CampaignForm() {
         }
         break;
       case 7: // Campaign description
-        if (!formData.description || formData.description.length < 10) {
-          errors.description =
-            "La presentación de la campaña debe tener al menos 10 caracteres";
-        } else if (formData.description.length > 600) {
-          errors.description =
-            "La presentación de la campaña no puede tener más de 600 caracteres";
+        if (
+          !formData.description ||
+          formData.description.trim().length < CAMPAIGN_DESCRIPTION_MIN_LENGTH
+        ) {
+          errors.description = `La presentación de la campaña debe tener al menos ${CAMPAIGN_DESCRIPTION_MIN_LENGTH} caracteres`;
+        } else if (
+          formData.description.length > CAMPAIGN_DESCRIPTION_MAX_LENGTH
+        ) {
+          errors.description = `La presentación de la campaña no puede tener más de ${CAMPAIGN_DESCRIPTION_MAX_LENGTH} caracteres`;
         }
         break;
       case 8:
@@ -2014,10 +2029,10 @@ export function CampaignForm() {
                               Toma en cuenta la comisión antes de fijar tu meta.
                             </p>
                             <p>
-                              Minka descuenta una <b>comisión</b> antes de transferir
-                              los fondos al beneficiario: <b>5%</b> en donaciones
-                              locales por QR y <b>11%</b> en donaciones internacionales
-                              por tarjeta.
+                              Minka descuenta una <b>comisión</b> antes de
+                              transferir los fondos al beneficiario: <b>5%</b>{" "}
+                              en donaciones locales por QR y <b>11%</b> en
+                              donaciones internacionales por tarjeta.
                             </p>
                           </div>
                         </div>
@@ -2808,8 +2823,8 @@ export function CampaignForm() {
                         Otra persona o una institución/fundación
                       </div>
                       <div className="text-base text-gray-600">
-                        Para apoyar a alguien que no puede crear su campaña, o
-                        a una institución o fundación que aún no está en la base
+                        Para apoyar a alguien que no puede crear su campaña, o a
+                        una institución o fundación que aún no está en la base
                         de Minka.
                       </div>
                     </div>
@@ -2952,10 +2967,12 @@ export function CampaignForm() {
                       confianza, o publicarla directamente mientras el equipo de
                       Minka la revisa.
                     </p>
-                      <p className="text-gray-600 mb-6 text-center ">
+                    <p className="text-gray-600 mb-6 text-center ">
                       <span className="font-semibold"> No olvides: </span>
-                      revisar nuestras Preguntas Frecuentes con consejos para mejorar tu campaña, aumentar la visibilidad, conocer sobre la comisión de Minka, etc.
-                      </p>
+                      revisar nuestras Preguntas Frecuentes con consejos para
+                      mejorar tu campaña, aumentar la visibilidad, conocer sobre
+                      la comisión de Minka, etc.
+                    </p>
                     <div className="mb-6 rounded-lg border border-yellow-200 bg-yellow-50 p-4 text-sm text-yellow-900">
                       Al publicar, tu campaña quedará visible de inmediato y el
                       equipo de Minka la revisará para confirmar que todo esté
@@ -3354,7 +3371,9 @@ export function CampaignForm() {
       >
         <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Seleccionar institución corroborada por Minka</DialogTitle>
+            <DialogTitle>
+              Seleccionar institución corroborada por Minka
+            </DialogTitle>
             <DialogDescription>
               Selecciona la organización que recibirá los fondos recaudados en
               tu campaña

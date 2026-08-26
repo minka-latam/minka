@@ -28,6 +28,11 @@ function boliviaDateParts(date: Date) {
   };
 }
 
+export function getCurrentCampaignDateKey(date = new Date()) {
+  const { year, month, day } = boliviaDateParts(date);
+  return `${String(year).padStart(4, "0")}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+}
+
 function utcDayNumber({
   year,
   month,

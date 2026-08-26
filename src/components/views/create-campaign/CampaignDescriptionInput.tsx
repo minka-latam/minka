@@ -1,5 +1,9 @@
 import { useState, useEffect } from "react";
 import { ImproveTextButton } from "@/components/ui/improve-text-button";
+import {
+  CAMPAIGN_DESCRIPTION_MAX_LENGTH,
+  CAMPAIGN_DESCRIPTION_MIN_LENGTH,
+} from "@/lib/campaign-validation";
 
 interface CampaignDescriptionInputProps {
   initialValue: string;
@@ -52,19 +56,23 @@ export function CampaignDescriptionInput({
         value={value}
         onChange={handleChange}
         onBlur={() => onUpdate(value)}
-        maxLength={600}
+        minLength={CAMPAIGN_DESCRIPTION_MIN_LENGTH}
+        maxLength={CAMPAIGN_DESCRIPTION_MAX_LENGTH}
       />
       <div className="flex justify-between items-center mt-1">
   <ImproveTextButton
   text={value}
   fieldType="description"
-  maxLength={600}
+  maxLength={CAMPAIGN_DESCRIPTION_MAX_LENGTH}
   onAccept={(improved) => {
     setValue(improved);
     onUpdate(improved);
   }}
 />
-  <span className="text-sm text-gray-500">{value.length}/600</span>
+  <span className="text-sm text-gray-500">
+    Mín. {CAMPAIGN_DESCRIPTION_MIN_LENGTH} · {value.length}/
+    {CAMPAIGN_DESCRIPTION_MAX_LENGTH}
+  </span>
 </div>
       {error && <div className="error-text">{error}</div>}
     </div>

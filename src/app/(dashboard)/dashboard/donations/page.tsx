@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation'
 import {
   PaymentMethod,
   PaymentStatus,
+  TransferStatus,
   type Prisma,
 } from '@prisma/client'
 
@@ -35,6 +36,7 @@ import { prisma } from '@/lib/prisma'
 import { ProfileData } from '@/types'
 import Link from 'next/link'
 import { Download } from 'lucide-react'
+import { AdminUserProfileLink } from '@/components/dashboard/admin-user-profile-link'
 
 type SearchParams = {
   campaignId?: string | string[]
@@ -44,7 +46,6 @@ type SearchParams = {
   status?: string | string[]
   sort?: string | string[]
 }
-
 export interface AdminDonationData {
   id: string
   amount: number
@@ -57,6 +58,7 @@ export interface AdminDonationData {
     | null
   profiles:
     | {
+        id: string
         name: string | null
         email: string | null
       }[]
@@ -273,12 +275,35 @@ export default async function DonationsPage({
       paymentStatus: PaymentStatus.completed,
     }
 
+    const custodyDonationWhere: Prisma.DonationWhereInput = {
+      ...campaignFilter,
+      paymentStatus: PaymentStatus.completed,
+    }
+
+    const custodyTransferWhere: Prisma.FundTransferWhereInput = {
+      status: TransferStatus.completed,
+      ...(campaignId
+        ? { campaignId }
+        : campaignSearch
+          ? {
+              campaign: {
+                title: {
+                  contains: campaignSearch,
+                  mode: 'insensitive',
+                },
+              },
+            }
+          : {}),
+    }
+
     const [
       campaigns,
       donations,
       completedDonations,
       completedQrDonations,
       completedCardDonations,
+      custodyDonations,
+      completedTransfers,
     ] = await Promise.all([
       prisma.campaign.findMany({
         where: campaignSearch
@@ -308,6 +333,7 @@ export default async function DonationsPage({
           },
           donor: {
             select: {
+              id: true,
               name: true,
               email: true,
             },
@@ -341,11 +367,28 @@ export default async function DonationsPage({
           tip_amount: true,
         },
       }),
+      prisma.donation.findMany({
+        where: custodyDonationWhere,
+        select: {
+          amount: true,
+          tip_amount: true,
+        },
+      }),
+      prisma.fundTransfer.aggregate({
+        where: custodyTransferWhere,
+        _sum: { amount: true },
+      }),
     ])
 
     const totals = addTotals(completedDonations)
     const qrTotals = addTotals(completedQrDonations)
     const cardTotals = addTotals(completedCardDonations)
+    const custodyTotals = addTotals(custodyDonations)
+    const completedTransferAmount = toNumber(
+      completedTransfers._sum.amount,
+    )
+    const currentCustodyBalance =
+      custodyTotals.total - completedTransferAmount
     const platformFee = calculatePlatformFee(totals.amount)
     const exportParams = new URLSearchParams()
     if (campaignId) exportParams.set('campaignId', campaignId)
@@ -518,11 +561,15 @@ export default async function DonationsPage({
           <Card className='rounded-lg'>
             <CardHeader className='pb-2'>
               <CardDescription>
-                Monto recaudado
+                Saldo actual en custodia
               </CardDescription>
               <CardTitle>
-                {formatCurrency(totals.amount)}
+                {formatCurrency(currentCustodyBalance)}
               </CardTitle>
+              <p className='text-xs text-gray-500'>
+                Aportes + tips cobrados menos{' '}
+                {formatCurrency(completedTransferAmount)} transferidos
+              </p>
             </CardHeader>
           </Card>
           <Card className='rounded-lg'>
@@ -632,10 +679,16 @@ export default async function DonationsPage({
                       </TableCell>
                       <TableCell>
                         <div className='font-medium'>
-                          {donation.isAnonymous
-                            ? 'Anónimo'
-                            : donation.donor.name ||
-                              'Sin nombre'}
+                          {donation.isAnonymous ? (
+                            'Anónimo'
+                          ) : (
+                            <AdminUserProfileLink
+                              userId={donation.donor.id}
+                              className='text-[#2c6e49] hover:underline'
+                            >
+                              {donation.donor.name || 'Sin nombre'}
+                            </AdminUserProfileLink>
+                          )}
                         </div>
                         {!donation.isAnonymous && (
                           <div className='text-xs text-gray-500'>

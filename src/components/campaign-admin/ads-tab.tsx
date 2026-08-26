@@ -743,7 +743,7 @@ export function AdsTab({ campaign }: AdsTabProps) {
           >
             {isPublishingUpdate || isUploadingImage ? (
               <div className="flex items-center gap-2">
-                <LoadingSpinner size="sm" />
+                <LoadingSpinner size="sm" tone="inverse" />
                 <span>Publicando...</span>
               </div>
             ) : (

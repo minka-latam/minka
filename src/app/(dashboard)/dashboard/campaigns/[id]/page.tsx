@@ -48,6 +48,10 @@ import {
   validateCampaignImageFile,
 } from "@/lib/uploads/image-upload-validation";
 import {
+  CAMPAIGN_DESCRIPTION_MAX_LENGTH,
+  CAMPAIGN_DESCRIPTION_MIN_LENGTH,
+} from "@/lib/campaign-validation";
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -100,10 +104,8 @@ export default function CampaignDetailPage() {
   const [legalEntitiesSearch, setLegalEntitiesSearch] = useState("");
   const [isLoadingLegalEntities, setIsLoadingLegalEntities] = useState(false);
   const { fetchActiveLegalEntities } = useLegalEntities();
-  const {
-    cancelCampaign,
-    isCancellingCampaign: isDeleting,
-  } = useCancelCampaign();
+  const { cancelCampaign, isCancellingCampaign: isDeleting } =
+    useCancelCampaign();
 
   // Track original campaign state for reset functionality
   const [originalCampaign, setOriginalCampaign] = useState<Record<string, any>>(
@@ -162,6 +164,16 @@ export default function CampaignDetailPage() {
       const file = new File([blob], fileName, {
         type: "image/jpeg",
       });
+
+      const validation = validateCampaignImageFile(file);
+      if (!validation.valid) {
+        toast({
+          title: validation.title,
+          description: validation.description,
+          variant: "destructive",
+        });
+        return;
+      }
 
       if (
         editingImageIndex !== null &&
@@ -474,6 +486,29 @@ export default function CampaignDetailPage() {
     try {
       if (!validateRecipientSelection()) return;
 
+      const descriptionLength = String(campaign.description || "").trim()
+        .length;
+      if (descriptionLength < CAMPAIGN_DESCRIPTION_MIN_LENGTH) {
+        toast({
+          title: "Descripción muy corta",
+          description: `La descripción debe tener al menos ${CAMPAIGN_DESCRIPTION_MIN_LENGTH} caracteres.`,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (
+        String(campaign.description || "").length >
+        CAMPAIGN_DESCRIPTION_MAX_LENGTH
+      ) {
+        toast({
+          title: "Descripción muy larga",
+          description: `La descripción no puede superar ${CAMPAIGN_DESCRIPTION_MAX_LENGTH} caracteres.`,
+          variant: "destructive",
+        });
+        return;
+      }
+
       if (
         (!campaign.media || campaign.media.length === 0) &&
         mediaFiles.length === 0
@@ -627,19 +662,19 @@ export default function CampaignDetailPage() {
       const beneficiaryName =
         campaign?.beneficiary_name || campaign?.beneficiaryName;
       const beneficiaryRelationship =
-        campaign?.beneficiary_relationship ||
-        campaign?.beneficiaryRelationship;
+        campaign?.beneficiary_relationship || campaign?.beneficiaryRelationship;
 
       return {
         label: "Otra persona o institución/fundación",
-        detail: [
-          beneficiaryName ? `Beneficiario: ${beneficiaryName}.` : null,
-          beneficiaryRelationship
-            ? `Relación: ${beneficiaryRelationship}.`
-            : null,
-        ]
-          .filter(Boolean)
-          .join(" ") || "La campaña indica un beneficiario externo.",
+        detail:
+          [
+            beneficiaryName ? `Beneficiario: ${beneficiaryName}.` : null,
+            beneficiaryRelationship
+              ? `Relación: ${beneficiaryRelationship}.`
+              : null,
+          ]
+            .filter(Boolean)
+            .join(" ") || "La campaña indica un beneficiario externo.",
       };
     }
 
@@ -647,7 +682,7 @@ export default function CampaignDetailPage() {
       label: "No indicado",
       detail:
         "Revisa en Editar campaña quién recibirá el apoyo antes de publicar.",
-      };
+    };
   })();
   const validateRecipientSelection = () => {
     if (!recipientType) {
@@ -949,7 +984,7 @@ export default function CampaignDetailPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-16">
+      <div className="flex min-h-[calc(100vh-8rem)] items-center justify-center px-4 py-16">
         <LoadingSpinner size="lg" />
       </div>
     );
@@ -1971,7 +2006,8 @@ export default function CampaignDetailPage() {
                           className="w-full p-4 border border-black rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 min-h-[120px] resize-none"
                           placeholder="Cuenta la descripción completa de tu campaña"
                           defaultValue={campaign.description || ""}
-                          maxLength={600}
+                          minLength={CAMPAIGN_DESCRIPTION_MIN_LENGTH}
+                          maxLength={CAMPAIGN_DESCRIPTION_MAX_LENGTH}
                           onChange={(e) => {
                             setCampaign({
                               ...campaign,
@@ -1985,17 +2021,22 @@ export default function CampaignDetailPage() {
                         <ImproveTextButton
                           text={campaign.description || ""}
                           fieldType="description"
-                          maxLength={600}
+                          maxLength={CAMPAIGN_DESCRIPTION_MAX_LENGTH}
                           onAccept={(improved) => {
                             setCampaign({
                               ...campaign,
-                              description: improved.slice(0, 600),
+                              description: improved.slice(
+                                0,
+                                CAMPAIGN_DESCRIPTION_MAX_LENGTH,
+                              ),
                             });
                             handleFormChange();
                           }}
                         />
                         <span className="text-sm text-black">
-                          {(campaign.description || "").length}/600
+                          Mín. {CAMPAIGN_DESCRIPTION_MIN_LENGTH} ·{" "}
+                          {(campaign.description || "").length}/
+                          {CAMPAIGN_DESCRIPTION_MAX_LENGTH}
                         </span>
                       </div>
                     </div>
@@ -2150,7 +2191,10 @@ export default function CampaignDetailPage() {
                               className="min-h-[100px] w-full rounded-md border border-gray-300 bg-white p-3 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#2c6e49]"
                             />
                             <p className="text-right text-xs text-gray-500">
-                              {(campaign.beneficiaries_description || "").length}
+                              {
+                                (campaign.beneficiaries_description || "")
+                                  .length
+                              }
                               /600
                             </p>
                           </div>
@@ -2210,7 +2254,10 @@ export default function CampaignDetailPage() {
                                       {entity.name}
                                     </span>
                                     <span className="mt-1 block text-xs text-gray-600">
-                                      {[entity.taxId && `NIT: ${entity.taxId}`, entity.city]
+                                      {[
+                                        entity.taxId && `NIT: ${entity.taxId}`,
+                                        entity.city,
+                                      ]
                                         .filter(Boolean)
                                         .join(" | ")}
                                     </span>
@@ -2360,7 +2407,9 @@ export default function CampaignDetailPage() {
               Volver a editar
             </AlertDialogCancel>
             <AlertDialogAction
-              disabled={isPublishing || recipientSummary.label === "No indicado"}
+              disabled={
+                isPublishing || recipientSummary.label === "No indicado"
+              }
               onClick={(event) => {
                 event.preventDefault();
                 void handlePublishCampaign().then(() => {

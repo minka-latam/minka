@@ -27,6 +27,7 @@ type AdminCampaignApprovalRow = {
   goalAmount: Prisma.Decimal;
   organizerName: string;
   organizerEmail: string;
+  organizerId: string;
   submittedAt: Date;
   createdAt: Date;
 };
@@ -67,6 +68,7 @@ export async function GET(request: NextRequest) {
         campaigns.goal_amount as "goalAmount",
         organizer.name as "organizerName",
         organizer.email as "organizerEmail",
+        organizer.id as "organizerId",
         campaigns.submitted_for_review_at as "submittedAt",
         campaigns.created_at as "createdAt"
       from public.campaigns

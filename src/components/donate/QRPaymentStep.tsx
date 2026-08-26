@@ -527,7 +527,7 @@ export function QRPaymentStep({
         >
           {checkingPayment ? (
             <>
-              <LoadingSpinner size="xs" className="mr-2" />
+              <LoadingSpinner size="sm" tone="inverse" className="mr-2" />
               Verificando pago...
             </>
           ) : (

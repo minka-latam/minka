@@ -10,6 +10,69 @@ import { prisma } from "@/lib/prisma";
 const allowedRoles = new Set(["admin", "user"]);
 const allowedStatuses = new Set(["active", "inactive"]);
 
+export async function GET(
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  try {
+    await requireAdminProfile();
+    const { id: userId } = await params;
+    const user = await prisma.profile.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        role: true,
+        status: true,
+        identityNumber: true,
+        birthDate: true,
+        profilePicture: true,
+        location: true,
+        bio: true,
+        activeCampaignsCount: true,
+        joinDate: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    return NextResponse.json({
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        role: user.role,
+        status: user.status,
+        identity_number: user.identityNumber,
+        birth_date: user.birthDate?.toISOString() ?? null,
+        profile_picture: user.profilePicture,
+        location: user.location,
+        bio: user.bio,
+        active_campaigns_count: user.activeCampaignsCount,
+        join_date: user.joinDate.toISOString(),
+        created_at: user.createdAt.toISOString(),
+        updated_at: user.updatedAt.toISOString(),
+      },
+    });
+  } catch (error) {
+    const authResponse = adminAuthErrorResponse(error);
+    if (authResponse) return authResponse;
+
+    console.error("Error fetching admin user profile:", error);
+    return NextResponse.json(
+      { error: "Failed to load user profile" },
+      { status: 500 },
+    );
+  }
+}
+
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }

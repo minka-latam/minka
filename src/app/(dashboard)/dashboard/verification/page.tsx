@@ -45,6 +45,7 @@ import { es } from "date-fns/locale";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { useAuth } from "@/providers/auth-provider";
 import { buildCsv, downloadCsv } from "@/lib/csv-export";
+import { AdminUserProfileLink } from "@/components/dashboard/admin-user-profile-link";
 
 interface VerificationRequest {
   id: string;
@@ -62,6 +63,8 @@ interface VerificationRequest {
   referenceContactEmail?: string;
   referenceContactPhone?: string;
   campaignImage?: string;
+  campaignStatus: "draft" | "active" | "completed" | "cancelled";
+  endDate: string;
 }
 
 export default function CampaignVerificationPage() {
@@ -154,6 +157,8 @@ export default function CampaignVerificationPage() {
             referenceContactEmail: item.referenceContactEmail,
             referenceContactPhone: item.referenceContactPhone,
             campaignImage: item.campaignImage,
+            campaignStatus: item.campaignStatus,
+            endDate: item.endDate,
           })
         );
 
@@ -407,7 +412,7 @@ export default function CampaignVerificationPage() {
   // Render loading state
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-16">
+      <div className="flex min-h-[calc(100vh-8rem)] items-center justify-center px-4 py-16">
         <LoadingSpinner size="lg" />
       </div>
     );
@@ -582,7 +587,14 @@ export default function CampaignVerificationPage() {
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell>{request.organizerName}</TableCell>
+                      <TableCell>
+                        <AdminUserProfileLink
+                          userId={request.organizerId}
+                          className="font-medium text-[#2c6e49] hover:underline"
+                        >
+                          {request.organizerName}
+                        </AdminUserProfileLink>
+                      </TableCell>
                       <TableCell>
                         {request.requestDate
                           ? formatDistanceToNow(new Date(request.requestDate), {
@@ -710,7 +722,12 @@ export default function CampaignVerificationPage() {
                           Organizador
                         </p>
                         <p className="text-base">
-                          {selectedRequest.organizerName}
+                          <AdminUserProfileLink
+                            userId={selectedRequest.organizerId}
+                            className="text-[#2c6e49] hover:underline"
+                          >
+                            {selectedRequest.organizerName}
+                          </AdminUserProfileLink>
                         </p>
                       </div>
                       <div>
@@ -1437,7 +1454,15 @@ export default function CampaignVerificationPage() {
             >
               {processingAction ? (
                 <>
-                  <LoadingSpinner className="mr-2" size="sm" />
+                  <LoadingSpinner
+                    className="mr-2"
+                    size="sm"
+                    tone={
+                      dialogAction === "approve" || dialogAction === "reject"
+                        ? "inverse"
+                        : "current"
+                    }
+                  />
                   Procesando...
                 </>
               ) : (

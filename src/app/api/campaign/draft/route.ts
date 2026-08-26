@@ -4,17 +4,23 @@ import { cookies } from "next/headers";
 import { prisma as db } from "@/lib/prisma";
 import { z } from "zod";
 import { Region } from "@prisma/client";
-import {
-  calculateCampaignDaysRemaining,
-  campaignDateKeyToDbDate,
-} from "@/lib/campaign-dates";
+import { campaignDateKeyToDbDate } from "@/lib/campaign-dates";
 import { deleteStorageObjectsForMedia } from "@/lib/storage/delete-objects";
+import {
+  CAMPAIGN_DESCRIPTION_MAX_LENGTH,
+  CAMPAIGN_DESCRIPTION_MIN_LENGTH,
+} from "@/lib/campaign-validation";
 
 const campaignDraftSchema = z.object({
   campaignId: z.string().uuid().optional(),
   title: z.string().min(3).max(80).optional(),
   subtitle: z.string().min(10).max(150).optional(),
-  description: z.string().min(10).max(600).optional(),
+  description: z
+    .string()
+    .trim()
+    .min(CAMPAIGN_DESCRIPTION_MIN_LENGTH)
+    .max(CAMPAIGN_DESCRIPTION_MAX_LENGTH)
+    .optional(),
   beneficiariesDescription: z.string().max(600).optional(),
   category: z.enum([
     "cultura_arte", "educacion", "emergencia", "igualdad",
@@ -93,10 +99,6 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      const daysRemaining = validatedData.endDate
-        ? calculateCampaignDaysRemaining(validatedData.endDate)
-        : undefined;
-
       campaign = await db.campaign.update({
         where: { id: validatedData.campaignId },
         data: {
@@ -108,7 +110,6 @@ export async function POST(req: NextRequest) {
           goalAmount: validatedData.goalAmount,
           location: validatedData.location,
           endDate: validatedData.endDate,
-          daysRemaining,
           youtubeUrl: validatedData.youtubeUrl || null,
           youtubeUrls: validatedData.youtubeUrls || [],
         },
@@ -160,9 +161,6 @@ export async function POST(req: NextRequest) {
           goalAmount: validatedData.goalAmount || 0,
           collectedAmount: 0,
           percentageFunded: 0,
-          daysRemaining: validatedData.endDate
-            ? calculateCampaignDaysRemaining(validatedData.endDate)
-            : 30,
           location: validatedData.location || "la_paz",
           endDate: validatedData.endDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
           youtubeUrl: validatedData.youtubeUrl || null,

@@ -62,7 +62,7 @@ function CampaignVerificationPageSkeleton() {
 
       <div className="w-full h-[100px] md:h-[200px] lg:h-[300px] relative border-t border-[#2c6e49]/5">
         <div className="absolute inset-0 flex items-center justify-center">
-          <LoadingSpinner size="lg" />
+          <LoadingSpinner size="md" />
         </div>
       </div>
       <main className="overflow-x-hidden">

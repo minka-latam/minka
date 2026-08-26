@@ -65,7 +65,6 @@ async function getRelatedProfileData(userId: string) {
         collectedAmount: true,
         donorCount: true,
         percentageFunded: true,
-        daysRemaining: true,
         location: true,
         endDate: true,
         verificationStatus: true,

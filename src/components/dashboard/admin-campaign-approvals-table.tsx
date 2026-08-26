@@ -18,6 +18,7 @@ import {
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { useToast } from "@/components/ui/use-toast";
 import { formatCurrency } from "@/lib/campaign-finance";
+import { AdminUserProfileLink } from "@/components/dashboard/admin-user-profile-link";
 
 type AdminCampaignApproval = {
   id: string;
@@ -27,6 +28,7 @@ type AdminCampaignApproval = {
   goalAmount: string;
   organizerName: string;
   organizerEmail: string;
+  organizerId: string;
   submittedAt: string;
   createdAt: string;
 };
@@ -142,7 +144,7 @@ export function AdminCampaignApprovalsTable({
       <CardContent className="p-0">
         {loading ? (
           <div className="flex justify-center py-10">
-            <LoadingSpinner />
+            <LoadingSpinner size="md" />
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -171,9 +173,12 @@ export function AdminCampaignApprovalsTable({
                     </TableCell>
                     <TableCell>
                       <div className="max-w-[220px]">
-                        <p className="truncate font-medium">
+                        <AdminUserProfileLink
+                          userId={campaign.organizerId}
+                          className="block truncate font-medium text-[#2c6e49] hover:underline"
+                        >
                           {campaign.organizerName}
-                        </p>
+                        </AdminUserProfileLink>
                         <p className="truncate text-xs text-gray-500">
                           {campaign.organizerEmail}
                         </p>

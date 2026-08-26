@@ -39,12 +39,14 @@ import {
   Eye,
   Trash2,
   Clock,
+  Ban,
 } from "lucide-react";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
 import Image from "next/image";
 import { formatCurrency } from "@/lib/campaign-finance";
+import { AdminUserProfileLink } from "@/components/dashboard/admin-user-profile-link";
 
 interface Campaign {
   id: string;
@@ -87,7 +89,7 @@ export function SuperAdminCampaignTable({
   const [loading, setLoading] = useState<string | null>(null);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [confirmAction, setConfirmAction] = useState<{
-    type: "verify" | "unverify" | "delete" | "bulk-delete";
+    type: "verify" | "unverify" | "cancel" | "delete" | "bulk-delete";
     campaignId: string;
     campaignTitle: string;
   } | null>(null);
@@ -109,9 +111,9 @@ export function SuperAdminCampaignTable({
   };
 
   const openConfirmDialog = (
-    type: "verify" | "unverify" | "delete" | "bulk-delete",
+    type: "verify" | "unverify" | "cancel" | "delete" | "bulk-delete",
     campaignId: string,
-    campaignTitle: string
+    campaignTitle: string,
   ) => {
     setConfirmAction({ type, campaignId, campaignTitle });
     setShowConfirmDialog(true);
@@ -153,12 +155,31 @@ export function SuperAdminCampaignTable({
               : "Verification Revoked",
           description: `Campaign has been ${confirmAction.type === "verify" ? "verified" : "unverified"} successfully.`,
         });
+      } else if (confirmAction.type === "cancel") {
+        const response = await fetch(
+          `/api/admin/campaigns/${confirmAction.campaignId}`,
+          {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "cancel" }),
+          },
+        );
+
+        if (!response.ok) {
+          const data = await response.json().catch(() => null);
+          throw new Error(data?.error || "No se pudo terminar la campaña");
+        }
+
+        toast({
+          title: "Campaña terminada",
+          description: "La campaña fue cancelada y su historial se conserva.",
+        });
       } else if (confirmAction.type === "delete") {
         const response = await fetch(
           `/api/admin/campaigns/${confirmAction.campaignId}`,
           {
             method: "DELETE",
-          }
+          },
         );
 
         if (!response.ok) {
@@ -167,7 +188,7 @@ export function SuperAdminCampaignTable({
         }
 
         setSelectedCampaigns((prev) =>
-          prev.filter((campaignId) => campaignId !== confirmAction.campaignId)
+          prev.filter((campaignId) => campaignId !== confirmAction.campaignId),
         );
 
         toast({
@@ -186,7 +207,7 @@ export function SuperAdminCampaignTable({
               const data = await response.json().catch(() => null);
               throw new Error(data?.error || "Failed to delete campaigns");
             }
-          })
+          }),
         );
 
         setSelectedCampaigns([]);
@@ -325,6 +346,18 @@ export function SuperAdminCampaignTable({
 
             <DropdownMenuSeparator />
 
+            {(campaign.status === "draft" || campaign.status === "active") && (
+              <DropdownMenuItem
+                onClick={() =>
+                  openConfirmDialog("cancel", campaign.id, campaign.title)
+                }
+                className="text-amber-700 focus:text-amber-700"
+              >
+                <Ban className="mr-2 h-4 w-4" />
+                Terminar campaña
+              </DropdownMenuItem>
+            )}
+
             <DropdownMenuItem
               onClick={() =>
                 openConfirmDialog("delete", campaign.id, campaign.title)
@@ -332,7 +365,7 @@ export function SuperAdminCampaignTable({
               className="text-red-600 focus:text-red-600"
             >
               <Trash2 className="mr-2 h-4 w-4" />
-              Delete Campaign
+              Eliminar permanentemente
             </DropdownMenuItem>
           </>
         )}
@@ -340,9 +373,7 @@ export function SuperAdminCampaignTable({
     </DropdownMenu>
   );
 
-  const renderFundingSummary = (
-    campaign: Campaign
-  ) => (
+  const renderFundingSummary = (campaign: Campaign) => (
     <div className="space-y-2">
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
         <span className="font-medium">
@@ -410,7 +441,16 @@ export function SuperAdminCampaignTable({
                   <div className="mt-3 grid gap-2 text-sm sm:grid-cols-2">
                     <div>
                       <p className="text-xs text-gray-500">Organizer</p>
-                      <p className="font-medium">{campaign.organizerName}</p>
+                      {isAdmin ? (
+                        <AdminUserProfileLink
+                          userId={campaign.organizerId}
+                          className="font-medium text-[#2c6e49] hover:underline"
+                        >
+                          {campaign.organizerName}
+                        </AdminUserProfileLink>
+                      ) : (
+                        <p className="font-medium">{campaign.organizerName}</p>
+                      )}
                       <p className="truncate text-gray-500">
                         {campaign.organizerEmail}
                       </p>
@@ -439,9 +479,7 @@ export function SuperAdminCampaignTable({
                     </span>
                   </div>
 
-                  <div className="mt-3">
-                    {renderFundingSummary(campaign)}
-                  </div>
+                  <div className="mt-3">{renderFundingSummary(campaign)}</div>
                 </div>
               </div>
             </div>
@@ -527,7 +565,16 @@ export function SuperAdminCampaignTable({
 
                   <TableCell>
                     <div>
-                      <p className="font-medium">{campaign.organizerName}</p>
+                      {isAdmin ? (
+                        <AdminUserProfileLink
+                          userId={campaign.organizerId}
+                          className="font-medium text-[#2c6e49] hover:underline"
+                        >
+                          {campaign.organizerName}
+                        </AdminUserProfileLink>
+                      ) : (
+                        <p className="font-medium">{campaign.organizerName}</p>
+                      )}
                       <p className="text-sm text-gray-500">
                         {campaign.organizerEmail}
                       </p>
@@ -540,9 +587,7 @@ export function SuperAdminCampaignTable({
                     </Badge>
                   </TableCell>
 
-                  <TableCell>
-                    {renderFundingSummary(campaign)}
-                  </TableCell>
+                  <TableCell>{renderFundingSummary(campaign)}</TableCell>
 
                   <TableCell>{getStatusBadge(campaign.status)}</TableCell>
 
@@ -592,7 +637,7 @@ export function SuperAdminCampaignTable({
                   openConfirmDialog(
                     "bulk-delete",
                     "bulk-delete",
-                    `${selectedCampaigns.length} selected campaigns`
+                    `${selectedCampaigns.length} selected campaigns`,
                   )
                 }
               >
@@ -618,7 +663,9 @@ export function SuperAdminCampaignTable({
               {confirmAction?.type === "verify" && "Verify Campaign"}
               {confirmAction?.type === "unverify" &&
                 "Revoke Campaign Verification"}
-              {confirmAction?.type === "delete" && "Delete Campaign"}
+              {confirmAction?.type === "cancel" && "Terminar campaña"}
+              {confirmAction?.type === "delete" &&
+                "Eliminar campaña permanentemente"}
               {confirmAction?.type === "bulk-delete" &&
                 "Delete Selected Campaigns"}
             </DialogTitle>
@@ -627,6 +674,8 @@ export function SuperAdminCampaignTable({
                 "This will mark the campaign as verified. Users will see a verification badge."}
               {confirmAction?.type === "unverify" &&
                 "This will remove the verification status from the campaign."}
+              {confirmAction?.type === "cancel" &&
+                "La campaña dejará de estar activa, pero se conservarán sus donaciones, transferencias y demás historial."}
               {confirmAction?.type === "delete" &&
                 "This action cannot be undone. This will permanently delete the campaign. The database cascade rules will remove only the configured related records."}
               {confirmAction?.type === "bulk-delete" &&
@@ -649,6 +698,19 @@ export function SuperAdminCampaignTable({
                   <p className="text-sm text-amber-700 mt-1">
                     Revoking verification should be done carefully as donors may
                     have trusted the verification badge when making donations.
+                  </p>
+                </div>
+              )}
+
+              {confirmAction.type === "cancel" && (
+                <div className="mt-4 rounded-md border border-amber-200 bg-amber-50 p-4">
+                  <h4 className="flex items-center text-sm font-bold text-amber-700">
+                    <Ban className="mr-2 h-4 w-4" />
+                    Terminación sin borrado
+                  </h4>
+                  <p className="mt-1 text-sm text-amber-800">
+                    Esta acción cambia el estado a cancelada y conserva toda la
+                    información de la campaña.
                   </p>
                 </div>
               )}
@@ -686,14 +748,16 @@ export function SuperAdminCampaignTable({
             >
               {loading !== null ? (
                 <>
-                  <LoadingSpinner className="mr-2" size="sm" />
+                  <LoadingSpinner className="mr-2" size="sm" tone="inverse" />
                   Processing...
                 </>
               ) : (
                 <>
                   {confirmAction?.type === "verify" && "Verify Campaign"}
                   {confirmAction?.type === "unverify" && "Revoke Verification"}
-                  {confirmAction?.type === "delete" && "Delete Campaign"}
+                  {confirmAction?.type === "cancel" && "Terminar campaña"}
+                  {confirmAction?.type === "delete" &&
+                    "Eliminar permanentemente"}
                   {confirmAction?.type === "bulk-delete" &&
                     "Delete Selected Campaigns"}
                 </>
