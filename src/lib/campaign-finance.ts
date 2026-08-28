@@ -1,5 +1,6 @@
 export const PLATFORM_FEE_RATE = 0.05
-export const MIN_TRANSFER_AMOUNT = 100
+// TEMPORARY: lowered for transfer-request testing. Restore to 100 afterwards.
+export const MIN_TRANSFER_AMOUNT = 0.01
 
 export function toNumber(value: unknown) {
   if (value == null) return 0

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -79,10 +80,24 @@ interface CampaignStats {
   netAmount: number;
 }
 
+type CampaignsPageCache = {
+  campaigns: Campaign[];
+  stats: CampaignStats | null;
+};
+
+const campaignsPageCacheKey = (userId: string) => [
+  "dashboard-campaigns",
+  userId,
+];
+
 export default function SuperAdminCampaignsPage() {
   const router = useRouter();
-  const { user, profile } = useAuth();
+  const queryClient = useQueryClient();
+  const { user, profile, isLoading: isAuthLoading } = useAuth();
   const { toast } = useToast();
+  const userId = user?.id;
+  const userEmail = user?.email;
+  const userRole = profile?.role;
 
   const [loading, setLoading] = useState(true);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
@@ -97,23 +112,35 @@ export default function SuperAdminCampaignsPage() {
   // Check user access and determine role
   useEffect(() => {
     const initializePage = async () => {
-      if (!user) {
+      if (isAuthLoading) return;
+
+      if (!userId) {
         router.push("/sign-in");
         return;
       }
 
       // Check user role from profile
-      const userRole = profile?.role;
       const isUserAdmin = userRole === "admin";
       setIsAdmin(isUserAdmin);
 
+      const cached = queryClient.getQueryData<CampaignsPageCache>(
+        campaignsPageCacheKey(userId),
+      );
+
+      if (cached) {
+        setCampaigns(cached.campaigns);
+        setStats(cached.stats);
+        setLoading(false);
+      }
+
       try {
-        await fetchCampaignsData(isUserAdmin);
+        await fetchCampaignsData(isUserAdmin, !cached);
       } catch (error) {
         console.error("Error initializing page:", error);
         toast({
           title: "Error",
-          description: "Failed to load campaigns data. Please try again.",
+          description:
+            "No se pudieron cargar las campañas. Intenta nuevamente.",
           variant: "destructive",
         });
         setLoading(false);
@@ -121,11 +148,14 @@ export default function SuperAdminCampaignsPage() {
     };
 
     initializePage();
-  }, [user, profile, router]);
+  }, [isAuthLoading, queryClient, router, userId, userRole]);
 
-  const fetchCampaignsData = async (userIsAdmin: boolean) => {
+  const fetchCampaignsData = async (
+    userIsAdmin: boolean,
+    showFullPageLoading = false,
+  ) => {
     try {
-      setLoading(true);
+      if (showFullPageLoading) setLoading(true);
 
       if (userIsAdmin) {
         // Admin user - fetch all campaigns and stats
@@ -145,8 +175,15 @@ export default function SuperAdminCampaignsPage() {
         const campaignsData = await campaignsResponse.json();
         const statsData = await statsResponse.json();
 
-        setCampaigns(campaignsData.campaigns || []);
+        const nextCampaigns = campaignsData.campaigns || [];
+        setCampaigns(nextCampaigns);
         setStats(statsData);
+        if (userId) {
+          queryClient.setQueryData<CampaignsPageCache>(
+            campaignsPageCacheKey(userId),
+            { campaigns: nextCampaigns, stats: statsData },
+          );
+        }
       } else {
         // Regular user - fetch only their campaigns
         const campaignsResponse = await fetch("/api/campaign/user");
@@ -170,7 +207,7 @@ export default function SuperAdminCampaignsPage() {
             donorCount: 0, // Not available in user API
             percentageFunded: Math.round(
               (Number(campaign.current_amount) / Number(campaign.goal_amount)) *
-                100
+                100,
             ),
             daysRemaining: 0, // Calculate if needed
             status: campaign.status,
@@ -182,14 +219,14 @@ export default function SuperAdminCampaignsPage() {
             createdAt: campaign.created_at,
             endDate: "",
             organizerName: "You",
-            organizerEmail: user?.email || "",
+            organizerEmail: userEmail || "",
             organizerId: campaign.organizer_id,
             imageUrl: campaign.image_url,
             tipAmount: 0,
             platformFeeAmount: 0,
             totalProcessedAmount: 0,
             netAmount: 0,
-          })
+          }),
         );
 
         setCampaigns(transformedCampaigns);
@@ -197,20 +234,20 @@ export default function SuperAdminCampaignsPage() {
         // Calculate basic stats for regular users
         const totalCampaigns = transformedCampaigns.length;
         const activeCampaigns = transformedCampaigns.filter(
-          (c: any) => c.status === "active"
+          (c: any) => c.status === "active",
         ).length;
         const totalRaised = transformedCampaigns.reduce(
           (sum: number, c: any) => sum + c.collectedAmount,
-          0
+          0,
         );
         const verifiedCampaigns = transformedCampaigns.filter(
-          (c: any) => c.verificationStatus
+          (c: any) => c.verificationStatus,
         ).length;
         const completedCampaigns = transformedCampaigns.filter(
-          (c: any) => c.status === "completed"
+          (c: any) => c.status === "completed",
         ).length;
 
-        setStats({
+        const nextStats = {
           totalCampaigns,
           activeCampaigns,
           totalRaised,
@@ -221,17 +258,24 @@ export default function SuperAdminCampaignsPage() {
           totalPlatformFeeAmount: 0,
           totalProcessedAmount: 0,
           netAmount: 0,
-        });
+        };
+        setStats(nextStats);
+        if (userId) {
+          queryClient.setQueryData<CampaignsPageCache>(
+            campaignsPageCacheKey(userId),
+            { campaigns: transformedCampaigns, stats: nextStats },
+          );
+        }
       }
     } catch (error) {
       console.error("Error fetching campaigns data:", error);
       toast({
         title: "Error",
-        description: "Failed to load campaigns data. Please try again.",
+        description: "No se pudieron cargar las campañas. Intenta nuevamente.",
         variant: "destructive",
       });
     } finally {
-      setLoading(false);
+      if (showFullPageLoading) setLoading(false);
     }
   };
 
@@ -308,14 +352,14 @@ export default function SuperAdminCampaignsPage() {
         const csvContent = [
           // CSV headers
           [
-            "Title",
-            "Category",
-            "Location",
-            "Goal Amount",
-            "Collected Amount",
-            "Status",
-            "Verification Status",
-            "Created Date",
+            "Título",
+            "Categoría",
+            "Ubicación",
+            "Meta",
+            "Monto recaudado",
+            "Estado",
+            "Estado de verificación",
+            "Fecha de creación",
           ].join(","),
           // CSV data
           ...filteredCampaigns.map((campaign) =>
@@ -326,9 +370,9 @@ export default function SuperAdminCampaignsPage() {
               campaign.goalAmount,
               campaign.collectedAmount,
               campaign.status,
-              campaign.verificationStatus ? "Verified" : "Unverified",
+              campaign.verificationStatus ? "Verificada" : "No verificada",
               new Date(campaign.createdAt).toLocaleDateString(),
-            ].join(",")
+            ].join(","),
           ),
         ].join("\n");
 
@@ -346,14 +390,14 @@ export default function SuperAdminCampaignsPage() {
       }
 
       toast({
-        title: "Export Successful",
-        description: "Campaign data has been exported successfully.",
+        title: "Exportación completada",
+        description: "Los datos de las campañas se exportaron correctamente.",
       });
     } catch (error) {
       console.error("Export error:", error);
       toast({
-        title: "Export Failed",
-        description: "Failed to export campaign data. Please try again.",
+        title: "Error al exportar",
+        description: "No se pudieron exportar los datos. Intenta nuevamente.",
         variant: "destructive",
       });
     }
@@ -418,9 +462,7 @@ export default function SuperAdminCampaignsPage() {
                 progress={campaign.percentageFunded}
                 status={campaign.status as CampaignStatus}
                 isVerified={campaign.verificationStatus}
-                verificationRequestStatus={
-                  campaign.verificationRequestStatus
-                }
+                verificationRequestStatus={campaign.verificationRequestStatus}
                 submittedForReviewAt={campaign.submittedForReviewAt}
               />
             ))}
@@ -437,10 +479,10 @@ export default function SuperAdminCampaignsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-800">
-            Campaign Management
+            Gestión de campañas
           </h1>
           <p className="text-gray-600 mt-1">
-            Manage and monitor all campaigns on the platform
+            Administra y supervisa todas las campañas de la plataforma
           </p>
         </div>
         <div className="flex gap-2">
@@ -458,7 +500,7 @@ export default function SuperAdminCampaignsPage() {
           >
             <Link href="/create-campaign">
               <Plus size={16} />
-              New Campaign
+              Nueva campaña
             </Link>
           </Button>
         </div>
@@ -471,13 +513,13 @@ export default function SuperAdminCampaignsPage() {
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-gray-600 flex items-center">
                 <TrendingUp className="h-4 w-4 mr-2" />
-                Total Campaigns
+                Total de campañas
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stats.totalCampaigns}</div>
               <p className="text-sm text-green-600">
-                {stats.activeCampaigns} active
+                {stats.activeCampaigns} activas
               </p>
             </CardContent>
           </Card>
@@ -486,7 +528,7 @@ export default function SuperAdminCampaignsPage() {
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-gray-600 flex items-center">
                 <DollarSign className="h-4 w-4 mr-2" />
-                Net
+                Neto
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -494,7 +536,7 @@ export default function SuperAdminCampaignsPage() {
                 {formatCurrency(stats.netAmount)}
               </div>
               <p className="text-sm text-gray-600">
-                Completed donations less transfers
+                Donaciones completadas menos transferencias
               </p>
             </CardContent>
           </Card>
@@ -503,7 +545,7 @@ export default function SuperAdminCampaignsPage() {
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-gray-600 flex items-center">
                 <DollarSign className="h-4 w-4 mr-2" />
-                Total Processed
+                Total procesado
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -511,7 +553,7 @@ export default function SuperAdminCampaignsPage() {
                 {formatCurrency(stats.totalProcessedAmount)}
               </div>
               <p className="text-sm text-gray-600">
-                Base plus stored tips
+                Base más aportes registrados
               </p>
             </CardContent>
           </Card>
@@ -520,7 +562,7 @@ export default function SuperAdminCampaignsPage() {
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-gray-600 flex items-center">
                 <DollarSign className="h-4 w-4 mr-2" />
-                Tips
+                Aportes a Minka
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -528,7 +570,7 @@ export default function SuperAdminCampaignsPage() {
                 {formatCurrency(stats.totalTipAmount)}
               </div>
               <p className="text-sm text-gray-600">
-                Stored Minka contributions
+                Contribuciones registradas para Minka
               </p>
             </CardContent>
           </Card>
@@ -537,7 +579,7 @@ export default function SuperAdminCampaignsPage() {
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-gray-600 flex items-center">
                 <DollarSign className="h-4 w-4 mr-2" />
-                Total Raised
+                Total recaudado
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -545,7 +587,7 @@ export default function SuperAdminCampaignsPage() {
                 {formatCurrency(stats.totalRaised)}
               </div>
               <p className="text-sm text-gray-600">
-                Progress amount only
+                Solo el monto aplicado al progreso
               </p>
             </CardContent>
           </Card>
@@ -554,7 +596,7 @@ export default function SuperAdminCampaignsPage() {
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-gray-600 flex items-center">
                 <DollarSign className="h-4 w-4 mr-2" />
-                Fee
+                Comisión
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -562,7 +604,7 @@ export default function SuperAdminCampaignsPage() {
                 {formatCurrency(stats.totalPlatformFeeAmount)}
               </div>
               <p className="text-sm text-gray-600">
-                Estimated 5% of base
+                5% estimado sobre el monto base
               </p>
             </CardContent>
           </Card>
@@ -571,7 +613,7 @@ export default function SuperAdminCampaignsPage() {
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-gray-600 flex items-center">
                 <CheckCircle className="h-4 w-4 mr-2" />
-                Verified
+                Verificadas
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -585,7 +627,7 @@ export default function SuperAdminCampaignsPage() {
                       100
                     ).toFixed(1)
                   : "0.0"}
-                % of total
+                % del total
               </p>
             </CardContent>
           </Card>
@@ -594,7 +636,7 @@ export default function SuperAdminCampaignsPage() {
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-gray-600 flex items-center">
                 <Users className="h-4 w-4 mr-2" />
-                Completed
+                Completadas
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -608,7 +650,7 @@ export default function SuperAdminCampaignsPage() {
                       100
                     ).toFixed(1)
                   : "0.0"}
-                % success rate
+                % de tasa de éxito
               </p>
             </CardContent>
           </Card>
@@ -618,8 +660,8 @@ export default function SuperAdminCampaignsPage() {
       {/* Tabs */}
       <Tabs value={currentTab} onValueChange={setCurrentTab} className="w-full">
         <TabsList className="mb-6">
-          <TabsTrigger value="overview">Campaign Overview</TabsTrigger>
-          <TabsTrigger value="analytics">Analytics</TabsTrigger>
+          <TabsTrigger value="overview">Resumen de campañas</TabsTrigger>
+          <TabsTrigger value="analytics">Análisis</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
@@ -639,7 +681,7 @@ export default function SuperAdminCampaignsPage() {
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                     <Input
-                      placeholder="Search campaigns, organizers, or categories..."
+                      placeholder="Buscar campañas, organizadores o categorías..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="pl-10"
@@ -649,14 +691,14 @@ export default function SuperAdminCampaignsPage() {
 
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Status" />
+                    <SelectValue placeholder="Estado" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Statuses</SelectItem>
-                    <SelectItem value="draft">Draft</SelectItem>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="completed">Completed</SelectItem>
-                    <SelectItem value="cancelled">Cancelled</SelectItem>
+                    <SelectItem value="all">Todos los estados</SelectItem>
+                    <SelectItem value="draft">Borrador</SelectItem>
+                    <SelectItem value="active">Activa</SelectItem>
+                    <SelectItem value="completed">Completada</SelectItem>
+                    <SelectItem value="cancelled">Cancelada</SelectItem>
                   </SelectContent>
                 </Select>
 
@@ -665,10 +707,10 @@ export default function SuperAdminCampaignsPage() {
                   onValueChange={setCategoryFilter}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Category" />
+                    <SelectValue placeholder="Categoría" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Categories</SelectItem>
+                    <SelectItem value="all">Todas las categorías</SelectItem>
                     <SelectItem value="salud">Salud</SelectItem>
                     <SelectItem value="educacion">Educación</SelectItem>
                     <SelectItem value="emergencia">Emergencia</SelectItem>
@@ -686,20 +728,20 @@ export default function SuperAdminCampaignsPage() {
                   onValueChange={setVerificationFilter}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Verification" />
+                    <SelectValue placeholder="Verificación" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All</SelectItem>
-                    <SelectItem value="verified">Verified</SelectItem>
-                    <SelectItem value="unverified">Unverified</SelectItem>
+                    <SelectItem value="all">Todas</SelectItem>
+                    <SelectItem value="verified">Verificadas</SelectItem>
+                    <SelectItem value="unverified">No verificadas</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="flex items-center gap-4 mt-4">
                 <p className="text-sm text-gray-600">
-                  Showing {filteredCampaigns.length} of {campaigns.length}{" "}
-                  campaigns
+                  Mostrando {filteredCampaigns.length} de {campaigns.length}{" "}
+                  campañas
                 </p>
                 {(searchTerm ||
                   statusFilter !== "all" ||
@@ -715,7 +757,7 @@ export default function SuperAdminCampaignsPage() {
                       setVerificationFilter("all");
                     }}
                   >
-                    Clear Filters
+                    Limpiar filtros
                   </Button>
                 )}
               </div>

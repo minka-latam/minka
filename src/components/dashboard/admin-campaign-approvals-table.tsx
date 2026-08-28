@@ -192,7 +192,7 @@ export function AdminCampaignApprovalsTable({
                     </TableCell>
                     <TableCell>{formatDate(campaign.submittedAt)}</TableCell>
                     <TableCell>
-                      <Badge className="bg-yellow-100 text-yellow-800">
+                      <Badge className="pointer-events-none bg-yellow-100 text-yellow-800">
                         Por revisar
                       </Badge>
                     </TableCell>

@@ -604,7 +604,7 @@ export function TransferFundsTab({ campaign }: TransferFundsTabProps) {
               type="number"
               min={minimumTransferAmount}
               max={availableAmount}
-              step="10"
+              step="0.01"
               placeholder="0.00"
               value={transferAmount || ""}
               onChange={handleTransferAmountChange}

@@ -50,7 +50,7 @@ export function CampaignAnalytics({ campaigns }: CampaignAnalyticsProps) {
       acc[campaign.category] = (acc[campaign.category] || 0) + 1;
       return acc;
     },
-    {} as Record<string, number>
+    {} as Record<string, number>,
   );
 
   // Calculate success metrics
@@ -66,11 +66,11 @@ export function CampaignAnalytics({ campaigns }: CampaignAnalyticsProps) {
   const totalTips = campaigns.reduce((sum, c) => sum + (c.tipAmount || 0), 0);
   const totalPlatformFees = campaigns.reduce(
     (sum, c) => sum + (c.platformFeeAmount || 0),
-    0
+    0,
   );
   const totalProcessed = campaigns.reduce(
     (sum, c) => sum + (c.totalProcessedAmount || 0),
-    0
+    0,
   );
   const overallFundingRate =
     totalGoal > 0 ? (totalRaised / totalGoal) * 100 : 0;
@@ -119,14 +119,14 @@ export function CampaignAnalytics({ campaigns }: CampaignAnalyticsProps) {
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-gray-600 flex items-center">
               <Target className="h-4 w-4 mr-2" />
-              Success Rate
+              Tasa de éxito
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{successRate.toFixed(1)}%</div>
             <p className="text-sm text-gray-600">
-              {completedCampaigns.length} of {campaigns.length} campaigns
-              completed
+              {completedCampaigns.length} de {campaigns.length} campañas
+              completadas
             </p>
           </CardContent>
         </Card>
@@ -135,7 +135,7 @@ export function CampaignAnalytics({ campaigns }: CampaignAnalyticsProps) {
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-gray-600 flex items-center">
               <DollarSign className="h-4 w-4 mr-2" />
-              Funding Rate
+              Porcentaje de recaudación
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -143,7 +143,8 @@ export function CampaignAnalytics({ campaigns }: CampaignAnalyticsProps) {
               {overallFundingRate.toFixed(1)}%
             </div>
             <p className="text-sm text-gray-600">
-              {formatCurrency(totalRaised)} raised of {formatCurrency(totalGoal)}
+              {formatCurrency(totalRaised)} recaudados de{" "}
+              {formatCurrency(totalGoal)}
             </p>
           </CardContent>
         </Card>
@@ -152,7 +153,7 @@ export function CampaignAnalytics({ campaigns }: CampaignAnalyticsProps) {
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-gray-600 flex items-center">
               <Calendar className="h-4 w-4 mr-2" />
-              This Month
+              Este mes
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -162,18 +163,18 @@ export function CampaignAnalytics({ campaigns }: CampaignAnalyticsProps) {
                 <>
                   <TrendingUp className="h-3 w-3 text-green-600" />
                   <span className="text-green-600">
-                    +{thisMonth - lastMonth} from last month
+                    +{thisMonth - lastMonth} respecto al mes anterior
                   </span>
                 </>
               ) : thisMonth < lastMonth ? (
                 <>
                   <TrendingDown className="h-3 w-3 text-red-600" />
                   <span className="text-red-600">
-                    {lastMonth - thisMonth} less than last month
+                    {lastMonth - thisMonth} menos que el mes anterior
                   </span>
                 </>
               ) : (
-                <span className="text-gray-600">Same as last month</span>
+                <span className="text-gray-600">Igual que el mes anterior</span>
               )}
             </p>
           </CardContent>
@@ -183,7 +184,7 @@ export function CampaignAnalytics({ campaigns }: CampaignAnalyticsProps) {
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-gray-600 flex items-center">
               <Users className="h-4 w-4 mr-2" />
-              Avg Donors
+              Promedio de donantes
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -191,12 +192,13 @@ export function CampaignAnalytics({ campaigns }: CampaignAnalyticsProps) {
               {campaigns.length > 0
                 ? Math.round(
                     campaigns.reduce((sum, c) => sum + c.donorCount, 0) /
-                      campaigns.length
+                      campaigns.length,
                   )
                 : 0}
             </div>
             <p className="text-sm text-gray-600">
-              {campaigns.reduce((sum, c) => sum + c.donorCount, 0)} total donors
+              {campaigns.reduce((sum, c) => sum + c.donorCount, 0)} donantes en
+              total
             </p>
           </CardContent>
         </Card>
@@ -208,7 +210,7 @@ export function CampaignAnalytics({ campaigns }: CampaignAnalyticsProps) {
           <CardHeader>
             <CardTitle className="flex items-center">
               <PieChart className="h-5 w-5 mr-2" />
-              Campaign Categories
+              Categorías de campañas
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -217,7 +219,7 @@ export function CampaignAnalytics({ campaigns }: CampaignAnalyticsProps) {
                 .sort(([, a], [, b]) => b - a)
                 .map(([category, count]) => {
                   const percentage = ((count / campaigns.length) * 100).toFixed(
-                    1
+                    1,
                   );
                   return (
                     <div
@@ -233,7 +235,7 @@ export function CampaignAnalytics({ campaigns }: CampaignAnalyticsProps) {
                           {category.replace("_", " ")}
                         </Badge>
                         <span className="text-sm text-gray-600">
-                          {count} campaigns
+                          {count} campañas
                         </span>
                       </div>
                       <span className="text-sm font-medium">{percentage}%</span>
@@ -249,7 +251,7 @@ export function CampaignAnalytics({ campaigns }: CampaignAnalyticsProps) {
           <CardHeader>
             <CardTitle className="flex items-center">
               <BarChart3 className="h-5 w-5 mr-2" />
-              Top Performing Campaigns
+              Campañas con mejor rendimiento
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -263,11 +265,11 @@ export function CampaignAnalytics({ campaigns }: CampaignAnalyticsProps) {
                     <div className="flex-1 min-w-0">
                       <p className="font-medium truncate">{campaign.title}</p>
                       <p className="text-sm text-gray-500">
-                        {formatCurrency(campaign.collectedAmount)} raised
+                        {formatCurrency(campaign.collectedAmount)} recaudados
                       </p>
                       <p className="text-xs text-gray-500">
-                        Tips {formatCurrency(campaign.tipAmount)} | 5% fee{" "}
-                        {formatCurrency(campaign.platformFeeAmount)}
+                        Aportes {formatCurrency(campaign.tipAmount)} | Comisión
+                        5% {formatCurrency(campaign.platformFeeAmount)}
                       </p>
                     </div>
                     <div className="text-right">
@@ -275,14 +277,14 @@ export function CampaignAnalytics({ campaigns }: CampaignAnalyticsProps) {
                         {(campaign.percentageFunded || 0).toFixed(1)}%
                       </div>
                       <div className="text-sm text-gray-500">
-                        {campaign.donorCount} donors
+                        {campaign.donorCount} donantes
                       </div>
                     </div>
                   </div>
                 ))
               ) : (
                 <p className="text-center text-gray-500 py-4">
-                  No campaigns with donations yet
+                  Aún no hay campañas con donaciones
                 </p>
               )}
             </div>
@@ -294,18 +296,18 @@ export function CampaignAnalytics({ campaigns }: CampaignAnalyticsProps) {
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Verification Status</CardTitle>
+            <CardTitle className="text-lg">Estado de verificación</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
               <div className="flex justify-between">
-                <span>Verified</span>
+                <span>Verificadas</span>
                 <span className="font-medium text-green-600">
                   {campaigns.filter((c) => c.verificationStatus).length}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span>Unverified</span>
+                <span>No verificadas</span>
                 <span className="font-medium text-gray-600">
                   {campaigns.filter((c) => !c.verificationStatus).length}
                 </span>
@@ -316,30 +318,30 @@ export function CampaignAnalytics({ campaigns }: CampaignAnalyticsProps) {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Campaign Status</CardTitle>
+            <CardTitle className="text-lg">Estado de campañas</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
               <div className="flex justify-between">
-                <span>Active</span>
+                <span>Activas</span>
                 <span className="font-medium text-blue-600">
                   {campaigns.filter((c) => c.status === "active").length}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span>Draft</span>
+                <span>Borradores</span>
                 <span className="font-medium text-gray-600">
                   {campaigns.filter((c) => c.status === "draft").length}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span>Completed</span>
+                <span>Completadas</span>
                 <span className="font-medium text-green-600">
                   {campaigns.filter((c) => c.status === "completed").length}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span>Cancelled</span>
+                <span>Canceladas</span>
                 <span className="font-medium text-red-600">
                   {campaigns.filter((c) => c.status === "cancelled").length}
                 </span>
@@ -350,32 +352,32 @@ export function CampaignAnalytics({ campaigns }: CampaignAnalyticsProps) {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Funding Insights</CardTitle>
+            <CardTitle className="text-lg">Datos de recaudación</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
               <div className="flex justify-between">
-                <span>Avg Goal</span>
+                <span>Meta promedio</span>
                 <span className="font-medium">
                   {formatCurrency(
                     campaigns.length > 0
                       ? Math.round(totalGoal / campaigns.length)
-                      : 0
+                      : 0,
                   )}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span>Avg Raised</span>
+                <span>Promedio recaudado</span>
                 <span className="font-medium">
                   {formatCurrency(
                     campaigns.length > 0
                       ? Math.round(totalRaised / campaigns.length)
-                      : 0
+                      : 0,
                   )}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span>Fully Funded</span>
+                <span>Meta alcanzada</span>
                 <span className="font-medium text-green-600">
                   {campaigns.filter((c) => c.percentageFunded >= 100).length}
                 </span>
@@ -386,30 +388,30 @@ export function CampaignAnalytics({ campaigns }: CampaignAnalyticsProps) {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Financial Breakdown</CardTitle>
+            <CardTitle className="text-lg">Desglose financiero</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
               <div className="flex justify-between gap-3">
-                <span>Base donations</span>
+                <span>Donaciones base</span>
                 <span className="font-medium">
                   {formatCurrency(totalRaised)}
                 </span>
               </div>
               <div className="flex justify-between gap-3">
-                <span>Tips</span>
+                <span>Aportes a Minka</span>
                 <span className="font-medium text-blue-700">
                   {formatCurrency(totalTips)}
                 </span>
               </div>
               <div className="flex justify-between gap-3">
-                <span>Estimated 5% fee</span>
+                <span>Comisión estimada del 5%</span>
                 <span className="font-medium text-amber-700">
                   {formatCurrency(totalPlatformFees)}
                 </span>
               </div>
               <div className="flex justify-between gap-3 border-t pt-2">
-                <span>Total processed</span>
+                <span>Total procesado</span>
                 <span className="font-medium">
                   {formatCurrency(totalProcessed)}
                 </span>

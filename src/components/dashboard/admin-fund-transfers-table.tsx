@@ -37,18 +37,25 @@ type TransferStatus = "processing" | "completed" | "cancelled";
 type AdminFundTransfer = {
   id: string;
   campaignId: string;
+  campaignBankAccountId: string | null;
   campaignTitle: string;
   accountHolderName: string;
   bankName: string;
   accountNumber: string;
   amount: string;
   status: TransferStatus;
+  transferDate: string | null;
+  requestedById: string;
   requestedByName: string;
   requestedByEmail: string;
+  requestedByIdentityNumber: string | null;
+  requestedByPhone: string | null;
+  reviewedById: string | null;
   requestedAt: string;
   reviewedAt: string | null;
   completedAt: string | null;
   notes: string | null;
+  updatedAt: string;
 };
 
 const statusLabels: Record<TransferStatus | "all", string> = {
@@ -89,7 +96,26 @@ export function AdminFundTransfersTable({
         );
       }
 
-      setTransfers(data.transfers || []);
+      const nextTransfers: AdminFundTransfer[] = data.transfers || [];
+
+      console.log(
+        "[Solicitudes de transferencia] Datos no renderizados:",
+        nextTransfers.map((transfer) => ({
+          transferId: transfer.id,
+          campaignId: transfer.campaignId,
+          campaignBankAccountId: transfer.campaignBankAccountId,
+          accountHolderName: transfer.accountHolderName,
+          requestedById: transfer.requestedById,
+          reviewedById: transfer.reviewedById,
+          transferDate: transfer.transferDate,
+          reviewedAt: transfer.reviewedAt,
+          completedAt: transfer.completedAt,
+          notes: transfer.notes,
+          updatedAt: transfer.updatedAt,
+        })),
+      );
+
+      setTransfers(nextTransfers);
     } catch (error) {
       console.error("Error loading fund transfers:", error);
       toast({
@@ -177,13 +203,25 @@ export function AdminFundTransfersTable({
 
   const renderStatus = (transferStatus: TransferStatus) => {
     if (transferStatus === "processing") {
-      return <Badge className="bg-yellow-100 text-yellow-800">Pendiente</Badge>;
+      return (
+        <Badge className="pointer-events-none bg-yellow-100 text-yellow-800">
+          Pendiente
+        </Badge>
+      );
     }
     if (transferStatus === "completed") {
-      return <Badge className="bg-green-100 text-green-800">Completada</Badge>;
+      return (
+        <Badge className="pointer-events-none bg-green-100 text-green-800">
+          Completada
+        </Badge>
+      );
     }
     if (transferStatus === "cancelled") {
-      return <Badge variant="secondary">Cancelada</Badge>;
+      return (
+        <Badge className="pointer-events-none bg-gray-100 text-gray-700">
+          Cancelada
+        </Badge>
+      );
     }
     return null;
   };
@@ -238,12 +276,15 @@ export function AdminFundTransfersTable({
               <TableHeader>
                 <TableRow>
                   <TableHead>Campaña</TableHead>
-                  <TableHead>Monto</TableHead>
+                  <TableHead>CI</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Teléfono</TableHead>
                   <TableHead>Banco</TableHead>
                   <TableHead>Titular</TableHead>
                   <TableHead>Cuenta</TableHead>
-                  <TableHead>Solicitada</TableHead>
+                  <TableHead>Monto</TableHead>
                   <TableHead>Estado</TableHead>
+                  <TableHead>Solicitada</TableHead>
                   <TableHead className="text-right">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
@@ -256,13 +297,20 @@ export function AdminFundTransfersTable({
                           {transfer.campaignTitle}
                         </p>
                         <p className="truncate text-xs text-gray-500">
-                          {transfer.requestedByName} ·{" "}
-                          {transfer.requestedByEmail}
+                          {transfer.requestedByName}
                         </p>
                       </div>
                     </TableCell>
-                    <TableCell className="font-medium">
-                      {formatCurrency(Number(transfer.amount))}
+                    <TableCell className="whitespace-nowrap">
+                      {transfer.requestedByIdentityNumber || "—"}
+                    </TableCell>
+                    <TableCell>
+                      <span className="block max-w-[220px] break-all">
+                        {transfer.requestedByEmail || "—"}
+                      </span>
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap">
+                      {transfer.requestedByPhone || "—"}
                     </TableCell>
                     <TableCell>{transfer.bankName}</TableCell>
                     <TableCell>{transfer.accountHolderName}</TableCell>
@@ -283,6 +331,10 @@ export function AdminFundTransfersTable({
                         </button>
                       </div>
                     </TableCell>
+                    <TableCell className="whitespace-nowrap font-medium">
+                      {formatCurrency(Number(transfer.amount))}
+                    </TableCell>
+                    <TableCell>{renderStatus(transfer.status)}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <span>{formatDate(transfer.requestedAt)}</span>
@@ -299,7 +351,6 @@ export function AdminFundTransfersTable({
                         </TooltipProvider>
                       </div>
                     </TableCell>
-                    <TableCell>{renderStatus(transfer.status)}</TableCell>
                     <TableCell>
                       <div className="flex justify-end gap-2">
                         <Button

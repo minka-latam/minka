@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { createBrowserClient } from "@supabase/ssr";
 import Image from "next/image";
@@ -69,9 +69,13 @@ export default function CampaignDetailPage() {
   const [campaign, setCampaign] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("editar");
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  const supabase = useMemo(
+    () =>
+      createBrowserClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      ),
+    [],
   );
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -1143,19 +1147,17 @@ export default function CampaignDetailPage() {
             onClick={() => {
               if (!isCancelledCampaign) setActiveTab("editar");
             }}
-            className={`relative flex items-center gap-2 py-3 px-3 sm:px-6 rounded-t-lg transition-colors flex-1 justify-center border border-[#2c6e49] border-b-0 ${
+            aria-pressed={activeTab === "editar"}
+            className={`relative flex flex-1 items-center justify-center gap-2 rounded-t-lg border border-b-0 border-[#2c6e49] bg-transparent px-3 py-3 text-[#1a5535] transition-colors sm:px-6 ${
               isCancelledCampaign
-                ? "bg-gray-100 text-gray-500 cursor-not-allowed opacity-75"
+                ? "cursor-not-allowed opacity-50"
                 : activeTab === "editar"
-                  ? "text-[#1a5535] after:absolute after:bottom-[-1px] after:left-0 after:right-0 after:h-[1px] after:bg-white after:z-10"
-                  : "bg-[#f2f8f5] text-[#1a5535] hover:bg-[#e8f5ed]"
+                  ? "font-semibold after:absolute after:bottom-[-1px] after:left-0 after:right-0 after:z-10 after:h-px after:bg-[#f5f7e9]"
+                  : "font-normal"
             }`}
           >
             <span className="text-xs sm:text-sm">Editar campaña</span>
             <Image src="/icons/edit.svg" alt="Edit" width={16} height={16} />
-            {isCancelledCampaign && (
-              <span className="pointer-events-none absolute inset-0 rounded-t-lg bg-black/10" />
-            )}
           </button>
 
           {!isDraftCampaign && (
@@ -1165,12 +1167,13 @@ export default function CampaignDetailPage() {
                 onClick={() => {
                   if (!isCancelledCampaign) setActiveTab("anuncios");
                 }}
-                className={`relative flex items-center gap-2 py-3 px-3 sm:px-6 rounded-t-lg transition-colors flex-1 justify-center border border-[#2c6e49] border-b-0 ${
+                aria-pressed={activeTab === "anuncios"}
+                className={`relative flex flex-1 items-center justify-center gap-2 rounded-t-lg border border-b-0 border-[#2c6e49] bg-transparent px-3 py-3 text-[#1a5535] transition-colors sm:px-6 ${
                   isCancelledCampaign
-                    ? "bg-gray-100 text-gray-500 cursor-not-allowed opacity-75"
+                    ? "cursor-not-allowed opacity-50"
                     : activeTab === "anuncios"
-                      ? "bg-white text-[#1a5535] after:absolute after:bottom-[-1px] after:left-0 after:right-0 after:h-[1px] after:bg-white after:z-10"
-                      : "bg-[#f2f8f5] text-[#1a5535] hover:bg-[#e8f5ed]"
+                      ? "font-semibold after:absolute after:bottom-[-1px] after:left-0 after:right-0 after:z-10 after:h-px after:bg-[#f5f7e9]"
+                      : "font-normal"
                 }`}
               >
                 <span className="text-xs sm:text-sm">Publicar anuncios</span>
@@ -1180,17 +1183,15 @@ export default function CampaignDetailPage() {
                   width={16}
                   height={16}
                 />
-                {isCancelledCampaign && (
-                  <span className="pointer-events-none absolute inset-0 rounded-t-lg bg-black/10" />
-                )}
               </button>
 
               <button
                 onClick={() => setActiveTab("comentarios")}
-                className={`relative flex items-center gap-2 py-3 px-3 sm:px-6 rounded-t-lg transition-colors flex-1 justify-center border border-[#2c6e49] border-b-0 ${
+                aria-pressed={activeTab === "comentarios"}
+                className={`relative flex flex-1 items-center justify-center gap-2 rounded-t-lg border border-b-0 border-[#2c6e49] bg-transparent px-3 py-3 text-[#1a5535] transition-colors sm:px-6 ${
                   activeTab === "comentarios"
-                    ? "bg-white text-[#1a5535] after:absolute after:bottom-[-1px] after:left-0 after:right-0 after:h-[1px] after:bg-white after:z-10"
-                    : "bg-[#f2f8f5] text-[#1a5535] hover:bg-[#e8f5ed]"
+                    ? "font-semibold after:absolute after:bottom-[-1px] after:left-0 after:right-0 after:z-10 after:h-px after:bg-[#f5f7e9]"
+                    : "font-normal"
                 }`}
               >
                 <span className="text-xs sm:text-sm">Comentarios</span>
@@ -1204,10 +1205,11 @@ export default function CampaignDetailPage() {
 
               <button
                 onClick={() => setActiveTab("donaciones")}
-                className={`relative flex items-center gap-2 py-3 px-3 sm:px-6 rounded-t-lg transition-colors flex-1 justify-center border border-[#2c6e49] border-b-0 ${
+                aria-pressed={activeTab === "donaciones"}
+                className={`relative flex flex-1 items-center justify-center gap-2 rounded-t-lg border border-b-0 border-[#2c6e49] bg-transparent px-3 py-3 text-[#1a5535] transition-colors sm:px-6 ${
                   activeTab === "donaciones"
-                    ? "bg-white text-[#1a5535] after:absolute after:bottom-[-1px] after:left-0 after:right-0 after:h-[1px] after:bg-white after:z-10"
-                    : "bg-[#f2f8f5] text-[#1a5535] hover:bg-[#e8f5ed]"
+                    ? "font-semibold after:absolute after:bottom-[-1px] after:left-0 after:right-0 after:z-10 after:h-px after:bg-[#f5f7e9]"
+                    : "font-normal"
                 }`}
               >
                 <span className="text-xs sm:text-sm">Donaciones</span>
@@ -1221,10 +1223,11 @@ export default function CampaignDetailPage() {
 
               <button
                 onClick={() => setActiveTab("transferir")}
-                className={`relative flex items-center gap-2 py-3 px-3 sm:px-6 rounded-t-lg transition-colors flex-1 justify-center border border-[#2c6e49] border-b-0 ${
+                aria-pressed={activeTab === "transferir"}
+                className={`relative flex flex-1 items-center justify-center gap-2 rounded-t-lg border border-b-0 border-[#2c6e49] bg-transparent px-3 py-3 text-[#1a5535] transition-colors sm:px-6 ${
                   activeTab === "transferir"
-                    ? "bg-white text-[#1a5535] after:absolute after:bottom-[-1px] after:left-0 after:right-0 after:h-[1px] after:bg-white after:z-10"
-                    : "bg-[#f2f8f5] text-[#1a5535] hover:bg-[#e8f5ed]"
+                    ? "font-semibold after:absolute after:bottom-[-1px] after:left-0 after:right-0 after:z-10 after:h-px after:bg-[#f5f7e9]"
+                    : "font-normal"
                 }`}
               >
                 <span className="text-xs sm:text-sm">Transferir fondos</span>

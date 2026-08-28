@@ -47,8 +47,6 @@ export function AdminUserProfileDialog({
         ["Ubicación", user.location],
         ["Campañas activas", user.active_campaigns_count ?? 0],
         ["Miembro desde", formatDate(user.join_date)],
-        ["Creado", formatDate(user.created_at, true)],
-        ["Actualizado", formatDate(user.updated_at, true)],
       ]
     : [];
 

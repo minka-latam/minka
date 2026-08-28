@@ -20,27 +20,36 @@ const updateTransferSchema = z.object({
 type AdminTransferRow = {
   id: string;
   campaignId: string;
+  campaignBankAccountId: string | null;
   campaignTitle: string;
   accountHolderName: string;
   bankName: string;
   accountNumber: string;
   amount: Prisma.Decimal;
   status: "processing" | "completed" | "cancelled";
+  transferDate: Date | null;
+  requestedById: string;
   requestedByName: string;
   requestedByEmail: string;
+  requestedByIdentityNumber: string | null;
+  requestedByPhone: string | null;
+  reviewedById: string | null;
   requestedAt: Date;
   reviewedAt: Date | null;
   completedAt: Date | null;
   notes: string | null;
+  updatedAt: Date;
 };
 
 function serializeTransfer(row: AdminTransferRow) {
   return {
     ...row,
     amount: row.amount.toString(),
+    transferDate: row.transferDate?.toISOString() ?? null,
     requestedAt: row.requestedAt.toISOString(),
     reviewedAt: row.reviewedAt?.toISOString() ?? null,
     completedAt: row.completedAt?.toISOString() ?? null,
+    updatedAt: row.updatedAt.toISOString(),
   };
 }
 
@@ -62,18 +71,25 @@ export async function GET(request: NextRequest) {
           select
             ft.id,
             ft.campaign_id as "campaignId",
+            ft.campaign_bank_account_id as "campaignBankAccountId",
             c.title as "campaignTitle",
             ft.account_holder_name as "accountHolderName",
             ft.bank_name as "bankName",
             ft.account_number as "accountNumber",
             ft.amount,
             ft.status,
+            ft.transfer_date as "transferDate",
+            ft.requested_by_id as "requestedById",
             requester.name as "requestedByName",
             requester.email as "requestedByEmail",
+            requester.identity_number as "requestedByIdentityNumber",
+            requester.phone as "requestedByPhone",
+            ft.reviewed_by_id as "reviewedById",
             ft.created_at as "requestedAt",
             ft.reviewed_at as "reviewedAt",
             ft.completed_at as "completedAt",
-            ft.notes
+            ft.notes,
+            ft.updated_at as "updatedAt"
           from public.fund_transfers ft
           join public.campaigns c on c.id = ft.campaign_id
           join public.profiles requester on requester.id = ft.requested_by_id
@@ -85,18 +101,25 @@ export async function GET(request: NextRequest) {
           select
             ft.id,
             ft.campaign_id as "campaignId",
+            ft.campaign_bank_account_id as "campaignBankAccountId",
             c.title as "campaignTitle",
             ft.account_holder_name as "accountHolderName",
             ft.bank_name as "bankName",
             ft.account_number as "accountNumber",
             ft.amount,
             ft.status,
+            ft.transfer_date as "transferDate",
+            ft.requested_by_id as "requestedById",
             requester.name as "requestedByName",
             requester.email as "requestedByEmail",
+            requester.identity_number as "requestedByIdentityNumber",
+            requester.phone as "requestedByPhone",
+            ft.reviewed_by_id as "reviewedById",
             ft.created_at as "requestedAt",
             ft.reviewed_at as "reviewedAt",
             ft.completed_at as "completedAt",
-            ft.notes
+            ft.notes,
+            ft.updated_at as "updatedAt"
           from public.fund_transfers ft
           join public.campaigns c on c.id = ft.campaign_id
           join public.profiles requester on requester.id = ft.requested_by_id
@@ -172,18 +195,25 @@ export async function PATCH(request: NextRequest) {
       returning
         id,
         campaign_id as "campaignId",
+        campaign_bank_account_id as "campaignBankAccountId",
         (select title from public.campaigns where id = fund_transfers.campaign_id) as "campaignTitle",
         account_holder_name as "accountHolderName",
         bank_name as "bankName",
         account_number as "accountNumber",
         amount,
         status,
+        transfer_date as "transferDate",
+        requested_by_id as "requestedById",
         (select name from public.profiles where id = fund_transfers.requested_by_id) as "requestedByName",
         (select email from public.profiles where id = fund_transfers.requested_by_id) as "requestedByEmail",
+        (select identity_number from public.profiles where id = fund_transfers.requested_by_id) as "requestedByIdentityNumber",
+        (select phone from public.profiles where id = fund_transfers.requested_by_id) as "requestedByPhone",
+        reviewed_by_id as "reviewedById",
         created_at as "requestedAt",
         reviewed_at as "reviewedAt",
         completed_at as "completedAt",
-        notes
+        notes,
+        updated_at as "updatedAt"
     `;
 
     await createAdminAuditLog({

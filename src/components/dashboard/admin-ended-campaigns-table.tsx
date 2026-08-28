@@ -166,7 +166,7 @@ export function AdminEndedCampaignsTable({
                     </TableCell>
                     <TableCell>{formatDate(campaign.endDate)}</TableCell>
                     <TableCell>
-                      <Badge className="bg-amber-100 text-amber-800">
+                      <Badge className="pointer-events-none bg-amber-100 text-amber-800">
                         Fecha cumplida
                       </Badge>
                     </TableCell>

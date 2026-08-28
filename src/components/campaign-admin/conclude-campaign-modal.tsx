@@ -48,9 +48,12 @@ export function ConcludeCampaignModal({
 
         <div className="space-y-4 px-5 py-5 text-sm leading-6 text-gray-700 sm:px-8">
           <p>
-            Tu campaña puede permanecer abierta el tiempo que consideres
-            prudente. Si necesitas más tiempo, puedes editar la fecha de
-            finalización y ampliarla sin problema.
+            <span className="underline decoration-gray-500 underline-offset-2">
+              Tu campaña puede permanecer abierta el tiempo que consideres
+              prudente.
+            </span>{" "}
+            Si necesitas más tiempo, puedes editar la fecha de finalización y
+            ampliarla sin problema.
           </p>
           <p>
             También puedes solicitar transferencias todas las veces que
@@ -69,7 +72,7 @@ export function ConcludeCampaignModal({
             type="button"
             disabled={isLoading}
             onClick={() => onOpenChange(false)}
-            className="order-2 rounded-full border border-gray-300 px-5 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60 sm:order-1"
+            className="order-2 rounded-full bg-[#2c6e49] px-5 py-3 text-sm font-semibold text-white hover:bg-[#1e4d33] disabled:cursor-not-allowed disabled:opacity-60 sm:order-1"
           >
             Mantener abierta
           </button>
@@ -77,7 +80,7 @@ export function ConcludeCampaignModal({
             type="button"
             disabled={isLoading}
             onClick={onConfirm}
-            className="order-1 rounded-full bg-red-600 px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60 sm:order-2"
+            className="order-1 rounded-full bg-[#dc6464] px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-[#ca5656] disabled:cursor-not-allowed disabled:opacity-60 sm:order-2"
           >
             {isLoading ? (
               <span className="flex items-center justify-center">
