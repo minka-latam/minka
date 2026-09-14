@@ -10,7 +10,7 @@ import { GlobalActivityToast } from "@/components/notifications/GlobalActivityTo
 
 const APP_NAME = "MINKA - Impulsa sueños, transforma vidas";
 const APP_DESCRIPTION =
-  "Plataforma de donaciones para causas sociales en Bolivia";
+  "Plataforma de aportes para campañas en Bolivia";
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://minka-comunidad.org";
 
 const quicksand = Quicksand({
@@ -62,13 +62,13 @@ export const metadata: Metadata = {
     },
   },
   keywords: [
-    "donaciones",
+    "aportes",
     "causas sociales",
     "bolivia",
     "crowdfunding",
     "ayuda social",
     "MINKA",
-    "plataforma de donaciones",
+    "plataforma de aportes",
     "transformar vidas",
   ],
   authors: [{ name: "MINKA Team" }],

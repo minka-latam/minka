@@ -63,10 +63,10 @@ export default async function SignInPage({ searchParams }: PageProps) {
       {hasDonationClaim && (
         <div className="mb-6 rounded-lg border border-[#2c6e49]/30 bg-[#f5f7e9] p-5 text-[#1f4d33]">
           <p className="text-base font-semibold">
-            Accede a tu cuenta para vincular tu donación.
+            Accede a tu cuenta para vincular tu aporte.
           </p>
           <p className="mt-1 text-sm">
-            Accede a tu cuenta para que vinculemos la donación que acabas de
+            Accede a tu cuenta para que vinculemos el aporte que acabas de
             hacer con tu perfil.
           </p>
         </div>
@@ -95,7 +95,7 @@ export default async function SignInPage({ searchParams }: PageProps) {
       <div className="mt-8 text-center">
         <p className="text-black">
           {hasDonationClaim
-            ? "¿No tienes cuenta? Créala para vincular esta donación."
+            ? "¿No tienes cuenta? Créala para vincular este aporte."
             : "¿Es la primera vez que usas Minka?"}{" "}
           <Link
             href={hasDonationClaim ? "/sign-up?donationClaim=1" : "/sign-up"}

@@ -170,7 +170,7 @@ export function AdminDashboardLayout({
             <NavItem
               href="/admin/donations"
               icon={<DollarSign size={20} />}
-              label="Donaciones"
+              label="Aportes"
               collapsed={isSidebarCollapsed}
             />
             <NavItem

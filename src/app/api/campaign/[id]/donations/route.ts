@@ -108,7 +108,7 @@ export async function GET(
       donor: donation.isAnonymous
         ? {
             id: null,
-            name: "Donante Anónimo",
+            name: "Colaborador anónimo",
             profilePicture: null,
           }
         : donation.donor,

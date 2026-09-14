@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 
 const documentDescriptions: Record<string, string> = {
   terms:
-    'Condiciones generales de uso de la plataforma, campañas, donaciones y obligaciones de usuarios.',
+    'Condiciones generales de uso de la plataforma, campañas, aportes y obligaciones de usuarios.',
   privacy:
     'Tratamiento de datos personales, privacidad, conservación de información y derechos de los usuarios.',
   disbursements:

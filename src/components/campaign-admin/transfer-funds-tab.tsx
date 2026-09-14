@@ -257,7 +257,7 @@ export function TransferFundsTab({ campaign }: TransferFundsTabProps) {
     const result = await cancelCampaign(campaign.id, {
       successTitle: "Campaña concluida",
       successDescription:
-        "La campaña fue marcada como cancelada y ya no recibirá donaciones.",
+        "La campaña fue marcada como cancelada y ya no recibirá aportes.",
       errorTitle: "No se pudo concluir la campaña",
       errorDescription: "No se pudo concluir la campaña.",
     });
@@ -530,7 +530,7 @@ export function TransferFundsTab({ campaign }: TransferFundsTabProps) {
           </p>
           <div className="mt-4 grid gap-3 text-sm text-gray-700 sm:grid-cols-2">
             <div className="rounded-md border border-gray-200 bg-white p-3">
-              <p className="text-xs text-gray-500">Donaciones confirmadas</p>
+              <p className="text-xs text-gray-500">Aportes confirmados</p>
               <p className="font-semibold">
                 {formatCurrency(confirmedBaseAmount)}
               </p>
@@ -543,7 +543,7 @@ export function TransferFundsTab({ campaign }: TransferFundsTabProps) {
             </div>
           </div>
           <p className="mt-3 text-xs text-gray-500">
-            El saldo transferible usa solo donaciones confirmadas y descuenta
+            El saldo transferible usa solo aportes confirmados y descuenta
             solicitudes en proceso o completadas.
           </p>
         </div>

@@ -112,7 +112,7 @@ Tu tarea es mejorar el siguiente texto que será usado como ${fieldContext}.
 Instrucciones:
 - Mantén el significado y la esencia original del texto
 - Mejora la gramática, ortografía y puntuación
-- Usa un tono emotivo y cercano que conecte con donantes latinoamericanos
+- Usa un tono emotivo y cercano que conecte con personas colaboradoras latinoamericanas
 - Mantén un lenguaje claro y accesible
 - No agregues información que no esté en el texto original
 - Responde ÚNICAMENTE con el texto mejorado, sin explicaciones ni comentarios

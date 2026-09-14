@@ -130,7 +130,7 @@ export async function POST(request: NextRequest) {
       alias,
       amount: payableAmount,
       currency: "BOB",
-      description: `Donacion Minka`,
+      description: `Aporte Minka`,
       expirationDate: expirationString,
       callbackUrl: getBisaCallbackUrl(request),
       singleUse: true

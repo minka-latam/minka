@@ -204,7 +204,7 @@ function drawStoryLayout(
   ctx.fill();
   ctx.fillStyle = DARK_GREEN;
   ctx.font = "700 44px Arial, sans-serif";
-  ctx.fillText("Donar ahora", 240, 1682);
+  ctx.fillText("Aportar", 240, 1682);
 
   ctx.strokeStyle = "rgba(245, 247, 233, 0.9)";
   ctx.lineWidth = 6;

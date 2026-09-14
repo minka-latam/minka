@@ -34,7 +34,7 @@ export function SuccessStory() {
             <p className="text-white/80 text-lg md:text-xl">
               Gracias a la plataforma Minka, los organizadores pudieron
               compartir su historia, establecer metas claras y recibir
-              donaciones de manera transparente. El proyecto se completó en 6
+              aportes de manera transparente. El proyecto se completó en 6
               meses y ahora toda la comunidad tiene acceso a agua limpia.
             </p>
           </div>

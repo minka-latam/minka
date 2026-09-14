@@ -16,7 +16,7 @@ export function DonorComments({ comments }: DonorCommentsProps) {
         Palabras de apoyo de donadores
       </h2>
       <p className="text-gray-600">
-        Realiza tu donación y comparte palabras de apoyo a esta causa.
+        Realiza tu aporte y comparte palabras de apoyo a esta causa.
       </p>
 
       <div className="space-y-6">

@@ -428,7 +428,7 @@ dispatch({ type: "SET_END_DATE", payload: endDate.toISOString() });
                 ¿Dónde se llevará a cabo?
               </h2>
               <p className="text-xl text-gray-600 leading-relaxed">
-                Indica dónde se realizará tu campaña para que los donantes sepan
+                Indica dónde se realizará tu campaña para que las personas colaboradoras sepan
                 dónde tendrá impacto.
               </p>
             </div>

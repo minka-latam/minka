@@ -536,7 +536,7 @@ export default function SuperAdminCampaignsPage() {
                 {formatCurrency(stats.netAmount)}
               </div>
               <p className="text-sm text-gray-600">
-                Donaciones completadas menos transferencias
+                Aportes completados menos transferencias
               </p>
             </CardContent>
           </Card>

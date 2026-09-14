@@ -115,7 +115,7 @@ export async function completeDonationAccounting(
       donationId: donation.id,
       campaignId: donation.campaign.id,
       organizerId: donation.campaign.organizerId,
-      donorName: donation.donor?.name || "Donante",
+      donorName: donation.donor?.name || "Colaborador",
       donorEmail: donation.donor?.email || undefined,
       amount: Number(donation.amount),
       tipAmount: Number(donationTipAmount),

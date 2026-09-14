@@ -601,7 +601,7 @@ export function useCampaign() {
         description:
           error instanceof Error
             ? error.message
-            : "Error al cargar las donaciones de la campaña",
+            : "Error al cargar los aportes de la campaña",
         variant: "destructive",
       });
       return null;

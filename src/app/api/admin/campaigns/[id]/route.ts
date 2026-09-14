@@ -130,7 +130,7 @@ export async function DELETE(
       return NextResponse.json(
         {
           error:
-            "No se puede eliminar permanentemente una campaña con donaciones o transferencias. Cancélala para conservar el historial.",
+            "No se puede eliminar permanentemente una campaña con aportes o transferencias. Cancélala para conservar el historial.",
         },
         { status: 400 },
       );

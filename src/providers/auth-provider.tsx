@@ -319,9 +319,9 @@ export function AuthProvider({
       if (response.ok) {
         localStorage.removeItem(DONATION_CLAIM_INTENT_KEY)
         toast({
-          title: 'Donación vinculada',
+          title: 'Aporte vinculado',
           description:
-            'Tu donación ya aparece en tu cuenta y tu nombre podrá mostrarse en la campaña.',
+            'Tu aporte ya aparece en tu cuenta y tu nombre podrá mostrarse en la campaña.',
         })
         return
       }

@@ -3,7 +3,7 @@ import { Prisma, Status, UserRole } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 
 export const CAMPAIGN_ANONYMOUS_EMAIL_PREFIX = "anonymous+campaign-";
-export const ANONYMOUS_DONOR_NAME = "Donante Anónimo";
+export const ANONYMOUS_DONOR_NAME = "Colaborador anónimo";
 
 type PrismaClientLike = Prisma.TransactionClient | typeof prisma;
 

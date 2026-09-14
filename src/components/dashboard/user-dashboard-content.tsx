@@ -484,7 +484,7 @@ export function UserDashboardContent({
                 <FileText size={24} />
               </div>
               <h3 className="text-xl font-medium text-gray-800">
-                Mis donaciones
+                Mis aportes
               </h3>
             </div>
           </Link>

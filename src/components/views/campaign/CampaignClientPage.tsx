@@ -528,7 +528,7 @@ export default function CampaignClientPage({
           ? data.data.map((donation: any) => ({
               id: donation.id,
               name:
-                donation.donor?.name || 'Donante anónimo',
+                donation.donor?.name || 'Colaborador anónimo',
               amount: Number(donation.amount || 0),
               isAnonymous: Boolean(donation.isAnonymous),
             }))
@@ -879,7 +879,7 @@ export default function CampaignClientPage({
         onClose={() => setIsVerificationModalOpen(false)}
         title='Sobre la verificación de campañas'
         content={
-          'La verificación en Minka es un proceso voluntario que permite revisar la información y documentación presentada por el organizador para comprobar que sea consistente con la causa publicada.\n\nUna campaña verificada muestra un distintivo visible dentro de la plataforma, lo que ayuda a generar mayor confianza entre los donantes y puede aumentar sus posibilidades de recibir apoyo.\n\nMinka realiza esfuerzos razonables de autenticación, revisión documental y monitoreo para fortalecer la transparencia, aunque la verificación no constituye una garantía absoluta sobre toda la información presentada por terceros.\n\nLos datos compartidos para este proceso son tratados de forma confidencial y conforme a nuestras políticas de privacidad.'
+          'La verificación en Minka es un proceso voluntario que permite revisar la información y documentación presentada por el organizador para comprobar que sea consistente con la causa publicada.\n\nUna campaña verificada muestra un distintivo visible dentro de la plataforma, lo que ayuda a generar mayor confianza entre las personas colaboradoras y puede aumentar sus posibilidades de recibir apoyo.\n\nMinka realiza esfuerzos razonables de autenticación, revisión documental y monitoreo para fortalecer la transparencia, aunque la verificación no constituye una garantía absoluta sobre toda la información presentada por terceros.\n\nLos datos compartidos para este proceso son tratados de forma confidencial y conforme a nuestras políticas de privacidad.'
         }
       />
       <VerificationInfoModal
@@ -895,7 +895,7 @@ export default function CampaignClientPage({
             </p>
             <p>
               Este proceso ayuda a <strong>dar confianza</strong> a los
-              donantes cuando una campaña indica que los fondos serán recibidos
+              colaboradores cuando una campaña indica que los fondos serán recibidos
               por una institución, fundación o asociación registrada en Minka.
             </p>
             <p>

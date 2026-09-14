@@ -184,7 +184,7 @@ export function CampaignAnalytics({ campaigns }: CampaignAnalyticsProps) {
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-gray-600 flex items-center">
               <Users className="h-4 w-4 mr-2" />
-              Promedio de donantes
+              Promedio de colaboradores
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -197,7 +197,7 @@ export function CampaignAnalytics({ campaigns }: CampaignAnalyticsProps) {
                 : 0}
             </div>
             <p className="text-sm text-gray-600">
-              {campaigns.reduce((sum, c) => sum + c.donorCount, 0)} donantes en
+              {campaigns.reduce((sum, c) => sum + c.donorCount, 0)} colaboradores en
               total
             </p>
           </CardContent>
@@ -277,14 +277,14 @@ export function CampaignAnalytics({ campaigns }: CampaignAnalyticsProps) {
                         {(campaign.percentageFunded || 0).toFixed(1)}%
                       </div>
                       <div className="text-sm text-gray-500">
-                        {campaign.donorCount} donantes
+                        {campaign.donorCount} colaboradores
                       </div>
                     </div>
                   </div>
                 ))
               ) : (
                 <p className="text-center text-gray-500 py-4">
-                  Aún no hay campañas con donaciones
+                  Aún no hay campañas con aportes
                 </p>
               )}
             </div>
@@ -393,7 +393,7 @@ export function CampaignAnalytics({ campaigns }: CampaignAnalyticsProps) {
           <CardContent>
             <div className="space-y-2">
               <div className="flex justify-between gap-3">
-                <span>Donaciones base</span>
+                <span>Aportes base</span>
                 <span className="font-medium">
                   {formatCurrency(totalRaised)}
                 </span>

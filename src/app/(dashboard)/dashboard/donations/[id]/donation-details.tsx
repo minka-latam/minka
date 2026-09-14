@@ -60,7 +60,7 @@ export default function DonationDetails({ id }: DonationDetailsProps) {
         <LoadingSpinner
           size="md"
           showText
-          text="Cargando detalles de la donación..."
+          text="Cargando detalles del aporte..."
         />
       </div>
     );
@@ -88,13 +88,13 @@ export default function DonationDetails({ id }: DonationDetailsProps) {
 
         <div className="bg-red-50 rounded-lg p-6 text-red-500 text-center">
           <p className="mb-4">
-            No se pudo cargar los detalles de esta donación.
+            No se pudo cargar los detalles de este aporte.
           </p>
           <Button
             variant="outline"
             onClick={() => router.push("/dashboard/donations")}
           >
-            Volver al historial de donaciones
+            Volver al historial de aportes
           </Button>
         </div>
       </div>
@@ -118,13 +118,13 @@ export default function DonationDetails({ id }: DonationDetailsProps) {
 
         <div className="bg-yellow-50 rounded-lg p-6 text-center">
           <p className="text-gray-700 mb-4">
-            No se encontró la donación solicitada.
+            No se encontró el aporte solicitado.
           </p>
           <Button
             variant="outline"
             onClick={() => router.push("/dashboard/donations")}
           >
-            Volver al historial de donaciones
+            Volver al historial de aportes
           </Button>
         </div>
       </div>
@@ -153,7 +153,7 @@ export default function DonationDetails({ id }: DonationDetailsProps) {
             className="flex items-center gap-1 px-3 py-1"
           >
             <CheckCircle className="h-4 w-4" />
-            Donación Completada
+            Aporte completado
           </Badge>
         );
       case "pending":
@@ -163,21 +163,21 @@ export default function DonationDetails({ id }: DonationDetailsProps) {
             className="flex items-center gap-1 px-3 py-1"
           >
             <Clock className="h-4 w-4" />
-            Donación Pendiente
+            Aporte pendiente
           </Badge>
         );
       case "failed":
         return (
           <Badge variant="error" className="flex items-center gap-1 px-3 py-1">
             <XCircle className="h-4 w-4" />
-            Donación Fallida
+            Aporte fallido
           </Badge>
         );
       case "refunded":
         return (
           <Badge variant="info" className="flex items-center gap-1 px-3 py-1">
             <RotateCcw className="h-4 w-4" />
-            Donación Reembolsada
+            Aporte reembolsado
           </Badge>
         );
       default:
@@ -198,7 +198,7 @@ export default function DonationDetails({ id }: DonationDetailsProps) {
           Volver
         </Button>
         <h1 className="text-2xl font-bold text-gray-800">
-          Detalles de la donación
+          Detalles del aporte
         </h1>
       </div>
 
@@ -250,7 +250,7 @@ export default function DonationDetails({ id }: DonationDetailsProps) {
         {/* Donation Info */}
         <div className="bg-white rounded-lg shadow-sm p-6">
           <h3 className="text-lg font-medium mb-4">
-            Información de la donación
+            Información del aporte
           </h3>
 
           <div className="mb-4">
@@ -268,7 +268,7 @@ export default function DonationDetails({ id }: DonationDetailsProps) {
             <div className="pt-3 border-t border-gray-100">
               <div className="flex items-center mb-2 text-sm text-gray-500">
                 <Calendar className="h-4 w-4 mr-2" />
-                Fecha de donación
+                Fecha del aporte
               </div>
               <div className="text-gray-700">
                 {formatDate(donation.created_at)}
@@ -295,7 +295,7 @@ export default function DonationDetails({ id }: DonationDetailsProps) {
             )}
 
             <div className="pt-3 border-t border-gray-100">
-              <div className="text-sm text-gray-500 mb-2">Donación anónima</div>
+              <div className="text-sm text-gray-500 mb-2">Aporte anónimo</div>
               <div className="text-gray-700">
                 {donation.is_anonymous ? "Sí" : "No"}
               </div>

@@ -1077,7 +1077,7 @@ export function CampaignVerificationView({
       id: "faq-1",
       question: "¿Por qué debería verificar mi campaña?",
       answer:
-        "La verificación añade credibilidad y confianza a tu campaña, lo que puede resultar en más donaciones. Las campañas verificadas son promocionadas por Minka y tienen mayor visibilidad.",
+        "La verificación añade credibilidad y confianza a tu campaña, lo que puede resultar en más aportes. Las campañas verificadas son promocionadas por Minka y tienen mayor visibilidad.",
     },
     {
       id: "faq-2",
@@ -1520,7 +1520,7 @@ export function CampaignVerificationView({
                 </h2>
                 <p className="text-xl text-gray-600 max-w-3xl mx-auto">
                   Asegura mayor confianza y visibilidad para tu causa. La
-                  verificación te ayuda a destacar y atraer más donaciones.
+                  verificación te ayuda a destacar y atraer más aportes.
                 </p>
               </div>
 

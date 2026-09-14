@@ -74,11 +74,11 @@ export async function createCardCheckout(body: unknown) {
     returnUrl.searchParams.set('donationId', donation.id);
     const result = await libelulaClient.register({
       identificador: donation.id, email_cliente: value.paymentEmail,
-      descripcion: `Donación a ${campaign.title}`.slice(0, 250), moneda: value.currency, emite_factura: false,
+      descripcion: `Aporte a la campaña: ${campaign.title}`.slice(0, 250), moneda: value.currency, emite_factura: false,
       callback_url: callback.href, url_retorno: returnUrl.href,
       lineas_detalle_deuda: [
-        { concepto: `Donación a ${campaign.title}`.slice(0, 250), cantidad: 1, costo_unitario: value.amount },
-        ...(value.tipAmount > 0 ? [{ concepto: 'Aporte voluntario a Minka', cantidad: 1, costo_unitario: value.tipAmount }] : []),
+        { concepto: `Aporte a la campaña: ${campaign.title}`.slice(0, 250), cantidad: 1, costo_unitario: value.amount },
+        ...(value.tipAmount > 0 ? [{ concepto: 'Aporte adicional a Minka', cantidad: 1, costo_unitario: value.tipAmount }] : []),
       ],
     });
     await prisma.donation.update({ where: { id: donation.id }, data: { providerPaymentId: result.paymentId, providerCheckoutUrl: result.url } });

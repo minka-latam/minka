@@ -1414,9 +1414,9 @@ export default function CampaignVerificationPage() {
                 </h4>
                 <p className="text-sm text-amber-700 mt-1">
                   Revocar la verificación de una campaña es una acción
-                  importante que debería usarse con precaución. Los donantes
+                  importante que debería usarse con precaución. Las personas colaboradoras
                   pueden haber confiado en el distintivo de verificación para
-                  realizar donaciones.
+                  realizar aportes.
                 </p>
                 <p className="text-sm text-amber-700 mt-2">
                   Asegúrese de incluir una nota explicando el motivo de la

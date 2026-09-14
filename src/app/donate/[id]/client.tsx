@@ -41,7 +41,7 @@ const PENDING_CARD_CHECKOUT_KEY =
   'minka_pending_card_checkout'
 const DISABLED_PAYMENT_METHODS = new Set(process.env.NEXT_PUBLIC_CARD_PAYMENTS_ENABLED === 'true' ? [] : ['card'])
 const CARD_DISABLED_MESSAGE =
-  'El pago con tarjeta no está disponible en este momento. Puedes donar mediante código QR.'
+  'El pago con tarjeta no está disponible en este momento. Puedes aportar mediante código QR.'
 
 const DONATION_AMOUNTS_BS = [
   { value: 50 },
@@ -70,7 +70,7 @@ const PAYMENT_METHODS = [
     id: 'card',
     title: 'Tarjeta de crédito/débito',
     description:
-      'Paga de forma segura con tu tarjeta a través de Libélula.',
+      'Paga de forma segura con tu tarjeta de banco internacional o local.',
     icon: <CreditCard className='h-6 w-6' />,
   },
 ]
@@ -639,7 +639,7 @@ export function DonatePageContent({
         toast({
           title: 'Monto inválido',
           description:
-            `El monto máximo de donación es ${currencyPrefix} 50,000.`,
+            `El monto máximo por aporte es ${currencyPrefix} 50,000.`,
           variant: 'destructive',
         })
       }
@@ -770,7 +770,7 @@ export function DonatePageContent({
           }
 
           if (error === 'CHECKOUT_IN_PROGRESS') {
-            userMessage = 'Estamos preparando tu pago. Espera 30 segundos y vuelve a intentarlo; se conservará la misma donación.'
+            userMessage = 'Estamos preparando tu pago. Espera 30 segundos y vuelve a intentarlo; se conservará el mismo aporte.'
           }
           if (error === 'CHECKOUT_FINISHED' && data.donationId) {
             sessionStorage.setItem(PENDING_CARD_CHECKOUT_KEY, JSON.stringify({ ...checkoutSignature, donationId: data.donationId, claimToken: data.claimToken }))
@@ -778,7 +778,7 @@ export function DonatePageContent({
             return
           }
           if (error === 'INVALID_PAYMENT_INPUT') {
-            userMessage = 'Revisa el correo, la moneda y los montos de tu donación.'
+            userMessage = 'Revisa el correo, la moneda y los montos de tu aporte.'
           }
           if (error === 'PAYMENT_PROVIDER_ERROR') {
             userMessage =
@@ -856,7 +856,7 @@ export function DonatePageContent({
           'User must be logged in for non-anonymous donations'
         ) {
           throw new Error(
-            'Debes iniciar sesión para realizar donaciones. Por favor, inicia sesión o regístrate primero.',
+            'Debes iniciar sesión para realizar aportes. Por favor, inicia sesión o regístrate primero.',
           )
         }
 
@@ -912,7 +912,7 @@ export function DonatePageContent({
       setErrorMessage(
         error instanceof Error
           ? error.message
-          : 'Error desconocido al enviar la donación',
+          : 'Error desconocido al enviar el aporte',
       )
     } finally {
       setIsSubmitting(false)
@@ -1066,7 +1066,7 @@ export function DonatePageContent({
         />
         <div className='absolute inset-0 flex items-center justify-center p-4'>
           <h1 className='text-4xl sm:text-6xl md:text-7xl lg:text-[90px] font-bold text-white text-center'>
-            Impulsa sueños con tu donación
+            Impulsa sueños con tu aporte
           </h1>
         </div>
       </div>
@@ -1333,15 +1333,6 @@ export function DonatePageContent({
                           }
                         />
                       </div>
-
-                      <p className='mt-6'>
-                        <span className='font-semibold'>
-                          Importante:
-                        </span>{' '}
-                        El tipo de cambio no es el oficial,
-                        sino el paralelo.
-                      </p>
-
                     </div>
 
                     <div className='mt-16 mb-8'>
@@ -1453,7 +1444,7 @@ export function DonatePageContent({
                         </div>
                         <div className='flex justify-between gap-4'>
                           <span className='text-gray-600'>
-                            Donación
+                            Aporte
                           </span>
                           <span className='font-medium'>
                             {currencyPrefix}{' '}
@@ -1512,11 +1503,11 @@ export function DonatePageContent({
                             <span className='text-sm text-gray-800'>
                               <span className='font-semibold text-[#2c6e49]'>
                                 ¿Quieres que tu nombre salga
-                                luego de donar?
+                                luego de aportar?
                               </span>{' '}
                               Crea tu cuenta después de
                               pagar para vincular esta
-                              donación y aparecer en últimos
+                              aporte y aparecer entre los últimos
                               donadores. También podrás ver
                               tu historial, guardar
                               favoritas y recibir
@@ -1579,17 +1570,17 @@ export function DonatePageContent({
                           />
                           <span className='text-sm text-gray-800'>
                             <span className='font-semibold text-[#2c6e49]'>
-                              Hacer mi donación anónima
+                              Hacer mi aporte anónimo
                             </span>{' '}
                             Tu nombre no aparecerá
-                            públicamente en esta donación.
+                            públicamente en este aporte.
                           </span>
                         </label>
                         {wantsAnonymousDonation && (
                           <p className='mt-2 pl-8 text-xs text-gray-500'>
                             Dejar tu apoyo con tu nombre
                             ayuda a dar confianza al
-                            organizador y a otros donantes.
+                            organizador y a otras personas colaboradoras.
                           </p>
                         )}
                       </div>
@@ -1754,7 +1745,7 @@ export function DonatePageContent({
               {!user && (
                 <p className='mt-3 text-sm text-[#2c6e49] font-medium'>
                   Crea una cuenta para dejar tu nombre en la
-                  donación que hiciste y seguir el impacto
+                  aporte que hiciste y seguir el impacto
                 </p>
               )}
 
@@ -1775,10 +1766,10 @@ export function DonatePageContent({
                   </p>
                   <p className='mt-1 text-sm text-gray-700'>
                     Crear una cuenta permite dejar tu nombre
-                    si lo deseas en las donaciones, puedes
+                    si lo deseas en los aportes, puedes
                     también dejar mensajes de apoyo a la
                     causa, guardar tus campañas favoritas,
-                    revisar tu historial de donaciones,
+                    revisar tu historial de aportes,
                     volver fácilmente para ver
                     actualizaciones cuando quieras y toma
                     pocos segundos.

@@ -13,7 +13,7 @@ export interface LegalDocument {
   blocks: readonly LegalBlock[];
 }
 
-export const legalDocuments = [
+const legalDocumentsSource = [
   {
     "id": "terms",
     "slug": "terminos-y-condiciones",
@@ -2339,6 +2339,29 @@ export const legalDocuments = [
     ]
   }
 ] as const satisfies readonly LegalDocument[];
+
+function usePublicContributionTerminology(text: string) {
+  return text
+    .replaceAll("crowdfunding por Donación", "crowdfunding de aportes")
+    .replaceAll("Personas Donantes", "Personas Colaboradoras")
+    .replaceAll("Persona Donante", "Persona Colaboradora")
+    .replaceAll("personas donantes", "personas colaboradoras")
+    .replaceAll("persona donante", "persona colaboradora")
+    .replaceAll("Donaciones", "Aportes")
+    .replaceAll("Donación", "Aporte")
+    .replaceAll("donaciones", "aportes")
+    .replaceAll("donación", "aporte")
+    .replaceAll("donantes", "colaboradores")
+    .replaceAll("donante", "colaborador")
+}
+
+export const legalDocuments = legalDocumentsSource.map((document) => ({
+  ...document,
+  blocks: document.blocks.map((block) => ({
+    ...block,
+    text: usePublicContributionTerminology(block.text),
+  })),
+})) satisfies readonly LegalDocument[];
 
 export const termsDocument = legalDocuments.find((document) => document.id === "terms")!;
 export const privacyDocument = legalDocuments.find((document) => document.id === "privacy")!;

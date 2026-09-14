@@ -19,7 +19,7 @@ export function HeroSection() {
         <p className="text-xl sm:text-2xl md:text-3xl text-[#555555] mb-10">
           Conectamos a quienes anhelan recibir ayuda, con aquellos que quieren
           hacer sueños realidad, a través de una plataforma segura que facilita
-          las donaciones.
+          los aportes.
         </p>
         <div className="flex flex-col items-center justify-center gap-4 sm:flex-row sm:gap-6">
           <Button

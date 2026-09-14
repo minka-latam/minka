@@ -706,7 +706,7 @@ export function SuperAdminCampaignTable({
               {confirmAction?.type === "unverify" &&
                 "Se quitará el estado de verificación de la campaña."}
               {confirmAction?.type === "cancel" &&
-                "La campaña dejará de estar activa, pero se conservarán sus donaciones, transferencias y demás historial."}
+                "La campaña dejará de estar activa, pero se conservarán sus aportes, transferencias y demás historial."}
               {confirmAction?.type === "delete" &&
                 "Esta acción no se puede deshacer. La campaña se eliminará permanentemente y las reglas de cascada de la base de datos eliminarán únicamente los registros relacionados configurados."}
               {confirmAction?.type === "bulk-delete" &&
@@ -727,8 +727,8 @@ export function SuperAdminCampaignTable({
                     Acción administrativa delicada
                   </h4>
                   <p className="text-sm text-amber-700 mt-1">
-                    Revoca la verificación con cuidado: algunos donantes pueden
-                    haber confiado en esa insignia al realizar sus donaciones.
+                    Revoca la verificación con cuidado: algunas personas colaboradoras pueden
+                    haber confiado en esa insignia al realizar sus aportes.
                   </p>
                 </div>
               )}

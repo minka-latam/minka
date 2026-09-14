@@ -10,7 +10,7 @@ export function TrustSection() {
           ¿Por qué confiar en Minka?
         </h2>
         <p className="text-2xl md:text-3xl text-[#555555]">
-          Transparencia y seguridad para donar y transformar vidas.
+          Transparencia y seguridad para aportar y transformar vidas.
         </p>
       </div>
 
@@ -49,7 +49,7 @@ export function TrustSection() {
               </h3>
               <p className="text-xl md:text-2xl text-gray-600">
                 Trabajamos con plataformas de pago seguras para garantizar la
-                protección de tus donaciones.
+                protección de tus aportes.
               </p>
             </div>
           </div>

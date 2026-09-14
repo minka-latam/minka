@@ -95,7 +95,7 @@ export async function GET() {
         return {
           id: `donation:${donation.id}`,
           type: "donation" as const,
-          title: "Nueva donación",
+          title: "Nuevo aporte",
           message: `${donorName} donó Bs. ${Number(donation.amount).toLocaleString("es-BO")} a ${donation.campaign.title}.`,
           campaignId: donation.campaign.id,
           campaignTitle: donation.campaign.title,

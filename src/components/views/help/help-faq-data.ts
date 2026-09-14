@@ -23,7 +23,7 @@ export const faqCategories: FaqCategory[] = [
         id: 'general-2',
         question: '¿Cómo funciona Minka?',
         answer:
-          'Crear una campaña en Minka es sencillo:\n\n1. Crea una cuenta y verifica tu identidad.\n2. Diseña tu campaña explicando tu causa y estableciendo una meta de recaudación.\n3. Publica y comparte tu campaña con tu comunidad.\n4. Recibe donaciones y mantén informados a tus donantes sobre los avances alcanzados.\n5. Solicita el desembolso de los fondos recaudados cuando los necesites.',
+          'Crear una campaña en Minka es sencillo:\n\n1. Crea una cuenta y verifica tu identidad.\n2. Diseña tu campaña explicando tu causa y estableciendo una meta de recaudación.\n3. Publica y comparte tu campaña con tu comunidad.\n4. Recibe aportes y mantén informadas a las personas colaboradoras sobre los avances alcanzados.\n5. Solicita el desembolso de los fondos reunidos cuando los necesites.',
       },
       {
         id: 'general-3',
@@ -35,13 +35,13 @@ export const faqCategories: FaqCategory[] = [
         id: 'general-4',
         question: '¿Dónde está disponible Minka?',
         answer:
-          'Minka es una plataforma digital accesible desde cualquier parte del mundo. Las personas pueden realizar donaciones desde Bolivia o desde el extranjero. Actualmente, los fondos recaudados pueden transferirse únicamente a cuentas bancarias bolivianas registradas y verificadas en la plataforma.',
+          'Minka es una plataforma digital accesible desde cualquier parte del mundo. Las personas pueden realizar aportes desde Bolivia o desde el extranjero. Actualmente, los fondos reunidos pueden transferirse únicamente a cuentas bancarias bolivianas registradas y verificadas en la plataforma.',
       },
       {
         id: 'general-5',
         question: '¿Por qué confiar en Minka?',
         answer:
-          'Minka implementa mecanismos de autenticación de usuarios, verificación de campañas, monitoreo permanente y sistemas seguros de pago. Además, promovemos la transparencia mediante procesos de revisión documental y actualizaciones periódicas de las campañas, permitiendo que los donantes tomen decisiones informadas.',
+          'Minka implementa mecanismos de autenticación de usuarios, verificación de campañas, monitoreo permanente y sistemas seguros de pago. Además, promovemos la transparencia mediante procesos de revisión documental y actualizaciones periódicas de las campañas, permitiendo que las personas colaboradoras tomen decisiones informadas.',
       },
     ],
   },
@@ -82,19 +82,19 @@ export const faqCategories: FaqCategory[] = [
         question:
           '¿Puedo crear una campaña para otra persona?',
         answer:
-          'Sí. Puedes crear una campaña para apoyar a un familiar, amigo en necesidad o institución. Si se trata de una institución, recomendamos que esté aprobada por Minka para generar mayor confianza. En todos los casos, debes contar con su consentimiento o con documentación que respalde tu relación con la persona beneficiaria. Esto contribuye a generar mayor transparencia y confianza para quienes realizan donaciones.',
+          'Sí. Puedes crear una campaña para apoyar a un familiar, amigo en necesidad o institución. Si se trata de una institución, recomendamos que esté aprobada por Minka para generar mayor confianza. En todos los casos, debes contar con su consentimiento o con documentación que respalde tu relación con la persona beneficiaria. Esto contribuye a generar mayor transparencia y confianza para quienes realizan aportes.',
       },
       {
         id: 'campaign-5',
         question: '¿Qué son las instituciones aprobadas por Minka?',
         answer:
-          'Son empresas, asociaciones, instituciones, fundaciones u otras entidades legalmente reconocidas que pueden registrarse en la base de datos de Minka para generar mayor confianza sobre el destino de los aportes. Esto es especialmente importante para donantes internacionales, que suelen necesitar más señales de seguridad antes de apoyar una campaña.\n\nTe recomendamos hacerlo porque mejora la visibilidad, la creación de campañas y la confianza de los donantes.\n\nPara solicitarlo, envíanos un mensaje a info@minka-comunidad.org con: datos legales, número de registro, forma legal, NIT, cuenta bancaria, ubicación, información de contacto, sitio web, redes sociales y cualquier otro dato que quieran compartir con nosotros.\n\nEstos datos no son públicos; se usan únicamente para nuestra administración y para poder responder con mayor seguridad cuando un donante tenga dudas.',
+          'Son empresas, asociaciones, instituciones, fundaciones u otras entidades legalmente reconocidas que pueden registrarse en la base de datos de Minka para generar mayor confianza sobre el destino de los aportes. Esto es especialmente importante para personas colaboradoras internacionales, que suelen necesitar más señales de seguridad antes de apoyar una campaña.\n\nTe recomendamos hacerlo porque mejora la visibilidad, la creación de campañas y la confianza de las personas colaboradoras.\n\nPara solicitarlo, envíanos un mensaje a info@minka-comunidad.org con: datos legales, número de registro, forma legal, NIT, cuenta bancaria, ubicación, información de contacto, sitio web, redes sociales y cualquier otro dato que quieran compartir con nosotros.\n\nEstos datos no son públicos; se usan únicamente para nuestra administración y para poder responder con mayor seguridad cuando una persona colaboradora tenga dudas.',
       },
       {
         id: 'campaign-6',
         question: '¿Qué es la verificación de campañas?',
         answer:
-          'La verificación es un proceso mediante el cual el equipo de Minka revisa la documentación presentada por el organizador de una campaña para validar que la información proporcionada sea consistente con la causa publicada.\n\nDocumentos que se pueden presentar dependen del tipo de causa, pueden ser diagnóstico médico, receta farmacéutica, invitación a un torneo, factura de gastos realizados, presupuestos, etc.\n\nLas campañas verificadas cuentan con un distintivo visible dentro de la plataforma que ayuda a generar mayor confianza entre los donantes.',
+          'La verificación es un proceso mediante el cual el equipo de Minka revisa la documentación presentada por el organizador de una campaña para validar que la información proporcionada sea consistente con la causa publicada.\n\nDocumentos que se pueden presentar dependen del tipo de causa, pueden ser diagnóstico médico, receta farmacéutica, invitación a un torneo, factura de gastos realizados, presupuestos, etc.\n\nLas campañas verificadas cuentan con un distintivo visible dentro de la plataforma que ayuda a generar mayor confianza entre las personas colaboradoras.',
       },
       {
         id: 'campaign-7',
@@ -113,14 +113,14 @@ export const faqCategories: FaqCategory[] = [
         id: 'campaign-9',
         question: '¿Cuánto cuesta crear una campaña?',
         answer:
-          'Crear una campaña en Minka es completamente gratuito.\n\nPara cubrir los costos operativos y tecnológicos de la plataforma, se aplica una comisión únicamente sobre los fondos efectivamente recaudados:\n\n- Donaciones nacionales: 5% del monto donado.\n- Donaciones internacionales: 11% del monto donado más USD 0,30 por transacción.\n\nAdicionalmente, las personas donantes pueden realizar una contribución voluntaria (tip) destinada al mantenimiento y desarrollo de la plataforma. Esta contribución es opcional y puede ajustarse libremente al momento de donar.',
+          'Crear una campaña en Minka es completamente gratuito.\n\nPara cubrir los costos operativos y tecnológicos de la plataforma, se aplica una comisión únicamente sobre los fondos efectivamente reunidos:\n\n- Aportes nacionales: 5% del monto aportado.\n- Aportes internacionales: 11% del monto aportado más USD 0,30 por transacción.\n\nAdicionalmente, las personas colaboradoras pueden realizar un aporte adicional destinado al mantenimiento y desarrollo de la plataforma. Este aporte es opcional y puede ajustarse libremente al momento de aportar.',
       },
       {
         id: 'campaign-10',
         question:
           '¿Cómo aumentar las probabilidades de éxito de mi campaña?',
         answer:
-          'Las campañas más exitosas suelen:\n\n- Explicar claramente la necesidad o causa.\n- Utilizar fotografías y videos auténticos. Dispones de 5 espacios para fotos y 1 espacio para un video de YouTube; aprovéchalos, porque las imágenes ayudan a contar mejor tu historia.\n- Establecer metas de recaudación realistas en tiempo y monto.\n- **Compartirse ampliamente en redes sociales y aplicaciones de mensajería.**\n- Mantener informados a los donantes mediante actualizaciones periódicas.\n- Solicitar la verificación de la campaña.\n\nLa transparencia y la comunicación constante son factores clave para generar confianza y apoyo.\n\nNosotros ponemos la plataforma: una herramienta para generar confianza, un puente para recibir donaciones del exterior y un espacio centralizado para nuestras necesidades. Te damos visibilidad y seguridad, pero el éxito de una campaña también depende en gran medida de que puedas compartir y viralizar tu causa en tu círculo.',
+          'Las campañas más exitosas suelen:\n\n- Explicar claramente la necesidad o causa.\n- Utilizar fotografías y videos auténticos. Dispones de 5 espacios para fotos y 1 espacio para un video de YouTube; aprovéchalos, porque las imágenes ayudan a contar mejor tu historia.\n- Establecer metas de recaudación realistas en tiempo y monto.\n- **Compartirse ampliamente en redes sociales y aplicaciones de mensajería.**\n- Mantener informadas a las personas colaboradoras mediante actualizaciones periódicas.\n- Solicitar la verificación de la campaña.\n\nLa transparencia y la comunicación constante son factores clave para generar confianza y apoyo.\n\nNosotros ponemos la plataforma: una herramienta para generar confianza, un puente para recibir aportes del exterior y un espacio centralizado para nuestras necesidades. Te damos visibilidad y seguridad, pero el éxito de una campaña también depende en gran medida de que puedas compartir y viralizar tu causa en tu círculo.',
       },
       {
         id: 'campaign-11',
@@ -138,37 +138,37 @@ export const faqCategories: FaqCategory[] = [
     ],
   },
   {
-    category: 'Donaciones',
+    category: 'Aportes',
     items: [
       {
         id: 'donations-1',
-        question: '¿Quién puede donar?',
+        question: '¿Quién puede aportar?',
         answer:
-          'Cualquier persona dentro o fuera de Bolivia puede realizar una donación utilizando los métodos de pago habilitados por la plataforma.',
+          'Cualquier persona dentro o fuera de Bolivia puede realizar un aporte utilizando los métodos de pago habilitados por la plataforma.',
       },
       {
         id: 'donations-2',
-        question: '¿Puedo donar desde el extranjero?',
+        question: '¿Puedo aportar desde el extranjero?',
         answer:
-          'Sí. Las personas que se encuentren fuera de Bolivia pueden donar utilizando tarjetas de crédito o débito habilitadas para pagos internacionales.',
+          'Sí. Las personas que se encuentren fuera de Bolivia pueden aportar utilizando tarjetas de crédito o débito habilitadas para pagos internacionales.',
       },
       {
         id: 'donations-3',
-        question: '¿Puedo donar de forma anónima?',
+        question: '¿Puedo aportar de forma anónima?',
         answer:
-          'Sí. Puedes realizar una donación sin crear una cuenta o iniciar sesión, manteniendo tu identidad oculta para el organizador de la campaña y otros usuarios.',
+          'Sí. Puedes realizar un aporte sin crear una cuenta o iniciar sesión, manteniendo tu identidad oculta para el organizador de la campaña y otros usuarios.',
       },
       {
         id: 'donations-4',
-        question: '¿Cómo sé que mi donación fue recibida?',
+        question: '¿Cómo sé que mi aporte fue recibido?',
         answer:
-          'Para donaciones internacionales, la pasarela de pago enviará una confirmación una vez que la transacción haya sido procesada exitosamente.\n\nPara donaciones nacionales mediante QR, la plataforma mostrará una confirmación una vez que el pago haya sido registrado correctamente.',
+          'Para aportes internacionales, la pasarela de pago enviará una confirmación una vez que la transacción haya sido procesada exitosamente.\n\nPara aportes nacionales mediante QR, la plataforma mostrará una confirmación una vez que el pago haya sido registrado correctamente.',
       },
       {
         id: 'donations-5',
         question: '¿Puedo solicitar un reembolso?',
         answer:
-          'Las donaciones realizadas a través de Minka no son reembolsables.',
+          'Los aportes realizados a través de Minka no son reembolsables.',
       },
     ],
   },
@@ -179,14 +179,14 @@ export const faqCategories: FaqCategory[] = [
         id: 'payments-1',
         question: '¿Qué métodos de pago acepta Minka?',
         answer:
-          'Actualmente puedes realizar donaciones mediante:\n\n- Tarjetas de crédito.\n- Tarjetas de débito.\n- Transferencias mediante QR para entidades financieras habilitadas en Bolivia.',
+          'Actualmente puedes realizar aportes mediante:\n\n- Tarjetas de crédito.\n- Tarjetas de débito.\n- Transferencias mediante QR para entidades financieras habilitadas en Bolivia.',
       },
       {
         id: 'payments-2',
         question:
-          '¿Existe un monto mínimo o máximo para donar?',
+          '¿Existe un monto mínimo o máximo para aportar?',
         answer:
-          'Los límites pueden variar según el método de pago utilizado y las condiciones establecidas por los proveedores de servicios de pago. Los montos aplicables serán informados al momento de realizar la donación.',
+          'Los límites pueden variar según el método de pago utilizado y las condiciones establecidas por los proveedores de servicios de pago. Los montos aplicables serán informados al momento de realizar el aporte.',
       },
       {
         id: 'payments-3',
@@ -205,7 +205,7 @@ export const faqCategories: FaqCategory[] = [
         question:
           '¿Por qué Minka verifica algunas campañas?',
         answer:
-          'La verificación ayuda a aumentar la transparencia y la confianza de los donantes, permitiéndoles contar con información adicional sobre la causa que desean apoyar.',
+          'La verificación ayuda a aumentar la transparencia y la confianza de las personas colaboradoras, permitiéndoles contar con información adicional sobre la causa que desean apoyar.',
       },
       {
         id: 'security-2',

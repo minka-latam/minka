@@ -118,7 +118,7 @@ export function UserDonationTable({ donations }: UserDonationTableProps) {
                 colSpan={3}
                 className="text-center text-muted-foreground py-8"
               >
-                Aún no has realizado ninguna donación.
+                Aún no has realizado ningún aporte.
               </TableCell>
             </TableRow>
           ) : (

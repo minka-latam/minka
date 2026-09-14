@@ -404,7 +404,7 @@ export default async function DonationsPage({
         <div className='flex flex-col gap-3 md:flex-row md:items-start md:justify-between'>
           <div>
             <h1 className='text-2xl font-semibold text-gray-900'>
-              Donaciones
+              Aportes
             </h1>
             <p className='mt-1 text-sm text-gray-600'>
               Revisa totales por campaña y el listado de
@@ -603,7 +603,7 @@ export default async function DonationsPage({
           <Card className='rounded-lg'>
             <CardHeader className='pb-2'>
               <CardDescription>
-                Donaciones completadas
+                Aportes completados
               </CardDescription>
               <CardTitle>
                 {completedDonations.length}
@@ -666,7 +666,7 @@ export default async function DonationsPage({
                       colSpan={6}
                       className='py-8 text-center text-muted-foreground'
                     >
-                      No hay donaciones con estos filtros.
+                      No hay aportes con estos filtros.
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -775,7 +775,7 @@ export default async function DonationsPage({
   return (
     <div className='space-y-6 p-4 md:p-6'>
       <h1 className='text-3xl font-bold text-gray-800'>
-        Historial de donaciones
+        Historial de aportes
       </h1>
       <div className='rounded-lg bg-white p-4 shadow-sm md:p-6'>
         <UserDonationTable donations={validUserDonations} />

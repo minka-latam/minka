@@ -208,11 +208,11 @@ export function Step3Preview() {
                   </div>
                   <div className="flex justify-between mt-2 text-sm">
                     <span>0%</span>
-                    <span>0 donantes</span>
+                    <span>0 colaboradores</span>
                   </div>
                 </div>
                 <Button className="w-full bg-[#2c6e49] hover:bg-[#1e4d33] text-white rounded-lg py-3">
-                  Donar
+                  Aportar
                 </Button>
               </div>
 

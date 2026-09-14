@@ -138,7 +138,7 @@ export function SavedCampaignCard({
 
         <div className="flex items-center pr-2 self-center flex-shrink-0">
           <div className="text-[#2c6e49] hover:bg-[#e8f5ed] border border-[#2c6e49] rounded-full px-5 py-2 text-sm flex items-center gap-2 font-medium transition-colors">
-            Donar ahora
+            Aportar
             <svg
               width="16"
               height="16"

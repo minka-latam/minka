@@ -49,7 +49,7 @@ export const sidebarData: SidebarData = {
           icon: ShieldCheck,
         },
         {
-          title: "Donaciones",
+          title: "Aportes",
           url: "/dashboard/donations",
           icon: HandCoins,
         },

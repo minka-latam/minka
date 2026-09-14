@@ -112,8 +112,8 @@ export function buildCampaignSharePayload(
   const title = getCampaignShareTitle(campaign);
   const text =
     intent === "donation"
-      ? `Acabo de donar a "${title}" en Minka. Entra al enlace para conocer la campaña y aportar directamente.`
-      : `Apoya la campaña "${title}". Entra al enlace para conocer la historia y donar directamente en Minka.`;
+      ? `Acabo de aportar a "${title}" en Minka. Entra al enlace para conocer la campaña y apoyar directamente.`
+      : `Apoya la campaña "${title}". Entra al enlace para conocer la historia y aportar directamente en Minka.`;
   const caption = `${text}\n${url}`;
   // Future Meta Share Dialog option:
   // const facebookAppId = process.env.NEXT_PUBLIC_FACEBOOK_APP_ID;

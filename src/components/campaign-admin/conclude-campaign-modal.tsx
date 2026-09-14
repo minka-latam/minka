@@ -63,7 +63,7 @@ export function ConcludeCampaignModal({
           <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-900">
             Si eliges concluirla ahora, la campaña quedará marcada como{" "}
             <span className="font-semibold">cancelada</span> y ya no podrá
-            recibir nuevas donaciones.
+            recibir nuevos aportes.
           </div>
         </div>
 

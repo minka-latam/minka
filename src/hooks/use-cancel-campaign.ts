@@ -43,7 +43,7 @@ export function useCancelCampaign() {
         title: options.successTitle || "Campaña cancelada",
         description:
           options.successDescription ||
-          "La campaña ya no es pública y no recibirá donaciones.",
+          "La campaña ya no es pública y no recibirá aportes.",
       });
 
       return { success: true };

@@ -20,6 +20,12 @@ export async function refreshLibelulaDonation(donationId: string, source: 'statu
   await prisma.donation.update({ where: { id: donation.id }, data: {
     providerCheckoutUrl: debt.url_pasarela_pagos,
     providerSessionExpiresAt: parsePaymentDate(debt.fecha_vencimiento),
+    // A recovered checkout lookup has no transaction ID. The authenticated
+    // callback does, so preserve it once the debt has been independently
+    // matched to this Minka donation.
+    ...(transactionId && !donation.providerPaymentId
+      ? { providerPaymentId: transactionId }
+      : {}),
   } });
   if (debt.pagado && !debt.pago_anulado) return completeLibelulaPayment(donation, debt, source);
   // Expired debts remain reconcilable through the paid-range sweep. Do not infer failure from browser timeouts.

@@ -158,7 +158,7 @@ export function CampaignCard({
           {/* Donate Button - Fixed height */}
           <div className="h-10">
             <Button className="w-full h-full bg-white text-[#2c6e49] hover:bg-[#2c6e49] hover:text-white text-lg shadow-none border-0 rounded-full justify-start transition-all duration-300">
-              Donar ahora <ArrowRight className="ml-2 h-5 w-5" />
+              Aportar <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
           </div>
         </div>

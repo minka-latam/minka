@@ -305,7 +305,7 @@ const CampaignPreview = ({
 
                 <div className="space-y-3">
                   <Button className="w-full bg-[#2c6e49] hover:bg-[#1e4d33] text-white rounded-full py-4">
-                    Donar ahora
+                    Aportar
                   </Button>
                   <Button
                     variant="outline"
@@ -2031,8 +2031,8 @@ export function CampaignForm() {
                             <p>
                               Minka descuenta una <b>comisión</b> antes de
                               transferir los fondos al beneficiario: <b>5%</b>{" "}
-                              en donaciones locales por QR y <b>11%</b> en
-                              donaciones internacionales por tarjeta.
+                              en aportes locales por QR y <b>11%</b> en
+                              aportes internacionales por tarjeta.
                             </p>
                           </div>
                         </div>
@@ -2943,7 +2943,7 @@ export function CampaignForm() {
                   </h2>
                   <p className="text-lg text-gray-600">
                     La verificación asegura la transparencia de tu campaña, te
-                    ayuda a generar confianza en los donantes y a destacar.{" "}
+                    ayuda a generar confianza en las personas colaboradoras y a destacar.{" "}
                     <span className="font-bold">
                       ¡Te recomendamos no saltarte este paso!
                     </span>
@@ -3384,7 +3384,7 @@ export function CampaignForm() {
             <div className="rounded-md border border-[#478C5C]/20 bg-[#478C5C]/5 px-4 py-3 text-sm text-gray-700">
               <p>
                 Estas instituciones ya fueron registradas y corroboradas por
-                Minka para dar más confianza a los donantes.
+                Minka para dar más confianza a las personas colaboradoras.
               </p>
               <InstitutionReviewDialog
                 trigger={

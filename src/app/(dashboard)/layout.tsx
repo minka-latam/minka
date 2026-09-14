@@ -8,7 +8,7 @@ import { PASSWORD_RECOVERY_COOKIE } from "@/lib/password-recovery-session";
 
 export const metadata: Metadata = {
   title: "Dashboard",
-  description: "Panel de control de MINKA - Gestiona tus campañas y donaciones",
+  description: "Panel de control de MINKA - Gestiona tus campañas y aportes",
   robots: {
     index: false,
     follow: false,

@@ -46,9 +46,9 @@ export default function SignUpPage() {
 
       {hasDonationClaimIntent && (
         <div className="mb-6 rounded-lg border border-[#2c6e49]/30 bg-[#f5f7e9] p-4 text-sm text-[#1f4d33]">
-          <p className="font-semibold">Haz visible el impacto de tu donación.</p>
+          <p className="font-semibold">Haz visible el impacto de tu aporte.</p>
           <p className="mt-1">
-            Al crear tu cuenta, vincularemos la donación que acabas de hacer,
+            Al crear tu cuenta, vincularemos el aporte que acabas de hacer,
             tu nombre podrá aparecer en los últimos donadores, podrás revisar tu
             historial, guardar campañas favoritas, crear campañas y recibir
             notificaciones dentro de Minka.

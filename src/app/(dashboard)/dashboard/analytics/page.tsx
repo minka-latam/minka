@@ -240,7 +240,7 @@ export default function AnalyticsPage() {
   )} avances`;
   const growthDescription =
     overview.donationGrowthRate === null
-      ? "Sin donaciones completadas en el periodo anterior"
+      ? "Sin aportes completados en el periodo anterior"
       : `Vs. ${formatCurrency(
           overview.previousCompletedDonationAmount
         )} del periodo anterior`;
@@ -253,7 +253,7 @@ export default function AnalyticsPage() {
             Estadísticas de Minka
           </h1>
           <p className="max-w-3xl text-sm leading-6 text-muted-foreground">
-            {period.label} · {dateRange}. Los montos usan donaciones completadas;
+            {period.label} · {dateRange}. Los montos usan aportes completados;
             la actividad cuenta comentarios, guardados y avances publicados.
           </p>
         </div>
@@ -299,7 +299,7 @@ export default function AnalyticsPage() {
           value={formatCurrency(overview.completedDonationAmount)}
           description={`${formatNumber(
             overview.completedDonationCount
-          )} donaciones completadas en el periodo`}
+          )} aportes completados en el periodo`}
           icon={HeartHandshake}
         />
         <MetricCard
@@ -333,7 +333,7 @@ export default function AnalyticsPage() {
           icon={Bell}
         />
         <MetricCard
-          title="Donación promedio"
+          title="Aporte promedio"
           value={formatCurrency(overview.averageDonationAmount)}
           description={`${formatCurrency(
             overview.totalCompletedDonationAmount
@@ -345,7 +345,7 @@ export default function AnalyticsPage() {
       <Tabs defaultValue="campaigns" className="w-full">
         <TabsList className="mb-4 grid h-auto w-full grid-cols-2 gap-1 sm:inline-grid sm:w-auto sm:grid-cols-4">
           <TabsTrigger value="campaigns">Campañas</TabsTrigger>
-          <TabsTrigger value="donations">Donaciones</TabsTrigger>
+          <TabsTrigger value="donations">Aportes</TabsTrigger>
           <TabsTrigger value="users">Usuarios</TabsTrigger>
           <TabsTrigger value="activity">Actividad</TabsTrigger>
         </TabsList>
@@ -445,7 +445,7 @@ export default function AnalyticsPage() {
         <TabsContent value="donations" className="space-y-4">
           <Card className="rounded-lg shadow-sm">
             <CardHeader>
-              <CardTitle>Tendencia de donaciones completadas</CardTitle>
+              <CardTitle>Tendencia de aportes completados</CardTitle>
             </CardHeader>
             <CardContent>
               {hasChartData(charts.donationTrend) ? (
@@ -474,7 +474,7 @@ export default function AnalyticsPage() {
                       <Line
                         type="monotone"
                         dataKey="donations"
-                        name="Donaciones"
+                        name="Aportes"
                         stroke="#2563eb"
                         strokeWidth={2}
                       />
@@ -482,7 +482,7 @@ export default function AnalyticsPage() {
                   </ResponsiveContainer>
                 </div>
               ) : (
-                <EmptyChart label="No hay donaciones completadas en este periodo" />
+                <EmptyChart label="No hay aportes completados en este periodo" />
               )}
             </CardContent>
           </Card>
@@ -515,7 +515,7 @@ export default function AnalyticsPage() {
                       </Pie>
                       <Tooltip
                         formatter={(value, name, props) => [
-                          `${formatNumber(Number(value))} donaciones · ${formatCurrency(
+                          `${formatNumber(Number(value))} aportes · ${formatCurrency(
                             Number(props.payload.amount)
                           )}`,
                           name,

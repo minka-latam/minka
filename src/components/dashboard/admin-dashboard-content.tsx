@@ -333,7 +333,7 @@ export function AdminDashboardContent({ profile }: AdminDashboardContentProps) {
             <h3 className="text-xl font-semibold">Estadísticas</h3>
           </div>
           <p className="text-gray-600 mb-6 h-24">
-            Visualiza métricas detalladas sobre campañas, donaciones, usuarios y
+            Visualiza métricas detalladas sobre campañas, aportes, usuarios y
             desempeño general de la plataforma.
           </p>
           <Link
@@ -347,17 +347,17 @@ export function AdminDashboardContent({ profile }: AdminDashboardContentProps) {
         <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-100 hover:shadow-md transition-shadow">
           <div className="flex items-center mb-4">
             <HandCoins className="h-6 w-6 mr-2 text-[#2c6e49]" />
-            <h3 className="text-xl font-semibold">Donaciones</h3>
+            <h3 className="text-xl font-semibold">Aportes</h3>
           </div>
           <p className="text-gray-600 mb-6 h-24">
-            Revisa donaciones completadas, métodos de pago, tips y totales por
+            Revisa aportes completados, métodos de pago, aportes adicionales y totales por
             campaña.
           </p>
           <Link
             href="/dashboard/donations"
             className="text-[#2c6e49] hover:underline font-medium flex items-center"
           >
-            Ver donaciones <ArrowRight className="ml-2 h-4 w-4" />
+            Ver aportes <ArrowRight className="ml-2 h-4 w-4" />
           </Link>
         </div>
 

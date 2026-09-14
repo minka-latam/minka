@@ -784,7 +784,7 @@ export default function CampaignDetailPage() {
     const result = await cancelCampaign(String(params.id), {
       successTitle: "Campaña concluida",
       successDescription:
-        "La campaña ya no es pública, no recibirá donaciones y sus registros se conservaron.",
+        "La campaña ya no es pública, no recibirá aportes y sus registros se conservaron.",
       errorTitle: "No se pudo concluir la campaña",
       errorDescription: "No se pudo concluir la campaña.",
     });
@@ -1212,7 +1212,7 @@ export default function CampaignDetailPage() {
                     : "font-normal"
                 }`}
               >
-                <span className="text-xs sm:text-sm">Donaciones</span>
+                <span className="text-xs sm:text-sm">Aportes</span>
                 <Image
                   src="/icons/check_circle.svg"
                   alt="Donations"

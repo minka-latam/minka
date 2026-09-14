@@ -10,7 +10,7 @@ export async function generateMetadata({
   const { id } = await params;
   return {
     title: `Apoyar campaña | ${id}`,
-    description: "Realiza una donación a esta campaña",
+    description: "Realiza un aporte a esta campaña",
   };
 }
 

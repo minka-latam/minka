@@ -415,7 +415,7 @@ export function QRPaymentStep({
           <CheckCircle className="h-10 w-10 text-green-600" />
         </div>
         <h3 className="text-2xl font-bold text-[#2c6e49] mb-2">¡Pago Confirmado!</h3>
-        <p className="text-gray-600">Tu donación ha sido procesada correctamente.</p>
+        <p className="text-gray-600">Tu aporte fue procesado correctamente.</p>
       </div>
     );
   }
@@ -427,7 +427,7 @@ export function QRPaymentStep({
           <Clock className="h-10 w-10 text-amber-600" />
         </div>
         <h3 className="text-xl font-bold text-gray-900 mb-2">QR Expirado</h3>
-        <p className="text-gray-600 mb-6 text-center max-w-md">El código QR ha expirado. Genera uno nuevo para continuar con tu donación.</p>
+        <p className="text-gray-600 mb-6 text-center max-w-md">El código QR ha expirado. Genera uno nuevo para continuar con tu aporte.</p>
         <div className="flex gap-4">
           <Button variant="outline" onClick={handleCancel} disabled={cancelling}>
             {cancelling ? "Cancelando..." : "Cancelar"}

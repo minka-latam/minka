@@ -6,7 +6,7 @@ export default function DonatePageLoading() {
       <LoadingSpinner
         size="lg"
         showText={true}
-        text="Cargando información de la donación..."
+        text="Cargando información del aporte..."
       />
     </div>
   );

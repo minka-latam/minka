@@ -23,7 +23,7 @@ export default function AboutPage() {
             En Minka, creemos en el poder de la solidaridad para transformar
             vidas. Somos una plataforma de crowdfunding que conecta a quienes
             necesitan apoyo social con personas dispuestas a ayudar,
-            garantizando transparencia y seguridad en cada donación. Nuestro
+            garantizando transparencia y seguridad en cada aporte. Nuestro
             objetivo es brindar un espacio accesible y confiable donde cualquier
             causa, desde emergencias hasta proyectos de impacto social, pueda
             recibir el respaldo que merece.
@@ -43,7 +43,7 @@ export default function AboutPage() {
             </h2>
             <p className="text-lg text-gray-600 mb-8 max-w-3xl mx-auto">
               Consulta nuestra sección de preguntas frecuentes para obtener
-              respuestas a las dudas más comunes sobre donaciones, campañas y
+              respuestas a las dudas más comunes sobre aportes, campañas y
               cómo funciona nuestra plataforma.
             </p>
             <Link href="/help">

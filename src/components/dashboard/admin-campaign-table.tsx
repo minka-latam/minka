@@ -292,9 +292,9 @@ export function AdminCampaignTable({ campaigns }: AdminCampaignTableProps) {
               </h4>
               <p className="text-sm text-amber-700 mt-1">
                 Revocar la verificación de una campaña es una acción importante
-                que debería usarse con precaución. Los donantes pueden haber
+                que debería usarse con precaución. Las personas colaboradoras pueden haber
                 confiado en el distintivo de verificación para realizar
-                donaciones.
+                aportado.
               </p>
             </div>
           </div>

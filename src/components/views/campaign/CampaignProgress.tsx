@@ -309,7 +309,7 @@ export function CampaignProgress({
 
     return (
       donor.isAnonymous ||
-      normalizedName === 'donante anónimo' ||
+      normalizedName === 'colaborador anónimo' ||
       normalizedName === 'anonymous' ||
       normalizedName === 'anónimo' ||
       normalizedName.includes('anonym') ||
@@ -353,7 +353,7 @@ export function CampaignProgress({
 
     displayedDonors.push({
       id: `anonymous-${anonymousUsed}`,
-      name: 'Donante anónimo',
+      name: 'Colaborador anónimo',
       amount: 0,
     })
     anonymousUsed += 1
@@ -480,7 +480,7 @@ export function CampaignProgress({
                     disabled
                     className='w-full cursor-not-allowed rounded-full bg-gray-200 py-6 text-gray-500 hover:bg-gray-200'
                   >
-                    Donar ahora
+                    Aportar
                   </Button>
                 </span>
               </TooltipTrigger>
@@ -492,7 +492,7 @@ export function CampaignProgress({
         ) : (
           <Link href={`/donate/${campaignId}`}>
             <Button className='w-full bg-[#2c6e49] hover:bg-[#1e4d33] text-white rounded-full py-6'>
-              Donar ahora
+              Aportar
             </Button>
           </Link>
         )}

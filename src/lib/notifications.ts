@@ -44,12 +44,12 @@ export async function createDonationNotification(
   campaignTitle: string,
   isAnonymous: boolean = false
 ) {
-  const displayName = isAnonymous ? "un donante anónimo" : donorName;
+  const displayName = isAnonymous ? "un colaborador anónimo" : donorName;
 
   return createNotification({
     userId: organizerId,
     type: "donation_received",
-    title: "¡Nueva donación recibida!",
+    title: "¡Nuevo aporte recibido!",
     message: `${displayName} ha donado Bs. ${amount} a tu campaña "${campaignTitle}". ¡Gracias por hacer la diferencia!`,
     campaignId,
     donationId,

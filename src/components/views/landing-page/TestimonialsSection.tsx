@@ -7,8 +7,8 @@ const communityVoices = [
   {
     id: 1,
     quote:
-      "Como donante, quiero entender bien quién organiza la campaña, cuál es la necesidad y cómo se usará mi aporte antes de ayudar.",
-    title: "Donante anónimo",
+      "Como persona colaboradora, quiero entender bien quién organiza la campaña, cuál es la necesidad y cómo se usará mi aporte antes de ayudar.",
+    title: "Colaborador anónimo",
   },
   {
     id: 2,
@@ -20,7 +20,7 @@ const communityVoices = [
     id: 3,
     quote:
       "Cuando una campaña muestra contexto, documentos y, mejor si está verificada, es más fácil decidir si puedo aportar o compartirla con otras personas.",
-    title: "Rodrigo - Donante",
+    title: "Rodrigo - Colaborador",
   },
 ];
 
@@ -107,7 +107,7 @@ export function TestimonialsSection() {
           </h2>
           <p className="mt-5 text-lg leading-8 text-[#555555] md:text-xl">
             Minka está empezando. Estas son las necesidades que queremos atender
-            para donantes, organizadores e instituciones.
+            para colaboradores, organizadores e instituciones.
           </p>
         </div>
 
