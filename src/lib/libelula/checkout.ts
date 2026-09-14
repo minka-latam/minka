@@ -7,7 +7,6 @@ import { canReceiveCampaignPayments } from '@/lib/campaigns/visibility';
 import { getOrCreateCampaignAnonymousProfileId } from '@/lib/donations/anonymous-donor';
 import { hashDonationClaimToken } from '@/lib/donations/claim-token';
 import { addMoney } from '@/lib/money';
-import { convertUsdToBob, getUsdToBobExchangeRate } from '@/lib/platform-settings';
 import { cardInputSchema, validateDebt } from './validation';
 import { libelulaClient, LibelulaError } from './client';
 
@@ -31,9 +30,9 @@ export async function createCardCheckout(body: unknown) {
     let donation = await prisma.donation.findUnique({ where: { checkoutKey: value.idempotencyKey } });
     if (!donation) {
       const id = randomUUID();
-      const rate = value.currency === 'USD' ? await getUsdToBobExchangeRate() : 1;
-      const bobAmount = convertUsdToBob(value.amount, rate);
-      const bobTip = convertUsdToBob(value.tipAmount, rate);
+      const rate = 1;
+      const bobAmount = value.amount;
+      const bobTip = value.tipAmount;
       const donorId = userId || await getOrCreateCampaignAnonymousProfileId(value.campaignId);
       try {
         donation = await prisma.donation.create({ data: {

@@ -5,8 +5,6 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 
 type Props = {
-  currency: 'USD' | 'BOB'
-  onCurrencyChange: (currency: 'USD' | 'BOB') => void
   email: string
   onEmailChange: (email: string) => void
   onRefreshSession: () => Promise<void>
@@ -15,8 +13,6 @@ type Props = {
 }
 
 export function CardPaymentOptions({
-  currency,
-  onCurrencyChange,
   email,
   onEmailChange,
   onRefreshSession,
@@ -31,29 +27,6 @@ export function CardPaymentOptions({
   const showInput = !authenticated || editing || !email
   return (
     <div className='mt-6 space-y-5 rounded-lg border border-gray-200 p-5'>
-      <fieldset disabled={disabled}>
-        <legend className='mb-2 text-sm font-medium text-gray-900'>
-          Moneda del pago
-        </legend>
-        <div className='inline-flex gap-1 rounded-full border border-gray-300 bg-white p-1'>
-          {(['USD', 'BOB'] as const).map((option) => (
-            <label
-              key={option}
-              className={`relative cursor-pointer rounded-full px-5 py-2 text-sm transition-colors focus-within:ring-2 focus-within:ring-[#2c6e49] focus-within:ring-offset-2 ${currency === option ? 'bg-[#2c6e49] text-white' : 'text-gray-600 hover:bg-gray-100'}`}
-            >
-              <input
-                type='radio'
-                name='card-currency'
-                value={option}
-                checked={currency === option}
-                onChange={() => onCurrencyChange(option)}
-                className='sr-only'
-              />
-              {option === 'USD' ? '$ / USD' : 'Bs. / BOB'}
-            </label>
-          ))}
-        </div>
-      </fieldset>
       <div>
         {authenticated && !showInput ? (
           <div className='flex flex-wrap items-center gap-x-3 gap-y-2 text-sm'>

@@ -33,7 +33,7 @@ test('checkout, callbacks, concurrent completion and reconciliation on isolated 
     return { paymentId: randomUUID(), url };
   });
   t.mock.method(libelulaClient, 'payments', async () => []);
-  const input = { campaignId: campaign.id, amount: 10, tipAmount: 2, currency: 'USD', paymentEmail: 'private@example.com', clientAuthState: 'anonymous', idempotencyKey: randomUUID() };
+  const input = { campaignId: campaign.id, amount: 10, tipAmount: 2, currency: 'BOB', paymentEmail: 'private@example.com', clientAuthState: 'anonymous', idempotencyKey: randomUUID() };
   try {
     const responses = await Promise.all([createCardCheckout(input), createCardCheckout(input)]);
     const successful = responses.find(response => response.status === 200)!;
@@ -45,8 +45,8 @@ test('checkout, callbacks, concurrent completion and reconciliation on isolated 
     assert.equal(registrations, 1);
     assert.equal((await createCardCheckout({ ...input, amount: 11 })).status, 409);
     const donation = await prisma.donation.findUniqueOrThrow({ where: { id: first.donationId } });
-    assert.equal(Number(donation.amount), 70);
-    assert.equal(Number(donation.tip_amount), 14);
+    assert.equal(Number(donation.amount), 10);
+    assert.equal(Number(donation.tip_amount), 2);
     assert.equal(Number(donation.providerTotalAmount), 12);
     assert.equal(donation.isAnonymous, true);
     assert.equal((await callback(new Request(`http://localhost/api/libelula/callback?donationId=${donation.id}&transaction_id=${randomUUID()}`))).status, 503);
@@ -55,23 +55,23 @@ test('checkout, callbacks, concurrent completion and reconciliation on isolated 
     assert.equal((await prisma.donation.findUniqueOrThrow({ where: { id: donation.id } })).paymentStatus, 'pending');
     const debt = { ...debts.get(donation.id), pagado: true, fecha_pago: '2026-09-08 12:00:00' };
     await assert.rejects(() => completeLibelulaPayment(donation, { ...debt, valor_total: 999 }, 'test'), /PAYMENT_DETAILS_MISMATCH/);
-    await assert.rejects(() => completeLibelulaPayment(donation, { ...debt, moneda: 'BOB' }, 'test'), /PAYMENT_DETAILS_MISMATCH/);
+    await assert.rejects(() => completeLibelulaPayment(donation, { ...debt, moneda: 'USD' }, 'test'), /PAYMENT_DETAILS_MISMATCH/);
     const outcomes = await Promise.all(Array.from({ length: 4 }, () => completeLibelulaPayment(donation, debt, 'test')));
     assert.equal(outcomes.filter(Boolean).length, 1);
     const totals = await prisma.campaign.findUniqueOrThrow({ where: { id: campaign.id } });
-    assert.equal(Number(totals.collectedAmount), 70);
-    assert.equal(Number(totals.tipCollected), 14);
+    assert.equal(Number(totals.collectedAmount), 10);
+    assert.equal(Number(totals.tipCollected), 2);
     assert.equal(totals.donorCount, 1);
     assert.equal(await prisma.paymentLog.count({ where: { paymentid: donation.id } }), 1);
     assert.equal(await prisma.notification.count({ where: { donationId: donation.id } }), 1);
     const publicStatus = await (await status(new Request(`http://localhost/api/donation/status?donationId=${donation.id}`))).json();
-    assert.equal(publicStatus.donation.providerCurrency, 'USD');
+    assert.equal(publicStatus.donation.providerCurrency, 'BOB');
     assert.equal(publicStatus.donation.providerAmount, 10);
     assert.equal(JSON.stringify(publicStatus).includes('private@example.com'), false);
     assert.equal(JSON.stringify(publicStatus).includes('checkoutKey'), false);
 
     timeoutOnce = true;
-    const bobInput = { ...input, currency: 'BOB', idempotencyKey: randomUUID() };
+    const bobInput = { ...input, idempotencyKey: randomUUID() };
     assert.equal((await createCardCheckout(bobInput)).status, 502);
     const unknown = await prisma.donation.findUniqueOrThrow({ where: { checkoutKey: bobInput.idempotencyKey } });
     assert.equal(unknown.paymentStatus, 'pending');
@@ -83,15 +83,15 @@ test('checkout, callbacks, concurrent completion and reconciliation on isolated 
     await prisma.donation.update({ where: { id: unknown.id }, data: { providerNextCheckAt: new Date(0) } });
     await refreshLibelulaDonation(unknown.id, 'status');
     assert.equal((await prisma.donation.findUniqueOrThrow({ where: { id: unknown.id } })).paymentStatus, 'completed');
-    const thirdInput = { ...input, currency: 'BOB', idempotencyKey: randomUUID() };
+    const thirdInput = { ...input, idempotencyKey: randomUUID() };
     const third = await (await createCardCheckout(thirdInput)).json();
     debts.set(third.donationId, { ...debts.get(third.donationId), pagado: true });
     await prisma.donation.update({ where: { id: third.donationId }, data: { providerNextCheckAt: new Date(0) } });
     const sweep = await reconcileLibelulaPayments();
     assert.equal(sweep.completed, 1);
     const final = await prisma.campaign.findUniqueOrThrow({ where: { id: campaign.id } });
-    assert.equal(Number(final.collectedAmount), 90);
-    assert.equal(Number(final.tipCollected), 18);
+    assert.equal(Number(final.collectedAmount), 30);
+    assert.equal(Number(final.tipCollected), 6);
     assert.equal(final.donorCount, 3);
   } finally {
     await prisma.$disconnect();

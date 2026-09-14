@@ -6,7 +6,7 @@ import { parsePaymentDate } from './payment-completion';
 
 const id = '00000000-0000-4000-8000-000000000001';
 const debt = { identificador: id, valor_total: 12.5, moneda: 'USD', pagado: true, url_pasarela_pagos: 'https://pagos.libelula.bo/?id=test' };
-const input = { campaignId: id, idempotencyKey: id, amount: 10, tipAmount: 2.5, currency: 'USD', paymentEmail: 'donor@example.com' };
+const input = { campaignId: id, idempotencyKey: id, amount: 10, tipAmount: 2.5, currency: 'BOB', paymentEmail: 'donor@example.com' };
 
 test('accepts observed lookup envelopes and explicit false/zero boolean values', () => {
   assert.equal(parseDebtResponse({ error: 0, datos: null }, id), null);
@@ -23,9 +23,9 @@ test('only redirects to HTTPS Libelula checkout hosts', () => {
   assert.equal(checkoutUrl(debt.url_pasarela_pagos), debt.url_pasarela_pagos);
   for (const url of ['https://libelula.bo.evil.test/', 'http://pagos.libelula.bo/', 'javascript:alert(1)', 'https://user:pass@pagos.libelula.bo/']) assert.throws(() => checkoutUrl(url));
 });
-test('validates email, currency, finite amounts, cents, and tips at the API boundary', () => {
-  for (const currency of ['USD', 'BOB']) assert.equal(cardInputSchema.safeParse({ ...input, currency }).success, true);
-  for (const change of [{ currency: 'EUR' }, { paymentEmail: '' }, { amount: Infinity }, { amount: 0 }, { amount: 1.001 }, { tipAmount: -1 }, { amount: true }, { amount: 50001 }, { idempotencyKey: 'invalid' }]) assert.equal(cardInputSchema.safeParse({ ...input, ...change }).success, false);
+test('validates email, BOB-only currency, finite amounts, cents, and tips at the API boundary', () => {
+  assert.equal(cardInputSchema.safeParse(input).success, true);
+  for (const change of [{ currency: 'USD' }, { currency: 'EUR' }, { paymentEmail: '' }, { amount: Infinity }, { amount: 0 }, { amount: 1.001 }, { tipAmount: -1 }, { amount: true }, { amount: 50001 }, { idempotencyKey: 'invalid' }]) assert.equal(cardInputSchema.safeParse({ ...input, ...change }).success, false);
 });
 test('payment validation uses stored provider amounts and currency, never callback totals', () => {
   const donation = { id, paymentProvider: 'libelula', providerReference: id, providerTotalAmount: '12.50', providerCurrency: 'USD' };

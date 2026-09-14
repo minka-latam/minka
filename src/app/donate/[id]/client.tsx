@@ -39,7 +39,11 @@ import { addMoney, roundMoney } from '@/lib/money'
 const PENDING_DONATION_KEY = 'minka_pending_donation'
 const PENDING_CARD_CHECKOUT_KEY =
   'minka_pending_card_checkout'
-const DISABLED_PAYMENT_METHODS = new Set(process.env.NEXT_PUBLIC_CARD_PAYMENTS_ENABLED === 'true' ? [] : ['card'])
+const DISABLED_PAYMENT_METHODS = new Set(
+  process.env.NEXT_PUBLIC_CARD_PAYMENTS_ENABLED === 'true'
+    ? []
+    : ['card'],
+)
 const CARD_DISABLED_MESSAGE =
   'El pago con tarjeta no está disponible en este momento. Puedes aportar mediante código QR.'
 
@@ -48,13 +52,6 @@ const DONATION_AMOUNTS_BS = [
   { value: 100 },
   { value: 200 },
   { value: 500 },
-]
-
-const DONATION_AMOUNTS_CARD = [
-  { value: 10 },
-  { value: 20 },
-  { value: 50 },
-  { value: 100 },
 ]
 
 // Define payment methods
@@ -96,9 +93,13 @@ export function DonatePageContent({
 
   // Add user state
   const [user, setUser] = useState<User | null>(null)
-  const [cardCurrency, setCardCurrency] = useState<'USD' | 'BOB'>('USD')
+  const [usdToBobExchangeRate, setUsdToBobExchangeRate] =
+    useState<number | null>(null)
   const [paymentEmail, setPaymentEmail] = useState('')
-  const checkoutAttemptRef = useRef<{ signature: string; key: string } | null>(null)
+  const checkoutAttemptRef = useRef<{
+    signature: string
+    key: string
+  } | null>(null)
 
   // State variables
   const [selectedAmount, setSelectedAmount] = useState<
@@ -201,7 +202,9 @@ export function DonatePageContent({
       try {
         const { data } = await supabase.auth.getUser()
         setUser(data?.user || null)
-        setPaymentEmail(current => current || data?.user?.email || '')
+        setPaymentEmail(
+          (current) => current || data?.user?.email || '',
+        )
       } catch (error) {
         console.error(
           'Error checking authentication:',
@@ -274,6 +277,33 @@ export function DonatePageContent({
     pollDonationStatus(donationIdFromRedirect)
   }, [donationIdFromRedirect])
 
+  useEffect(() => {
+    if (paymentMethod !== 'card') return
+
+    let active = true
+    void fetch('/api/exchange-rate/usd-bob', {
+      cache: 'no-store',
+    })
+      .then(async (response) => {
+        if (!response.ok)
+          throw new Error('EXCHANGE_RATE_UNAVAILABLE')
+        return response.json()
+      })
+      .then((data) => {
+        const rate = Number(data?.usdToBobExchangeRate)
+        if (active && Number.isFinite(rate) && rate > 0) {
+          setUsdToBobExchangeRate(rate)
+        }
+      })
+      .catch(() => {
+        if (active) setUsdToBobExchangeRate(null)
+      })
+
+    return () => {
+      active = false
+    }
+  }, [paymentMethod])
+
   // Calculate donation details
   const donationAmount =
     selectedAmount ||
@@ -285,19 +315,25 @@ export function DonatePageContent({
         )
       : roundMoney(Number.parseFloat(customTipAmount) || 0)
   const totalAmount = addMoney(donationAmount, platformFee)
-  const currencyPrefix =
-    paymentMethod === 'card' && cardCurrency === 'USD' ? '$' : 'Bs.'
-  const donationAmounts =
-    paymentMethod === 'card' && cardCurrency === 'USD'
-      ? DONATION_AMOUNTS_CARD
-      : DONATION_AMOUNTS_BS
+  const currencyPrefix = 'Bs.'
+  const donationAmounts = DONATION_AMOUNTS_BS
+  const approximateUsdAmount =
+    paymentMethod === 'card' &&
+    usdToBobExchangeRate !== null &&
+    donationAmount > 0
+      ? donationAmount / usdToBobExchangeRate
+      : null
   const isDonationAmountValid =
     Number.isFinite(donationAmount) &&
     donationAmount >= 1 &&
     donationAmount <= 50000
   const isPaymentFormReady =
-    Boolean(paymentMethod) && isDonationAmountValid &&
-    (paymentMethod !== 'card' || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(paymentEmail.trim()))
+    Boolean(paymentMethod) &&
+    isDonationAmountValid &&
+    (paymentMethod !== 'card' ||
+      /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
+        paymentEmail.trim(),
+      ))
   const isDonationAnonymous = user
     ? wantsAnonymousDonation
     : true
@@ -462,25 +498,23 @@ export function DonatePageContent({
       saveDonationClaimIntent(intent)
     }
 
-    const redirectToSignIn = shouldRedirectToSignInAfterDonation(completedDonationId)
-    const redirectToSignup = shouldRedirectToSignupAfterDonation(completedDonationId)
+    const redirectToSignIn =
+      shouldRedirectToSignInAfterDonation(
+        completedDonationId,
+      )
+    const redirectToSignup =
+      shouldRedirectToSignupAfterDonation(
+        completedDonationId,
+      )
     sessionStorage.removeItem(PENDING_CARD_CHECKOUT_KEY)
     localStorage.removeItem(PENDING_DONATION_KEY)
 
-    if (
-      !user &&
-      intent &&
-      redirectToSignIn
-    ) {
+    if (!user && intent && redirectToSignIn) {
       router.push('/sign-in?donationClaim=1')
       return
     }
 
-    if (
-      !user &&
-      intent &&
-      redirectToSignup
-    ) {
+    if (!user && intent && redirectToSignup) {
       router.push('/sign-up?donationClaim=1')
       return
     }
@@ -526,17 +560,20 @@ export function DonatePageContent({
           const paymentStatus =
             data?.donation?.paymentStatus
           const dbAmount = Number(
-            data?.donation?.providerAmount ?? data?.donation?.amount ?? 0,
+            data?.donation?.providerAmount ??
+              data?.donation?.amount ??
+              0,
           )
           const dbTip = Number(
-            data?.donation?.providerTipAmount ?? data?.donation?.tipAmount ?? 0,
+            data?.donation?.providerTipAmount ??
+              data?.donation?.tipAmount ??
+              0,
           )
 
           // 1) amount: set either selectedAmount (if matches predefined) or customAmount
-          const matchesPreset = [
-            ...DONATION_AMOUNTS_BS,
-            ...DONATION_AMOUNTS_CARD,
-          ].some((o) => o.value === dbAmount)
+          const matchesPreset = DONATION_AMOUNTS_BS.some(
+            (o) => o.value === dbAmount,
+          )
           if (matchesPreset) {
             setSelectedAmount(dbAmount)
             setCustomAmount('')
@@ -553,7 +590,6 @@ export function DonatePageContent({
 
           // 3) ensure payment method in UI (optional but consistent)
           setPaymentMethod('card')
-          setCardCurrency(data?.donation?.providerCurrency === 'USD' ? 'USD' : 'BOB')
 
           if (paymentStatus === 'completed') {
             setInfoMessage(null)
@@ -568,7 +604,10 @@ export function DonatePageContent({
             return
           }
 
-          if (paymentStatus === 'failed' || paymentStatus === 'cancelled') {
+          if (
+            paymentStatus === 'failed' ||
+            paymentStatus === 'cancelled'
+          ) {
             setInfoMessage(null)
             setErrorMessage(
               'Lo siento, tu pago no se completó. Por favor inténtalo nuevamente.',
@@ -638,8 +677,7 @@ export function DonatePageContent({
       } else {
         toast({
           title: 'Monto inválido',
-          description:
-            `El monto máximo por aporte es ${currencyPrefix} 50,000.`,
+          description: `El monto máximo por aporte es ${currencyPrefix} 50,000.`,
           variant: 'destructive',
         })
       }
@@ -702,7 +740,7 @@ export function DonatePageContent({
           donorId: user?.id ?? null,
           amount: donationAmount,
           tipAmount: platformFee,
-          currency: cardCurrency,
+          currency: 'BOB',
           paymentEmail: paymentEmail.trim(),
           isAnonymous: isDonationAnonymous,
           wantsAccountAfterDonation,
@@ -711,49 +749,75 @@ export function DonatePageContent({
         const signature = JSON.stringify(checkoutSignature)
         if (!checkoutAttemptRef.current) {
           try {
-            const stored = JSON.parse(sessionStorage.getItem(PENDING_CARD_CHECKOUT_KEY) || 'null')
-            if (stored?.signature && stored?.idempotencyKey) checkoutAttemptRef.current = { signature: stored.signature, key: stored.idempotencyKey }
-          } catch { /* Invalid browser state starts a fresh checkout. */ }
+            const stored = JSON.parse(
+              sessionStorage.getItem(
+                PENDING_CARD_CHECKOUT_KEY,
+              ) || 'null',
+            )
+            if (stored?.signature && stored?.idempotencyKey)
+              checkoutAttemptRef.current = {
+                signature: stored.signature,
+                key: stored.idempotencyKey,
+              }
+          } catch {
+            /* Invalid browser state starts a fresh checkout. */
+          }
         }
-        if (checkoutAttemptRef.current?.signature !== signature) {
-          checkoutAttemptRef.current = { signature, key: crypto.randomUUID() }
+        if (
+          checkoutAttemptRef.current?.signature !==
+          signature
+        ) {
+          checkoutAttemptRef.current = {
+            signature,
+            key: crypto.randomUUID(),
+          }
         }
-        const idempotencyKey = checkoutAttemptRef.current.key
-        const previousCheckout = JSON.parse(sessionStorage.getItem(PENDING_CARD_CHECKOUT_KEY) || 'null')
-        sessionStorage.setItem(PENDING_CARD_CHECKOUT_KEY, JSON.stringify({
-          ...(previousCheckout?.idempotencyKey === idempotencyKey ? previousCheckout : {}),
-          ...checkoutSignature, signature, idempotencyKey,
-        }))
+        const idempotencyKey =
+          checkoutAttemptRef.current.key
+        const previousCheckout = JSON.parse(
+          sessionStorage.getItem(
+            PENDING_CARD_CHECKOUT_KEY,
+          ) || 'null',
+        )
+        sessionStorage.setItem(
+          PENDING_CARD_CHECKOUT_KEY,
+          JSON.stringify({
+            ...(previousCheckout?.idempotencyKey ===
+            idempotencyKey
+              ? previousCheckout
+              : {}),
+            ...checkoutSignature,
+            signature,
+            idempotencyKey,
+          }),
+        )
 
         setInfoMessage(
           'Estamos redirigiendo a la plataforma segura de pago por tarjeta, espera por favor.',
         )
-        const response = await fetch(
-          '/api/payments/card',
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              campaignId,
-              donorId: user?.id ?? null,
-              clientAuthState: user?.id
-                ? 'authenticated'
-                : 'anonymous',
-              amount: donationAmount,
-              tipAmount: platformFee,
-              message: '',
-              isAnonymous: isDonationAnonymous,
-              notificationEnabled: false,
-              paymentMethod: selectedMethod,
-              currency: cardCurrency,
-              paymentEmail: paymentEmail.trim(),
-              idempotencyKey,
-              customAmount: !selectedAmount,
-            }),
+        const response = await fetch('/api/payments/card', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
           },
-        )
+          body: JSON.stringify({
+            campaignId,
+            donorId: user?.id ?? null,
+            clientAuthState: user?.id
+              ? 'authenticated'
+              : 'anonymous',
+            amount: donationAmount,
+            tipAmount: platformFee,
+            message: '',
+            isAnonymous: isDonationAnonymous,
+            notificationEnabled: false,
+            paymentMethod: selectedMethod,
+            currency: 'BOB',
+            paymentEmail: paymentEmail.trim(),
+            idempotencyKey,
+            customAmount: !selectedAmount,
+          }),
+        })
 
         const data = await response.json()
 
@@ -770,15 +834,27 @@ export function DonatePageContent({
           }
 
           if (error === 'CHECKOUT_IN_PROGRESS') {
-            userMessage = 'Estamos preparando tu pago. Espera 30 segundos y vuelve a intentarlo; se conservará el mismo aporte.'
+            userMessage =
+              'Estamos preparando tu pago. Espera 30 segundos y vuelve a intentarlo; se conservará el mismo aporte.'
           }
-          if (error === 'CHECKOUT_FINISHED' && data.donationId) {
-            sessionStorage.setItem(PENDING_CARD_CHECKOUT_KEY, JSON.stringify({ ...checkoutSignature, donationId: data.donationId, claimToken: data.claimToken }))
+          if (
+            error === 'CHECKOUT_FINISHED' &&
+            data.donationId
+          ) {
+            sessionStorage.setItem(
+              PENDING_CARD_CHECKOUT_KEY,
+              JSON.stringify({
+                ...checkoutSignature,
+                donationId: data.donationId,
+                claimToken: data.claimToken,
+              }),
+            )
             await pollDonationStatus(data.donationId)
             return
           }
           if (error === 'INVALID_PAYMENT_INPUT') {
-            userMessage = 'Revisa el correo, la moneda y los montos de tu aporte.'
+            userMessage =
+              'Revisa el correo, la moneda y los montos de tu aporte.'
           }
           if (error === 'PAYMENT_PROVIDER_ERROR') {
             userMessage =
@@ -1167,7 +1243,9 @@ export function DonatePageContent({
                     <TooltipProvider delayDuration={100}>
                       {PAYMENT_METHODS.map((method) => {
                         const isDisabled =
-                          DISABLED_PAYMENT_METHODS.has(method.id)
+                          DISABLED_PAYMENT_METHODS.has(
+                            method.id,
+                          )
                         const methodButton = (
                           <button
                             key={method.id}
@@ -1176,7 +1254,8 @@ export function DonatePageContent({
                             className={`text-left rounded-lg p-5 border transition-colors ${
                               isDisabled
                                 ? 'cursor-not-allowed border-gray-300 bg-gray-50 opacity-60 grayscale'
-                                : paymentMethod === method.id
+                                : paymentMethod ===
+                                    method.id
                                   ? 'border-[#2c6e49] bg-[#f5f7e9]'
                                   : 'border-black hover:border-[#2c6e49] hover:bg-gray-50'
                             }`}
@@ -1253,17 +1332,11 @@ export function DonatePageContent({
                   </div>
                   {paymentMethod === 'card' && (
                     <CardPaymentOptions
-                      currency={cardCurrency}
-                      onCurrencyChange={currency => {
-                        if (currency === cardCurrency) return
-                        setCardCurrency(currency)
-                        setSelectedAmount(null)
-                        setCustomAmount('')
-                        setCustomTipAmount('')
-                      }}
                       email={paymentEmail}
                       onEmailChange={setPaymentEmail}
-                      onRefreshSession={handleRefreshPaymentSession}
+                      onRefreshSession={
+                        handleRefreshPaymentSession
+                      }
                       authenticated={Boolean(user)}
                       disabled={isSubmitting}
                     />
@@ -1279,7 +1352,13 @@ export function DonatePageContent({
                 >
                   <div className='border-t border-gray-200 pt-8'>
                     <h3 className='text-lg font-semibold text-black mb-4'>
-                      Monto de aporte
+                      Monto de aporte{' '}
+                      {paymentMethod === 'card' && (
+                        <span>
+                          (si es tarjeta internacional tu
+                          banco hará la conversión)
+                        </span>
+                      )}
                     </h3>
                     <div className='grid grid-cols-2 md:grid-cols-4 gap-4 mb-6'>
                       {donationAmounts.map((option) => (
@@ -1333,6 +1412,43 @@ export function DonatePageContent({
                           }
                         />
                       </div>
+                      {approximateUsdAmount !== null && (
+                        <TooltipProvider
+                          delayDuration={150}
+                        >
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <button
+                                type='button'
+                                className='mt-2 text-left text-sm italic text-gray-600 underline decoration-gray-300 underline-offset-2 focus:outline-none focus:ring-2 focus:ring-[#2c6e49] focus:ring-offset-2'
+                              >
+                                Aproximadamente equivale a
+                                US${' '}
+                                <span className='font-semibold'>
+                                  {approximateUsdAmount.toLocaleString(
+                                    'en-US',
+                                    {
+                                      minimumFractionDigits: 2,
+                                      maximumFractionDigits: 2,
+                                    },
+                                  )}
+                                </span>
+                              </button>
+                            </TooltipTrigger>
+                            <TooltipContent
+                              side='bottom'
+                              className='max-w-xs text-sm leading-relaxed'
+                            >
+                              Este es un cálculo basado en
+                              el tipo de cambio actual. El
+                              valor final del cobro depende
+                              de tu banco emisor y de los
+                              servicios Visa/Mastercard;
+                              este dato es solo una guía.
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      )}
                     </div>
 
                     <div className='mt-16 mb-8'>
@@ -1507,10 +1623,10 @@ export function DonatePageContent({
                               </span>{' '}
                               Crea tu cuenta después de
                               pagar para vincular esta
-                              aporte y aparecer entre los últimos
-                              donadores. También podrás ver
-                              tu historial, guardar
-                              favoritas y recibir
+                              aporte y aparecer entre los
+                              últimos donadores. También
+                              podrás ver tu historial,
+                              guardar favoritas y recibir
                               notificaciones.
                             </span>
                           </label>
@@ -1580,7 +1696,8 @@ export function DonatePageContent({
                           <p className='mt-2 pl-8 text-xs text-gray-500'>
                             Dejar tu apoyo con tu nombre
                             ayuda a dar confianza al
-                            organizador y a otras personas colaboradoras.
+                            organizador y a otras personas
+                            colaboradoras.
                           </p>
                         )}
                       </div>
@@ -1769,10 +1886,9 @@ export function DonatePageContent({
                     si lo deseas en los aportes, puedes
                     también dejar mensajes de apoyo a la
                     causa, guardar tus campañas favoritas,
-                    revisar tu historial de aportes,
-                    volver fácilmente para ver
-                    actualizaciones cuando quieras y toma
-                    pocos segundos.
+                    revisar tu historial de aportes, volver
+                    fácilmente para ver actualizaciones
+                    cuando quieras y toma pocos segundos.
                   </p>
                 </div>
               )}
