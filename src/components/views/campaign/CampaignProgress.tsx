@@ -435,7 +435,7 @@ export function CampaignProgress({
             {(currentAmount || 0).toLocaleString()}
           </span>
           <span className='text-[#2c6e49] font-medium'>
-            {donorsCount || 0} donadores
+            {donorsCount || 0} colaboradores
           </span>
         </div>
         <div className='flex items-center gap-3'>
@@ -537,7 +537,7 @@ export function CampaignProgress({
         {displayedDonors.length > 0 && (
           <div className='border-t border-gray-200 pt-4 text-left'>
             <h3 className='mb-2 text-sm font-semibold text-[#2c6e49]'>
-              Últimos donadores
+              Últimos colaboradores
             </h3>
             <ul className='space-y-1 text-[12.5px] leading-relaxed text-gray-600'>
               {displayedDonors.map((donor) => (

@@ -82,7 +82,7 @@ export function CompletedCampaignCard({
                 <p className="text-sm text-gray-600 line-clamp-3 leading-relaxed">
                   {description && description.length > 50
                     ? description
-                    : "Esta campaña ha sido completada exitosamente gracias a la colaboración de todos los donadores."}
+                    : "Esta campaña ha sido completada exitosamente gracias a la colaboración de todas las personas que aportaron."}
                 </p>
               </div>
             </div>
@@ -93,7 +93,7 @@ export function CompletedCampaignCard({
                 <div className="grid grid-cols-2 gap-2 text-[#2c6e49]">
                   <div className="overflow-hidden">
                     <span className="font-medium text-sm block truncate">
-                      Donadores
+                      Colaboradores
                     </span>
                     <p className="font-bold text-lg truncate">{donorCount}</p>
                   </div>

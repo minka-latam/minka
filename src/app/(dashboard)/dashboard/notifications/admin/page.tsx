@@ -229,7 +229,7 @@ export default function AdminNotificationsPage() {
       case "all":
         return "Todos los usuarios";
       case "donors":
-        return "Solo donadores";
+        return "Solo colaboradores";
       case "organizers":
         return "Solo organizadores";
       case "admins":
@@ -316,7 +316,7 @@ export default function AdminNotificationsPage() {
           <CardHeader className="pb-2">
             <CardTitle className="text-base text-orange-600 flex items-center">
               <Mail className="h-5 w-5 mr-2" />
-              Donadores activos
+              Colaboradores activos
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -401,7 +401,7 @@ export default function AdminNotificationsPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Todos los usuarios</SelectItem>
-                    <SelectItem value="donors">Solo donadores</SelectItem>
+                    <SelectItem value="donors">Solo colaboradores</SelectItem>
                     <SelectItem value="organizers">
                       Solo organizadores
                     </SelectItem>

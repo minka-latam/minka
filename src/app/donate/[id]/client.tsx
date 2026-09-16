@@ -1624,7 +1624,7 @@ export function DonatePageContent({
                               Crea tu cuenta después de
                               pagar para vincular esta
                               aporte y aparecer entre los
-                              últimos donadores. También
+                              últimos colaboradores. También
                               podrás ver tu historial,
                               guardar favoritas y recibir
                               notificaciones.

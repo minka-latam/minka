@@ -1541,7 +1541,7 @@ export function CampaignVerificationView({
                           Genera confianza
                         </h3>
                         <p className="text-lg text-gray-600">
-                          Los donadores se sienten más seguros al apoyar
+                          Las personas colaboradoras se sienten más seguras al apoyar
                           campañas verificadas.
                         </p>
                       </div>

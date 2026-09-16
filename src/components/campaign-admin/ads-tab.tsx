@@ -716,7 +716,7 @@ export function AdsTab({ campaign }: AdsTabProps) {
                 </h3>
                 <p className="text-sm text-gray-500 max-w-md mx-auto">
                   Comparte novedades sobre tu campaña para mantener informados a
-                  los donadores.
+                  las personas colaboradoras.
                 </p>
               </div>
             )}

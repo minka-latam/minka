@@ -18,7 +18,7 @@ const legalDocumentsSource = [
     "id": "terms",
     "slug": "terminos-y-condiciones",
     "title": "TÉRMINOS Y CONDICIONES DE USO DE LA PLATAFORMA MINKA",
-    "updated": "Última actualización: julio de 2026",
+    "updated": "Última actualización: septiembre de 2026",
     "blocks": [
       {
         "type": "title",
@@ -34,7 +34,7 @@ const legalDocumentsSource = [
       },
       {
         "type": "paragraph",
-        "text": "Bienvenido a Minka, una plataforma tecnológica de crowdfunding basada exclusivamente en Donaciones voluntarias, diseñada para facilitar la recaudación de fondos destinados a causas, proyectos e iniciativas de carácter lícito, promoviendo la solidaridad, la colaboración y el apoyo entre personas, organizaciones y comunidades."
+        "text": "Bienvenido a Minka, una plataforma tecnológica comercial de crowdfunding de aportes, diseñada para brindar servicios de intermediación digital, gestión de campañas y registro operativo de aportes destinados a causas, proyectos e iniciativas lícitas."
       },
       {
         "type": "paragraph",
@@ -54,7 +54,7 @@ const legalDocumentsSource = [
       },
       {
         "type": "paragraph",
-        "text": "Minka constituye una plataforma tecnológica que facilita la creación de Campañas de recaudación de fondos y la realización de Donaciones voluntarias. Salvo disposición expresa en contrario, Minka no actúa como Beneficiario de las Donaciones, representante o mandatario de las Personas Usuarias, entidad financiera, entidad de intermediación financiera, fiduciaria ni representante de las Personas Organizadoras o de los Beneficiarios de las Campañas."
+        "text": "Minka constituye una plataforma tecnológica que facilita la creación, difusión y gestión digital de Campañas, así como el registro y canalización operativa de Aportes mediante los medios de pago habilitados. Salvo disposición expresa en contrario, Minka no actúa como Beneficiario de los Aportes, representante o mandatario de las Personas Usuarias, entidad financiera, entidad de intermediación financiera, fiduciaria ni representante de las Personas Organizadoras o de los Beneficiarios de las Campañas."
       },
       {
         "type": "paragraph",
@@ -230,11 +230,11 @@ const legalDocumentsSource = [
       },
       {
         "type": "paragraph",
-        "text": "Minka es una plataforma tecnológica que opera bajo la modalidad de crowdfunding por Donación, entendido como el mecanismo mediante el cual múltiples personas realizan aportes económicos voluntarios para apoyar causas, proyectos, necesidades o iniciativas de carácter lícito a través de una plataforma digital."
+        "text": "Minka es una plataforma tecnológica comercial que opera bajo la modalidad de crowdfunding de aportes, entendido como el mecanismo mediante el cual múltiples personas realizan aportes económicos voluntarios para apoyar causas, proyectos, necesidades o iniciativas de carácter lícito a través de una plataforma digital."
       },
       {
         "type": "paragraph",
-        "text": "El objeto de Minka es facilitar la creación, publicación, difusión y administración de Campañas de recaudación de fondos, así como permitir que las Personas Donantes realicen Donaciones voluntarias a favor de dichas Campañas mediante los medios de pago habilitados en la Plataforma."
+        "text": "El objeto de Minka es brindar servicios de intermediación tecnológica para facilitar la creación, publicación, difusión y administración de Campañas de recaudación de fondos, así como el procesamiento, registro y seguimiento de los Aportes realizados por las Personas Colaboradoras mediante los medios de pago habilitados en la Plataforma."
       },
       {
         "type": "section",
@@ -242,11 +242,11 @@ const legalDocumentsSource = [
       },
       {
         "type": "paragraph",
-        "text": "La Plataforma facilita la interacción entre Personas Organizadoras, Personas Donantes y Beneficiarios, poniendo a disposición herramientas tecnológicas que permiten la creación, publicación, administración y difusión de Campañas, la realización de Donaciones y la gestión de solicitudes de desembolso, de conformidad con los presentes Términos y las Políticas de Minka que resulten aplicables."
+        "text": "La Plataforma facilita la interacción entre Personas Organizadoras, Personas Colaboradoras y Beneficiarios, poniendo a disposición herramientas tecnológicas para la creación, publicación, administración y difusión de Campañas, el procesamiento y registro de Aportes, y la gestión de solicitudes de desembolso, de conformidad con los presentes Términos y las Políticas de Minka que resulten aplicables."
       },
       {
         "type": "paragraph",
-        "text": "Minka presta un servicio tecnológico de crowdfunding por Donación y, salvo disposición expresa en contrario, no actúa como representante, mandataria, fiduciaria, administradora de patrimonios, entidad financiera o entidad de intermediación financiera de las Personas Usuarias."
+        "text": "Minka presta un servicio tecnológico comercial de intermediación y gestión digital de campañas, por el cual cobra las comisiones y cargos informados en la Plataforma. Salvo disposición expresa en contrario, no actúa como representante, mandataria, fiduciaria, administradora de patrimonios, entidad financiera o entidad de intermediación financiera de las Personas Usuarias."
       },
       {
         "type": "paragraph",
@@ -270,7 +270,7 @@ const legalDocumentsSource = [
       },
       {
         "type": "listItem",
-        "text": "c) facilitación de la recepción y registro de las Donaciones efectuadas mediante los medios de pago habilitados en la Plataforma;"
+        "text": "c) facilitación del procesamiento, registro y seguimiento de los Aportes efectuados mediante los medios de pago habilitados en la Plataforma;"
       },
       {
         "type": "listItem",
@@ -1610,7 +1610,7 @@ const legalDocumentsSource = [
       },
       {
         "type": "paragraph",
-        "text": "Minka no asume las obligaciones tributarias de las Personas Usuarias ni emite certificados de donación con efectos tributarios, salvo que la normativa aplicable disponga expresamente lo contrario, sin perjuicio de las obligaciones fiscales propias de Minka respecto de las comisiones derivadas de sus servicios."
+        "text": "Minka no asume las obligaciones tributarias de las Personas Usuarias ni emite certificados de aporte con efectos tributarios, salvo que la normativa aplicable disponga expresamente lo contrario, sin perjuicio de las obligaciones fiscales propias de Minka respecto de las comisiones derivadas de sus servicios."
       },
       {
         "type": "paragraph",
@@ -1622,7 +1622,7 @@ const legalDocumentsSource = [
     "id": "privacy",
     "slug": "politica-de-privacidad",
     "title": "POLÍTICA DE PRIVACIDAD DE MINKA",
-    "updated": "Última actualización: julio de 2026",
+    "updated": "Última actualización: septiembre de 2026",
     "blocks": [
       {
         "type": "title",
@@ -1710,15 +1710,15 @@ const legalDocumentsSource = [
       },
       {
         "type": "section",
-        "text": "2.4. Información de Donaciones y operaciones"
+        "text": "2.4. Información de Aportes y operaciones"
       },
       {
         "type": "paragraph",
-        "text": "Minka podrá registrar información relacionada con las Donaciones y operaciones realizadas a través de la Plataforma, incluyendo la fecha y hora, identidad y correo electrónico de la Persona Donante cuando corresponda, Campaña destinataria, monto, medio de pago y estado de la operación."
+        "text": "Minka podrá registrar información relacionada con los Aportes y operaciones realizadas a través de la Plataforma, incluyendo la fecha y hora, identidad y correo electrónico de la Persona Colaboradora cuando corresponda, Campaña destinataria, monto, medio de pago y estado de la operación. Esta información se utiliza para prestar el servicio de intermediación tecnológica, conciliación operativa, prevención de fraude y atención de incidencias."
       },
       {
         "type": "paragraph",
-        "text": "Cuando una Donación se realice mediante tarjeta, la información necesaria para procesar el pago será gestionada directamente por el Procesador de Pagos correspondiente. Minka no almacena directamente los datos completos de la tarjeta ni los códigos de seguridad utilizados para realizar la operación."
+        "text": "Cuando un Aporte se realice mediante tarjeta, la información necesaria para procesar el pago será gestionada directamente por el Procesador de Pagos correspondiente. Minka no almacena directamente los datos completos de la tarjeta ni los códigos de seguridad utilizados para realizar la operación."
       },
       {
         "type": "section",
@@ -2342,6 +2342,11 @@ const legalDocumentsSource = [
 
 function usePublicContributionTerminology(text: string) {
   return text
+    .replaceAll("CROWDFUNDING POR DONACIÓN", "CROWDFUNDING DE APORTES")
+    .replaceAll("PERSONAS DONANTES", "PERSONAS COLABORADORAS")
+    .replaceAll("PERSONA DONANTE", "PERSONA COLABORADORA")
+    .replaceAll("DONACIONES", "APORTES")
+    .replaceAll("DONACIÓN", "APORTE")
     .replaceAll("crowdfunding por Donación", "crowdfunding de aportes")
     .replaceAll("Personas Donantes", "Personas Colaboradoras")
     .replaceAll("Persona Donante", "Persona Colaboradora")

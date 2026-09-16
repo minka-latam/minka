@@ -49,7 +49,7 @@ export default function SignUpPage() {
           <p className="font-semibold">Haz visible el impacto de tu aporte.</p>
           <p className="mt-1">
             Al crear tu cuenta, vincularemos el aporte que acabas de hacer,
-            tu nombre podrá aparecer en los últimos donadores, podrás revisar tu
+            tu nombre podrá aparecer entre los últimos colaboradores, podrás revisar tu
             historial, guardar campañas favoritas, crear campañas y recibir
             notificaciones dentro de Minka.
           </p>

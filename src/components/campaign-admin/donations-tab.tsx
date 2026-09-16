@@ -157,10 +157,10 @@ export function DonationsTab({ campaign }: DonationsTabProps) {
               <thead>
                 <tr className="border-b border-gray-200">
                   <th className="text-left py-3 px-4 font-medium text-gray-600">
-                    Nombre del donador
+                    Nombre del colaborador
                   </th>
                   <th className="text-left py-3 px-4 font-medium text-gray-600">
-                    Monto donado
+                    Monto aportado
                   </th>
                   <th className="text-left py-3 px-4 font-medium text-gray-600">
                     Propina a Minka

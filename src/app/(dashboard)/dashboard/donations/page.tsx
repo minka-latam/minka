@@ -408,7 +408,7 @@ export default async function DonationsPage({
             </h1>
             <p className='mt-1 text-sm text-gray-600'>
               Revisa totales por campaña y el listado de
-              donadores.
+              colaboradores.
             </p>
           </div>
           <Link
@@ -424,7 +424,7 @@ export default async function DonationsPage({
           <CardHeader>
             <CardTitle>Filtros</CardTitle>
             <CardDescription>
-              Filtra por campaña, donador, método, estado y
+              Filtra por campaña, colaborador, método, estado y
               fecha.
             </CardDescription>
           </CardHeader>
@@ -467,7 +467,7 @@ export default async function DonationsPage({
 
               <label className='space-y-1 text-sm'>
                 <span className='font-medium text-gray-700'>
-                  Donador
+                  Colaborador
                 </span>
                 <input
                   name='donorSearch'
@@ -637,7 +637,7 @@ export default async function DonationsPage({
 
         <Card className='rounded-lg'>
           <CardHeader>
-            <CardTitle>Lista de donadores</CardTitle>
+            <CardTitle>Lista de colaboradores</CardTitle>
             <CardDescription>
               Hasta 200 registros según los filtros
               seleccionados.
@@ -650,7 +650,7 @@ export default async function DonationsPage({
                   <TableHead className='min-w-[150px]'>
                     Fecha y hora
                   </TableHead>
-                  <TableHead>Donador</TableHead>
+                  <TableHead>Colaborador</TableHead>
                   <TableHead>Campaña</TableHead>
                   <TableHead className='text-right'>
                     Monto

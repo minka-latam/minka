@@ -284,7 +284,7 @@ const CampaignPreview = ({
                 <div className="space-y-3 mb-4">
                   <div className="flex justify-between text-sm">
                     <span>Recaudado Bs. 1.200,00</span>
-                    <span>250 donadores</span>
+                    <span>250 colaboradores</span>
                   </div>
                   <div className="h-2 w-full bg-[#e8f0e9] rounded-full overflow-hidden">
                     <div
@@ -338,10 +338,10 @@ const CampaignPreview = ({
               {/* Comments */}
               <div className="mt-6 bg-white p-5 rounded-lg border border-gray-200">
                 <h2 className="text-lg font-medium text-[#2c6e49] mb-4">
-                  Comentarios de donadores
+                  Comentarios de colaboradores
                 </h2>
                 <p className="text-gray-600 text-sm">
-                  Aún no hay comentarios en esta campaña. Los donadores podrán
+                  Aún no hay comentarios en esta campaña. Las personas colaboradoras podrán
                   dejar sus comentarios aquí.
                 </p>
               </div>
@@ -1637,7 +1637,7 @@ export function CampaignForm() {
       id: 2,
       title: "Selecciona una categoría",
       description:
-        "Categoriza una categoría y tu campaña va ser encontrada más fácilmente por los donadores potenciales.",
+        "Elige una categoría para que tu campaña sea encontrada más fácilmente por personas colaboradoras potenciales.",
     },
     {
       id: 3,

@@ -1116,7 +1116,7 @@ export default function CampaignDetailPage() {
                 <div className="mx-6 w-1 h-1 bg-gray-400 rounded-full"></div>
                 <div className="text-sm">
                   <p className="font-medium text-gray-800">
-                    {campaign.donor_count || "0"} donadores
+                    {campaign.donor_count || "0"} colaboradores
                   </p>
                 </div>
                 <div className="mx-6 w-1 h-1 bg-gray-400 rounded-full"></div>
@@ -2304,7 +2304,7 @@ export default function CampaignDetailPage() {
                 </h2>
                 <p className="text-xl text-gray-600 leading-relaxed mb-10">
                   Comparte actualizaciones sobre el progreso de tu campaña,
-                  agradece a los donadores o motiva publicando anuncios en
+                  agradece a quienes aportaron o motiva publicando anuncios en
                   tiempo real.
                 </p>
                 <div className="border-b border-[#478C5C]/20 my-8"></div>
