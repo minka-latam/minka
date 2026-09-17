@@ -10,13 +10,21 @@ import { addMoney } from '@/lib/money';
 import { cardInputSchema, validateDebt } from './validation';
 import { libelulaClient, LibelulaError } from './client';
 
+// Keep this server-side guard independent from public environment variables.
+// The UI is disabled too, but this prevents direct API calls from creating
+// card-payment donations while the provider is unavailable.
+const CARD_PAYMENTS_ENABLED = false;
+
 export async function createCardCheckout(body: unknown) {
+  if (!CARD_PAYMENTS_ENABLED) {
+    return NextResponse.json({ success: false, error: 'CARD_PAYMENTS_UNAVAILABLE' }, { status: 503 });
+  }
   const input = cardInputSchema.safeParse(body);
   if (!input.success) return NextResponse.json({ success: false, error: 'INVALID_PAYMENT_INPUT' }, { status: 400 });
   const value = input.data;
   const secret = process.env.LIBELULA_CHECKOUT_SECRET;
   const origin = process.env.LIBELULA_MERCHANT_BASE_URL || process.env.NEXT_PUBLIC_BASE_URL;
-  if (process.env.NEXT_PUBLIC_CARD_PAYMENTS_ENABLED !== 'true' || !secret || !origin || !process.env.LIBELULA_APP_KEY) {
+  if (!secret || !origin || !process.env.LIBELULA_APP_KEY) {
     return NextResponse.json({ success: false, error: 'CARD_PAYMENTS_UNAVAILABLE' }, { status: 503 });
   }
   try {

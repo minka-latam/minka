@@ -39,11 +39,9 @@ import { addMoney, roundMoney } from '@/lib/money'
 const PENDING_DONATION_KEY = 'minka_pending_donation'
 const PENDING_CARD_CHECKOUT_KEY =
   'minka_pending_card_checkout'
-const DISABLED_PAYMENT_METHODS = new Set(
-  process.env.NEXT_PUBLIC_CARD_PAYMENTS_ENABLED === 'true'
-    ? []
-    : ['card'],
-)
+// Card payments are intentionally unavailable until the provider is enabled
+// again after the required operational checks have been completed.
+const DISABLED_PAYMENT_METHODS = new Set(['card'])
 const CARD_DISABLED_MESSAGE =
   'El pago con tarjeta no está disponible en este momento. Puedes aportar mediante código QR.'
 
@@ -1250,6 +1248,7 @@ export function DonatePageContent({
                           <button
                             key={method.id}
                             type='button'
+                            disabled={isDisabled}
                             aria-disabled={isDisabled}
                             className={`text-left rounded-lg p-5 border transition-colors ${
                               isDisabled
@@ -1318,7 +1317,9 @@ export function DonatePageContent({
                         return isDisabled ? (
                           <Tooltip key={method.id}>
                             <TooltipTrigger asChild>
-                              {methodButton}
+                              <span className='block cursor-none'>
+                                {methodButton}
+                              </span>
                             </TooltipTrigger>
                             <TooltipContent className='max-w-xs text-sm leading-relaxed'>
                               {CARD_DISABLED_MESSAGE}
